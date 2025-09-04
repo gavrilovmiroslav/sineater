@@ -1,0 +1,1 @@
+XCOPY /Y C:\art\REXPaint-v1.70\images\*.xp C:\Projects\sineater\SINEATER\Content\
