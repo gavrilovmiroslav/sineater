@@ -24,8 +24,8 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
-        <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
+        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5-develop.11" />
+        <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.5-develop.11" />
         <PackageReference Include="RogueSharp" Version="5.0.0-pre4" />
         <PackageReference Include="SadRex" Version="1.0.3" />
     </ItemGroup>

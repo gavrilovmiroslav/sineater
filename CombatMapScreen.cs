@@ -22,15 +22,15 @@ public enum ETerrainKind
 
 public class CombatMapScreen : IScreen
 {
-    private readonly int _fullWidth = 26, _fullHeight = 20;
-    private readonly int _offsetX = 4, _offsetY = 3;
+    private readonly int _fullWidth = 24, _fullHeight = 22;
+    private readonly int _offsetX = 0, _offsetY = 2;
     private int _width, _height;
     private SineaterGame _game;
     private ETerrainKind _kind;
     private IMap? _map;
     private bool _rendered = false;
     private bool _debugView = false;
-    private List<(int, int)> _entryPositions = new();
+    private Dictionary<Character, (int, int)> _positions = new();
     
     private void Regenerate(bool resize) {
         if (resize)
@@ -43,18 +43,36 @@ public class CombatMapScreen : IScreen
     }
     
     private void Regenerate() => Regenerate(_kind);
+    private int _extraFill = 0;
+    
+    public CombatMapScreen(SineaterGame game, ETerrainKind kind, int width = -1, int height = -1)
+    {
+        _width = width;
+        _height = height;
+        
+        _kind = kind;
+        _game = game;
+        Initialize(game);
+        Regenerate(_width == -1 || _height == -1);
+    }
+
+    public void Initialize(SineaterGame game)
+    {
+        _game = game;
+    }
+    
     private void Regenerate(ETerrainKind kind)
     {
-        _entryPositions.Clear();
+        _positions.Clear();
         _kind = kind;
         var (a, b, c, d, e) = (0, 0, 0, _width, _height);
         switch (_kind)
         {
             case ETerrainKind.Tomb:
-                (a, b, c, d, e) = (32, 2, 2, 48, 38);//36
+                (a, b, c, d, e) = (32, 2, 2, 22, 20);//36
                 break;
             case ETerrainKind.Temple:
-                (a, b, c, d, e) = (40, 1, 1, 48, 38); //45
+                (a, b, c, d, e) = (40, 1, 1, 22, 20); //45
                 break;
             case ETerrainKind.Cave:
                 (a, b, c) = (52, 3, 3); //47
@@ -66,10 +84,13 @@ public class CombatMapScreen : IScreen
                 (a, b, c) = (92, 2, 2);//89
                 break;
             default:
-                (a, b, c) = (Rnd.Instance.Next(1, 99), Rnd.Instance.D4, Rnd.Instance.D4);
+                (a, b, c, d, e) = (Rnd.Instance.Next(1, 99), Rnd.Instance.D6, Rnd.Instance.D6, 22, 20);
                 break;
         }
-        
+
+        a += _extraFill;
+        _width = d;
+        _height = e;
         Console.WriteLine($"Fill probability: {a}, iterations: {b}, cutoff: {c}, size: {_width} x {_height}");
 
         IMapCreationStrategy<Map>? mapCreationStrategy = null;
@@ -93,12 +114,24 @@ public class CombatMapScreen : IScreen
         _rendered = false;
 
         var vas = _map.GetAllCells().Where(t => t.IsWalkable).ToArray();
+        Console.WriteLine("Free tiles: " + vas.Length);
+        if (vas.Length <= 50)
+        {
+            _extraFill++;
+            Regenerate();
+            return;
+        }
+        
         vas.Shuffle();
         var vs = vas.AsEnumerable().GetEnumerator();
+        var idx = 0;
+
+        List<(int, int)> entryPositions = [];
         if (vs.MoveNext())
         {
             var v = vs.Current;
-            _entryPositions.Add((v.X, v.Y));
+            entryPositions.Add((v.X, v.Y));
+            _positions[_game.Party.Characters[idx++]] = (v.X, v.Y);
             var freeTiles = new HashSet<Cell>(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
             for (int i = 0; i < 3; i++)
             {
@@ -116,32 +149,20 @@ public class CombatMapScreen : IScreen
                     }
                 }
                 v = freeTiles.ToArray()[Rnd.Instance.Next(freeTiles.Count)];
-                _entryPositions.Add((v.X, v.Y));
+                entryPositions.Add((v.X, v.Y));
+                _positions[_game.Party.Characters[idx++]] = (v.X, v.Y);
                 freeTiles.UnionWith(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
-                freeTiles.RemoveWhere(t => _entryPositions.Contains((t.X, t.Y)));
+                freeTiles.RemoveWhere(t => entryPositions.Contains((t.X, t.Y)));
             }
         }
         else
         {
             Console.WriteLine("HAD TO REGENERATE FORCEFULLY!");
             Regenerate(true);
+            return;
         }
-    }
-    
-    public CombatMapScreen(SineaterGame game, ETerrainKind kind, int width = -1, int height = -1)
-    {
-        _width = width;
-        _height = height;
-        
-        _kind = kind;
-        
-        Initialize(game);
-        Regenerate(_width == -1 || _height == -1);
-    }
 
-    public void Initialize(SineaterGame game)
-    {
-        _game = game;
+        _extraFill = 0;
     }
 
     public void Update(GameTime gameTime)
@@ -194,8 +215,6 @@ public class CombatMapScreen : IScreen
         if (_rendered) return;
         
         _rendered = true;
-        _game.Layers["mrmo"].Set(1, 1, "                ");
-        _game.Layers["mrmo"].Set(1, 1, _kind.ToString());
 
         for (int i = 0; i < _fullWidth; i++)
         {
@@ -204,31 +223,33 @@ public class CombatMapScreen : IScreen
                 _game.Layers["mrmo"].Unset(i + _offsetX, j + _offsetY);
             }
         }
-
-        var shouldDrawAll = _debugView;
-        if (!shouldDrawAll) shouldDrawAll = _entryPositions.Count == 0;
-        if (!shouldDrawAll)
+        
+        if (!_debugView)
         {
             var fieldOfView = new FieldOfView(_map);
             ReadOnlyCollection<Cell>? cells = null;
-            foreach (var (x, y) in _entryPositions)
+            
+            foreach (var (chr, (x, y)) in _positions)
             {
-                cells = fieldOfView.AppendFov(x, y, 10, true);
+                cells = fieldOfView.AppendFov(x, y, 5 + chr.Stats.Mod(EStat.Clarity), true);
             }
 
-            foreach (var cell in cells)
+            if (cells != null)
             {
-                var (i, j) = (cell.X, cell.Y);
-                var g = Glyph.Bw(0, 0);
-                if (!cell.IsTransparent)
+                foreach (var cell in cells)
                 {
-                    g.U = Rnd.Instance.Next(6, 12);
-                    g.V = Rnd.Instance.Next(5, 6);
-                    _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, g);
-                }
-                else
-                {
-                    _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, ".");
+                    var (i, j) = (cell.X, cell.Y);
+                    var g = Glyph.Bw(0, 0);
+                    if (!cell.IsTransparent)
+                    {
+                        g.U = Rnd.Instance.Next(6, 12);
+                        g.V = Rnd.Instance.Next(5, 6);
+                        _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, g);
+                    }
+                    else
+                    {
+                        _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, ".");
+                    }
                 }
             }
         }
@@ -250,9 +271,26 @@ public class CombatMapScreen : IScreen
             }
         }
         
-        foreach (var (x, y) in _entryPositions)
+        var colors = new Color[] { Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.IndianRed };
+        var ch = 0;
+        
+        foreach (var (chr, (x, y)) in _positions)
         {
-            _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, new Glyph(11, 25, Color.Black, Color.Yellow));
+            var (ix, iy) = chr.Job.GetImage();
+            _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, new Glyph(ix, iy, Color.Black, colors[ch]));
+            ch++;
+        }
+        
+        // HEADER
+        _game.Layers["ascii"].Set(0, 0, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        // LOG
+        
+        for (int i = 0; i < 22; i++)
+        {
+            for (int j = 0; j < _fullHeight + _offsetY; j++)
+            {
+                _game.Layers["ascii"].Set(i + 2 * _fullWidth + 2, j, "x");
+            }
         }
     }
 }

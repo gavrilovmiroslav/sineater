@@ -15,7 +15,9 @@ public class SineaterGame : Game
     
     private Texture2D _mrmo;
     private Texture2D _ibm;
-    private Texture2D _room;
+    private Texture2D[] _room = new Texture2D[24];
+    private float _dHour;
+    private Texture2D _monitor;
 
     private Effect _crt;
     private RenderTarget2D _renderTarget;
@@ -23,17 +25,34 @@ public class SineaterGame : Game
     private const int Width = 1280;
     private const int Height = 960;
 
+    private float _currentMinutes = 0;
+    private int _currentHour = 0;
+    private int _nextHour = 1;
+    private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
     public Bar Bar;
     public Dictionary<string, TextLayer> Layers = new();
     public IScreen? CurrentScreen = null;
+    public Party Party;
     
     public SineaterGame()
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+
+        var time = DateTime.Now;
+        _currentHour = time.Hour;
+        var currentMillis = time.Millisecond + time.Second * 1000 + time.Minute * 1000 * 60; 
+        _currentMinutes = currentMillis;
+        _nextHour = (time.Hour + 1) % 24;
+        _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
+        _dHour += (float)time.Second * 1000.0f;
+        // _currentHour = 12;
+        // _nextHour = 13;
+        // _currentMinutes = 0;
+        // _dHour = 0;
     }
     
     private void SetupCrt(int w, int h)
@@ -67,9 +86,15 @@ public class SineaterGame : Game
     
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
-        _room = Content.Load<Texture2D>("room");
 
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2);
+        for (int i = 0; i < 24; i++)
+        {
+            _room[i] = Content.Load<Texture2D>(i.ToString().PadLeft(2, '0'));    
+        }
+        
+        _monitor = Content.Load<Texture2D>("monitor");
+
+        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 68), new Vector2(2, 1), 2);
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
@@ -79,17 +104,6 @@ public class SineaterGame : Game
         mrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
         mrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
         Layers.Add("mrmo", mrmoLayer);
-        
-        var miniMrmoLayer = new TextLayer(_mrmo, new Vector2(74, 56), new Vector2(16, 16),new Vector2(16, 64), new Vector2(3, 2), 1);
-        miniMrmoLayer.Map(" ", 0, 0);
-        miniMrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
-        miniMrmoLayer.Map("@abcdefghijklmno", 0, 55);
-        miniMrmoLayer.Map("ABCDEFGHIJKLMNO", 1, 55);
-        miniMrmoLayer.Map("`{|}~", 0, 56);
-        miniMrmoLayer.Map("0123456789:;<=>?", 0, 59);
-        miniMrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
-        miniMrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
-        Layers.Add("mini", miniMrmoLayer);
         
         var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2);
         ibmLayer.SetOffset(1, 0);
@@ -115,14 +129,21 @@ public class SineaterGame : Game
         _bar.Spend(3);
         */
 
-        new Party();
+        Party = new Party();
         CurrentScreen = new CombatMapScreen(this, ETerrainKind.Cave);
     }
     
     protected override void Update(GameTime gameTime)
     {
-        var frameRate = Math.Ceiling(1 / gameTime.ElapsedGameTime.TotalSeconds);
-        Window.Title = "SINEATER | " + frameRate + " FPS";
+        _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
+        _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
+        
+        if (_currentMinutes > HourLengthMillis)
+        {
+            _currentHour = (_currentHour + 1) % 24;
+            _nextHour = (_nextHour + 1) % 24;
+            _currentMinutes = 0;
+        }
         
         if (KB.HasBeenPressed(Keys.F10))
         {
@@ -147,7 +168,7 @@ public class SineaterGame : Game
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(Color.Black);
 
-        foreach (var layer in new[]{ "mrmo", "mini", "ascii" })
+        foreach (var layer in new[]{ "mrmo", "ascii" })
         {
             Layers[layer].Draw(_spriteBatch);
         }
@@ -160,11 +181,19 @@ public class SineaterGame : Game
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
         var f = 1 - focus * 0.8f;
-        _spriteBatch.Draw(_room, new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, 0.25f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+        _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+            new Color(f, f, f, Math.Clamp(1 - _dHour, 0, 1)) * 0.25f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            SpriteEffects.None, 0.0f);
+        _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+            new Color(f, f, f, Math.Clamp(_dHour, 0, 1)) * 0.25f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         
+        _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
+        _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
+            new Color(f, f, f, 0.01f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            SpriteEffects.None, 0.0f);
+        _spriteBatch.End();
         base.Draw(gameTime);
     }
 }
