@@ -61,7 +61,7 @@ public class CombatMapScreen : IScreen
     private Color[,] _coloredMap;
     private bool[,] _visited;
     ReadOnlyCollection<Cell>? _fov = null;
-    HashSet<(int, int)>? _fov2 = new();
+    HashSet<(int, int)>? _isInActivePartyFOV = new();
     private Dictionary<Character, CombatState> _combatStates = new();
     private List<Character> _turnOrder = new();
     private bool _showStats = false;
@@ -251,8 +251,8 @@ public class CombatMapScreen : IScreen
             }
         }
 
-        _fov2.Clear();
-        foreach (var f in _fov) _fov2.Add((f.X, f.Y));
+        _isInActivePartyFOV.Clear();
+        foreach (var f in _fov) _isInActivePartyFOV.Add((f.X, f.Y));
         
         _perspectives = new ReadOnlyCollection<Cell>?[4];
         int i = 0;
@@ -303,7 +303,7 @@ public class CombatMapScreen : IScreen
                     if (c.G > 0) cs[ci++] = _combatStates[_game.Party.Characters[1]].Tint;
                     if (c.B > 0) cs[ci++] = _combatStates[_game.Party.Characters[2]].Tint;
                     if (c.A > 0) cs[ci++] = _combatStates[_game.Party.Characters[3]].Tint;
-                    _coloredMap[i, j] = Color.Lerp(cs[0], cs[1], 0.5f);
+                    _coloredMap[i, j] = Color.Lerp(Color.White, Color.Lerp(cs[0], cs[1], 0.5f), 0.5f);
                 }
                 else if (o == 1)
                 {
@@ -312,7 +312,7 @@ public class CombatMapScreen : IScreen
                     if (c.G > 0) cs = _combatStates[_game.Party.Characters[1]].Tint;
                     if (c.B > 0) cs = _combatStates[_game.Party.Characters[2]].Tint;
                     if (c.A > 0) cs = _combatStates[_game.Party.Characters[3]].Tint;
-                    _coloredMap[i, j] = Color.Lerp(Color.White, cs, 0.5f);
+                    _coloredMap[i, j] = Color.Lerp(Color.White, cs, 0.35f);
                 }
             }
         }
@@ -401,7 +401,7 @@ public class CombatMapScreen : IScreen
             {
                 for (int j = 0; j < _fullHeight; j++)
                 {
-                    if (_fov2.Contains((i, j)))
+                    if (_isInActivePartyFOV.Contains((i, j)))
                     {
                         var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
                         g.Fg = _coloredMap[i, j];
@@ -449,8 +449,8 @@ public class CombatMapScreen : IScreen
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 2 + i, " ");
         }
         
-        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 2), new Vector2(2 + _fullWidth + 23, 2 + 6), ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 2), new Vector2(2 * _fullWidth + 23, 2 + 6), ' ');
+        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 1), new Vector2(2 + _fullWidth + 25, 2 + 6), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 1), new Vector2(2 * _fullWidth + 25, 2 + 6), ' ');
 
         if (_showStats)
         {
@@ -464,34 +464,36 @@ public class CombatMapScreen : IScreen
 
     private void DrawDetails()
     {
-        _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SEE MOV");
+        _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SEE MOV LH RH DF");
         
         var index = 0;
         foreach (var character in _turnOrder)
         {
             var (ix, iy) = character.Job.GetImage();
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 2 + index,
+            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
                 new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 2 + index, character.Job.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 2 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
 
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 2 + index, _combatStates[character].Move.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, _combatStates[character].Move.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
-
-            //
-            // _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 2 + index, character.Stats.Poise.ToString(),
-            //     Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
-            //
-            // _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 2 + index, character.Stats.Vigor.ToString(),
-            //     Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, character.LeftWeapon?.Quality.ToString() ?? "-",
+                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, character.RightWeapon?.Quality.ToString() ?? "-",
+                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 20, 1 + index, character.Armor?.Guard.ToString() ?? "-",
+                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
 
             if (_playerSelectedIndex == index)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 2 + index, ">");
-                if (_secondCounter < 400 || (_secondCounter > 800 && _secondCounter < 1200))
+                _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
+                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
                 {
                     _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
@@ -509,27 +511,27 @@ public class CombatMapScreen : IScreen
         foreach (var character in _turnOrder)
         {
             var (ix, iy) = character.Job.GetImage();
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 2 + index,
+            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
                 new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 2 + index, character.Job.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 2 + index, character.Stats.Will.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, character.Stats.Will.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 2 + index, character.Stats.Clarity.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, character.Stats.Clarity.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 2 + index, character.Stats.Poise.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, character.Stats.Poise.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 2 + index, character.Stats.Vigor.ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 1 + index, character.Stats.Vigor.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
 
             if (_playerSelectedIndex == index)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 2 + index, ">");
-                if (_secondCounter < 400 || (_secondCounter > 800 && _secondCounter < 1200))
+                _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
+                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
                 {
                     _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
@@ -577,7 +579,7 @@ public class CombatMapScreen : IScreen
         if (_playerSelectedIndex > -1)
         {
             var current = _turnOrder[_playerSelectedIndex];
-            if (_combatStates[current].Move > 0)
+            if (_combatStates[current].Move > 0 && _game.Bar.Remaining > 0)
             {
                 var up = KB.HasBeenPressed(Keys.Up);
                 var down = KB.HasBeenPressed(Keys.Down);
@@ -592,6 +594,7 @@ public class CombatMapScreen : IScreen
                     {
                         var x = _combatStates[current].X;
                         var y = _combatStates[current].Y;
+                        
                         if (_map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
                             var pos = _combatStates[current];

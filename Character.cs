@@ -108,6 +108,7 @@ public record struct Character
     public Stats Stats = new();
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
+    public Armor? Armor = null;
 
     public Character(ECharacterClass? job = null)
     {
@@ -145,9 +146,45 @@ public record struct Party
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {
-            Characters[i] = new Character(queue.Dequeue());
-            Characters[i].Index = i;
-            Characters[i].Tint = Colors[i];
+            Characters[i] = new Character(queue.Dequeue())
+            {
+                Index = i,
+                Tint = Colors[i]
+            };
+            switch (Characters[i].Job)
+            {
+                case ECharacterClass.Wizard:
+                    Characters[i].LeftWeapon = new Weapon("Staff", EWeaponClass.Heavy, 2);
+                    Characters[i].Armor = new Armor("Robe", 2);
+                    break;
+                case ECharacterClass.Witch:
+                    Characters[i].RightWeapon = new Weapon("Dagger", EWeaponClass.Small, 4);
+                    Characters[i].Armor = new Armor("Veil", 3);
+                    break;
+                case ECharacterClass.Knight:
+                    Characters[i].RightWeapon = new Weapon("Sword", EWeaponClass.Large, 3);
+                    Characters[i].Armor = new Armor("Plate", 9);
+                    break;
+                case ECharacterClass.Monk:
+                    Characters[i].RightWeapon = new Weapon("Staff", EWeaponClass.Heavy, 5);
+                    Characters[i].Armor = new Armor("Robe", 1);
+                    break;
+                case ECharacterClass.Sage:
+                    Characters[i].LeftWeapon = new Weapon("Dagger", EWeaponClass.Tiny, 3);
+                    Characters[i].RightWeapon = new Weapon("Book", EWeaponClass.Heavy, 7);
+                    Characters[i].Armor = new Armor("Robe", 2);
+                    break;
+                case ECharacterClass.Priest:
+                    Characters[i].LeftWeapon = new Weapon("Sceptre", EWeaponClass.Heavy, 4);
+                    Characters[i].Armor = new Armor("Robe", 2);
+                    break;
+                case ECharacterClass.Thief:
+                    Characters[i].LeftWeapon = new Weapon("Dagger", EWeaponClass.Tiny, 2);
+                    Characters[i].RightWeapon = new Weapon("Sword", EWeaponClass.Medium, 6);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }
