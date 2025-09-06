@@ -94,7 +94,7 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("monitor");
 
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 68), new Vector2(2, 1), 2);
+        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 68), new Vector2(2, 1), 2, new Vector2(0, -3));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
@@ -104,8 +104,8 @@ public class SineaterGame : Game
         mrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
         mrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
         Layers.Add("mrmo", mrmoLayer);
-        
-        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2);
+
+        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, Vector2.Zero);
         ibmLayer.SetOffset(1, 0);
         ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);

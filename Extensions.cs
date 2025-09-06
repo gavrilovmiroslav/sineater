@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
@@ -35,4 +36,9 @@ internal static class Extensions
             }
         }
     }
+
+    public static Color Mix(this Color a, Color b)
+    {
+        return new Color(Math.Max(a.R / 2, b.R / 2), Math.Max(a.G / 2, b.G / 2), Math.Max(a.B / 2, b.B / 2));
+    } 
 }

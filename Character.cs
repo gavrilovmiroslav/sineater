@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 using static SINEATER.Extensions;
 
 namespace SINEATER;
@@ -90,18 +91,23 @@ public record struct Stats
     {
         return this[stat] switch
         {
-            < 5 => 1,
-            < 8 => 2,
-            < 11 => 3,
-            _ => 4
+            < 3 => -1,  
+            < 5 => 0,
+            < 8 => 1,
+            < 10 => 2,
+            _ => 3
         };
     }
 }
 
 public record struct Character
 {
+    public int Index;
+    public Color Tint;
     public ECharacterClass Job;
     public Stats Stats = new();
+    public Weapon? LeftWeapon = null;
+    public Weapon? RightWeapon = null;
 
     public Character(ECharacterClass? job = null)
     {
@@ -120,6 +126,7 @@ public record struct Character
 
 public record struct Party
 {
+    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Crimson];
     public Character[] Characters = new Character[4];
 
     public Party()
@@ -136,6 +143,11 @@ public record struct Party
         };
         jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
-        for (var i = 0; i < 4; i++) Characters[i] = new Character(queue.Dequeue());
+        for (var i = 0; i < 4; i++)
+        {
+            Characters[i] = new Character(queue.Dequeue());
+            Characters[i].Index = i;
+            Characters[i].Tint = Colors[i];
+        }
     }
 }

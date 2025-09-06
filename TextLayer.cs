@@ -24,7 +24,7 @@ public static class RexColorExtensions {
 
 public record struct Corners<T>(T TopLeft, T TopRight, T BottomLeft, T BottomRight);
 
-public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale = 1)
+public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset)
 {
     private Vector2 _offset = Vector2.Zero;
     private readonly Dictionary<int, Glyph> _glyphs = new();
@@ -324,6 +324,30 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
 
+    public void Set(int x, int y, string s, Color fg)
+    {
+        var chars = s.ToCharArray();
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (!_chars.ContainsKey(chars[i])) continue;
+            
+            var (u, v) = _chars[chars[i]];
+            Set(x + i, y, new Glyph(u, v, Color.Black, fg));
+        }
+    }
+    
+    public void Set(int x, int y, string s, Color fg, Color bg)
+    {
+        var chars = s.ToCharArray();
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (!_chars.ContainsKey(chars[i])) continue;
+            
+            var (u, v) = _chars[chars[i]];
+            Set(x + i, y, new Glyph(u, v, bg, fg));
+        }
+    }
+
     public void SetRex(int sx, int sy, Image rex)
     {
         for (var i = 0; i < rex.Width; i++)
@@ -391,7 +415,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             var (x, y) = FromPosition(xy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
-            spriteBatch.Draw(font, pos, src, glyph.Bg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
 
@@ -403,7 +427,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             src.Y = glyph.V * (ty + oy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
-            spriteBatch.Draw(font, pos, src, glyph.Fg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            spriteBatch.Draw(font, pos + offset, src, glyph.Fg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
     }
