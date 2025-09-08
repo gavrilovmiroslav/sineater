@@ -29,7 +29,8 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
     private Vector2 _offset = Vector2.Zero;
     private readonly Dictionary<int, Glyph> _glyphs = new();
     private readonly Dictionary<char, (int, int)> _chars = new();
-
+    private readonly HashSet<(int, int)> _flips = new();
+    
     public (int, int) Char(char c) => _chars[c];
     
     public void Map(char c, int x, int y)
@@ -63,6 +64,18 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
     {
         _offset.X = u;
         _offset.Y = v;
+    }
+
+    public void SetFlip(int u, int v, SpriteEffects flip)
+    {
+        if (flip != SpriteEffects.None)
+        {
+            _flips.Add((u, v));
+        }
+        else
+        {
+            _flips.Remove((u, v));
+        }
     }
     
     public void Unset(int x, int y)
@@ -415,7 +428,8 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             var (x, y) = FromPosition(xy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
-            spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, 
+                _flips.Contains((glyph.U, glyph.V)) ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
 
@@ -427,7 +441,8 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             src.Y = glyph.V * (ty + oy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
-            spriteBatch.Draw(font, pos + offset, src, glyph.Fg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            spriteBatch.Draw(font, pos + offset, src, glyph.Fg, 0.0f, Vector2.Zero, scale, 
+                _flips.Contains((glyph.U, glyph.V)) ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
     }

@@ -6,6 +6,7 @@ namespace SINEATER;
 public class Enemy : ICharacter
 {
     public int X, Y;
+    public string Name;
     public Color Tint;
     public ActionPoints AP;
     public Stats Stats;
@@ -23,6 +24,7 @@ public class Enemy : ICharacter
     {
         var gob = new Enemy
         {
+            Name = "Goblin",
             Icon = (5, 64),
             Tint = Color.LightGreen,
             Armor = new Armor("Rags", Rnd.Instance.D4, EWeightClass.Tiny, 1),
@@ -82,7 +84,12 @@ public class Enemy : ICharacter
     {
     }
 
-    public void ApplyOnCausedWounds(ICharacter defender, int wounds, bool crit)
+    public void ApplyOnCausedWounds(ICharacter defender, int wounds)
     {
+    }
+
+    public string GetName()
+    {
+        return Name;
     }
 }

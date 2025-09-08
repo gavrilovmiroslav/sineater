@@ -10,6 +10,9 @@ namespace SINEATER;
 
 public class SineaterGame : Game
 {
+    public static SineaterGame Instance;
+    public static int DeltaTime;
+    
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     
@@ -38,6 +41,8 @@ public class SineaterGame : Game
     
     public SineaterGame()
     {
+        Instance = this;
+        
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -99,6 +104,17 @@ public class SineaterGame : Game
         mrmoLayer.Map("0123456789:;<=>?", 0, 59);
         mrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
         mrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
+        foreach (var (u, v) in new[]
+                 {
+                     (2, 64), (3, 64), (4, 64), (5, 64), (6, 64), (7, 64), (8, 64), (10, 64),
+                     (0, 65), (5, 65), (7, 65), (8, 65), (9, 65),
+                     (0, 66), (1, 66), (2, 66), (3, 66), (7, 66), (8, 66), (9, 66), (10, 66), (11, 66), (12, 66),
+                     (0, 67), (1, 67), (2, 67), (3, 67) 
+                 })
+        {
+            mrmoLayer.SetFlip(u, v, SpriteEffects.FlipHorizontally);
+        }
+        
         Layers.Add("mrmo", mrmoLayer);
 
         var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, Vector2.Zero);
@@ -120,6 +136,7 @@ public class SineaterGame : Game
     
     protected override void Update(GameTime gameTime)
     {
+        DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
         
@@ -138,7 +155,7 @@ public class SineaterGame : Game
         CurrentScreen?.Update(gameTime);
         ActionPoints.Update(gameTime);
 
-        _focus.Update();
+        //_focus.Update();
 
         base.Update(gameTime);
         KB.Update();
@@ -153,7 +170,7 @@ public class SineaterGame : Game
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(Color.Black);
 
-        foreach (var layer in new[]{ "mrmo", "ascii" })
+        foreach (var layer in new[]{ "ascii", "mrmo" })
         {
             Layers[layer].Draw(_spriteBatch);
         }
@@ -167,10 +184,10 @@ public class SineaterGame : Game
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
         var f = 1 - focus * 0.8f;
         _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, Math.Clamp(1 - _dHour, 0, 1)) * 0.25f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            new Color(f, f, f, Math.Clamp(1 - _dHour, 0, 1)) * 0.35f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
         _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, Math.Clamp(_dHour, 0, 1)) * 0.25f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            new Color(f, f, f, Math.Clamp(_dHour, 0, 1)) * 0.35f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         

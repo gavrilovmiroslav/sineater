@@ -113,7 +113,8 @@ public interface ICharacter
     void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue, (int defense, Armor armor) defenseValue);
     void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon);
     void ApplyOnWounded(ICharacter attacker, int wounds);
-    void ApplyOnCausedWounds(ICharacter defender, int wounds, bool crit);
+    void ApplyOnCausedWounds(ICharacter defender, int wounds);
+    string GetName();
 }
 
 public class Character : ICharacter
@@ -197,9 +198,14 @@ public class Character : ICharacter
         
     }
 
-    public void ApplyOnCausedWounds(ICharacter defender, int wounds, bool crit)
+    public void ApplyOnCausedWounds(ICharacter defender, int wounds)
     {
         
+    }
+
+    public string GetName()
+    {
+        return Job.ToString();
     }
 }
 
@@ -250,16 +256,16 @@ public record struct Party
                     break;
                 case ECharacterClass.Sage:
                     Characters[i].LeftWeapon = new Weapon("Dagger", 3, EWeightClass.Tiny, 3);
-                    Characters[i].RightWeapon = new Weapon("Book", 3, EWeightClass.Heavy, 5);
+                    Characters[i].RightWeapon = new Weapon("Book", 2, EWeightClass.Heavy, 5);
                     Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 1);
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].LeftWeapon = new Weapon("Sceptre", 4, EWeightClass.Heavy, 8);
+                    Characters[i].LeftWeapon = new Weapon("Sceptre", 3, EWeightClass.Heavy, 8);
                     Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 4);
                     break;
                 case ECharacterClass.Thief:
                     Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 7);
-                    Characters[i].RightWeapon = new Weapon("Sword", 6, EWeightClass.Medium, 7);
+                    Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Medium, 7);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
