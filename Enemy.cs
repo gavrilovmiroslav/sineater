@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
@@ -9,12 +10,16 @@ public class Enemy : ICharacter
     public string Name;
     public Color Tint;
     public ActionPoints AP;
+    public int HP;
     public Stats Stats;
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
-    public (int, int) Icon; 
-
+    public (int, int) Icon;
+    public (int, int) DeadIcon;
+    public int Sin;
+    public bool IsDead = false;
+    
     public Enemy()
     {
         
@@ -26,10 +31,16 @@ public class Enemy : ICharacter
         {
             Name = "Goblin",
             Icon = (5, 64),
+            DeadIcon = (8, 65),
+            Sin = Rnd.Instance.D4,
+            HP = Rnd.Instance.Next(5, 10),
             Tint = Color.LightGreen,
-            Armor = new Armor("Rags", Rnd.Instance.D4, EWeightClass.Tiny, 1),
-            RightWeapon = new Weapon("Bone dagger", Rnd.Instance.D4, EWeightClass.Tiny, 1)
+            Armor = new Armor("Rags", Rnd.Instance.Next(3, 4), EWeightClass.Tiny, 1),
+            Stats = new Stats(1, 2, 2, Rnd.Instance.Next(3, 4)),
         };
+        if (Rnd.Instance.D4 > gob.Sin)
+            gob.LeftWeapon = new Weapon("Stick", Rnd.Instance.D4 + 1, EWeightClass.Small, 1);
+        gob.RightWeapon = new Weapon("Bone dagger", Rnd.Instance.D4, EWeightClass.Tiny, 1);
         return gob;
     }
 
@@ -88,8 +99,17 @@ public class Enemy : ICharacter
     {
     }
 
+    public void ApplyOnWoundCounted(int hitDie, int index, ref int damage)
+    {
+    }
+    
     public string GetName()
     {
         return Name;
+    }
+
+    public void Die()
+    {
+        IsDead = true;
     }
 }

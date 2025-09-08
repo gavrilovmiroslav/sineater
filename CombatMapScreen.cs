@@ -70,7 +70,7 @@ public class CombatMapScreen : IScreen
     private int _playerSelectedIndex = -1;
     private Glyph[,] _groundGlyphs;
     private CoroutineHandler _coroutineHandler = new();
-
+    private ActionPoints _enemyActionPoints;
     
     private void Regenerate(bool resize) {
         if (resize)
@@ -167,9 +167,15 @@ public class CombatMapScreen : IScreen
         _enemies.Add(Enemy.Goblin());
         _enemies.Add(Enemy.Goblin());
         
+        var hp = 0;
         foreach (var enemy in _enemies)
         {
-            enemy.AP = new ActionPoints(10, _game.Layers["ascii"], new StatusStamina());
+            hp += enemy.Sin;
+        }
+        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusStamina());
+        foreach (var enemy in _enemies)
+        {
+            enemy.AP = _enemyActionPoints;
         }
         
         var inner = Map.Create(mapCreationStrategy);
@@ -502,13 +508,8 @@ public class CombatMapScreen : IScreen
         }
     }
 
-    private void DrawGUI()
+    private void DrawGui()
     {
-        // HEADER
-        _game.Layers["ascii"].Set(0, 0, "                                                                                                           ");
-        _game.Layers["ascii"].Set(0, 0, "TEMPLE OF ELEMENTAL EVIL");
-        // LOG
-        
         for (int i = 0; i < 22; i++)
         {
             for (int j = 0; j < _fullHeight + _offsetY; j++)
@@ -617,9 +618,11 @@ public class CombatMapScreen : IScreen
     public void Draw(GameTime gameTime)
     {
         if (_map == null) return;
+        _enemyActionPoints.Draw(1, 0);
+        
         if (_coroutineHandler.IsActive()) return;
         DrawCombat();
-        DrawGUI();
+        DrawGui();
     }
 
     private void CheckInputs()
@@ -690,7 +693,11 @@ public class CombatMapScreen : IScreen
         int startLine = 9;
         _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine, "atk");
         _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 1, "def");
-        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 2, "dmg");
+        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 2, "hit");
+        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 3, "dmg");
+        
+        int wounds = 0;
+        List<int> hitDice = [];
         foreach (var (atk, weapon) in attackDice)
         {
             var attack = atk;
@@ -759,11 +766,13 @@ public class CombatMapScreen : IScreen
                 defender.ApplyOnAttackBlocked(attacker, (attack, weapon), (defense, armor));
                 if (defense > attack)
                 {
+                    hitDice.Add(0);
                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(9, 68, Color.Black, Color.DarkSlateGray));
                     defender.ApplyOnSuccessfulBlock(attacker, attack, weapon);
                 }
                 else if (defense == attack && attack > 0)
                 {
+                    hitDice.Add(0);
                     if (Rnd.Instance.D10 > armor.Quality + defender.GetStats().Mod(EStat.Poise))
                     {
                         _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(6, 68, Color.Black, Color.Orange));
@@ -772,11 +781,9 @@ public class CombatMapScreen : IScreen
                 }
                 else if (attack > defense)
                 {
-                    var wounds = attack - defense;
-                    defender.ApplyOnWounded(attacker, wounds);
-                    defender.GetAP().Add<StatusWounds>(wounds);
-                    attacker.ApplyOnCausedWounds(defender, wounds);
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(wounds - 1, 68, Color.Black, Color.Red));
+                    hitDice.Add(attack - defense);
+                    wounds = Math.Max(wounds, attack - defense);
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph((attack - defense) - 1, 68, Color.Black, Color.White));
                 }
             }
             else
@@ -790,18 +797,61 @@ public class CombatMapScreen : IScreen
                     yield return new WaitForSeconds(waitingTime);
                     waitingTime += 0.01f;
                 }
-
-                defender.ApplyOnWounded(attacker, attack);
-                defender.GetAP().Add<StatusWounds>(attack);
-                attacker.ApplyOnCausedWounds(defender, attack);
+                
+                wounds = Math.Max(wounds, attack);
                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(attack - 1, 68, Color.Black, Color.White));
-                _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(attack - 1, 68, Color.Black, Color.Red));
+                _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(attack - 1, 68, Color.Black, Color.White));
+                hitDice.Add(attack);
             }
-
+            
             diceIdx += 1;
-            yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSeconds(0.15f);
+        }
+        
+        int count = 0;
+        if (wounds > 0)
+        {
+            for (int i = 0; i < diceIdx; i++)
+            {
+                if (hitDice[i] == wounds)
+                {
+                    count++;
+                    int dmg = 1;
+                    defender.ApplyOnWoundCounted(hitDice[i], i, ref dmg);
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, startLine + 3,
+                        new Glyph(dmg - 1, 68, Color.Black, Color.Red));
+                }
+            }
+            
+            defender.GetAP().Add<StatusWounds>(count);
+            attacker.ApplyOnCausedWounds(defender, count);
+            
+            if (defender is Enemy enemy)
+            {
+                var max = defender.GetAP().Total - defender.GetStats().Vigor;
+                var wnd = defender.GetAP().Count<StatusWounds>();
+                var rnd = Rnd.Instance.Next(0, max);
+                var isDead = rnd < wnd;
+                Console.WriteLine($"RND(0, {max}) = {rnd} < {wnd}? {isDead}");
+
+                if (isDead)
+                {
+                    defender.GetAP().Reduce<StatusWounds>(rnd);
+                    defender.GetAP().Add<StatusStunned>(1);
+                    attacker.GetAP().Add<StatusSin>(enemy.Sin);
+                    enemy.Die();
+                }
+            }
         }
 
+        if (defender is Enemy { IsDead: true } e)
+        {
+            var (x, y) = e.DeadIcon;
+            _enemies.Remove(e);
+            _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(x, y, Color.Black, Color.White));
+            _map?.SetCellProperties(e.X, e.Y, true, true);
+        }
+        
         yield return new WaitForKey(Keys.Space);
     }
 
@@ -860,6 +910,7 @@ public class CombatMapScreen : IScreen
                                 if (enemy.X == x + dx && enemy.Y == y + dy)
                                 {
                                     _coroutineHandler.Run(Attack(current, enemy));
+                                    _combatStates[current].Move = 0;
                                     break;
                                 }
                             }

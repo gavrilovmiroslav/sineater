@@ -71,6 +71,14 @@ public record struct Stats
         Vigor = bag[3];
     }
 
+    public Stats(int wil, int cla, int poi, int vig)
+    {
+        Will = wil;
+        Clarity = cla;
+        Poise = poi;
+        Vigor = vig;
+    }
+
     public int this[EStat stat]
     {
         get
@@ -114,7 +122,9 @@ public interface ICharacter
     void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon);
     void ApplyOnWounded(ICharacter attacker, int wounds);
     void ApplyOnCausedWounds(ICharacter defender, int wounds);
+    void ApplyOnWoundCounted(int hitDie, int index, ref int damage);
     string GetName();
+    void Die();
 }
 
 public class Character : ICharacter
@@ -203,10 +213,17 @@ public class Character : ICharacter
         
     }
 
+    public void ApplyOnWoundCounted(int hitDie, int index, ref int damage)
+    {
+    }
+    
     public string GetName()
     {
         return Job.ToString();
     }
+
+    public void Die()
+    {}
 }
 
 public record struct Party
@@ -247,15 +264,15 @@ public record struct Party
                     Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].RightWeapon = new Weapon("Sword", 6, EWeightClass.Large, 4);
-                    Characters[i].Armor = new Armor("Plate", 9, EWeightClass.Heavy, 4);
+                    Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Large, 4);
+                    Characters[i].Armor = new Armor("Plate", 5, EWeightClass.Heavy, 4);
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].RightWeapon = new Weapon("Staff", 5, EWeightClass.Heavy, 1);
+                    Characters[i].RightWeapon = new Weapon("Staff", 3, EWeightClass.Heavy, 1);
                     Characters[i].Armor = new Armor("Robe", 1, EWeightClass.Tiny, 1);
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].LeftWeapon = new Weapon("Dagger", 3, EWeightClass.Tiny, 3);
+                    Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 3);
                     Characters[i].RightWeapon = new Weapon("Book", 2, EWeightClass.Heavy, 5);
                     Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 1);
                     break;
@@ -265,7 +282,7 @@ public record struct Party
                     break;
                 case ECharacterClass.Thief:
                     Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 7);
-                    Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Medium, 7);
+                    Characters[i].RightWeapon = new Weapon("Sword", 3, EWeightClass.Medium, 7);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

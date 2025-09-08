@@ -24,6 +24,7 @@ public class BarPiece : IBarPiece {
 
 public class ActionPoints(int width, TextLayer layer, IBarPiece def)
 {
+    public int Total => width;
     public TextLayer Layer => layer;
     private readonly List<IBarPiece> _pieces = new();
     public (int, int) Points => (_empty - _spent, _empty);
@@ -94,7 +95,21 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
 
         return false;
     }
-    
+
+    public int Count<T>() where T : class, IBarPiece
+    {
+        int n = 0;
+        foreach (var p in _pieces)
+        {
+            if (p is T)
+            {
+                n += p.Width;
+            }
+        }
+
+        return n;
+    }
+
     public void Reduce<T>(int w) where T : class, IBarPiece, new()
     {
         T piece = null;
