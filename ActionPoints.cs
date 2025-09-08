@@ -8,7 +8,7 @@ namespace SINEATER;
 public interface IBarPiece
 {
     public int Width { get; set; }
-    public Bar Bar { get; set; }
+    public ActionPoints ActionPoints { get; set; }
     
     public void Update(GameTime gameTime);
     public void Draw(int xMin, int xMax, int y);
@@ -16,13 +16,13 @@ public interface IBarPiece
 
 public class BarPiece : IBarPiece {
     public int Width { get; set; }
-    public Bar Bar { get; set; }
+    public ActionPoints ActionPoints { get; set; }
 
     public virtual void Update(GameTime gameTime) {}
     public virtual void Draw(int xMin, int xMax, int y) {}
 }
 
-public class Bar(int width, TextLayer layer, IBarPiece def)
+public class ActionPoints(int width, TextLayer layer, IBarPiece def)
 {
     public TextLayer Layer => layer;
     private readonly List<IBarPiece> _pieces = new();
@@ -40,6 +40,12 @@ public class Bar(int width, TextLayer layer, IBarPiece def)
         _spent += n;
 
         return true;
+    }
+
+    public void Free(int n)
+    {
+        if (n > _spent) n = _spent;
+        _spent -= n;
     }
     
     public void Add<T>(int w) where T : class, IBarPiece, new()
@@ -71,9 +77,22 @@ public class Bar(int width, TextLayer layer, IBarPiece def)
         var t = new T
         {
             Width = w,
-            Bar = this
+            ActionPoints = this
         };
         _pieces.Add(t);
+    }
+
+    public bool Contains<T>() where T : class, IBarPiece
+    {
+        foreach (var p in _pieces)
+        {
+            if (p is T)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     public void Reduce<T>(int w) where T : class, IBarPiece, new()
@@ -102,7 +121,7 @@ public class Bar(int width, TextLayer layer, IBarPiece def)
     
     public void Draw(int x, int y)
     {
-        def.Bar = this;
+        def.ActionPoints = this;
         def.Width = _empty - _spent;
 
         for (var i = x - 1; i <= x + width; i++)
@@ -158,7 +177,7 @@ public static class Bars
     }
 }
 
-public class StaminaBar : BarPiece
+public class StatusStamina : BarPiece
 {
     private float _time = 0;
     
@@ -173,41 +192,28 @@ public class StaminaBar : BarPiece
         var dx = 1.0f / (float)len;
         for (int i = xMin; i <= xMax; i++)
         {
-            Bar.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.LightGreen, Color.Green, (i - xMin) * dx)));
+            ActionPoints.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.LightGreen, Color.Green, (i - xMin) * dx)));
         }
 
-        var (ap, tot) = Bar.Points;
-        Bar.Layer.Set(xMin, y + 1, $"{ap}/{tot}");
+        var (ap, tot) = ActionPoints.Points;
+        ActionPoints.Layer.Set(xMin, y + 1, $"{ap}/{tot}");
     }
 }
 
-public class HungerBar : BarPiece
+public class StatusWounds : BarPiece
 {
     public override void Draw(int xMin, int xMax, int y)
     {
         var (ux, uy) = Bars.Offset(xMin, xMax);
         for (int i = xMin; i <= xMax; i++)
         {
-            Bar.Layer.Set(i, y, new Glyph(16, 5, Color.Black, i % 2 == 0 ? Color.SandyBrown : Color.Yellow));
+            ActionPoints.Layer.Set(i, y, new Glyph(18, 5, Color.Black, i % 2 == 0 ? Color.Red : Color.DarkRed));
         }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(5, 0, Color.Black, Color.Yellow));
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(3, 0, Color.Black, Color.Red));
     }
 }
 
-public class DamageBar : BarPiece
-{
-    public override void Draw(int xMin, int xMax, int y)
-    {
-        var (ux, uy) = Bars.Offset(xMin, xMax);
-        for (int i = xMin; i <= xMax; i++)
-        {
-            Bar.Layer.Set(i, y, new Glyph(18, 5, Color.Black, i % 2 == 0 ? Color.Red : Color.DarkRed));
-        }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(3, 0, Color.Black, Color.Red));
-    }
-}
-
-public class FlameBar : BarPiece
+public class StatusFire : BarPiece
 {
     private float _time = 0;
     
@@ -223,14 +229,14 @@ public class FlameBar : BarPiece
         {
             var dt = MathF.Sin(_time) * 0.5f + 0.5f;
             var t = (float)Math.Clamp(dt, 0.2, 0.8);
-            Bar.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.Yellow, Color.OrangeRed, i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
-            Bar.Layer.Set(i, y - 1, new Glyph(10 + ((int)(i + dt * 3)) % 3, 0, Color.Black, Color.Lerp(Color.Yellow, Color.OrangeRed, i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
+            ActionPoints.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.Yellow, Color.OrangeRed, i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
+            ActionPoints.Layer.Set(i, y - 1, new Glyph(10 + ((int)(i + dt * 3)) % 3, 0, Color.Black, Color.Lerp(Color.Yellow, Color.OrangeRed, i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
         }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(7, 0, Color.Black, Color.OrangeRed));
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(7, 0, Color.Black, Color.OrangeRed));
     }
 }
 
-public class SleepBar : BarPiece
+public class StatusTired : BarPiece
 {
     private float _time = 0;
     
@@ -245,21 +251,21 @@ public class SleepBar : BarPiece
         for (int i = xMin; i <= xMax; i++)
         {
             var t = (float)Math.Clamp(MathF.Sin(_time) * 0.5f + 0.5f, 0.2, 0.8);
-            Bar.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.Pink, Color.CornflowerBlue, i % 2 == 0 ? t : 1 - t)));
+            ActionPoints.Layer.Set(i, y, new Glyph(17, 5, Color.Black, Color.Lerp(Color.Pink, Color.CornflowerBlue, i % 2 == 0 ? t : 1 - t)));
             var idx = (int)(i * 6.28f + _time) % 18;
             if (idx < 6)
             {
-                Bar.Layer.Set(i, y - 1,
+                ActionPoints.Layer.Set(i, y - 1,
                     new Glyph(17 + idx, 0, Color.Black,
                         Color.Lerp(Color.Pink, Color.CornflowerBlue,
                             i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
             }
         }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(6, 0, Color.Black, Color.CadetBlue));
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(6, 0, Color.Black, Color.CadetBlue));
     }
 }
 
-public class InsanityBar : BarPiece
+public class StatusInsanity : BarPiece
 {
     private float _time = 0;
     
@@ -277,15 +283,15 @@ public class InsanityBar : BarPiece
             var t = (int)((MathF.Sin(_time) * 0.5f + 0.5f) * 360 + d * i) % 360;
             var f = ((int)((_time * 100 % 30) / 10) + 2) % 8;
             var c = HSB.New(255, t, 0.5f, 0.6f);
-            Bar.Layer.Set(i, y, new Glyph(27 + (i + f) % 3, 6, Color.Black, c));
+            ActionPoints.Layer.Set(i, y, new Glyph(27 + (i + f) % 3, 6, Color.Black, c));
         }
         
         var color = HSB.New(255, (int)((MathF.Sin(_time) * 0.5f + 0.5f) * 360) % 360, 0.5f, 0.7f);
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(8, 0, Color.Black, color));
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(8, 0, Color.Black, color));
     }
 }
 
-public class PoisonBar : BarPiece
+public class StatusPoison : BarPiece
 {
     private float _time = 0;
     
@@ -302,40 +308,45 @@ public class PoisonBar : BarPiece
             var dt = MathF.Sin(_time) * 0.5f + 0.5f;
             var t = (float)Math.Clamp(dt, 0.2, 0.8);
             var idx = (int)(i * 3.12f + _time) % 12;
-            Bar.Layer.Set(i, y, new Glyph(18, 5, Color.Black, Color.Lerp(Color.Black, Color.DarkViolet, i % 2 == 0 ? t : 1 - t)));
+            ActionPoints.Layer.Set(i, y, new Glyph(18, 5, Color.Black, Color.Lerp(Color.Black, Color.DarkViolet, i % 2 == 0 ? t : 1 - t)));
             if (idx < 4)
             {
-                Bar.Layer.Set(i, y - 1,
+                ActionPoints.Layer.Set(i, y - 1,
                     new Glyph(13 + idx, 0, Color.Black,
                         Color.Lerp(Color.Black, Color.DarkViolet,
                             i % 2 == 0 ? t : 1 - t + Rnd.Instance.Next01() * 0.2f)));
             }
         }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(4, 0, Color.Black, Color.DarkViolet));
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(4, 0, Color.Black, Color.DarkViolet));
     }
 }
 
-public class DeathBar : BarPiece
+public class StatusSin : BarPiece
 {
     private float _time = 0;
     
     public override void Update(GameTime gameTime)
     {
-        _time += gameTime.ElapsedGameTime.Milliseconds * 0.001f;
+        _time += gameTime.ElapsedGameTime.Milliseconds * 0.003f;
     }
     
     public override void Draw(int xMin, int xMax, int y)
     {
         var (ux, uy) = Bars.Offset(xMin, xMax);
+        var t = 45 + MathF.Sin(_time) * 5;
+        var b = (1.5f + MathF.Sin(_time)) * 0.33f;
+        var c = HSB.New(255, t, 0.7f, b);
         for (int i = xMin; i <= xMax; i++)
         {
-            Bar.Layer.Set(i, y, new Glyph(15, 5, Color.Black, i % 2 == 0 ? Color.LightGray : Color.Gray));
+            ActionPoints.Layer.Set(i, y, new Glyph(15, 5, Color.Black, c));
         }
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(9, 0, Color.Black, Color.LightGray));
+        
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(5, 0, Color.Black, 
+            HSB.New(255, t, 0.5f, 0.6f)));
     }
 }
 
-public class FocusBar : BarPiece
+public class StatusStunned : BarPiece
 {
     private float _time = 0;
     
@@ -352,15 +363,15 @@ public class FocusBar : BarPiece
         {
             var t = (30 + (int)(MathF.Sin(_time) * 30) + (int)(i * d)) % 60;
             var c = HSB.New(255, t, 0.7f, 0.6f);
-            Bar.Layer.Set(i, y, new Glyph(18, 5, Color.Black, c));
+            ActionPoints.Layer.Set(i, y, new Glyph(18, 5, Color.Black, c));
         }
         
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(1, 0, Color.Black, 
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(1, 0, Color.Black, 
             HSB.New(255, (int)(30 + (int)(MathF.Sin(_time) * 30)) % 60, 0.5f, 0.6f)));
     }
 }
 
-public class FrostBar : BarPiece
+public class StatusFrozen : BarPiece
 {
     private float _time = 0;
     
@@ -379,15 +390,15 @@ public class FrostBar : BarPiece
             if (t > 190)
             {
                 var c = HSB.New(255, t, 0.7f, 0.6f);
-                Bar.Layer.Set(i, y, new Glyph(15, 5, Color.Black, c));
+                ActionPoints.Layer.Set(i, y, new Glyph(15, 5, Color.Black, c));
             }
             else
             {
-                Bar.Layer.Set(i, y, new Glyph(15, 5, Color.Black, Color.White));
+                ActionPoints.Layer.Set(i, y, new Glyph(15, 5, Color.Black, Color.White));
             }
         }
         
-        Bar.Layer.Set(xMin + ux, y + uy, new Glyph(2, 0, Color.Black, 
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(2, 0, Color.Black, 
             HSB.New(255, 180 + (int)((int)(MathF.Sin(_time) * 30)) % 60, 0.5f, 0.6f)));
     }
 }

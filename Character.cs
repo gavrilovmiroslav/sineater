@@ -100,10 +100,27 @@ public record struct Stats
     }
 }
 
-public record struct Character
+public interface ICharacter
+{
+    public Stats GetStats();
+    public ActionPoints GetAP();
+    public Weapon? GetLeftWeapon();
+    public Weapon? GetRightWeapon();
+    public Armor? GetArmor();
+    public bool IsStunned();
+    void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
+    void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
+    void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue, (int defense, Armor armor) defenseValue);
+    void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon);
+    void ApplyOnWounded(ICharacter attacker, int wounds);
+    void ApplyOnCausedWounds(ICharacter defender, int wounds, bool crit);
+}
+
+public class Character : ICharacter
 {
     public int Index;
     public Color Tint;
+    public ActionPoints AP;
     public ECharacterClass Job;
     public Stats Stats = new();
     public Weapon? LeftWeapon = null;
@@ -123,6 +140,67 @@ public record struct Character
             Console.WriteLine($"Created character with {Stats} and class: {Job}");
         }
     }
+
+    public Stats GetStats()
+    {
+        return Stats;
+    }
+
+    public ActionPoints GetAP()
+    {
+        return AP;
+    }
+
+    public Weapon? GetLeftWeapon()
+    {
+        return LeftWeapon;
+    }
+
+    public Weapon? GetRightWeapon()
+    {
+        return RightWeapon;
+    }
+
+    public Armor? GetArmor()
+    {
+        return Armor;
+    }
+
+    public bool IsStunned()
+    {
+        return AP.Contains<StatusStunned>();
+    }
+
+    public void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    {
+        
+    }
+
+    public void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    {
+        
+    }
+
+    public void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue,
+        (int defense, Armor armor) defenseValue)
+    {
+        
+    }
+
+    public void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon)
+    {
+        
+    }
+
+    public void ApplyOnWounded(ICharacter attacker, int wounds)
+    {
+        
+    }
+
+    public void ApplyOnCausedWounds(ICharacter defender, int wounds, bool crit)
+    {
+        
+    }
 }
 
 public record struct Party
@@ -130,7 +208,7 @@ public record struct Party
     private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Crimson];
     public Character[] Characters = new Character[4];
 
-    public Party()
+    public Party(ActionPoints AP)
     {
         var jobs = new[]
         {
@@ -149,38 +227,39 @@ public record struct Party
             Characters[i] = new Character(queue.Dequeue())
             {
                 Index = i,
-                Tint = Colors[i]
+                Tint = Colors[i],
+                AP = AP
             };
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].LeftWeapon = new Weapon("Staff", EWeaponClass.Heavy, 2);
-                    Characters[i].Armor = new Armor("Robe", 2);
+                    Characters[i].LeftWeapon = new Weapon("Staff", 2, EWeightClass.Heavy, 1);
+                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Heavy, 1);
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].RightWeapon = new Weapon("Dagger", EWeaponClass.Small, 4);
-                    Characters[i].Armor = new Armor("Veil", 3);
+                    Characters[i].RightWeapon = new Weapon("Dagger", 2,EWeightClass.Small, 4);
+                    Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].RightWeapon = new Weapon("Sword", EWeaponClass.Large, 3);
-                    Characters[i].Armor = new Armor("Plate", 9);
+                    Characters[i].RightWeapon = new Weapon("Sword", 6, EWeightClass.Large, 4);
+                    Characters[i].Armor = new Armor("Plate", 9, EWeightClass.Heavy, 4);
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].RightWeapon = new Weapon("Staff", EWeaponClass.Heavy, 5);
-                    Characters[i].Armor = new Armor("Robe", 1);
+                    Characters[i].RightWeapon = new Weapon("Staff", 5, EWeightClass.Heavy, 1);
+                    Characters[i].Armor = new Armor("Robe", 1, EWeightClass.Tiny, 1);
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].LeftWeapon = new Weapon("Dagger", EWeaponClass.Tiny, 3);
-                    Characters[i].RightWeapon = new Weapon("Book", EWeaponClass.Heavy, 7);
-                    Characters[i].Armor = new Armor("Robe", 2);
+                    Characters[i].LeftWeapon = new Weapon("Dagger", 3, EWeightClass.Tiny, 3);
+                    Characters[i].RightWeapon = new Weapon("Book", 3, EWeightClass.Heavy, 5);
+                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 1);
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].LeftWeapon = new Weapon("Sceptre", EWeaponClass.Heavy, 4);
-                    Characters[i].Armor = new Armor("Robe", 2);
+                    Characters[i].LeftWeapon = new Weapon("Sceptre", 4, EWeightClass.Heavy, 8);
+                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 4);
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].LeftWeapon = new Weapon("Dagger", EWeaponClass.Tiny, 2);
-                    Characters[i].RightWeapon = new Weapon("Sword", EWeaponClass.Medium, 6);
+                    Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 7);
+                    Characters[i].RightWeapon = new Weapon("Sword", 6, EWeightClass.Medium, 7);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

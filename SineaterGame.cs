@@ -31,7 +31,7 @@ public class SineaterGame : Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public Bar Bar;
+    public ActionPoints ActionPoints;
     public Dictionary<string, TextLayer> Layers = new();
     public IScreen? CurrentScreen = null;
     public Party Party;
@@ -49,10 +49,6 @@ public class SineaterGame : Game
         _nextHour = (time.Hour + 1) % 24;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
         _dHour += (float)time.Second * 1000.0f;
-        // _currentHour = 12;
-        // _nextHour = 13;
-        // _currentMinutes = 0;
-        // _dHour = 0;
     }
     
     private void SetupCrt(int w, int h)
@@ -94,7 +90,7 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("monitor");
 
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 68), new Vector2(2, 1), 2, new Vector2(0, -3));
+        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 69), new Vector2(2, 1), 2, new Vector2(0, -3));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
@@ -116,20 +112,9 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        Bar = new Bar(50, ibmLayer, new StaminaBar());
-        /*_bar.Add<HungerBar>(4);
-        _bar.Add<DamageBar>(1);
-        _bar.Add<SleepBar>(1);
-        _bar.Add<PoisonBar>(5);
-        _bar.Add<InsanityBar>(5);
-        _bar.Add<FlameBar>(3);
-        _bar.Add<DeathBar>(3);
-        _bar.Add<FocusBar>(4);
-        _bar.Add<FrostBar>(3);
-        _bar.Spend(3);
-        */
-
-        Party = new Party();
+        ActionPoints = new ActionPoints(50, ibmLayer, new StatusStamina());
+        
+        Party = new Party(ActionPoints);
         CurrentScreen = new CombatMapScreen(this, ETerrainKind.Cave);
     }
     
@@ -151,7 +136,7 @@ public class SineaterGame : Game
         }
         
         CurrentScreen?.Update(gameTime);
-        Bar.Update(gameTime);
+        ActionPoints.Update(gameTime);
 
         _focus.Update();
 
@@ -162,7 +147,7 @@ public class SineaterGame : Game
     protected override void Draw(GameTime gameTime)
     {
         CurrentScreen?.Draw(gameTime);
-        Bar.Draw(10, 25);
+        ActionPoints.Draw(10, 25);
         
         var focus = _focus.Get();
         GraphicsDevice.SetRenderTarget(_renderTarget);

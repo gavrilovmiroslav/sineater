@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,10 +14,8 @@ namespace SINEATER;
 
 public enum ECombatState
 {
-    CheckIfFinished,
-    EnemyPlanningPhase,
-    PlayerActionPhase,
-    EnemyExecutionPhase,
+    EnemyPhase,
+    PlayerPhase,
 }
 
 public enum EPresentationState
@@ -63,9 +62,10 @@ public class CombatMapScreen : IScreen
     ReadOnlyCollection<Cell>? _fov = null;
     HashSet<(int, int)>? _isInActivePartyFOV = new();
     private Dictionary<Character, CombatState> _combatStates = new();
-    private List<Character> _turnOrder = new();
+    private List<Character> _party = new();
+    private List<Enemy> _enemies = new();
     private bool _showStats = false;
-    private ECombatState _combatState = ECombatState.PlayerActionPhase;
+    private ECombatState _combatState = ECombatState.PlayerPhase;
     private EPresentationState _presentation = EPresentationState.Preparing;
     private int _playerSelectedIndex = -1;
     private Glyph[,] _groundGlyphs;
@@ -105,7 +105,7 @@ public class CombatMapScreen : IScreen
     private void Regenerate(ETerrainKind kind)
     {
         _presentation = EPresentationState.Preparing;
-        _combatState = ECombatState.PlayerActionPhase;
+        _combatState = ECombatState.PlayerPhase;
         _combatStates.Clear();
         _kind = kind;
         var (a, b, c, d, e) = (0, 0, 0, _width, _height);
@@ -151,6 +151,14 @@ public class CombatMapScreen : IScreen
             mapCreationStrategy = new CaveMapCreationStrategy<Map>( _width, _height, a, b, c, Rnd.Instance);
         }
 
+        // todo: move from here!
+        _enemies.Clear();
+        _enemies.Add(Enemy.Goblin());
+        foreach (var enemy in _enemies)
+        {
+            enemy.AP = new ActionPoints(10, _game.Layers["ascii"], new StatusStamina());
+        }
+        
         var inner = Map.Create(mapCreationStrategy);
         _map = Map.Create(new FilledMapCreationStrategy<Map>(_fullWidth, _fullHeight));
         _map.Copy(inner, 1 + Rnd.Instance.Next(0, _fullWidth - 2 - _width), Rnd.Instance.Next(0, 1 + (_fullHeight - 2 - _height)));
@@ -219,6 +227,31 @@ public class CombatMapScreen : IScreen
                 freeTiles.RemoveWhere(t => entryPositions.Contains((t.X, t.Y)));
                 idx++;
             }
+
+            foreach (var enemy in _enemies)
+            {
+                if (freeTiles.Count == 0)
+                {
+                    if (vs.MoveNext())
+                    {
+                        freeTiles.Add(vs.Current);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HAD TO REGENERATE FORCEFULLY INNER!");
+                        Regenerate(true);
+                        return;
+                    }
+                }
+                
+                v = freeTiles.ToArray()[Rnd.Instance.Next(freeTiles.Count)];
+                enemy.X = v.X;
+                enemy.Y = v.Y;
+                _map.SetCellProperties(v.X, v.Y, true, false);
+                freeTiles.UnionWith(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
+                freeTiles.RemoveWhere(t => entryPositions.Contains((t.X, t.Y)));
+                idx++;
+            }
         }
         else
         {
@@ -228,11 +261,12 @@ public class CombatMapScreen : IScreen
         }
 
         _extraFill = 0;
-        
-        _turnOrder.Clear();
+
+        // TODO: move this away
+        _party.Clear();
         foreach (var ch in _combatStates.Keys.OrderBy(ch => -_combatStates[ch].Initiative))
         {
-            _turnOrder.Add(ch);
+            _party.Add(ch);
         }
     }
 
@@ -334,11 +368,11 @@ public class CombatMapScreen : IScreen
             
             switch (_combatState)
             {
-                case ECombatState.CheckIfFinished:
+                case ECombatState.EnemyPhase:
+                    _combatState = ECombatState.PlayerPhase;
+                    _presentation = EPresentationState.Preparing;
                     break;
-                case ECombatState.EnemyPlanningPhase:
-                    break;
-                case ECombatState.PlayerActionPhase:
+                case ECombatState.PlayerPhase:
                     _playerSelectedIndex = 0;
                     int max = 0;
                     foreach (var (chr, st) in _combatStates)
@@ -349,14 +383,14 @@ public class CombatMapScreen : IScreen
                         }
                     }
 
+                    
                     max += 5;
                     foreach (var (chr, st) in _combatStates)
                     {
+                        _game.ActionPoints.Free(st.Move);
                         st.Move = max;
                     }
                     _presentation = EPresentationState.Executing;
-                    break;
-                case ECombatState.EnemyExecutionPhase:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -366,14 +400,24 @@ public class CombatMapScreen : IScreen
         {
             switch (_combatState)
             {
-                case ECombatState.CheckIfFinished:
+                case ECombatState.EnemyPhase:
                     break;
-                case ECombatState.EnemyPlanningPhase:
-                    break;
-                case ECombatState.PlayerActionPhase:
+                case ECombatState.PlayerPhase:
                     CheckPlayerInputs();
                     break;
-                case ECombatState.EnemyExecutionPhase:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        else if (_presentation == EPresentationState.Done)
+        {
+            switch (_combatState)
+            {
+                case ECombatState.EnemyPhase:
+                    break;
+                case ECombatState.PlayerPhase:
+                    _combatState = ECombatState.EnemyPhase;
+                    _presentation = EPresentationState.Preparing;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -419,6 +463,12 @@ public class CombatMapScreen : IScreen
                     }
                 }
             }
+        }
+
+        foreach (var enemy in _enemies)
+        {
+            var (ix, iy) = enemy.Icon;
+            _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, enemy.Tint));
         }
         
         foreach (var (chr, cs) in _combatStates)
@@ -467,7 +517,7 @@ public class CombatMapScreen : IScreen
         _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SEE MOV LH RH DF");
         
         var index = 0;
-        foreach (var character in _turnOrder)
+        foreach (var character in _party)
         {
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
@@ -481,10 +531,10 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, _combatStates[character].Move.ToString(),
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, character.LeftWeapon?.Quality.ToString() ?? "-",
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-",
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, character.RightWeapon?.Quality.ToString() ?? "-",
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, character.RightWeapon?.Attack.ToString() ?? "-",
                 Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 20, 1 + index, character.Armor?.Guard.ToString() ?? "-",
@@ -508,7 +558,7 @@ public class CombatMapScreen : IScreen
         _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       WIL CLA POI VIG");
         
         var index = 0;
-        foreach (var character in _turnOrder)
+        foreach (var character in _party)
         {
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
@@ -567,6 +617,118 @@ public class CombatMapScreen : IScreen
         _showStats = KB.IsPressed(Keys.LeftAlt);
     }
 
+    private void Attack(ICharacter attacker, ICharacter defender)
+    {
+        var attackDice = new List<(int, Weapon)>();
+        foreach (var weapon in new[] { attacker.GetLeftWeapon(), attacker.GetRightWeapon() })
+        {
+            if (weapon.HasValue)
+            {
+                for (int i = 0; i < weapon.Value.Attack; i++)
+                {
+                    attackDice.Add((Rnd.Instance.D6, weapon.Value));
+                }
+            }
+        }
+
+        foreach (var att in attackDice) Console.Write(att.Item1 + " ");
+        Console.WriteLine();
+        
+        var defenseDice = new List<(int, Armor)>();
+        if (defender.GetArmor().HasValue)
+        {
+            var armor = defender.GetArmor().Value;
+            for (int i = 0; i < armor.Guard; i++)
+            {
+                defenseDice.Add((Rnd.Instance.D6, armor));
+            }
+        }
+
+        foreach (var def in defenseDice) Console.Write(def.Item1 + " ");
+        Console.WriteLine();
+        
+        attacker.ApplyOnAttackRoll(defender, ref attackDice, ref defenseDice);
+        defender.ApplyOnRolledAttack(attacker, ref attackDice, ref defenseDice);
+
+        attackDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
+        if (!defender.IsStunned())
+        {
+            Console.WriteLine("Defender isn't stunned, sorting!");
+            defenseDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
+        }
+        else
+        {
+            Console.WriteLine("Defender is stunned, no sorting!");
+        }
+        
+        foreach (var att in attackDice) Console.Write(att.Item1 + " ");
+        Console.WriteLine();
+
+        foreach (var def in defenseDice) Console.Write(def.Item1 + " ");
+        Console.WriteLine();
+        
+        var defenseDiceQueue = new Queue<(int, Armor)>(defenseDice);
+        foreach (var (atk, weapon) in attackDice)
+        {
+            var attack = atk;
+            if (Rnd.Instance.D100 <= 10 + defender.GetStats().Poise)
+            {
+                Console.WriteLine("Crit defense, attack = 0!");
+                defender.GetAP().Spend(1);
+                attack = 0;
+            }
+            
+            if (defenseDiceQueue.TryDequeue(out var nextDefenseDie))
+            {
+                var (def, armor) = nextDefenseDie;
+                var defense = def;
+                if (Rnd.Instance.D100 <= 10 + attacker.GetStats().Clarity)
+                {
+                    Console.WriteLine("Crit attack!");
+                    attacker.GetAP().Spend(1);
+                    defense = 0;
+                }
+
+                Console.WriteLine($"  Dice battle: {attack} vs {defense}");
+                defender.ApplyOnAttackBlocked(attacker, (attack, weapon), (defense, armor));
+                if (defense > attack)
+                {
+                    Console.WriteLine("Blocked!");
+                    defender.ApplyOnSuccessfulBlock(attacker, attack, weapon);
+                }
+                else if (defense == attack && attack > 0)
+                {
+                    if (Rnd.Instance.D10 > armor.Quality + defender.GetStats().Mod(EStat.Poise))
+                    {
+                        Console.WriteLine("Dented armor!");
+                        armor.Guard--;
+                    }
+                }
+                else if (attack > defense)
+                {
+                    var wounds = attack - defense;
+                    bool crit = false;
+                    if (Rnd.Instance.D10 <= attacker.GetAP().Remaining + attacker.GetStats().Mod(EStat.Clarity))
+                    {
+                        wounds = (int)Math.Ceiling(wounds * 1.5f);
+                        crit = true;
+                    }
+                    defender.ApplyOnWounded(attacker, wounds);
+                    defender.GetAP().Add<StatusWounds>(wounds);
+                    attacker.ApplyOnCausedWounds(defender, wounds, crit);
+                    Console.WriteLine($"{wounds} Wounds!");
+                }
+            }
+            else
+            {
+                defender.ApplyOnWounded(attacker, attack);
+                defender.GetAP().Add<StatusWounds>(attack);
+                attacker.ApplyOnCausedWounds(defender, attack, false);
+                Console.WriteLine($"{attack} Wounds!");
+            }
+        }
+    }
+    
     private void CheckPlayerInputs()
     {
         if (KB.HasBeenPressed(Keys.Tab))
@@ -575,11 +737,16 @@ public class CombatMapScreen : IScreen
             _secondCounter = 0;
         }
 
+        if (KB.HasBeenPressed(Keys.Space))
+        {
+            _presentation = EPresentationState.Done;
+        }
+        
         // MOVE
         if (_playerSelectedIndex > -1)
         {
-            var current = _turnOrder[_playerSelectedIndex];
-            if (_combatStates[current].Move > 0 && _game.Bar.Remaining > 0)
+            var current = _party[_playerSelectedIndex];
+            if (_combatStates[current].Move > 0 && _game.ActionPoints.Remaining > 0)
             {
                 var up = KB.HasBeenPressed(Keys.Up);
                 var down = KB.HasBeenPressed(Keys.Down);
@@ -601,8 +768,19 @@ public class CombatMapScreen : IScreen
                             pos.X += dx;
                             pos.Y += dy;
                             _combatStates[current].Move--;
-                            _game.Bar.Spend(1);
+                            _game.ActionPoints.Spend(1);
                             UpdateFov();
+                        }
+                        else
+                        {
+                            foreach (var enemy in _enemies)
+                            {
+                                if (enemy.X == x + dx && enemy.Y == y + dy)
+                                {
+                                    Attack(current, enemy);
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
