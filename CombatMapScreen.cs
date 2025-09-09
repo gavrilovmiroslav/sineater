@@ -272,7 +272,6 @@ public class CombatMapScreen : IScreen
                 v = tiles[it];
                 enemy.X = v.X;
                 enemy.Y = v.Y;
-                _map.SetCellProperties(v.X, v.Y, true, false);
                 tiles.RemoveAt(it);
                 idx++;
             }
@@ -375,6 +374,71 @@ public class CombatMapScreen : IScreen
             }
         }
     }
+
+    public IEnumerable EnemyMoves()
+    {
+        _combatState = ECombatState.PlayerPhase;
+        _presentation = EPresentationState.Preparing;
+        _enemyActionPoints.Free(_enemies.Count);
+                    
+        var gm = new GoalMap<Cell>(_map, false);
+        foreach (var (ch, cs) in _combatStates)
+        {
+            gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
+        }
+                    
+        foreach (var enemy in _enemies)
+        {
+            gm.ClearObstacles();
+            foreach (var e in _enemies.Where(e => e != enemy))
+            {
+                gm.AddObstacle(e.X, e.Y);
+            }
+            var path = gm.TryFindPath(enemy.X, enemy.Y);
+                        
+            if (path != null)
+            {
+                for (var i = 0; i < enemy.Stats.Will; i++)
+                {
+                    if (enemy.AP.Remaining == 0)
+                    {
+                        continue;
+                    }
+
+                    var next = path.StepForward();
+                    if (IsCharacterAt(next.X, next.Y) is {} chr)
+                    {
+                        var (ex, ey) = enemy.Icon;
+                        var (cx, cy) = chr.Job.GetImage();
+                        for (int f = 0; f < 10; f++)
+                        {
+                            _game.Layers["mrmo"].Set(enemy.X, enemy.Y + _offsetY,
+                                new Glyph(ex, ey, Color.Black, f % 2 == 0 ? Color.Red : enemy.Tint));
+                            _game.Layers["mrmo"].Set(next.X, next.Y + _offsetY,
+                                new Glyph(cx, cy, Color.Black, f % 2 == 1 ? Color.Red : chr.Tint));
+                            yield return new WaitForSeconds(0.01f);
+                        }
+                        yield return new WaitForSeconds(0.5f);
+                        yield return Attack(enemy, chr);
+                    }
+                    else
+                    {
+                        enemy.X = next.X;
+                        enemy.Y = next.Y;
+                        enemy.AP.Spend(1);
+                    }
+
+                    DrawGui();
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+            else
+            {
+                Console.WriteLine("NO PATH!");
+            }
+        }
+    }
     
     public void Update(GameTime gameTime)
     {
@@ -397,8 +461,8 @@ public class CombatMapScreen : IScreen
             switch (_combatState)
             {
                 case ECombatState.EnemyPhase:
-                    _combatState = ECombatState.PlayerPhase;
-                    _presentation = EPresentationState.Preparing;
+                    _coroutineHandler.Run(EnemyMoves());
+                    
                     break;
                 case ECombatState.PlayerPhase:
                     _playerSelectedIndex = 0;
@@ -417,6 +481,8 @@ public class CombatMapScreen : IScreen
                         _game.ActionPoints.Free(st.Move);
                         st.Move = max;
                     }
+
+                    _combatState = ECombatState.PlayerPhase;
                     _presentation = EPresentationState.Executing;
                     break;
                 default:
@@ -643,7 +709,7 @@ public class CombatMapScreen : IScreen
 
         _showStats = KB.IsPressed(Keys.LeftAlt);
     }
-
+    
     private IEnumerable Attack(ICharacter attacker, ICharacter defender)
     {
         _game.Layers["ascii"].Set(2 * _fullWidth + 2, 6, $"{attacker.GetName()} attacks {defender.GetName()}", Color.White, Color.Black);
@@ -685,6 +751,7 @@ public class CombatMapScreen : IScreen
         else
         {
             Console.WriteLine("Defender is stunned, no sorting!");
+            defender.GetAP().Reduce<StatusStunned>(1);
         }
 
         int diceIdx = 0;
@@ -849,10 +916,29 @@ public class CombatMapScreen : IScreen
             var (x, y) = e.DeadIcon;
             _enemies.Remove(e);
             _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(x, y, Color.Black, Color.White));
-            _map?.SetCellProperties(e.X, e.Y, true, true);
         }
         
         yield return new WaitForKey(Keys.Space);
+    }
+
+    private Enemy? IsEnemyAt(int x, int y)
+    {
+        foreach (var enemy in _enemies)
+        {
+            if (enemy.X == x && enemy.Y == y) return enemy;
+        }
+
+        return null;
+    }
+
+    private Character? IsCharacterAt(int x, int y)
+    {
+        foreach (var (chr, cs) in _combatStates)
+        {
+            if (cs.X == x && cs.Y == y) return chr;
+        }
+
+        return null;
     }
 
     private IEnumerable Coroutine_EndTurn()
@@ -893,8 +979,13 @@ public class CombatMapScreen : IScreen
                     {
                         var x = _combatStates[current].X;
                         var y = _combatStates[current].Y;
-                        
-                        if (_map?.IsWalkable(x + dx, y + dy) ?? false)
+
+                        if (IsEnemyAt(x + dx, y + dy) is { } e)
+                        {
+                            _coroutineHandler.Run(Attack(current, e));
+                            _combatStates[current].Move = 0;
+                        } 
+                        else if (_map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
                             var pos = _combatStates[current];
                             pos.X += dx;
@@ -902,18 +993,6 @@ public class CombatMapScreen : IScreen
                             _combatStates[current].Move--;
                             _game.ActionPoints.Spend(1);
                             UpdateFov();
-                        }
-                        else
-                        {
-                            foreach (var enemy in _enemies)
-                            {
-                                if (enemy.X == x + dx && enemy.Y == y + dy)
-                                {
-                                    _coroutineHandler.Run(Attack(current, enemy));
-                                    _combatStates[current].Move = 0;
-                                    break;
-                                }
-                            }
                         }
                     }
                 }
