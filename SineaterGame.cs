@@ -35,8 +35,9 @@ public class SineaterGame : Game
     private Focus _focus;
     
     public ActionPoints ActionPoints;
+    public World World;
     public Dictionary<string, TextLayer> Layers = new();
-    public IScreen? CurrentScreen = null;
+    public Stack<IScreen> ScreenStack = new();
     public Party Party;
     
     public SineaterGame()
@@ -131,7 +132,8 @@ public class SineaterGame : Game
         ActionPoints = new ActionPoints(50, ibmLayer, new StatusStamina());
         
         Party = new Party(ActionPoints);
-        CurrentScreen = new CombatMapScreen(this, ETerrainKind.Cave);
+        ScreenStack.Push(new ExplorationMapScreen(this));
+        //ScreenStack.Push(new CombatMapScreen(this, ETerrainKind.Cave, title: "GOBLIN CAVE"));
     }
     
     protected override void Update(GameTime gameTime)
@@ -152,7 +154,16 @@ public class SineaterGame : Game
             Exit();
         }
         
-        CurrentScreen?.Update(gameTime);
+        if (KB.HasBeenPressed(Keys.F1))
+        {
+            ScreenStack.Pop();
+            ScreenStack.Push(new ExplorationMapScreen(this));
+        }
+
+        if (ScreenStack?.Peek() is { } screen)
+        {
+            screen.Update(gameTime);
+        }
         ActionPoints.Update(gameTime);
 
         //_focus.Update();
@@ -163,7 +174,10 @@ public class SineaterGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        CurrentScreen?.Draw(gameTime);
+        if (ScreenStack?.Peek() is { } screen)
+        {
+            screen.Draw(gameTime);
+        }
         ActionPoints.Draw(10, 25);
         
         var focus = _focus.Get();

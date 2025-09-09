@@ -8,7 +8,6 @@ using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using RogueSharp.MapCreation;
 using SINEATER.Content;
-using static SINEATER.Extensions;
 
 namespace SINEATER;
 
@@ -51,6 +50,7 @@ public class CombatMapScreen : IScreen
     private int _width, _height;
     private SineaterGame _game;
     private ETerrainKind _kind;
+    private string _title;
     private IMap? _map;
     private bool _rendered = false;
     private bool _debugView = false;
@@ -85,10 +85,11 @@ public class CombatMapScreen : IScreen
     private void Regenerate() => Regenerate(_kind);
     private int _extraFill = 0;
     
-    public CombatMapScreen(SineaterGame game, ETerrainKind kind, int width = -1, int height = -1)
+    public CombatMapScreen(SineaterGame game, ETerrainKind kind, int width = -1, int height = -1, string title = "???")
     {
         _width = width;
         _height = height;
+        _title = title;
         _coloredMap = new Color[_fullWidth, _fullHeight];
         _visited = new bool[_fullWidth, _fullHeight];
         
@@ -156,14 +157,6 @@ public class CombatMapScreen : IScreen
 
         // todo: move from here!
         _enemies.Clear();
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
         _enemies.Add(Enemy.Goblin());
         _enemies.Add(Enemy.Goblin());
         
@@ -491,6 +484,11 @@ public class CombatMapScreen : IScreen
         }
         else if (_presentation == EPresentationState.Executing)
         {
+            if (_enemies.Count == 0)
+            {
+                _coroutineHandler.Run(new FadeOutAndLeaveScreen(1));
+            }
+            
             switch (_combatState)
             {
                 case ECombatState.EnemyPhase:
@@ -523,18 +521,12 @@ public class CombatMapScreen : IScreen
     {
         var index = 0;
         
-        for (int i = 0; i < _fullWidth; i++)
-        {
-            for (int j = 0; j < _fullHeight; j++)
-            {
-                _game.Layers["mrmo"].Unset(i + _offsetX, j + _offsetY);
-            }
-        }
+        _game.Layers["mrmo"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth + _offsetX, _fullHeight + _offsetY), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth * 2 + _offsetX, _fullHeight * 2 + _offsetY), ' ');
         
         index = 0;
         if (_fov != null)
         {
-            //
             for (int i = 0; i < _fullWidth; i++)
             {
                 for (int j = 0; j < _fullHeight; j++)
@@ -569,7 +561,8 @@ public class CombatMapScreen : IScreen
         foreach (var (chr, cs) in _combatStates)
         {
             var (ix, iy) = chr.Job.GetImage();
-            _game.Layers["mrmo"].Set(cs.X + _offsetX, cs.Y + _offsetY, new Glyph(ix, iy, Color.Black, _combatStates[chr].Tint));
+            _game.Layers["mrmo"].Set(cs.X + _offsetX, cs.Y + _offsetY, new Glyph(ix, iy, Color.Black, 
+                _combatStates[chr].Move > 0 ? _combatStates[chr].Tint : Color.DarkGray));
             index++;
         }
     }
@@ -589,8 +582,8 @@ public class CombatMapScreen : IScreen
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 2 + i, " ");
         }
         
-        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 1), new Vector2(2 + _fullWidth + 25, 2 + 10), ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 1), new Vector2(2 * _fullWidth + 25, 2 + 6), ' ');
+        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 0), new Vector2(2 + _fullWidth + 40, 2 + 10), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 0), new Vector2(2 * _fullWidth + 40, 2 + 6), ' ');
 
         if (_showStats)
         {
@@ -684,8 +677,14 @@ public class CombatMapScreen : IScreen
     public void Draw(GameTime gameTime)
     {
         if (_map == null) return;
-        _enemyActionPoints.Draw(1, 0);
-        
+
+        if (_enemies.Count > 0)
+        {
+            _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(40, 2), ' ');
+            _game.Layers["ascii"].Set(1, 0, _title);
+            _enemyActionPoints.Draw(_title.Length + 3, 0);
+        }
+
         if (_coroutineHandler.IsActive()) return;
         DrawCombat();
         DrawGui();
@@ -900,9 +899,17 @@ public class CombatMapScreen : IScreen
                 var rnd = Rnd.Instance.Next(0, max);
                 var isDead = rnd < wnd;
                 Console.WriteLine($"RND(0, {max}) = {rnd} < {wnd}? {isDead}");
-
+                
                 if (isDead)
                 {
+                    _game.Layers["mrmo"].SetRect(new Vector2(10, 10), new Vector2(30, 15), ' ');
+                    _game.Layers["ascii"].Set(30, 12, "BARK HERE", Color.Red, Color.Black);
+                    Console.WriteLine("BARK HERE!");
+                    yield return new WaitForKey(Keys.Space);
+
+                    DrawCombat();
+                    DrawGui();
+                    
                     defender.GetAP().Reduce<StatusWounds>(rnd);
                     defender.GetAP().Add<StatusStunned>(1);
                     attacker.GetAP().Add<StatusSin>(enemy.Sin);
@@ -980,7 +987,16 @@ public class CombatMapScreen : IScreen
                         var x = _combatStates[current].X;
                         var y = _combatStates[current].Y;
 
-                        if (IsEnemyAt(x + dx, y + dy) is { } e)
+                        if (IsCharacterAt(x + dx, y + dy) is { } c)
+                        {
+                            var cs = _combatStates[c];
+                            cs.X = x;
+                            cs.Y = y;
+                            var pos = _combatStates[current];
+                            pos.X += dx;
+                            pos.Y += dy;
+                        }
+                        else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
                             _coroutineHandler.Run(Attack(current, e));
                             _combatStates[current].Move = 0;

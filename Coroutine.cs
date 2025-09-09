@@ -129,3 +129,33 @@ public class WaitForKey(Keys key) : IEnumerable
         }
     }
 }
+
+public class FadeOutAndLeaveScreen(float seconds) : IEnumerable
+{
+    private int _waitTimeMillis = (int)(seconds * 1000);
+    private int _currentTime = 0;
+    
+    public IEnumerator GetEnumerator()
+    {
+        while (true)
+        {
+            var dt = SineaterGame.DeltaTime;
+            var factor = (float)dt / (float)_waitTimeMillis;
+            _currentTime += dt;
+            if (_currentTime < _waitTimeMillis)
+            {
+                foreach (var (_, layer) in SineaterGame.Instance.Layers)
+                {
+                    layer.Darken(factor);
+                }
+                yield return null;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        SineaterGame.Instance.ScreenStack.TryPop(out var _);
+    }
+}

@@ -7,8 +7,13 @@ using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
 
-public record struct Glyph(int U, int V, Color Bg, Color Fg)
+public class Glyph(int u, int v, Color bg, Color fg)
 {
+    public int U { get; set; } = u;
+    public int V { get; set; } = v;
+    public Color Bg { get; set; } = bg;
+    public Color Fg { get; set; } = fg;
+    
     public static Glyph Bw(int u, int v)
     {
         return  new Glyph(u, v, Color.Black, Color.White);
@@ -90,6 +95,50 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         if (x < 0 || x >= screen.X) return;
         if (y < 0 || y >= screen.Y) return;
         _glyphs[ToPosition(x, y)] = glyph;
+    }
+
+    public void Lighten(int x, int y, float lp)
+    {
+        if (x < 0 || x >= screen.X) return;
+        if (y < 0 || y >= screen.Y) return;
+        var index = ToPosition(x, y);
+        if (_glyphs.ContainsKey(index))
+        {
+            _glyphs[index].Fg.ToHSL(out var h, out var s, out var l);
+            var g = _glyphs[index];
+            g.Fg = g.Fg.FromHSL(h, s, Math.Min(1, l + lp));
+        }
+    }
+    
+    public void Darken(int x, int y, float lp)
+    {
+        if (x < 0 || x >= screen.X) return;
+        if (y < 0 || y >= screen.Y) return;
+        var index = ToPosition(x, y);
+        if (_glyphs.ContainsKey(index))
+        {
+            _glyphs[index].Fg.ToHSV(out var h, out var s, out var l);
+            var g = _glyphs[index];
+            g.Fg = g.Fg.FromHSV(h, s, Math.Max(0, l - lp * 100));
+        }
+    }
+
+    public void Lighten(float lp)
+    {
+        foreach (var (_, g) in _glyphs)
+        {
+            g.Fg.ToHSV(out var h, out var s, out var l);
+            g.Fg = g.Fg.FromHSV(h, s, Math.Min(1, l + lp * 100));
+        }
+    }
+    
+    public void Darken(float lp)
+    {
+        foreach (var (_, g) in _glyphs)
+        {
+            g.Fg.ToHSV(out var h, out var s, out var l);
+            g.Fg = g.Fg.FromHSV(h, Math.Max(0, s - lp * 100), Math.Max(0, l - lp * 100));
+        }
     }
 
     public void Set(int x, int y, char c)
@@ -445,5 +494,28 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 _flips.Contains((glyph.U, glyph.V)) ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
+    }
+
+    public void UnsetRect(Vector2 a, Vector2 b)
+    {
+        for (int i = (int)a.X; i < a.Y; i++)
+        {
+            for (int j = (int)b.X; j < b.Y; j++)
+            {
+                Unset(i, j);
+            }
+        }
+
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < screen.X; i++)
+        {
+            for (int j = 0; j < screen.Y; j++)
+            {
+                Set(i, j, ' ');
+            }
+        }
     }
 }
