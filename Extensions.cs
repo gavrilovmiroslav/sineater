@@ -1,10 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
 internal static class Extensions
 {
+    public static Color Darken(this Color color, float factor)
+    {
+        color.ToHSV(out var h, out var s, out var l);
+        return color.FromHSV(h, s, Math.Max(0, l - factor * 100));
+    }
+    
+    public static Color Lighten(this Color color, float factor)
+    {
+        color.ToHSV(out var h, out var s, out var l);
+        return color.FromHSV(h, s, Math.Max(0, l + factor * 100));
+    }
+    
     public static void Shuffle<T> (this T[] array)
     {
         var n = array.Length;
@@ -12,6 +25,16 @@ internal static class Extensions
         {
             var k = Rnd.Instance.Next(0, n--);
             (array[n], array[k]) = (array[k], array[n]);
+        }
+    }
+    
+    public static void Shuffle<T> (this List<T> list)
+    {
+        var n = list.Count;
+        while (n > 1) 
+        {
+            var k = Rnd.Instance.Next(0, n--);
+            (list[n], list[k]) = (list[k], list[n]);
         }
     }
     

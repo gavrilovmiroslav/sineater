@@ -7,8 +7,11 @@ namespace SINEATER;
 
 public class World
 {
-    private int[,] _map;
-    private int _width, _height;
+    public int[,] Map;
+    public Glyph[,] Glyphs;
+    private int _width;
+    public int Height;
+    public (int, int) Start;
     private int _seed;
     
     public World(int width, int height)
@@ -16,12 +19,13 @@ public class World
         _seed = Rnd.Instance.Next(0, 30);
         Init(width, height);
     }
-
+    
     private void Init(int width, int height)
     {
         _width = width;
-        _height = height;
-        _map = new int[width, height];
+        Height = height;
+        Map = new int[width, height];
+        Glyphs = new Glyph[width, height];
         List<(int, int)> doors = [];
         
         var prevDoor = Rnd.Instance.Next(5, height - 5);
@@ -32,11 +36,11 @@ public class World
             {
                 for (var j = 0; j < 4 - w; j++)
                 {
-                    _map[i, j] = 8;
+                    Map[i, j] = 8;
                 }
                 for (var j = 4 - (w + 1); j < height; j++)
                 {
-                    _map[i, j] = w;
+                    Map[i, j] = w;
                 }
             }
         }
@@ -64,21 +68,21 @@ public class World
                 {
                     if (first)
                     {
-                        if (_map[x - 1, j] != 8)
-                            _map[x - 1, j] = 5;
+                        if (Map[x - 1, j] != 8)
+                            Map[x - 1, j] = 5;
                         else
-                            _map[x, j] = 5;
+                            Map[x, j] = 5;
                     }
                     else
                     {
-                        _map[x, j] = 4;
+                        Map[x, j] = 4;
                         shade.Add((x - 1, j));
                         if (j > 3 && j < height - 2)
                             doors.Add((x, j));
                         if (x > 0)
                         {
                             for (int k = 0; k < dx; k++)
-                                _map[x - k - 1, j] = w;
+                                Map[x - k - 1, j] = w;
                         }
                     }
                 }
@@ -94,9 +98,9 @@ public class World
             {
                 try
                 {
-                    _map[cx, cy] = 10;
+                    Map[cx, cy] = 10;
                     shade.Add((cx - 1, cy));
-                    _map[cx + 1, cy] = 11;
+                    Map[cx + 1, cy] = 11;
                 }
                 catch
                 {
@@ -107,14 +111,14 @@ public class World
             
             foreach (var (sx, sy) in shade)
             {
-                if (_map[sx, sy] != 10)
-                    _map[sx, sy] = -1;
+                if (Map[sx, sy] != 10)
+                    Map[sx, sy] = -1;
             }
             
             var ds = doors.Where(d =>
             {
                 var (dox, doy) = d;
-                return !(dox > 0 && _map[dox - 1, doy] == 10);
+                return !(dox > 0 && Map[dox - 1, doy] == 10);
             }).ToList();
 
             var didx = prevDoor;
@@ -124,15 +128,15 @@ public class World
             } while (Math.Abs(didx - prevDoor) < w + 1);
             var (dox, doy) = ds[didx];
             prevDoor = didx;
-            _map[dox, doy] = 9;
+            Map[dox, doy] = 9;
             doors.Clear();
             offset += 2;
         }
 
         for (var j = 0; j < height; j++)
         {
-            _map[width - 1, j] = 4;
-            _map[width - 2, j] = -1;
+            Map[width - 1, j] = 4;
+            Map[width - 2, j] = -1;
         }
 
         var fd = 0;
@@ -140,29 +144,30 @@ public class World
         {
             fd = Rnd.Instance.Next(3, height - 2);
         } while (Math.Abs(prevDoor - fd) <= 3);
-        _map[width - 1, Rnd.Instance.Next(3, height - 3)] = 9;
-        _map[0, Rnd.Instance.Next(3, height - 3)] = 6;
+        Map[width - 1, Rnd.Instance.Next(3, height - 3)] = 9;
+        Map[0, Rnd.Instance.Next(3, height - 3)] = 6;
 
         for (var i = 0; i < _width; i++)
         {
-            for (var j = 0; j < _height; j++)
+            for (var j = 0; j < Height; j++)
             {
-                if (_map[i, j] != 8) continue;
-                if (_map[i, j + 1] != 8 || _map[i + 1, j + 1] == 5)
+                if (Map[i, j] != 8) continue;
+                if (Map[i, j + 1] != 8 || Map[i + 1, j + 1] == 5)
                 {
-                    _map[i, j] = -2;
+                    Map[i, j] = -2;
                 }
             }
         }
+        
+        DrawInternal(Height);
     }
-
+    
     public static Color[] Colors =
     [
         new Color(0, 102, 51),
-        new Color(0, 140, 0),
-        new Color(89, 178, 0),
-        new Color(163, 217, 0),
-        new Color(255, 255, 0),
+        new Color(100, 140, 0),
+        new Color(189, 178, 0),
+        new Color(255, 25, 0),
     ];
     
     public static Color[] Walls =
@@ -174,77 +179,69 @@ public class World
         Color.Gray,
     ];
     
-    public void Draw(SineaterGame game, int ow, int oh)
+    public void DrawInternal(int oh)
     {
         for (var i = 0; i < _width; i++)
         {
-            for (int j = 0; j < _height; j++)
+            for (int j = 0; j < Height; j++)
             {
-                switch (_map[i, j])
+                switch (Map[i, j])
                 {
                     case 0:
                     case 1:
                     case 2:
                     case 3:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(14, 54, Color.Black, Colors[_map[i, j]]));
+                        Glyphs[i, j] = new Glyph(14, 54, Color.Black,  Colors[Map[i, j]]);
                         break;
                     case 4:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(15, 63, Color.Black, Walls[(int)(_seed + (i * 3.14f + j * 2.6f)) % Walls.Length]));
+                        Glyphs[i, j] = new Glyph(15, 63, Color.Black,
+                            Walls[(int)(_seed + (i * 3.14f + j * 2.6f)) % Walls.Length]);
                         break;
                     case 5:
-                        game.Layers["mrmo"].Set(i + ow - 1, j + oh, new Glyph(11, 7, Color.Black, Color.White));
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(15, 63, Color.Black, Color.White));
+                        Glyphs[i - 1, j] = new Glyph(11, 7, Color.Black, Color.White);
+                        Glyphs[i, j] = new Glyph(15, 63, Color.Black, Color.White);
                         break;
                     case 10:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(11, 7, Color.Black, Color.White));                       
+                        Glyphs[i, j] = new Glyph(11, 7, Color.Black, Color.White);
                         break;
                     case 11:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(15, 33, Color.Black, Color.White));                       
+                        Glyphs[i, j] = new Glyph(15, 33, Color.Black, Color.White);
                         break;
                     case 6:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, "@");
+                        Glyphs[i, j] = new Glyph(14, 54, Color.Black, Colors[0]);
+                        Start = (i, j);
                         break;
                     case 9:
                         // stepeniste
                         if (i != _width - 1)
                         {
-                            game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(8, 8, Color.Black, Color.White));
-                            game.Layers["mrmo"].Set(i + ow, j + oh - 1, new Glyph(11, 53, Color.Black, Color.Gray));
-                            game.Layers["mrmo"].Set(i + ow, j + oh - 2, new Glyph(9, 8, Color.Black, Color.White));
+                            Glyphs[i, j] = new Glyph(8, 8, Color.Black, Color.White);
+                            Glyphs[i, j - 1] = new Glyph(11, 53, Color.Black, Color.White);
+                            Glyphs[i, j - 2] = new Glyph(9, 8, Color.Black, Color.White);
                         }
                         else
                         {
-                            game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(8, 8, Color.Black, Color.White));
-                            game.Layers["mrmo"].Set(i + ow, j + oh - 1, new Glyph(11, 53, Color.Black, Color.White));
-                            game.Layers["mrmo"].Set(i + ow, j + oh - 2, new Glyph(0, 14, Color.Black, Color.Lerp(Colors[4], Color.White, 0.5f)));
-                            game.Layers["mrmo"].Set(i + ow, j + oh - 3, new Glyph(0, 13, Color.Black, Colors[4]));
+                            Glyphs[i, j] = new Glyph(8, 8, Color.Black, Color.White);
+                            Glyphs[i, j - 1] = new Glyph(11, 53, Color.Black, Color.White);
+                            Glyphs[i, j - 2] = new Glyph(0, 14, Color.Black, Color.White);
+                            Glyphs[i, j - 3] = new Glyph(0, 13, Color.Black, Color.White);
                         }
 
                         break;
                     case -1:
-                        var m = _map[i - 2, j];
+                        var m = Map[i - 1, j];
                         if (m < 0) m = 0;
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(14, 54, Color.Black, Colors[m]));
-                        game.Layers["mrmo"].Darken(i + ow, j + oh, 0.2f * (m + 0.5f));
+                        if (m > Colors.Length - 1) m = Colors.Length - 1;
+                        Glyphs[i, j] = new Glyph(14, 54, Color.Black, Colors[m].Darken(0.2f * (m + 0.5f)));
                         break;
                     case -2:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, new Glyph(10, 29, Color.Black, Color.White));
+                        Glyphs[i, j] = new Glyph(10, 29, Color.Black, Color.White);
                         break;
                     default:
-                        game.Layers["mrmo"].Set(i + ow, j + oh, ' ');
+                        Glyphs[i, j] = new Glyph(0, 0, Color.Black, Color.White);
                         break;
                 }
             }
-        }
-        var w4 = _width / 4;
-        var x = 3 * w4;
-        for (var i = x - 1 ; i < _width; i++)
-        {
-            game.Layers["mrmo"].Set(i + ow, oh - 1, new Glyph(10, 29, Color.Black, Color.White));
-        }
-        for (var i = 0 ; i < _width; i++)
-        {
-            game.Layers["mrmo"].Set(i + ow, _height + 1, new Glyph(10, 27, Color.Black, Color.White));
         }
     }
 }

@@ -289,4 +289,21 @@ public record struct Party
             }
         }
     }
+
+    public int WorldSight {
+        get
+        {
+            int max = 0;
+            foreach (var character in Characters)
+            {
+                var m = 0;
+                var c = character.Stats.Clarity;
+                if (c > 10) m = 3;
+                if (c > 0) m = 2;
+                if (m > max) max = m;
+            }
+
+            return max;
+        }
+    }
 }

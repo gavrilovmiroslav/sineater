@@ -18,6 +18,11 @@ public class Glyph(int u, int v, Color bg, Color fg)
     {
         return  new Glyph(u, v, Color.Black, Color.White);
     }
+
+    public Glyph Recolored(Color bg, Color fg)
+    {
+        return new Glyph(U, V, bg, fg);
+    }
 }
 
 public static class RexColorExtensions {
@@ -117,9 +122,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         var index = ToPosition(x, y);
         if (_glyphs.ContainsKey(index))
         {
-            _glyphs[index].Fg.ToHSV(out var h, out var s, out var l);
-            var g = _glyphs[index];
-            g.Fg = g.Fg.FromHSV(h, s, Math.Max(0, l - lp * 100));
+            _glyphs[index].Fg.Darken(lp);
         }
     }
 
