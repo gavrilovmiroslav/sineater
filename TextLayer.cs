@@ -32,6 +32,7 @@ public static class RexColorExtensions {
     }
 }
 
+public record struct Sides<T>(T Top, T Left, T Bottom, T Right);
 public record struct Corners<T>(T TopLeft, T TopRight, T BottomLeft, T BottomRight);
 
 public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset)
@@ -144,6 +145,12 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
 
+    public TextLayerBox Bounds(Vector2 xy, Vector2 br)
+    {
+        SetRect(xy, br, ' ');
+        return new TextLayerBox(this, xy, br);
+    }
+    
     public void Set(int x, int y, char c)
     {
         if (x < 0 || x >= screen.X) return;
@@ -296,6 +303,34 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
     
+    public void SetFrame(Vector2 start, Vector2 end, Sides<Glyph> sides)
+    {
+        var places = new[] { new Vector2(0, (int)start.Y), new Vector2(0, (int)end.Y) };
+        var hs = new[] { sides.Top, sides.Bottom };
+        var vs = new[] { sides.Left, sides.Right };
+        
+        for (var x = start.X; x <= end.X; x++)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                places[i].X = x;
+                Set((int)places[i].X, (int)places[i].Y, hs[i]);
+            }
+        }
+
+        places[0].X = start.X;
+        places[1].X = end.X;
+        for (var y = start.Y + 1; y <= end.Y - 1; y++)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                places[i].Y = y;
+                Set((int)places[i].X, (int)places[i].Y, vs[i]);
+            }
+        }
+    }
+
+    
     public void SetFrame(Vector2 start, Vector2 end, Glyph h, Glyph v)
     {
         var places = new[] { new Vector2(0, (int)start.Y), new Vector2(0, (int)end.Y) };
@@ -370,8 +405,14 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         SetFrame(start, end, h, v);
         SetCorners(start, end, corners);
     }
-    
-    public void SetBox(Vector2 start, Vector2 end, Glyph h, Glyph v, Corners<char> corners)
+
+    public void SetBox(Vector2 start, Vector2 end, Sides<Glyph> sides, Corners<Glyph> corners)
+    {
+        SetFrame(start, end, sides);
+        SetCorners(start, end, corners);
+    }
+
+    public void SetBox(Vector2 start, Vector2 end, char h, char v, Corners<char> corners)
     {
         SetFrame(start, end, h, v);
         SetCorners(start, end, corners);

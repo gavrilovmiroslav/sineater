@@ -15,6 +15,7 @@ public class Enemy : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
+    public readonly List<Trait> Traits = [];
     public (int, int) Icon;
     public (int, int) DeadIcon;
     public int Sin;
@@ -43,6 +44,28 @@ public class Enemy : ICharacter
         gob.RightWeapon = new Weapon("Bone dagger", Rnd.Instance.D4, EWeightClass.Tiny, 1);
         return gob;
     }
+    
+    public static Enemy Hobgoblin()
+    {
+        var gob = new Enemy
+        {
+            Name = "Hobgoblin",
+            Icon = (6, 64),
+            DeadIcon = (8, 65),
+            Sin = 3 + Rnd.Instance.D2,
+            HP = 8,
+            Tint = Color.Red,
+            Armor = new Armor("Rags", 4, EWeightClass.Tiny, 1),
+            Stats = new Stats(2, 3, 2, 4),
+        };
+        
+        gob.LeftWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
+        gob.RightWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
+        gob.Traits.Add(new TraitSneaky());
+        gob.Traits.Add(new TraitProficient());
+        gob.Traits.Add(new TraitBalanced());
+        return gob;
+    }
 
     public Stats GetStats()
     {
@@ -69,6 +92,11 @@ public class Enemy : ICharacter
         return Armor;
     }
 
+    public List<Trait> GetTraits()
+    {
+        return Traits;
+    }
+
     public bool IsStunned()
     {
         return AP.Contains<StatusStunned>();
@@ -76,31 +104,59 @@ public class Enemy : ICharacter
 
     public void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnAttackRoll(this, defender, ref attackDice, ref defenseDice);
+        }
     }
 
     public void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnRolledAttack(attacker, this, ref attackDice, ref defenseDice);
+        }
     }
 
-    public void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue,
-        (int defense, Armor armor) defenseValue)
+    public void ApplyOnAttackBlocked(ICharacter attacker, ref (int attack, Weapon weapon) attackValue,
+        ref (int defense, Armor armor) defenseValue)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnAttackBlocked(attacker, this, ref attackValue, ref defenseValue);
+        }
     }
 
-    public void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon)
+    public void ApplyOnSuccessfulBlock(ICharacter attacker, ref int attack, Weapon weapon)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnSuccessfulBlock(attacker, this, ref attack, weapon);
+        }
     }
 
-    public void ApplyOnWounded(ICharacter attacker, int wounds)
+    public void ApplyOnWounded(ICharacter attacker, ref int wounds)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnWounded(attacker, this, ref wounds);
+        }
     }
 
-    public void ApplyOnCausedWounds(ICharacter defender, int wounds)
+    public void ApplyOnDamageIncoming(ICharacter defender, ref int wounds)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnDamageIncoming(this, defender, ref wounds);
+        }
     }
 
-    public void ApplyOnWoundCounted(int hitDie, int index, ref int damage)
+    public void ApplyOnWoundCounted(int hitDie, int index, int count, ref int damage)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnWoundCounted(this, hitDie, index, count, ref damage);
+        }
     }
     
     public string GetName()

@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
@@ -12,9 +14,12 @@ public class ExplorationMapScreen : IScreen
     private readonly int _fullWidth = 26, _fullHeight = 15;
     private readonly int _offsetX = 4, _offsetY = 2;
     private SineaterGame _game;
+    private CoroutineHandler _coroutineHandler = new();
 
     private (int, int) _position;
     private HashSet<(int, int)> _history = [];
+    private HashSet<(int, int)> _gossip = [];
+    private Dictionary<(int, int), Trait?> _promised = [];
     private HashSet<(int, int)> _seen = [];
     private Dictionary<(int, int), ILocation> _locations = [];
     private Map<Cell> _map;
@@ -22,6 +27,7 @@ public class ExplorationMapScreen : IScreen
     private FieldOfView<Cell> _fov;
     public float Time = 0.0f;
     private bool _debug = false;
+    public List<Trait> UnusedTraits = [];
 
     public void UpdateFov(int sightRedux = 0)
     {
@@ -33,17 +39,24 @@ public class ExplorationMapScreen : IScreen
         {
             _history.Add((s.X, s.Y));
             _seen.Add((s.X, s.Y));
+            _gossip.Remove((s.X, s.Y));
         }
     }
 
     public ExplorationMapScreen(SineaterGame game)
     {
+        foreach (var typ in Trait.All)
+        {
+            UnusedTraits.Add((Trait)Activator.CreateInstance(typ));
+        }
+        UnusedTraits.Shuffle();
+        
         _game = game;
         _game.World = new(_fullWidth, _fullHeight);
         _map = new Map(_fullWidth, _fullHeight);
         UpdateMap();
         _fov = new FieldOfView(_map);
-        
+
         DrawDebugMap();
         _position = _game.World.Start;
         UpdateFov();
@@ -55,60 +68,231 @@ public class ExplorationMapScreen : IScreen
 
     public void Update(GameTime gameTime)
     {
-        if (KB.HasBeenPressed(Keys.Tab))
+        if (_coroutineHandler.IsActive())
         {
-            _debug = !_debug;
+            _coroutineHandler.Update();
         }
-
-        var (x, y) = _position;
-        if (KB.HasBeenPressed(Keys.Left))
+        else
         {
-            _position = (x - 1, y);
-        }
-
-        if (KB.HasBeenPressed(Keys.Right))
-        {
-            _position = (x + 1, y);
-        }
-
-        if (KB.HasBeenPressed(Keys.Up))
-        {
-            _position = (x, y - 1);
-        }
-
-        if (KB.HasBeenPressed(Keys.Down))
-        {
-            _position = (x, y + 1);
-        }
-
-        if (_position != (x, y))
-        {
-            var (nx, ny) = _position;
-            if (_position.Item1 < 0 || _position.Item2 < 0
-                                    || _position.Item1 >= _fullWidth
-                                    || _position.Item2 >= _fullHeight
-                                    || _game.World.Map[nx, ny] == -2
-                                    || _game.World.Map[nx, ny] == 4
-                                    || _game.World.Map[nx, ny] == 8
-                                    || _game.World.Map[nx, ny] == 10
-                                    || _game.World.Map[nx, ny] == 11
-                                    || !_map.IsWalkable(nx, ny))
+            if (KB.HasBeenPressed(Keys.Tab))
             {
-                _position = (x, y);
+                _debug = !_debug;
             }
-            else
+
+            var (x, y) = _position;
+            if (KB.HasBeenPressed(Keys.Left))
             {
-                var t = _map.IsTransparent(nx, ny);
-                var w = _map.IsWalkable(nx, ny);
-                _map.SetCellProperties(nx, ny, true, true);
-                UpdateFov(!t ? 1 : 0);
-                _map.SetCellProperties(nx, ny, t, w);
+                _position = (x - 1, y);
+            }
+
+            if (KB.HasBeenPressed(Keys.Right))
+            {
+                _position = (x + 1, y);
+            }
+
+            if (KB.HasBeenPressed(Keys.Up))
+            {
+                _position = (x, y - 1);
+            }
+
+            if (KB.HasBeenPressed(Keys.Down))
+            {
+                _position = (x, y + 1);
+            }
+
+            if (_position != (x, y))
+            {
+                var (nx, ny) = _position;
+                if (_position.Item1 < 0 || _position.Item2 < 0
+                                        || _position.Item1 >= _fullWidth
+                                        || _position.Item2 >= _fullHeight
+                                        || _game.World.Map[nx, ny] == -2
+                                        || _game.World.Map[nx, ny] == 4
+                                        || _game.World.Map[nx, ny] == 8
+                                        || _game.World.Map[nx, ny] == 10
+                                        || _game.World.Map[nx, ny] == 11
+                                        || !_map.IsWalkable(nx, ny))
+                {
+                    _position = (x, y);
+                }
+                else
+                {
+                    var t = _map.IsTransparent(nx, ny);
+                    var w = _map.IsWalkable(nx, ny);
+                    _map.SetCellProperties(nx, ny, true, true);
+                    UpdateFov(!t ? 1 : 0);
+                    _map.SetCellProperties(nx, ny, t, w);
+
+                    if (_locations.ContainsKey((nx, ny)))
+                    {
+                        var l = _locations[(nx, ny)];
+                        if (!l.Visited())
+                        {
+                            _coroutineHandler.Run(EnterLocation(l, nx, ny));
+                            l.Visit();
+                        }
+
+                        if (l is LocationForest f)
+                        {
+                            if (Rnd.Instance.D100 < 25)
+                            {
+                                _game.ActionPoints.Add<StatusTired>(1);
+                            }
+                        } else if (l is LocationNPC npc)
+                        {
+                            _position = (x, y);
+                        }
+                    }
+                    else
+                    {
+                        if (Rnd.Instance.D100 < 15)
+                        {
+                            _game.ActionPoints.Add<StatusTired>(1);
+                        }
+                    }
+                }
             }
         }
     }
 
+    private IEnumerable EnterLocation(ILocation l, int x, int y)
+    {
+        if (l is LocationCave cave)
+        {
+            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+                (_, bnd) =>
+                {
+                    bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
+                });
+
+            Trait? p = null;
+            if (_promised.ContainsKey((x, y)))
+            {
+                p = _promised[(x, y)];
+            }
+            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+        }
+        else if (l is LocationTemple temple)
+        {
+            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+                (_, bnd) =>
+                {
+                    bnd.Add($"{_locations[(x, y)].GetName()} You hear voices from within...");
+                });
+        
+            Trait? p = null;
+            if (_promised.ContainsKey((x, y)))
+            {
+                p = _promised[(x, y)];
+            }
+            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+        }
+        else if (l is LocationTomb tomb)
+        {
+            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+                (_, bnd) =>
+                {
+                    bnd.Add($"{_locations[(x, y)].GetName()} It might contain some precious bones.");
+                });
+        
+            Trait? p = null;
+            if (_promised.ContainsKey((x, y)))
+            {
+                p = _promised[(x, y)];
+            }
+            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+        }
+        else if (l is LocationTreasure treasure)
+        {
+            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+                (_, bnd) =>
+                {
+                    bnd.Add($"{_locations[(x, y)].GetName()} You found...");
+                });
+        }
+        else if (l is LocationNPC npc)
+        {
+            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 18),
+                (_, bnd) =>
+                {
+                    var gossip = _locations
+                        .Where(xy => !_history.Contains(xy.Key))
+                        .Where(xy => !(xy.Value is LocationGodhead or LocationPillar or LocationForest))
+                        .ToList();
+                    if (gossip.Count > 0)
+                    {
+                        gossip.Shuffle();
+                        var ((x, y), lo) = gossip.First();
+                        _seen.Add((x, y));
+                        _history.Add((x, y));
+                        for (int i = -1; i < 2; i++)
+                        {
+                            if (x + i >= 0
+                                && y + i >= 0
+                                && x + i < _fullWidth
+                                && y + i < _fullHeight)
+                            {
+                                _seen.Add((x + i, y));
+                                _history.Add((x + i, y));
+                                _gossip.Add((x + i, y));
+                                _seen.Add((x, y + i));
+                                _history.Add((x, y + i));
+                                _gossip.Add((x, y + i));
+                            }
+                        }
+
+                        if (lo is not LocationNPC && lo is not LocationTreasure && UnusedTraits.Count > 0 && Rnd.Instance.D100 < 80)
+                        {
+                            var t = UnusedTraits[0];
+                            UnusedTraits.RemoveAt(0);
+                            _promised[(x, y)] = t;
+                        }
+                        Draw(new GameTime());
+                        
+                        bnd.Add($"{_locations[(x, y)].GetName()} You camp together. You learn about ");
+                        if (lo is LocationNPC _)
+                        {
+                            bnd.Add($"their friend", Color.Gold);
+                        }
+                        else if (lo is LocationCave _)
+                        {
+                            bnd.Add($"a cave", Color.Gold);
+                        }
+                        else if (lo is LocationTemple _)
+                        {
+                            bnd.Add($"a temple", Color.Gold);
+                        }
+                        else if (lo is LocationTreasure _)
+                        {
+                            bnd.Add($"an unknown treasure", Color.Gold);
+                        }
+                        else if (lo is LocationTomb _)
+                        {
+                            bnd.Add($"an ancient tomb", Color.Gold);
+                        }
+                        bnd.Add(".");
+                        
+                        if (_promised.ContainsKey((x, y)))
+                        {
+                            bnd.Add("They mention a ");
+                            bnd.Add(_promised[(x, y)].Name.ToUpper(), Color.DarkRed);
+                            bnd.Add(" opponent there...");
+                        } 
+                    }
+                });
+            
+            _locations.Remove((x, y));
+            _game.World.Glyphs[x, y].U = 14;
+            _game.World.Glyphs[x, y].V = 81;
+        }
+    }
+        
     public void Draw(GameTime gameTime)
     {
+        if (_coroutineHandler.IsActive()) return;
         _game.Layers["ascii"].Clear();
         _game.Layers["mrmo"].Clear();
 
@@ -132,13 +316,16 @@ public class ExplorationMapScreen : IScreen
                 for (int j = 0; j < _fullHeight; j++)
                 {
                     if (_game.World.Map[i, j] == 8) continue;
-                    if (_game.World.Map[i, j] == 4 
-                        || _game.World.Map[i, j] == 11 
-                        || _game.World.Map[i, j] == 5 
+                    if (_game.World.Map[i, j] == 4
+                        || _game.World.Map[i, j] == 11
+                        || _game.World.Map[i, j] == 5
                         || _game.World.Map[i, j] == 9)
                     {
+                        var c = Color.Lerp(Color.MediumPurple, Color.Purple, (float)j / (float)_fullHeight);
+                        var f = (float)i / (float)_fullWidth;
+                        c = Color.Lerp(Color.DarkGreen, c, f);
                         _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, new Glyph(1 + ((int)Time + j) % 2, 38,
-                            Color.Black, Color.Lerp(Color.MediumPurple, Color.Purple, (float)j / (float)_fullHeight)));
+                            Color.Black, c));
                     }
                 }
             }
@@ -147,21 +334,30 @@ public class ExplorationMapScreen : IScreen
         foreach (var (px, py) in _history)
         {
             if (_game.World.Glyphs[px, py] != null)
+            {
+                var c = Color.Lerp(Color.MediumPurple, Color.Purple, (float)py / (float)_fullHeight);
+                var f = (float)px / (float)_fullWidth;
+                c = Color.Lerp(Color.DarkGreen, c, f);
                 _game.Layers["mrmo"].Set(px + _offsetX, py + _offsetY, _game.World.Glyphs[px, py].Recolored(Color.Black,
-                    Color.Lerp(Color.MediumPurple, Color.Purple, (float)py / (float)_fullHeight)));
+                    c));
+            }
         }
-
-        var (plx, ply) = _position;
-        var sight = SineaterGame.Instance.Party.WorldSight;
 
         foreach (var (sx, sy) in _seen)
         {
             _game.Layers["mrmo"].Set(sx + _offsetX, sy + _offsetY,
-                _game.World.Glyphs[sx, sy]);    
+                _game.World.Glyphs[sx, sy]);
         }
 
+        foreach (var (gx, gy) in _gossip)
+        {
+            _game.Layers["mrmo"].Set(gx + _offsetX, gy + _offsetY,
+                _game.World.Glyphs[gx, gy].Recolored(Color.Black, Color.Gold));
+        }
+        
         var (x, y) = _position;
-        _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, "@");
+        var (u, v) = _game.Party.Characters[0].Job.GetImage();
+        _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, Glyph.Bw(u, v));
 
         if (_debug) DrawDebugMap();
     }
@@ -228,6 +424,7 @@ public class ExplorationMapScreen : IScreen
                             }
                         }
                     }
+
                     _map.SetCellProperties(i, j, true, true);
                 }
                 else
@@ -236,58 +433,24 @@ public class ExplorationMapScreen : IScreen
                 }
             }
         }
-        
+
         for (int l = 0; l < 4; l++)
         {
             levels[l].Shuffle();
-            Console.WriteLine(levels[l].Count);
             switch (l)
             {
                 case 0:
-                    for (int i = 0; i < 20; i++)
-                    {
-                        var (x, y) = levels[l][i];
-                        _locations.Add((x, y), new LocationForest());
-                    }
-                    levels[l].RemoveRange(0, 30);
-
-                    int d = Rnd.Instance.D2 + 2;
-                    for (int i = 0; i < d; i++)
-                    {
-                        var (x, y) = levels[l][i];
-                        _locations.Add((x, y), new LocationCave());
-                    }
-                    levels[l].RemoveRange(0, d);
-                    
-                    d = Math.Min(Rnd.Instance.D4, levels[l].Count);
-                    for (int i = 0; i < d; i++)
-                    {
-                        var (x, y) = levels[l][i];
-                        _locations.Add((x, y), new LocationHill());
-                    }
-                    levels[l].RemoveRange(0, d);
-
-                    d = Math.Min(Rnd.Instance.D6, levels[l].Count);
-                    for (int i = 0; i < d; i++)
-                    {
-                        var (x, y) = levels[l][i];
-                        _locations.Add((x, y), new LocationNPC());
-                    }
-                    levels[l].RemoveRange(0, d);
-
-                    d = Math.Min(Rnd.Instance.D4, levels[l].Count);
-                    for (int i = 0; i < d; i++)
-                    {
-                        var (x, y) = levels[l][i];
-                        _locations.Add((x, y), new LocationPillar());
-                    }
-                    levels[l].Clear();
+                    levels[l].RemoveAll(xy => xy.Item1 == 0);
+                    GenBeach(ref levels[l]);
                     break;
                 case 1:
+                    GenCity(ref levels[l]);
                     break;
                 case 2:
+                    GenForest(ref levels[l]);
                     break;
                 case 3:
+                    GenRed(ref levels[l]);
                     break;
             }
         }
@@ -297,5 +460,252 @@ public class ExplorationMapScreen : IScreen
             _map.SetCellProperties(px, py, l.Transparent(), l.Walkable());
             _game.World.Glyphs[px, py] = l.GetIcon(px, py);
         }
+    }
+
+    private void GenBeach(ref List<(int, int)> level)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationForest());
+        }
+
+        level.RemoveRange(0, 30);
+        level.Shuffle();
+
+        int d = Rnd.Instance.D2 + 2;
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationCave());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D2, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTomb());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D2, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTemple());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationNPC());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTreasure());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationPillar());
+        }
+
+        level.Clear();
+    }
+    
+    private void GenCity(ref List<(int, int)> level)
+    {
+        var (ax, ay) = level.Min();
+        var (bx, by) = level.Max();
+        for (int i = ax; i <= bx; i += 2)
+        {
+            for (int j = ay; j <= by; j += 2)
+            {
+                if (level.Contains((i, j)))
+                {
+                    if (Rnd.Instance.D100 >= 59) continue;
+                    if (j + 2 < _fullHeight && _game.World.Map[i - 1, j + 2] == 9) continue;
+                    if (_game.World.Map[i - 1, j] == 9) continue;
+                    
+                    _locations.Add((i, j), new LocationPillar());
+                    level.Remove((i, j));
+                }
+            }
+        }
+        
+        var d = Math.Min(Rnd.Instance.D4 - 1, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationNPC());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTreasure());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+        
+        d = Math.Min(Rnd.Instance.D6, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTemple());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+        
+        d = Math.Min(Rnd.Instance.D6, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTomb());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+    }
+    
+    private void GenForest(ref List<(int, int)> level)
+    {
+        int d = level.Count * 3 / 4;
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationForest());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Rnd.Instance.D2 + 2;
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationCave());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D2, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTomb());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+        
+        d = Math.Min(Rnd.Instance.D4 - 1, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationNPC());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4 - 1, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTreasure());
+        }
+
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationPillar());
+        }
+
+        level.Clear();
+    }
+
+    private void GenRed(ref List<(int, int)> level)
+    {
+        var (ax, ay) = level.Min();
+        var (bx, by) = level.Max();
+        for (int i = ax; i <= bx; i += 2)
+        {
+            for (int j = ay; j <= by; j += 2)
+            {
+                if (level.Contains((i, j)))
+                {
+                    if (Rnd.Instance.D100 >= 49) continue;
+                    if (j + 2 < _fullHeight && _game.World.Map[i - 1, j + 2] == 9) continue;
+                    if (_game.World.Map[i - 1, j] == 9) continue;
+                    _locations.Add((i, j), new LocationGodhead());
+
+                    level.Remove((i, j));
+                }
+            }
+        }
+        
+        var d = Math.Min(Rnd.Instance.D4 - 1, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationNPC());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+
+        d = Math.Min(Rnd.Instance.D4, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTreasure());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+        
+        d = Math.Min(Rnd.Instance.D6, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTemple());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
+        
+        d = Math.Min(Rnd.Instance.D6, level.Count);
+        for (int i = 0; i < d; i++)
+        {
+            var (x, y) = level[i];
+            _locations.Add((x, y), new LocationTomb());
+        }
+        level.RemoveRange(0, d);
+        level.Shuffle();
     }
 }

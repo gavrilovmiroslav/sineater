@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 
@@ -157,5 +159,64 @@ public class FadeOutAndLeaveScreen(float seconds) : IEnumerable
         }
         
         SineaterGame.Instance.ScreenStack.TryPop(out var _);
+    }
+}
+
+public class FadeOutAndLoadScreen(float seconds, IScreen screen) : IEnumerable
+{
+    private int _waitTimeMillis = (int)(seconds * 1000);
+    private int _currentTime = 0;
+    
+    public IEnumerator GetEnumerator()
+    {
+        while (true)
+        {
+            var dt = SineaterGame.DeltaTime;
+            var factor = (float)dt / (float)_waitTimeMillis;
+            _currentTime += dt;
+            if (_currentTime < _waitTimeMillis)
+            {
+                foreach (var (_, layer) in SineaterGame.Instance.Layers)
+                {
+                    layer.Darken(factor);
+                }
+                yield return null;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        SineaterGame.Instance.ScreenStack.Push(screen);
+    }
+}
+
+public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterGame, TextLayerBox> content) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        // 10,11 25,26
+        // 10,11 39,40,41
+        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
+        {
+            Top = Glyph.Bw(10, 27),
+            Bottom = Glyph.Bw(10, 29),
+            Left = Glyph.Bw(9, 28),
+            Right = Glyph.Bw(11, 28),
+        }, new Corners<Glyph>()
+        {
+            BottomLeft = Glyph.Bw(11, 30), 
+            BottomRight = Glyph.Bw(10, 30), 
+            TopLeft = Glyph.Bw(11, 31), 
+            TopRight = Glyph.Bw(10, 31),
+        });
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["ascii"].Set((int)start.X * 2 + 19, (int)end.Y, "SPACE >");
+        yield return new WaitForKey(Keys.Space);
     }
 }

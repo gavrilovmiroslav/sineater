@@ -115,14 +115,15 @@ public interface ICharacter
     public Weapon? GetLeftWeapon();
     public Weapon? GetRightWeapon();
     public Armor? GetArmor();
+    public List<Trait> GetTraits();
     public bool IsStunned();
     void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
     void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
-    void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue, (int defense, Armor armor) defenseValue);
-    void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon);
-    void ApplyOnWounded(ICharacter attacker, int wounds);
-    void ApplyOnCausedWounds(ICharacter defender, int wounds);
-    void ApplyOnWoundCounted(int hitDie, int index, ref int damage);
+    void ApplyOnAttackBlocked(ICharacter attacker, ref (int attack, Weapon weapon) attackValue, ref (int defense, Armor armor) defenseValue);
+    void ApplyOnSuccessfulBlock(ICharacter attacker, ref int attack, Weapon weapon);
+    void ApplyOnWounded(ICharacter attacker, ref int wounds);
+    void ApplyOnDamageIncoming(ICharacter defender, ref int wounds);
+    void ApplyOnWoundCounted(int hitDie, int index, int count, ref int damage);
     string GetName();
     void Die();
 }
@@ -137,6 +138,7 @@ public class Character : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
+    public List<Trait> Traits = [];
 
     public Character(ECharacterClass? job = null)
     {
@@ -177,6 +179,11 @@ public class Character : ICharacter
         return Armor;
     }
 
+    public List<Trait> GetTraits()
+    {
+        return Traits;
+    }
+
     public bool IsStunned()
     {
         return AP.Contains<StatusStunned>();
@@ -184,37 +191,59 @@ public class Character : ICharacter
 
     public void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnAttackRoll(this, defender, ref attackDice, ref defenseDice);
+        }
     }
 
     public void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnRolledAttack(attacker, this, ref attackDice, ref defenseDice);
+        }
     }
 
-    public void ApplyOnAttackBlocked(ICharacter attacker, (int attack, Weapon weapon) attackValue,
-        (int defense, Armor armor) defenseValue)
+    public void ApplyOnAttackBlocked(ICharacter attacker, ref (int attack, Weapon weapon) attackValue,
+        ref (int defense, Armor armor) defenseValue)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnAttackBlocked(attacker, this, ref attackValue, ref defenseValue);
+        }
     }
 
-    public void ApplyOnSuccessfulBlock(ICharacter attacker, int attack, Weapon weapon)
+    public void ApplyOnSuccessfulBlock(ICharacter attacker, ref int attack, Weapon weapon)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnSuccessfulBlock(attacker, this, ref attack, weapon);
+        }
     }
 
-    public void ApplyOnWounded(ICharacter attacker, int wounds)
+    public void ApplyOnWounded(ICharacter attacker, ref int wounds)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnWounded(attacker, this, ref wounds);
+        }
     }
 
-    public void ApplyOnCausedWounds(ICharacter defender, int wounds)
+    public void ApplyOnDamageIncoming(ICharacter defender, ref int wounds)
     {
-        
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnDamageIncoming(this, defender, ref wounds);
+        }
     }
 
-    public void ApplyOnWoundCounted(int hitDie, int index, ref int damage)
+    public void ApplyOnWoundCounted(int hitDie, int index, int count, ref int damage)
     {
+        foreach (var trait in Traits)
+        {
+            trait.ApplyOnWoundCounted(this, hitDie, index, count, ref damage);
+        }
     }
     
     public string GetName()

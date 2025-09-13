@@ -43,6 +43,14 @@ public class CombatState(int x, int y, int initiative, Color tint, int move)
     public int Move { get; set; } = move;
 }
 
+public class CombatConfig
+{
+    public int Phase;
+    public Trait? Reward;
+    public int Sin;
+    public ETerrainKind Terrain;
+}
+
 public class CombatMapScreen : IScreen
 {
     private readonly int _fullWidth = 24, _fullHeight = 22;
@@ -75,7 +83,7 @@ public class CombatMapScreen : IScreen
     private void Regenerate(bool resize) {
         if (resize)
         {
-            this._width = Rnd.Instance.Next(3 * _fullWidth / 4, _fullWidth - 2);
+            this._width = Rnd.Instance.Next(3 * _fullWidth / 4, _fullWidth - 4);
             this._height = Rnd.Instance.Next(3 * _fullHeight / 4, _fullHeight - 2);
         }
 
@@ -84,16 +92,18 @@ public class CombatMapScreen : IScreen
     
     private void Regenerate() => Regenerate(_kind);
     private int _extraFill = 0;
-    
-    public CombatMapScreen(SineaterGame game, ETerrainKind kind, int width = -1, int height = -1, string title = "???")
+    private readonly CombatConfig? _config;
+
+    public CombatMapScreen(SineaterGame game, CombatConfig? config = null, int width = -1, int height = -1, string title = "???")
     {
+        _config = config;
         _width = width;
         _height = height;
         _title = title;
         _coloredMap = new Color[_fullWidth, _fullHeight];
         _visited = new bool[_fullWidth, _fullHeight];
         
-        _kind = kind;
+        _kind = _config?.Terrain ?? ETerrainKind.Cave;
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
         Initialize(game);
@@ -157,8 +167,19 @@ public class CombatMapScreen : IScreen
 
         // todo: move from here!
         _enemies.Clear();
-        _enemies.Add(Enemy.Goblin());
-        _enemies.Add(Enemy.Goblin());
+        var count = Rnd.Instance.D2 + (_config.Reward != null ? 4 : 2);
+        var chosen = Rnd.Instance.Next(0, count);
+        for (int i = 0; i < count; i++)
+        {
+            var en = Enemy.Goblin();
+            _enemies.Add(en);
+            if (i == chosen && _config.Reward != null)
+            {
+                en.Traits.Add(_config.Reward);
+            }
+        }
+        
+        _enemies.Add(Enemy.Hobgoblin());
         
         var hp = 0;
         foreach (var enemy in _enemies)
@@ -398,7 +419,9 @@ public class CombatMapScreen : IScreen
                         continue;
                     }
 
-                    var next = path.StepForward();
+                    var next = path.TryStepForward();
+                    if (next == null) continue;
+                    
                     if (IsCharacterAt(next.X, next.Y) is {} chr)
                     {
                         var (ex, ey) = enemy.Icon;
@@ -555,7 +578,9 @@ public class CombatMapScreen : IScreen
         {
             if (!_isInActivePartyFOV.Contains((enemy.X, enemy.Y))) continue;
             var (ix, iy) = enemy.Icon;
-            _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, enemy.Tint));
+            var c = enemy.Tint;
+            if (enemy.Traits.Count > 0) c = Color.Lerp(c, Color.Gold, 0.6f);
+            _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, c));
         }
         
         foreach (var (chr, cs) in _combatStates)
@@ -718,6 +743,7 @@ public class CombatMapScreen : IScreen
         {
             if (weapon != null)
             {
+                Console.WriteLine($"w{weapon.Weight} a{weapon.Attack} q{weapon.Quality}");
                 for (int i = 0; i < weapon.Attack; i++)
                 {
                     var d6 = Rnd.Instance.D6;
@@ -829,12 +855,17 @@ public class CombatMapScreen : IScreen
                     }
                 }
 
-                defender.ApplyOnAttackBlocked(attacker, (attack, weapon), (defense, armor));
+                var aw = (attack, weapon);
+                var da = (defense, armor);
+                defender.ApplyOnAttackBlocked(attacker, ref aw, ref da);
+                attack = aw.attack;
+                defense = da.defense;
+                
                 if (defense > attack)
                 {
                     hitDice.Add(0);
                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(9, 68, Color.Black, Color.DarkSlateGray));
-                    defender.ApplyOnSuccessfulBlock(attacker, attack, weapon);
+                    defender.ApplyOnSuccessfulBlock(attacker, ref attack, weapon);
                 }
                 else if (defense == attack && attack > 0)
                 {
@@ -873,8 +904,9 @@ public class CombatMapScreen : IScreen
             diceIdx += 1;
             yield return new WaitForSeconds(0.15f);
         }
-        
+            
         int count = 0;
+        int damage = 0;
         if (wounds > 0)
         {
             for (int i = 0; i < diceIdx; i++)
@@ -883,14 +915,16 @@ public class CombatMapScreen : IScreen
                 {
                     count++;
                     int dmg = 1;
-                    defender.ApplyOnWoundCounted(hitDice[i], i, ref dmg);
+                    attacker.ApplyOnWoundCounted(hitDice[i], i, count, ref dmg);
                     _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, startLine + 3,
                         new Glyph(dmg - 1, 68, Color.Black, Color.Red));
+                    damage += dmg;
                 }
             }
             
-            defender.GetAP().Add<StatusWounds>(count);
-            attacker.ApplyOnCausedWounds(defender, count);
+            defender.ApplyOnDamageIncoming(defender, ref damage);
+            Console.WriteLine($"TOTAL DAMAGE: {damage}");
+            defender.GetAP().Add<StatusWounds>(damage);
             
             if (defender is Enemy enemy)
             {
@@ -898,14 +932,13 @@ public class CombatMapScreen : IScreen
                 var wnd = defender.GetAP().Count<StatusWounds>();
                 var rnd = Rnd.Instance.Next(0, max);
                 var isDead = rnd < wnd;
-                Console.WriteLine($"RND(0, {max}) = {rnd} < {wnd}? {isDead}");
                 
                 if (isDead)
                 {
-                    _game.Layers["mrmo"].SetRect(new Vector2(10, 10), new Vector2(30, 15), ' ');
-                    _game.Layers["ascii"].Set(30, 12, "BARK HERE", Color.Red, Color.Black);
-                    Console.WriteLine("BARK HERE!");
-                    yield return new WaitForKey(Keys.Space);
+                    yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(30, 15), (game, bnd) =>
+                    {
+                        bnd.Add("BARK HERE!");
+                    });
 
                     DrawCombat();
                     DrawGui();
