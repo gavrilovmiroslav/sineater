@@ -1,20 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public interface ITrait
+public interface ITrait : IAbilitySource
 {
-    void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
-    void ApplyOnRolledAttack(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice);
-    void ApplyOnAttackBlocked(ICharacter attacker, ICharacter defender, ref (int attack, Weapon weapon) attackValue, ref (int defense, Armor armor) defenseValue);
-    void ApplyOnSuccessfulBlock(ICharacter attacker, ICharacter defender, ref int attack, Weapon weapon);
-    void ApplyOnWounded(ICharacter attacker, ICharacter defender, ref int wounds);
-    void ApplyOnDamageIncoming(ICharacter attacker, ICharacter defender, ref int wounds);
-    void ApplyOnWoundCounted(ICharacter self, int hitDie, int index, int count, ref int damage);
 }
 
-public class Trait(string name)
+public class Trait(string name) : ICombatFlowParticipant, IAbilitySource
 {
     public string Name => name;
     
@@ -28,44 +23,113 @@ public class Trait(string name)
         typeof(TraitWise)
     ];
     
-    public virtual void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice) {}
-    public virtual void ApplyOnRolledAttack(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice) {}
-    public virtual void ApplyOnAttackBlocked(ICharacter attacker, ICharacter defender, ref (int attack, Weapon weapon) attackValue, ref (int defense, Armor armor) defenseValue) {}
-    public virtual void ApplyOnSuccessfulBlock(ICharacter attacker, ICharacter defender, ref int attack, Weapon weapon) {}
-    public virtual void ApplyOnWounded(ICharacter attacker, ICharacter defender, ref int wounds) {}
-    public virtual void ApplyOnDamageIncoming(ICharacter attacker, ICharacter defender, ref int wounds) {}
-    public virtual void ApplyOnWoundCounted(ICharacter self, int hitDie, int index, int count, ref int damage) {}
+    public virtual IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    {
+        yield break;
+    }
 }
 
 public class TraitSneaky() : Trait("Sneaky")
 {
-    public override void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        var left = attacker.GetLeftWeapon();
-        var right = attacker.GetRightWeapon();
-        if (left == null || right == null) return;
+        var left = flow.Attacker.GetLeftWeapon();
+        var right = flow.Attacker.GetRightWeapon();
+        if (left == null || right == null) yield break;
 
         if ((int)left.Weight <= 6 && (int)right.Weight <= 6)
         {
-            attackDice.Add((Rnd.Instance.D6, Rnd.Instance.D2 == 0 ? left : right));
-            Console.WriteLine($"SNEAKY: Added another attack dice to {attacker.GetName()}");
+            flow.AttackDicePreRoll.Add(new Die(this));
+            yield return new CombatFlow_Notify($"SNEAKY: Added another attack dice to {flow.Attacker.GetName()}");
         }
     }
 }
 
 public class TraitProficient() : Trait("Proficient")
 {
-    public override void ApplyOnWoundCounted(ICharacter self, int hitDie, int index, int count, ref int damage)
+    public override IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
     {
-        var left = self.GetLeftWeapon();
-        var right = self.GetRightWeapon();
-        if (left == null || right == null) return;
+        var left = flow.Attacker.GetLeftWeapon();
+        var right = flow.Attacker.GetRightWeapon();
+        if (left == null || right == null) yield break;
+        
         if ((int)left.Weight <= 6 && (int)right.Weight <= 6)
         {
-            if (count == 1)
+            if (flow.CurrentHitDieIndex == 0)
             {
-                damage += 1;
-                Console.WriteLine($"PROFICIENT: +1 damage to {self.GetName()}");
+                flow.HitDieDamage += 1;
+                for (int i = 0; i <= 10; i++)
+                {
+                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + flow.CurrentHitDieIndex + 1, 12,
+                        new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.Gray, (float)i / 10.0f)));
+                    yield return new WaitForSeconds(0.01f);
+                }
+                yield return new CombatFlow_Notify($"PROFICIENT: +1 damage on proficient hit!");
             }
         }
     }
@@ -73,101 +137,107 @@ public class TraitProficient() : Trait("Proficient")
 
 public class TraitBalanced() : Trait("Balanced")
 {
-    public override void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        var left = attacker.GetLeftWeapon();
-        var right = attacker.GetRightWeapon();
-        if (left == null || right == null) return;
+        var left = flow.Attacker.GetLeftWeapon();
+        var right = flow.Attacker.GetRightWeapon();
+        if (left == null || right == null) yield break;
 
         if (left.Weight == right.Weight)
         {
-            attackDice.Add((Rnd.Instance.D6, left));
-            attackDice.Add((Rnd.Instance.D6, right));
-            Console.WriteLine($"BALANCED: Two more dice to {attacker.GetName()}");
+            flow.AttackDicePreRoll.Add(new Die(this));
+            yield return new CombatFlow_Notify($"BALANCED: Added dice for balanced strike.");
         }
     }
 }
 
 public class TraitSkilled() : Trait("Skilled")
 {
-    public override void ApplyOnWoundCounted(ICharacter self, int hitDie, int index, int count, ref int damage)
+    public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        if (Rnd.Instance.D100 <= 50)
+        if (flow.TotalIncomingDamage == 0)
         {
-            damage += 1;
-            Console.WriteLine($"SKILLED: Added +1 damage to {self.GetName()}");
+            flow.TotalIncomingDamage += 1;
+            yield return new CombatFlow_Notify($"SKILLED: Skilled shot deals 1 damage.");
         }
     }
 }
 
 public class TraitPadded() : Trait("Padded")
 {
-    public override void ApplyOnDamageIncoming(ICharacter attacker, ICharacter defender, ref int wounds)
+    public override IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        if (wounds > 0)
-            wounds -= 1;
-        Console.WriteLine($"PADDED: -1 damage to {attacker.GetName()}");
+        if (flow.TotalIncomingDamage > 0)
+        {
+            flow.TotalIncomingDamage -= 1;
+            yield return new CombatFlow_Notify($"PADDED: Reducing damage by 1.");
+        }
     }
 }
 
 public class TraitHeavy() : Trait("Heavy")
 {
-    public override void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        var left = attacker.GetLeftWeapon();
-        var right = attacker.GetRightWeapon();
-
+        var left = flow.Attacker.GetLeftWeapon();
         if (left != null && (int)left.Weight > 6)
         {
-            attackDice.Add((Rnd.Instance.D6, left));
+            flow.AttackDicePreRoll.Add(new Die(left));
         }
         
+        var right = flow.Attacker.GetRightWeapon();
         if (right != null && (int)right.Weight > 6)
         {
-            attackDice.Add((Rnd.Instance.D6, right));
+            flow.AttackDicePreRoll.Add(new Die(right));
         }
         
-        Console.WriteLine($"HEAVY: Added some dice if heavy weapons, probably");
+        yield return new CombatFlow_Notify($"HEAVY: Added some dice if heavy weapons, probably");
+
     }
 }
 
 public class TraitWise() : Trait("Wise")
 {
-    public override void ApplyOnAttackRoll(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
+    public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
         var min = 100;
-        for (int i = 0; i < attackDice.Count; i++)
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
         {
-            if (attackDice[i].Item1 < min) min = attackDice[i].Item1;
+            if (flow.AttackDiceRolled[i].Value < min) min = flow.AttackDiceRolled[i].Value;
         }
         
-        for (int i = 0; i < attackDice.Count; i++)
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
         {
-            if (attackDice[i].Item1 == min)
+            if (flow.AttackDiceRolled[i].Value == min)
             {
-                var a = attackDice[i];
-                a.Item1 = Rnd.Instance.D6;
-                attackDice[i] = a;
-            }
-        }
-    }
+                for (int j = 0; j < 10; j++)
+                {
+                    if (j % 2 == 0)
+                    {
+                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                            new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Gray));
+                    }
+                    else
+                    {
+                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                            new Glyph(0, 0, Color.Black, Color.Black));
+                    }
 
-    public override void ApplyOnRolledAttack(ICharacter attacker, ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
-    {
-        var min = 100;
-        for (int i = 0; i < attackDice.Count; i++)
-        {
-            if (attackDice[i].Item1 < min) min = attackDice[i].Item1;
-        }
-        
-        for (int i = 0; i < attackDice.Count; i++)
-        {
-            if (attackDice[i].Item1 == min)
-            {
-                var a = attackDice[i];
-                a.Item1 = Rnd.Instance.D6;
-                Console.WriteLine($"WISE: Rerolling {attackDice[i].Item1} into {a.Item1}");
-                attackDice[i] = a;
+                    yield return new WaitForSeconds(0.01f);
+                }
+
+                for (int j = 0; j <= 10; j++)
+                {
+                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+                    yield return new WaitForSeconds(0.01f);
+                }
+                var a = flow.AttackDiceRolled[i];
+                a.Value = Rnd.Instance.D6;
+                flow.AttackDiceRolled[i] = a;
+                SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                    new Glyph(a.Value - 1, 68, Color.Black, Color.Green));
+                yield return new WaitForSeconds(0.1f);
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
@@ -733,233 +734,370 @@ public class CombatMapScreen : IScreen
 
         _showStats = KB.IsPressed(Keys.LeftAlt);
     }
-    
-    private IEnumerable Attack(ICharacter attacker, ICharacter defender)
+
+    private IEnumerable CombatAlgebra(CombatFlow flow, ICombatFlowStep step)
     {
-        _game.Layers["ascii"].Set(2 * _fullWidth + 2, 6, $"{attacker.GetName()} attacks {defender.GetName()}", Color.White, Color.Black);
-        
-        var attackDice = new List<(int, Weapon)>();
-        foreach (var weapon in new[] { attacker.GetLeftWeapon(), attacker.GetRightWeapon() })
+        if (step is CombatFlow_Notify notif)
         {
-            if (weapon != null)
+            Console.WriteLine(notif.Message);
+            yield return new WaitForSeconds(1);
+        }
+        else if (step is CombatFlow_PresentAttacker att)
+        {
+        }
+        else if (step is CombatFlow_PresentDefender def)
+        {
+        }
+        else if (step is CombatFlow_PresentRollingAttackDie ra)
+        {
+            var waitingTime = 0.01f;
+            for (int i = 0; i < 5; i++)
             {
-                Console.WriteLine($"w{weapon.Weight} a{weapon.Attack} q{weapon.Quality}");
-                for (int i = 0; i < weapon.Attack; i++)
+                _game.Layers["mrmo"].Set(2 + _fullWidth + ra.Index + 1, 9,
+                    new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+            
+                yield return new WaitForSeconds(waitingTime);
+                waitingTime += 0.01f;
+            }
+        }
+        else if (step is CombatFlow_PresentRollingDefenseDie rd)
+        {
+            var waitingTime = 0.01f;
+            for (int i = 0; i < 10; i++)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + rd.Index + 1, 10,
+                    new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+            
+                yield return new WaitForSeconds(waitingTime);
+                waitingTime += 0.01f;
+            }
+        }
+        else if (step is CombatFlow_PresentAttackDie a)
+        {
+            _game.Layers["mrmo"].Set(2 + _fullWidth + a.Index + 1, 9,
+                new Glyph(a.Value - 1, 68, Color.Black, Color.Gray));
+        }
+        else if (step is CombatFlow_PresentDefenseDie d)
+        {
+            _game.Layers["mrmo"].Set(2 + _fullWidth + d.Index + 1, 10,
+                new Glyph(d.Value - 1, 68, Color.Black, Color.Gray));
+        }
+        else if (step is CombatFlow_SortAttackDice _)
+        {
+            for (int i = 0; i < flow.AttackDiceRolled.Count; i++)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, 9,
+                    new Glyph(flow.AttackDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        else if (step is CombatFlow_SortDefenseDice _)
+        {
+            for (int i = 0; i < flow.DefenseDiceRolled.Count; i++)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, 10,
+                    new Glyph(flow.DefenseDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        else if (step is CombatFlow_PresentStrike strike)
+        {
+            for (int i = 0; i <= 10; i++)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + strike.Index + 1, 9,
+                    new Glyph(strike.Attack.Value - 1, 68, Color.Black, Color.Lerp(Color.Gold, Color.Gray, (float)i / 10.0f)));
+
+                if (strike.Defense != null)
                 {
-                    var d6 = Rnd.Instance.D6;
-                    attackDice.Add((d6, weapon));
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + strike.Index + 1, 10,
+                        new Glyph(strike.Defense.Value - 1, 68, Color.Black,
+                            Color.Lerp(Color.Gold, Color.Gray, (float)i / 10.0f)));
+                }
+
+                yield return new WaitForSeconds(0.01f);
+            }
+        }
+        else if (step is CombatFlow_PresentHitDie hit)
+        {
+            _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                new Glyph(hit.Value - 1, 68, Color.Black, Color.Gray));
+        }
+        else if (step is CombatFlow_PresentDamagingHitDie damaging)
+        {
+            var die = flow.HitDice[damaging.Index];
+            if (die != null)
+            {
+                for (int i = 0; i <= 10; i++)
+                {
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + damaging.Index + 1, 11,
+                        new Glyph(die.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, (float)i / 10.0f)));
+                    yield return new WaitForSeconds(0.01f);
                 }
             }
         }
-        
-        var defenseDice = new List<(int, Armor)>();
-        if (defender.GetArmor() != null)
+        else if (step is CombatFlow_PresentDamageDie dmg)
         {
-            var armor = defender.GetArmor();
-            for (int i = 0; i < armor.Guard; i++)
+            for (int i = 0; i <= 10; i++)
             {
-                defenseDice.Add((Rnd.Instance.D6, armor));
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dmg.Index + 1, 12,
+                    new Glyph(dmg.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, (float)i / 10.0f)));
+                yield return new WaitForSeconds(0.01f);
             }
         }
-        
-        _game.Layers["ascii"].Set(2 * _fullWidth + 2, 7, $"{attackDice.Count} strikes, {defenseDice.Count} guards.", Color.White, Color.Black);
-        
-        attacker.ApplyOnAttackRoll(defender, ref attackDice, ref defenseDice);
-        defender.ApplyOnRolledAttack(attacker, ref attackDice, ref defenseDice);
+    }
 
-        attackDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
-        if (!defender.IsStunned())
+    private IEnumerable ResolveAttack(CombatFlow flow, IEnumerable log)
+    {
+        foreach (var part in log)
         {
-            Console.WriteLine("Defender isn't stunned, sorting!");
-            defenseDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
-        }
-        else
-        {
-            Console.WriteLine("Defender is stunned, no sorting!");
-            defender.GetAP().Reduce<StatusStunned>(1);
-        }
-
-        int diceIdx = 0;
-        var defenseDiceQueue = new Queue<(int, Armor)>(defenseDice);
-        
-        int startLine = 9;
-        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine, "atk");
-        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 1, "def");
-        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 2, "hit");
-        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 3, "dmg");
-        
-        int wounds = 0;
-        List<int> hitDice = [];
-        foreach (var (atk, weapon) in attackDice)
-        {
-            var attack = atk;
-            bool critAttack = false, critDefense = false;
-            if (defenseDiceQueue.TryDequeue(out var nextDefenseDie))
+            if (part is IEnumerable enm)
             {
-                var waitingTime = 0.01f;
-                for (int i = 0; i < 5; i++)
-                {
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine,
-                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-
-                    yield return new WaitForSeconds(waitingTime);
-                    waitingTime += 0.01f;
-                }
-
-                waitingTime = 0.01f;
-                for (int i = 0; i < 5; i++)
-                {
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1,
-                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-                    
-                    yield return new WaitForSeconds(waitingTime);
-                    waitingTime += 0.01f;
-                }
-
-                if (Rnd.Instance.D100 <= 10 + defender.GetStats().Poise)
-                {
-                    defender.GetAP().Spend(1);
-                    critDefense = true;
-                    attack = 0;
-                }
-
-                var (def, armor) = nextDefenseDie;
-                var defense = def;
-                if (attack > 0 && Rnd.Instance.D100 <= 10 + attacker.GetStats().Clarity)
-                {
-                    attacker.GetAP().Spend(1);
-                    critAttack = true;
-                    defense = 0;
-                }
-
-                Console.WriteLine($"Att: {attack}, def: {defense}, critAtt: {critAttack}, critDef: {critDefense}");
-                if (!critAttack && !critDefense)
-                {
-                    if (attack > 0 && !critAttack)
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(attack - 1, 68, Color.Black, Color.White));
-
-                    if (defense > 0 && !critDefense)
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(defense - 1, 68, Color.Black, Color.White));
-                }
-                else
-                {
-                    if (critAttack)
-                    {
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(8, 68, Color.Black, Color.Gold));
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(9, 68, Color.Black, Color.Gold));
-                    }
-                    else if (critDefense)
-                    {
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(8, 68, Color.Black, Color.Gold));
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(9, 68, Color.Black, Color.Gold));
-                    }
-                }
-
-                var aw = (attack, weapon);
-                var da = (defense, armor);
-                defender.ApplyOnAttackBlocked(attacker, ref aw, ref da);
-                attack = aw.attack;
-                defense = da.defense;
-                
-                if (defense > attack)
-                {
-                    hitDice.Add(0);
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(9, 68, Color.Black, Color.DarkSlateGray));
-                    defender.ApplyOnSuccessfulBlock(attacker, ref attack, weapon);
-                }
-                else if (defense == attack && attack > 0)
-                {
-                    hitDice.Add(0);
-                    if (Rnd.Instance.D10 > armor.Quality + defender.GetStats().Mod(EStat.Poise))
-                    {
-                        _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(6, 68, Color.Black, Color.Orange));
-                        armor.Guard--;
-                    }
-                }
-                else if (attack > defense)
-                {
-                    hitDice.Add(attack - defense);
-                    wounds = Math.Max(wounds, attack - defense);
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph((attack - defense) - 1, 68, Color.Black, Color.White));
-                }
+                yield return ResolveAttack(flow, enm);
+            }
+            else if (part is ICombatFlowStep step) 
+            {
+                yield return CombatAlgebra(flow, step);
             }
             else
             {
-                var waitingTime = 0.01f;
-                for (int i = 0; i < 5; i++)
-                {
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine,
-                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-                    
-                    yield return new WaitForSeconds(waitingTime);
-                    waitingTime += 0.01f;
-                }
-                
-                wounds = Math.Max(wounds, attack);
-                _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(attack - 1, 68, Color.Black, Color.White));
-                _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(attack - 1, 68, Color.Black, Color.White));
-                hitDice.Add(attack);
-            }
-            
-            diceIdx += 1;
-            yield return new WaitForSeconds(0.15f);
-        }
-            
-        int count = 0;
-        int damage = 0;
-        if (wounds > 0)
-        {
-            for (int i = 0; i < diceIdx; i++)
-            {
-                if (hitDice[i] == wounds)
-                {
-                    count++;
-                    int dmg = 1;
-                    attacker.ApplyOnWoundCounted(hitDice[i], i, count, ref dmg);
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, startLine + 3,
-                        new Glyph(dmg - 1, 68, Color.Black, Color.Red));
-                    damage += dmg;
-                }
-            }
-            
-            defender.ApplyOnDamageIncoming(defender, ref damage);
-            Console.WriteLine($"TOTAL DAMAGE: {damage}");
-            defender.GetAP().Add<StatusWounds>(damage);
-            
-            if (defender is Enemy enemy)
-            {
-                var max = defender.GetAP().Total - defender.GetStats().Vigor;
-                var wnd = defender.GetAP().Count<StatusWounds>();
-                var rnd = Rnd.Instance.Next(0, max);
-                var isDead = rnd < wnd;
-                
-                if (isDead)
-                {
-                    yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(30, 15), (game, bnd) =>
-                    {
-                        bnd.Add("BARK HERE!");
-                    });
-
-                    DrawCombat();
-                    DrawGui();
-                    
-                    defender.GetAP().Reduce<StatusWounds>(rnd);
-                    defender.GetAP().Add<StatusStunned>(1);
-                    attacker.GetAP().Add<StatusSin>(enemy.Sin);
-                    enemy.Die();
-                }
+                yield return part;
             }
         }
-
-        if (defender is Enemy { IsDead: true } e)
-        {
-            var (x, y) = e.DeadIcon;
-            _enemies.Remove(e);
-            _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(x, y, Color.Black, Color.White));
-        }
-        
+    }
+    
+    private IEnumerable Attack(ICharacter attacker, ICharacter defender)
+    {
+        var flow = new CombatFlow(attacker, defender);
+        yield return ResolveAttack(flow, flow.Attack());
         yield return new WaitForKey(Keys.Space);
     }
+    
+    // private IEnumerable Attack(ICharacter attacker, ICharacter defender)
+    // {
+    //     _game.Layers["ascii"].Set(2 * _fullWidth + 2, 6, $"{attacker.GetName()} attacks {defender.GetName()}", Color.White, Color.Black);
+    //     
+    //     var attackDice = new List<(int, Weapon)>();
+    //     foreach (var weapon in new[] { attacker.GetLeftWeapon(), attacker.GetRightWeapon() })
+    //     {
+    //         if (weapon != null)
+    //         {
+    //             Console.WriteLine($"w{weapon.Weight} a{weapon.Attack} q{weapon.Quality}");
+    //             for (int i = 0; i < weapon.Attack; i++)
+    //             {
+    //                 var d6 = Rnd.Instance.D6;
+    //                 attackDice.Add((d6, weapon));
+    //             }
+    //         }
+    //     }
+    //     
+    //     var defenseDice = new List<(int, Armor)>();
+    //     if (defender.GetArmor() != null)
+    //     {
+    //         var armor = defender.GetArmor();
+    //         for (int i = 0; i < armor.Guard; i++)
+    //         {
+    //             defenseDice.Add((Rnd.Instance.D6, armor));
+    //         }
+    //     }
+    //     
+    //     _game.Layers["ascii"].Set(2 * _fullWidth + 2, 7, $"{attackDice.Count} strikes, {defenseDice.Count} guards.", Color.White, Color.Black);
+    //     
+    //     attacker.ApplyOnAttackRoll(defender, ref attackDice, ref defenseDice);
+    //     defender.ApplyOnRolledAttack(attacker, ref attackDice, ref defenseDice);
+    //
+    //     attackDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
+    //     if (!defender.IsStunned())
+    //     {
+    //         Console.WriteLine("Defender isn't stunned, sorting!");
+    //         defenseDice.Sort((a, b) => -a.Item1.CompareTo(b.Item1));
+    //     }
+    //     else
+    //     {
+    //         Console.WriteLine("Defender is stunned, no sorting!");
+    //         defender.GetAP().Reduce<StatusStunned>(1);
+    //     }
+    //
+    //     int diceIdx = 0;
+    //     var defenseDiceQueue = new Queue<(int, Armor)>(defenseDice);
+    //     
+    //     int startLine = 9;
+    //     _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine, "atk");
+    //     _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 1, "def");
+    //     _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 2, "hit");
+    //     _game.Layers["mrmo"].Set(2 + _fullWidth - 3, startLine + 3, "dmg");
+    //     
+    //     int wounds = 0;
+    //     List<int> hitDice = [];
+    //     foreach (var (atk, weapon) in attackDice)
+    //     {
+    //         var attack = atk;
+    //         bool critAttack = false, critDefense = false;
+    //         if (defenseDiceQueue.TryDequeue(out var nextDefenseDie))
+    //         {
+    //             var waitingTime = 0.01f;
+    //             for (int i = 0; i < 5; i++)
+    //             {
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine,
+    //                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+    //
+    //                 yield return new WaitForSeconds(waitingTime);
+    //                 waitingTime += 0.01f;
+    //             }
+    //
+    //             waitingTime = 0.01f;
+    //             for (int i = 0; i < 5; i++)
+    //             {
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1,
+    //                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+    //                 
+    //                 yield return new WaitForSeconds(waitingTime);
+    //                 waitingTime += 0.01f;
+    //             }
+    //
+    //             if (Rnd.Instance.D100 <= 10 + defender.GetStats().Poise)
+    //             {
+    //                 defender.GetAP().Spend(1);
+    //                 critDefense = true;
+    //                 attack = 0;
+    //             }
+    //
+    //             var (def, armor) = nextDefenseDie;
+    //             var defense = def;
+    //             if (attack > 0 && Rnd.Instance.D100 <= 10 + attacker.GetStats().Clarity)
+    //             {
+    //                 attacker.GetAP().Spend(1);
+    //                 critAttack = true;
+    //                 defense = 0;
+    //             }
+    //
+    //             Console.WriteLine($"Att: {attack}, def: {defense}, critAtt: {critAttack}, critDef: {critDefense}");
+    //             if (!critAttack && !critDefense)
+    //             {
+    //                 if (attack > 0 && !critAttack)
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(attack - 1, 68, Color.Black, Color.White));
+    //
+    //                 if (defense > 0 && !critDefense)
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(defense - 1, 68, Color.Black, Color.White));
+    //             }
+    //             else
+    //             {
+    //                 if (critAttack)
+    //                 {
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(8, 68, Color.Black, Color.Gold));
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(9, 68, Color.Black, Color.Gold));
+    //                 }
+    //                 else if (critDefense)
+    //                 {
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 1, new Glyph(8, 68, Color.Black, Color.Gold));
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(9, 68, Color.Black, Color.Gold));
+    //                 }
+    //             }
+    //
+    //             var aw = (attack, weapon);
+    //             var da = (defense, armor);
+    //             defender.ApplyOnAttackBlocked(attacker, ref aw, ref da);
+    //             attack = aw.attack;
+    //             defense = da.defense;
+    //             
+    //             if (defense > attack)
+    //             {
+    //                 hitDice.Add(0);
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(9, 68, Color.Black, Color.DarkSlateGray));
+    //                 defender.ApplyOnSuccessfulBlock(attacker, ref attack, weapon);
+    //             }
+    //             else if (defense == attack && attack > 0)
+    //             {
+    //                 hitDice.Add(0);
+    //                 if (Rnd.Instance.D10 > armor.Quality + defender.GetStats().Mod(EStat.Poise))
+    //                 {
+    //                     _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(6, 68, Color.Black, Color.Orange));
+    //                     armor.Guard--;
+    //                 }
+    //             }
+    //             else if (attack > defense)
+    //             {
+    //                 hitDice.Add(attack - defense);
+    //                 wounds = Math.Max(wounds, attack - defense);
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph((attack - defense) - 1, 68, Color.Black, Color.White));
+    //             }
+    //         }
+    //         else
+    //         {
+    //             var waitingTime = 0.01f;
+    //             for (int i = 0; i < 5; i++)
+    //             {
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine,
+    //                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
+    //                 
+    //                 yield return new WaitForSeconds(waitingTime);
+    //                 waitingTime += 0.01f;
+    //             }
+    //             
+    //             wounds = Math.Max(wounds, attack);
+    //             _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine, new Glyph(attack - 1, 68, Color.Black, Color.White));
+    //             _game.Layers["mrmo"].Set(2 + _fullWidth + diceIdx + 1, startLine + 2, new Glyph(attack - 1, 68, Color.Black, Color.White));
+    //             hitDice.Add(attack);
+    //         }
+    //         
+    //         diceIdx += 1;
+    //         yield return new WaitForSeconds(0.15f);
+    //     }
+    //         
+    //     int count = 0;
+    //     int damage = 0;
+    //     if (wounds > 0)
+    //     {
+    //         for (int i = 0; i < diceIdx; i++)
+    //         {
+    //             if (hitDice[i] == wounds)
+    //             {
+    //                 count++;
+    //                 int dmg = 1;
+    //                 attacker.ApplyOnWoundCounted(hitDice[i], i, count, ref dmg);
+    //                 _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, startLine + 3,
+    //                     new Glyph(dmg - 1, 68, Color.Black, Color.Red));
+    //                 damage += dmg;
+    //             }
+    //         }
+    //         
+    //         defender.ApplyOnDamageIncoming(defender, ref damage);
+    //         Console.WriteLine($"TOTAL DAMAGE: {damage}");
+    //         defender.GetAP().Add<StatusWounds>(damage);
+    //         
+    //         if (defender is Enemy enemy)
+    //         {
+    //             var max = defender.GetAP().Total - defender.GetStats().Vigor;
+    //             var wnd = defender.GetAP().Count<StatusWounds>();
+    //             var rnd = Rnd.Instance.Next(0, max);
+    //             var isDead = rnd < wnd;
+    //             
+    //             if (isDead)
+    //             {
+    //                 yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(30, 15), (game, bnd) =>
+    //                 {
+    //                     bnd.Add("BARK HERE!");
+    //                 });
+    //
+    //                 DrawCombat();
+    //                 DrawGui();
+    //                 
+    //                 defender.GetAP().Reduce<StatusWounds>(rnd);
+    //                 defender.GetAP().Add<StatusStunned>(1);
+    //                 attacker.GetAP().Add<StatusSin>(enemy.Sin);
+    //                 enemy.Die();
+    //             }
+    //         }
+    //     }
+    //
+    //     if (defender is Enemy { IsDead: true } e)
+    //     {
+    //         var (x, y) = e.DeadIcon;
+    //         _enemies.Remove(e);
+    //         _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(x, y, Color.Black, Color.White));
+    //     }
+    //     
+    //     yield return new WaitForKey(Keys.Space);
+    // }
 
     private Enemy? IsEnemyAt(int x, int y)
     {

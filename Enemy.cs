@@ -1,10 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public class Enemy : ICharacter
+public class Enemy : ICharacter, ICombatFlowParticipant
 {
     public int X, Y;
     public string Name;
@@ -61,9 +62,9 @@ public class Enemy : ICharacter
         
         gob.LeftWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
         gob.RightWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
-        gob.Traits.Add(new TraitSneaky());
-        gob.Traits.Add(new TraitProficient());
-        gob.Traits.Add(new TraitBalanced());
+        //gob.Traits.Add(new TraitSneaky());
+        //gob.Traits.Add(new TraitProficient());
+        gob.Traits.Add(new TraitWise());
         return gob;
     }
 
@@ -101,63 +102,6 @@ public class Enemy : ICharacter
     {
         return AP.Contains<StatusStunned>();
     }
-
-    public void ApplyOnAttackRoll(ICharacter defender, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnAttackRoll(this, defender, ref attackDice, ref defenseDice);
-        }
-    }
-
-    public void ApplyOnRolledAttack(ICharacter attacker, ref List<(int, Weapon)> attackDice, ref List<(int, Armor)> defenseDice)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnRolledAttack(attacker, this, ref attackDice, ref defenseDice);
-        }
-    }
-
-    public void ApplyOnAttackBlocked(ICharacter attacker, ref (int attack, Weapon weapon) attackValue,
-        ref (int defense, Armor armor) defenseValue)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnAttackBlocked(attacker, this, ref attackValue, ref defenseValue);
-        }
-    }
-
-    public void ApplyOnSuccessfulBlock(ICharacter attacker, ref int attack, Weapon weapon)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnSuccessfulBlock(attacker, this, ref attack, weapon);
-        }
-    }
-
-    public void ApplyOnWounded(ICharacter attacker, ref int wounds)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnWounded(attacker, this, ref wounds);
-        }
-    }
-
-    public void ApplyOnDamageIncoming(ICharacter defender, ref int wounds)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnDamageIncoming(this, defender, ref wounds);
-        }
-    }
-
-    public void ApplyOnWoundCounted(int hitDie, int index, int count, ref int damage)
-    {
-        foreach (var trait in Traits)
-        {
-            trait.ApplyOnWoundCounted(this, hitDie, index, count, ref damage);
-        }
-    }
     
     public string GetName()
     {
@@ -167,5 +111,89 @@ public class Enemy : ICharacter
     public void Die()
     {
         IsDead = true;
+    }
+
+    public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_ApplyDiceCountModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
+    }
+
+    public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_ApplyCombatModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyCombatModifiers(flow);
+    }
+
+    public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_ApplyStrikeModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyStrikeModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyStrikeBlocked(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyArmorDented(flow);
+    }
+
+    public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_ApplyHitModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyHitModifiers(flow);
+    }
+
+    public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_DetermineHitDieDamage(flow);
+    }
+
+    public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_DetermineHitDieDamage(flow);
+    }
+
+    public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsAttacker_ApplyTotalIncomingDamageModifiers(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    {
+        foreach (var trait in Traits) 
+            yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
 }
