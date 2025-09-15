@@ -7,7 +7,7 @@ namespace SINEATER;
 public interface ICombatFlowStep {}
 
 public record struct CombatFlow_PresentAttacker(ICharacter Attacker) : ICombatFlowStep;
-public record struct CombatFlow_PresentDefender(ICharacter Attacker) : ICombatFlowStep;
+public record struct CombatFlow_PresentDefender(ICharacter Defender) : ICombatFlowStep;
 public record struct CombatFlow_Notify(string Message) : ICombatFlowStep;
 public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
@@ -183,7 +183,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 else if (atk == dfn)
                 {
                     HitDice.Add(null);
-                    yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, 0);
+                    yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, -1);
                     ArmorDented = true;
                     yield return defender.AsDefender_ApplyArmorDented(this);
                     if (ArmorDented)

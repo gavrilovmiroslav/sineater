@@ -301,6 +301,9 @@
 /processorParam:TextureFormat=Color
 /build:23.png
 
+#begin barks.yaml
+/copy:barks.yaml
+
 #begin Codepage.png
 /importer:TextureImporter
 /processor:TextureProcessor

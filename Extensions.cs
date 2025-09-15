@@ -1,11 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
 internal static class Extensions
 {
+    public static IEnumerable<string> ReadLines(this Stream stream, Encoding encoding)
+    {
+        using var reader = new StreamReader(stream, encoding);
+        string line = "";
+        while ((line = reader.ReadLine()) != null)
+        {
+            yield return line;
+        }
+    }
+    
     public static Color Darken(this Color color, float factor)
     {
         color.ToHSV(out var h, out var s, out var l);

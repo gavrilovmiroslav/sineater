@@ -159,6 +159,10 @@ public class FadeOutAndLeaveScreen(float seconds) : IEnumerable
         }
         
         SineaterGame.Instance.ScreenStack.TryPop(out var _);
+        if (SineaterGame.Instance.ScreenStack.TryPeek(out var screen))
+        {
+            screen.Draw(new GameTime());
+        }
     }
 }
 
@@ -192,6 +196,14 @@ public class FadeOutAndLoadScreen(float seconds, IScreen screen) : IEnumerable
     }
 }
 
+public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> content) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(23 + 5, 16 + 2), content);
+    }
+}
+
 public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterGame, TextLayerBox> content) : IEnumerable
 {
     public IEnumerator GetEnumerator()
@@ -216,7 +228,9 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
-        game.Layers["ascii"].Set((int)start.X * 2 + 19, (int)end.Y, "SPACE >");
+        game.Layers["ascii"].Set((int)end.X * 2 - 12, (int)end.Y - 2, "OK ->");
         yield return new WaitForKey(Keys.Space);
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        game.Layers["ascii"].SetRect(start * 2, end * 2, ' ');
     }
 }

@@ -126,7 +126,7 @@ public class TraitProficient() : Trait("Proficient")
                 for (int i = 0; i <= 10; i++)
                 {
                     SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + flow.CurrentHitDieIndex + 1, 12,
-                        new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.Gray, (float)i / 10.0f)));
+                        new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.CornflowerBlue, (float)i / 10.0f)));
                     yield return new WaitForSeconds(0.01f);
                 }
                 yield return new CombatFlow_Notify($"PROFICIENT: +1 damage on proficient hit!");

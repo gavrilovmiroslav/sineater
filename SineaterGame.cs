@@ -55,6 +55,8 @@ public class SineaterGame : Game
         _nextHour = (time.Hour + 1) % 24;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
         _dHour += (float)time.Second * 1000.0f;
+
+        Barks.Load(Content);
     }
     
     private void SetupCrt(int w, int h)
@@ -111,6 +113,17 @@ public class SineaterGame : Game
                      (0, 65), (5, 65), (7, 65), (8, 65), (9, 65),
                      (0, 66), (1, 66), (2, 66), (3, 66), (7, 66), (8, 66), (9, 66), (10, 66), (11, 66), (12, 66),
                      (0, 67), (1, 67), (2, 67), (3, 67) 
+                 })
+        {
+            mrmoLayer.SetFlip(u, v, SpriteEffects.None);
+        }
+        
+        foreach (var (u, v) in new[]
+                 {
+                     (0, 64), (1, 64),
+                     (1, 65), (2, 65), (3, 65), (4, 65), (6, 65),
+                     (4, 66), 
+                     (4, 67), (5, 67) 
                  })
         {
             mrmoLayer.SetFlip(u, v, SpriteEffects.FlipHorizontally);

@@ -274,6 +274,12 @@ public class Character : ICharacter
         foreach (var trait in Traits) 
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
+
+    public string GetRandomBark()
+    {
+        var barks = Barks.Instance[this.Job];
+        return barks[Rnd.Instance.Next(0, barks.Length)];
+    }
 }
 
 public record struct Party

@@ -187,7 +187,7 @@ public class CombatMapScreen : IScreen
         {
             hp += enemy.Sin;
         }
-        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusStamina());
+        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusSin());
         foreach (var enemy in _enemies)
         {
             enemy.AP = _enemyActionPoints;
@@ -394,8 +394,8 @@ public class CombatMapScreen : IScreen
     {
         _combatState = ECombatState.PlayerPhase;
         _presentation = EPresentationState.Preparing;
-        _enemyActionPoints.Free(_enemies.Count);
-                    
+        //_enemyActionPoints.Free(_enemies.Count);
+
         var gm = new GoalMap<Cell>(_map, false);
         foreach (var (ch, cs) in _combatStates)
         {
@@ -413,13 +413,9 @@ public class CombatMapScreen : IScreen
                         
             if (path != null)
             {
-                for (var i = 0; i < enemy.Stats.Will; i++)
+                int ap = enemy.Stats.Will;
+                for (var i = 0; i < ap; i++)
                 {
-                    if (enemy.AP.Remaining == 0)
-                    {
-                        continue;
-                    }
-
                     var next = path.TryStepForward();
                     if (next == null) continue;
                     
@@ -435,14 +431,15 @@ public class CombatMapScreen : IScreen
                                 new Glyph(cx, cy, Color.Black, f % 2 == 1 ? Color.Red : chr.Tint));
                             yield return new WaitForSeconds(0.01f);
                         }
-                        yield return new WaitForSeconds(0.5f);
                         yield return Attack(enemy, chr);
+                        ap = 0;
                     }
                     else
                     {
                         enemy.X = next.X;
                         enemy.Y = next.Y;
-                        enemy.AP.Spend(1);
+                        //enemy.AP.Spend(1);
+                        ap -= 1;
                     }
 
                     DrawGui();
@@ -483,20 +480,10 @@ public class CombatMapScreen : IScreen
                     break;
                 case ECombatState.PlayerPhase:
                     _playerSelectedIndex = 0;
-                    int max = 0;
-                    foreach (var (chr, st) in _combatStates)
-                    {
-                        if (max < chr.Stats.Will)
-                        {
-                            max = chr.Stats.Will;
-                        }
-                    }
-                    
-                    max += 5;
                     foreach (var (chr, st) in _combatStates)
                     {
                         _game.ActionPoints.Free(st.Move);
-                        st.Move = max;
+                        st.Move = chr.Stats.Will + 5;
                     }
 
                     _combatState = ECombatState.PlayerPhase;
@@ -707,8 +694,8 @@ public class CombatMapScreen : IScreen
         if (_enemies.Count > 0)
         {
             _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(40, 2), ' ');
-            _game.Layers["ascii"].Set(1, 0, _title);
-            _enemyActionPoints.Draw(_title.Length + 3, 0);
+            _game.Layers["ascii"].Set(1, 1, _title);
+            _enemyActionPoints.Draw(_title.Length + 3, 1);
         }
 
         if (_coroutineHandler.IsActive()) return;
@@ -740,13 +727,35 @@ public class CombatMapScreen : IScreen
         if (step is CombatFlow_Notify notif)
         {
             Console.WriteLine(notif.Message);
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(0.5f);
         }
         else if (step is CombatFlow_PresentAttacker att)
         {
+            if (att.Attacker is Character chr)
+            {
+                var cs = _combatStates[chr];
+                var (u, v) = chr.Job.GetImage();
+                _game.Layers["mrmo"].Set(cs.X, cs.Y + 2, new Glyph(u, v, Color.Black, Color.Yellow));
+            }
+            else if (att.Attacker is Enemy enm)
+            {
+                var (u, v) = enm.Icon;
+                _game.Layers["mrmo"].Set(enm.X, enm.Y + 2, new Glyph(u, v, Color.Black, Color.Yellow));
+            }
         }
         else if (step is CombatFlow_PresentDefender def)
         {
+            if (def.Defender is Character chr)
+            {
+                var cs = _combatStates[chr];
+                var (u, v) = chr.Job.GetImage();
+                _game.Layers["mrmo"].Set(cs.X, cs.Y + 2, new Glyph(u, v, Color.Black, Color.Red));
+            }
+            else if (def.Defender is Enemy enm)
+            {
+                var (u, v) = enm.Icon;
+                _game.Layers["mrmo"].Set(enm.X, enm.Y + 2, new Glyph(u, v, Color.Black, Color.Red));
+            }
         }
         else if (step is CombatFlow_PresentRollingAttackDie ra)
         {
@@ -763,7 +772,7 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_PresentRollingDefenseDie rd)
         {
             var waitingTime = 0.01f;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 5; i++)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth + rd.Index + 1, 10,
                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
@@ -819,8 +828,21 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_PresentHitDie hit)
         {
-            _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
-                new Glyph(hit.Value - 1, 68, Color.Black, Color.Gray));
+            if (hit.Value == 0)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                    new Glyph(9, 68, Color.Black, Color.DarkGray));
+            }
+            else if (hit.Value == -1)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                    new Glyph(6, 68, Color.Black, Color.CadetBlue));
+            }
+            else
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                    new Glyph(hit.Value - 1, 68, Color.Black, Color.Gray));
+            }
         }
         else if (step is CombatFlow_PresentDamagingHitDie damaging)
         {
@@ -831,17 +853,34 @@ public class CombatMapScreen : IScreen
                 {
                     _game.Layers["mrmo"].Set(2 + _fullWidth + damaging.Index + 1, 11,
                         new Glyph(die.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, (float)i / 10.0f)));
-                    yield return new WaitForSeconds(0.01f);
                 }
             }
+            yield return new WaitForSeconds(0.01f);
         }
         else if (step is CombatFlow_PresentDamageDie dmg)
         {
             for (int i = 0; i <= 10; i++)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth + dmg.Index + 1, 12,
-                    new Glyph(dmg.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, (float)i / 10.0f)));
-                yield return new WaitForSeconds(0.01f);
+                    new Glyph(dmg.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.DarkRed, (float)i / 10.0f)));
+            }
+            yield return new WaitForSeconds(0.25f);
+        }
+        else if (step is CombatFlow_TotalIncomingDamage inc)
+        {
+            var ap = flow.Defender.GetAP();
+            var stats = flow.Defender.GetStats();
+            ap.Add<StatusWounds>(inc.TotalDamage);
+            var totalWounds = ap.Count<StatusWounds>();
+
+            if (totalWounds > 0 && flow.Defender is Enemy enemy)
+            {
+                if (Rnd.Instance.Next(0, totalWounds) >= stats.Vigor)
+                {
+                    ap.Reduce<StatusWounds>(stats.Vigor);
+                    flow.Attacker.GetAP().Add<StatusSin>(enemy.Sin);
+                    enemy.Die();
+                }
             }
         }
     }
@@ -869,7 +908,29 @@ public class CombatMapScreen : IScreen
     {
         var flow = new CombatFlow(attacker, defender);
         yield return ResolveAttack(flow, flow.Attack());
-        yield return new WaitForKey(Keys.Space);
+        
+        if (defender is Enemy { IsDead: true } e)
+        {
+            var (u, v) = e.DeadIcon;
+            _enemies.Remove(e);
+            _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(u, v, Color.Black, Color.Red));
+            yield return new ShowPopupWindowAndWaitForKey((_, bnd) =>
+            {
+                bnd.Newline();
+                bnd.Add($"The {attacker.GetName()} kills the {defender.GetName()}:");
+                bnd.Newline();
+                bnd.Newline();
+                bnd.Add($"  {((Character)attacker).GetRandomBark()}");
+                bnd.Newline();
+                bnd.Newline();
+                if (e.Traits.Count > 0)
+                {
+                    var t = e.Traits[Rnd.Instance.Next(0, e.Traits.Count)];
+                    bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!");
+                    attacker.GetTraits().Add(t);
+                }
+            });
+        }
     }
     
     // private IEnumerable Attack(ICharacter attacker, ICharacter defender)

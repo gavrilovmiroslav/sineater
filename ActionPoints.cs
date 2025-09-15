@@ -32,7 +32,7 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
     private int _empty = width;
     private int _spent = 0;
 
-    public int Remaining => _empty - _spent;
+    public int Remaining => Math.Max(0, _empty - _spent);
     public bool Spend(int n)
     {
         if (_empty - _spent == 0) return false;

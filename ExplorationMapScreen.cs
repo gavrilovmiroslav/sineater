@@ -159,7 +159,7 @@ public class ExplorationMapScreen : IScreen
     {
         if (l is LocationCave cave)
         {
-            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+            yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
@@ -175,7 +175,7 @@ public class ExplorationMapScreen : IScreen
         }
         else if (l is LocationTemple temple)
         {
-            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+            yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You hear voices from within...");
@@ -191,7 +191,7 @@ public class ExplorationMapScreen : IScreen
         }
         else if (l is LocationTomb tomb)
         {
-            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+            yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} It might contain some precious bones.");
@@ -207,7 +207,7 @@ public class ExplorationMapScreen : IScreen
         }
         else if (l is LocationTreasure treasure)
         {
-            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 16),
+            yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You found...");
@@ -215,7 +215,7 @@ public class ExplorationMapScreen : IScreen
         }
         else if (l is LocationNPC npc)
         {
-            yield return new ShowPopupAndWaitForKey(new Vector2(10, 10), new Vector2(23, 18),
+            yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
                     var gossip = _locations
@@ -290,6 +290,34 @@ public class ExplorationMapScreen : IScreen
         }
     }
         
+    private void DrawStats()
+    {
+        var w = 10;
+        var h = 19;
+        _game.Layers["ascii"].Set(w - 1, h + 0, "CHAR  NAME     WIL CLA POI VIG     SEE MOV LH RH DF");
+        
+        var index = 0;
+        foreach (var character in _game.Party.Characters)
+        {
+            var (ix, iy) = character.Job.GetImage();
+            _game.Layers["mrmo"].Set(2 + w / 2 - 3, h + 1 + index,
+                new Glyph(ix, iy, Color.Black, Color.White));
+            _game.Layers["ascii"].Set(w + 2, h + 1 + index, $"{index + 1}. {character.Job}", Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 10, h + 1 + index, character.Stats.Will.ToString(), Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 14, h + 1 + index, character.Stats.Clarity.ToString(), Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 18, h + 1 + index, character.Stats.Poise.ToString(), Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 22, h + 1 + index, character.Stats.Vigor.ToString(), Color.White);
+            
+            _game.Layers["ascii"].Set(w + 6 + 7 + 22, h + 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(), Color.White);
+            _game.Layers["ascii"].Set(w + 6 + 11 + 22, h + 1 + index, (character.Stats.Will + 5).ToString(), Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 14 + 23, h + 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-", Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 17 + 23, h + 1 + index, character.RightWeapon?.Attack.ToString() ?? "-", Color.White);
+            _game.Layers["ascii"].Set(w + 5 + 20 + 23, h + 1 + index, character.Armor?.Guard.ToString() ?? "-", Color.White);
+
+            index++;
+        }
+    }
+    
     public void Draw(GameTime gameTime)
     {
         if (_coroutineHandler.IsActive()) return;
@@ -360,6 +388,7 @@ public class ExplorationMapScreen : IScreen
         _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, Glyph.Bw(u, v));
 
         if (_debug) DrawDebugMap();
+        DrawStats();
     }
 
     public void DrawDebugMap()
