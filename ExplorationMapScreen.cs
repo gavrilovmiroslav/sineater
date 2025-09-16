@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SINEATER.Content;
@@ -16,6 +17,7 @@ public class ExplorationMapScreen : IScreen
     private SineaterGame _game;
     private CoroutineHandler _coroutineHandler = new();
 
+    private bool _stats = false;
     private (int, int) _position;
     private HashSet<(int, int)> _history = [];
     private HashSet<(int, int)> _gossip = [];
@@ -74,9 +76,14 @@ public class ExplorationMapScreen : IScreen
         }
         else
         {
-            if (KB.HasBeenPressed(Keys.Tab))
+            if (KB.HasBeenPressed(Keys.F10))
             {
                 _debug = !_debug;
+            }
+
+            if (KB.HasBeenPressed(Keys.Tab))
+            {
+                _stats = !_stats;
             }
 
             var (x, y) = _position;
@@ -159,11 +166,11 @@ public class ExplorationMapScreen : IScreen
     {
         if (l is LocationCave cave)
         {
-            yield return new ShowPopupWindowAndWaitForKey(
+            yield return new ShowPopupWindowWithPortraitAndWaitForKey(_game.Party.Characters[0].GetPortait(),
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
-                });
+                }, true);
 
             Trait? p = null;
             if (_promised.ContainsKey((x, y)))
@@ -289,31 +296,56 @@ public class ExplorationMapScreen : IScreen
             _game.World.Glyphs[x, y].V = 81;
         }
     }
-        
+
+    private void DrawParty()
+    {
+        var h = 19;
+        var index = 0;
+        foreach (var character in _game.Party.Characters)
+        {
+            var (m, r) = character.Job.GetImage();
+            var (u, v) = character.GetPortait();
+            _game.Layers["mrmo"].Set(10 * index, h - 1, new Glyph(m, r, Color.Black, character.Tint));
+            _game.Layers["ascii"].Set(20 * index + 4, h - 1, $"{index + 1}. {character.Job}", character.Tint);
+            for (int i = 0; i < character.Traits.Count; i++)
+            {
+                _game.Layers["ascii"].Set(20 * index + (index > 1 ? -1 : 12), h + i, character.Traits[i].ShortName, character.Tint);
+            }
+
+            _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+            _game.Layers["portrait"].Set(index * 2, 4, new Glyph(u, v, Color.Black, character.Tint));
+            index++;
+        }
+    }
+    
     private void DrawStats()
     {
         var w = 10;
         var h = 19;
-        _game.Layers["ascii"].Set(w - 1, h + 0, "CHAR  NAME     WIL CLA POI VIG     SEE MOV LH RH DF");
+        _game.Layers["ascii"].Set(w - 1, h + 0, "CHAR  NAME   WIL CLA POI VIG  SEE MOV LH RH DF SKLS", Color.CadetBlue);
         
         var index = 0;
         foreach (var character in _game.Party.Characters)
         {
+            var c = index % 2 == 0 ? Color.White : Color.CadetBlue; 
             var (ix, iy) = character.Job.GetImage();
-            _game.Layers["mrmo"].Set(2 + w / 2 - 3, h + 1 + index,
-                new Glyph(ix, iy, Color.Black, Color.White));
-            _game.Layers["ascii"].Set(w + 2, h + 1 + index, $"{index + 1}. {character.Job}", Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 10, h + 1 + index, character.Stats.Will.ToString(), Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 14, h + 1 + index, character.Stats.Clarity.ToString(), Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 18, h + 1 + index, character.Stats.Poise.ToString(), Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 22, h + 1 + index, character.Stats.Vigor.ToString(), Color.White);
+            _game.Layers["mrmo"].Set(2 + w / 2 - 3, h + 1 + index, new Glyph(ix, iy, Color.Black, c));
+            _game.Layers["ascii"].Set(w + 2, h + 1 + index, $"{index + 1}. {character.Job}", c);
+            _game.Layers["ascii"].Set(w + 5 + 8, h + 1 + index, character.Stats.Will.ToString(), c);
+            _game.Layers["ascii"].Set(w + 5 + 12, h + 1 + index, character.Stats.Clarity.ToString(), c);
+            _game.Layers["ascii"].Set(w + 5 + 16, h + 1 + index, character.Stats.Poise.ToString(), c);
+            _game.Layers["ascii"].Set(w + 5 + 20, h + 1 + index, character.Stats.Vigor.ToString(), c);
             
-            _game.Layers["ascii"].Set(w + 6 + 7 + 22, h + 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(), Color.White);
-            _game.Layers["ascii"].Set(w + 6 + 11 + 22, h + 1 + index, (character.Stats.Will + 5).ToString(), Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 14 + 23, h + 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-", Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 17 + 23, h + 1 + index, character.RightWeapon?.Attack.ToString() ?? "-", Color.White);
-            _game.Layers["ascii"].Set(w + 5 + 20 + 23, h + 1 + index, character.Armor?.Guard.ToString() ?? "-", Color.White);
-
+            _game.Layers["ascii"].Set(w + 6 + 7 + 17, h + 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(), c);
+            _game.Layers["ascii"].Set(w + 6 + 11 + 17, h + 1 + index, (character.Stats.Will + 5).ToString(), c);
+            _game.Layers["ascii"].Set(w + 5 + 14 + 18, h + 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 14 + 19, h + 1 + index, character.LeftWeapon?.Weight.Short() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 17 + 18, h + 1 + index, character.RightWeapon?.Attack.ToString() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 17 + 19, h + 1 + index, character.RightWeapon?.Weight.Short() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 20 + 18, h + 1 + index, character.Armor?.Guard.ToString() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 20 + 19, h + 1 + index, character.Armor?.Weight.Short() ?? "-", c);
+            _game.Layers["ascii"].Set(w + 5 + 20 + 22, h + 1 + index, character.GetTraits().Count.ToString(), c);
+            
             index++;
         }
     }
@@ -323,6 +355,7 @@ public class ExplorationMapScreen : IScreen
         if (_coroutineHandler.IsActive()) return;
         _game.Layers["ascii"].Clear();
         _game.Layers["mrmo"].Clear();
+        _game.Layers["portrait"].Clear();
 
         Time += SineaterGame.DeltaTime * 0.001f;
         for (var i = 3; i < _fullHeight; i++)
@@ -388,7 +421,11 @@ public class ExplorationMapScreen : IScreen
         _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, Glyph.Bw(u, v));
 
         if (_debug) DrawDebugMap();
-        DrawStats();
+        
+        if (_stats)
+            DrawStats();
+        else
+            DrawParty();
     }
 
     public void DrawDebugMap()

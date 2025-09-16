@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.Versioning;
 
@@ -12,6 +13,28 @@ public enum EWeightClass
     Medium = 6,
     Heavy = 8,
     Large = 10
+}
+
+public static class WeightClassExtensions
+{
+    public static string Short(this EWeightClass weightClass)
+    {
+        switch (weightClass)
+        {
+            case EWeightClass.Tiny:
+                return "T";
+            case EWeightClass.Small:
+                return "S";
+            case EWeightClass.Medium:
+                return "M";
+            case EWeightClass.Heavy:
+                return "H";
+            case EWeightClass.Large:
+                return "L";
+            default:
+                return "-";
+        }
+    }
 }
 
 public class Weapon(string Name, int attack, EWeightClass weight, int quality) : IAbilitySource

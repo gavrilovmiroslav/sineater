@@ -20,6 +20,8 @@ public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlo
 public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentDamageDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFlowStep;
+public record struct CombatFlow_PresentArmorDestroyed() : ICombatFlowStep;
+
 
 public record struct Die(IAbilitySource Source)
 {
@@ -47,7 +49,8 @@ public interface ICombatFlowParticipant
     
     public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow);
     public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow);
-
+    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow);
+    
     public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow);
     public IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow);
     
@@ -191,7 +194,12 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                         var a = defender.GetArmor();
                         if (a != null)
                         {
-                            a.Guard--;    
+                            a.Guard--;
+                            if (a.Guard == 0)
+                            {
+                                yield return defender.AsDefender_ApplyArmorDestroyed(this);
+                                yield return new CombatFlow_PresentArmorDestroyed();
+                            }
                         }
 
                         ArmorDented = false;
@@ -255,6 +263,15 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
             {
                 yield return new CombatFlow_PresentDamagingHitDie(index);
                 HitDieDamage = 1;
+                if (HitDice[index].Die.Source is Weapon wpn)
+                {
+                    Console.WriteLine((int)wpn.Weight + ", " + attacker.GetStats().Vigor);
+                    if ((int)wpn.Weight >= 5 && attacker.GetStats().Vigor >= 5)
+                    {
+                        HitDieDamage += 1;
+                    }
+                }
+
                 yield return attacker.AsAttacker_DetermineHitDieDamage(this);
                 yield return defender.AsDefender_DetermineHitDieDamage(this);
                 yield return new CombatFlow_PresentDamageDie(index, HitDieDamage);

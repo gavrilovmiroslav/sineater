@@ -554,12 +554,6 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
 
     public void Clear()
     {
-        for (int i = 0; i < screen.X; i++)
-        {
-            for (int j = 0; j < screen.Y; j++)
-            {
-                Set(i, j, ' ');
-            }
-        }
+        _glyphs.Clear();
     }
 }

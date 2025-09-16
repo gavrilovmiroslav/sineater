@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 
@@ -196,11 +198,14 @@ public class FadeOutAndLoadScreen(float seconds, IScreen screen) : IEnumerable
     }
 }
 
-public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> content) : IEnumerable
+public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> content, bool clear = false) : IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
-        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(23 + 5, 16 + 2), content);
+        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(28, 16), content);
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(new Vector2(5, 5), new Vector2(28, 16), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(5, 5), new Vector2(28 * 2, 16), ' ');
     }
 }
 
@@ -208,6 +213,37 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
 {
     public IEnumerator GetEnumerator()
     {
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
+        {
+            Top = Glyph.Bw(10, 27),
+            Bottom = Glyph.Bw(10, 29),
+            Left = Glyph.Bw(9, 28),
+            Right = Glyph.Bw(11, 28),
+        }, new Corners<Glyph>()
+        {
+            BottomLeft = Glyph.Bw(11, 30), 
+            BottomRight = Glyph.Bw(10, 30), 
+            TopLeft = Glyph.Bw(11, 31), 
+            TopRight = Glyph.Bw(10, 31),
+        });
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<OK>");
+        yield return new WaitForKey(Keys.Space);
+    }
+}
+
+public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Action<SineaterGame, TextLayerBox> content, bool flip = false) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var (u, v) = portrait;
+        var start = new Vector2(5, 5);
+        var end = new Vector2(23 + 5, 16);
+            
         var game = SineaterGame.Instance;
         game.Layers["mrmo"].SetRect(start, end, ' ');
         // 10,11 25,26
@@ -225,12 +261,13 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
             TopLeft = Glyph.Bw(11, 31), 
             TopRight = Glyph.Bw(10, 31),
         });
+        
         content(game, game.Layers["ascii"].Bounds(
-            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(start.X * 2 + 15, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
-        game.Layers["ascii"].Set((int)end.X * 2 - 12, (int)end.Y - 2, "OK ->");
+        game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<OK>");
+        game.Layers["portrait"].SetFlip(u, v, flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+        game.Layers["portrait"].Set(1, 2, Glyph.Bw(u, v));
         yield return new WaitForKey(Keys.Space);
-        game.Layers["mrmo"].SetRect(start, end, ' ');
-        game.Layers["ascii"].SetRect(start * 2, end * 2, ' ');
     }
 }

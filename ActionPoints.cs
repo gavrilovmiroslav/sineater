@@ -27,7 +27,7 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
     public int Total => width;
     public TextLayer Layer => layer;
     private readonly List<IBarPiece> _pieces = new();
-    public (int, int) Points => (_empty - _spent, _empty);
+    public (int, int) Points => (Remaining, _empty);
     
     private int _empty = width;
     private int _spent = 0;

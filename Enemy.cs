@@ -18,6 +18,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     public Armor? Armor = null;
     public readonly List<Trait> Traits = [];
     public (int, int) Icon;
+    public (int, int) Portrait;
     public (int, int) DeadIcon;
     public int Sin;
     public bool IsDead = false;
@@ -34,6 +35,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
             Name = "Goblin",
             Icon = (5, 64),
             DeadIcon = (8, 65),
+            Portrait = (0, 2),
             Sin = Rnd.Instance.D4,
             HP = Rnd.Instance.Next(5, 10),
             Tint = Color.LightGreen,
@@ -53,6 +55,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
             Name = "Hobgoblin",
             Icon = (6, 64),
             DeadIcon = (8, 65),
+            Portrait = (1, 2),
             Sin = 3 + Rnd.Instance.D2,
             HP = 8,
             Tint = Color.Red,
@@ -62,9 +65,10 @@ public class Enemy : ICharacter, ICombatFlowParticipant
         
         gob.LeftWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
         gob.RightWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
-        //gob.Traits.Add(new TraitSneaky());
-        //gob.Traits.Add(new TraitProficient());
-        gob.Traits.Add(new TraitWise());
+        if (Rnd.Instance.D6 <= 2) gob.Traits.Add(new TraitWise());
+        if (Rnd.Instance.D6 <= 2) gob.Traits.Add(new TraitSneaky());
+        if (Rnd.Instance.D6 <= 2) gob.Traits.Add(new TraitProficient());
+        
         return gob;
     }
 
@@ -108,9 +112,19 @@ public class Enemy : ICharacter, ICombatFlowParticipant
         return Name;
     }
 
+    public (int, int) GetPortait()
+    {
+        return Portrait;
+    }
+
     public void Die()
     {
         IsDead = true;
+    }
+
+    public void RemoveArmor()
+    {
+        this.Armor = null;
     }
 
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -159,6 +173,12 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     {
         foreach (var trait in Traits) 
             yield return trait.AsDefender_ApplyArmorDented(flow);
+    }
+
+    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsDefender_ApplyArmorDestroyed(flow);
     }
 
     public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)

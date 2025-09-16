@@ -15,9 +15,10 @@ public class SineaterGame : Game
     
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
-    
+
     private Texture2D _mrmo;
     private Texture2D _ibm;
+    private Texture2D _portraits;
     private Texture2D[] _room = new Texture2D[24];
     private float _dHour;
     private Texture2D _monitor;
@@ -90,7 +91,8 @@ public class SineaterGame : Game
     
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
-
+        _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
+        
         for (int i = 0; i < 24; i++)
         {
             _room[i] = Content.Load<Texture2D>(i.ToString().PadLeft(2, '0'));    
@@ -98,6 +100,12 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("monitor");
 
+        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 1, new Vector2(75, 0));
+        Layers.Add("porsmol", portraitSmolLayer);
+        
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 2, new Vector2(75, 0));
+        Layers.Add("portrait", portraitLayer);
+        
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 69), new Vector2(2, 1), 2, new Vector2(0, -3));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
@@ -197,7 +205,7 @@ public class SineaterGame : Game
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(Color.Black);
 
-        foreach (var layer in new[]{ "ascii", "mrmo" })
+        foreach (var layer in new[]{ "ascii", "mrmo", "portrait", "porsmol" })
         {
             Layers[layer].Draw(_spriteBatch);
         }

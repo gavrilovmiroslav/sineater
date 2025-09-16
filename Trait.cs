@@ -9,9 +9,10 @@ public interface ITrait : IAbilitySource
 {
 }
 
-public class Trait(string name) : ICombatFlowParticipant, IAbilitySource
+public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbilitySource
 {
     public string Name => name;
+    public string ShortName => shortName;
     
     public static List<Type> All = [
         typeof(TraitBalanced),
@@ -63,6 +64,11 @@ public class Trait(string name) : ICombatFlowParticipant, IAbilitySource
         yield break;
     }
 
+    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
+    {
+        yield break;
+    }
+
     public virtual IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
     {
         yield break;
@@ -94,7 +100,7 @@ public class Trait(string name) : ICombatFlowParticipant, IAbilitySource
     }
 }
 
-public class TraitSneaky() : Trait("Sneaky")
+public class TraitSneaky() : Trait("Sneaky", "Sn")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -110,7 +116,7 @@ public class TraitSneaky() : Trait("Sneaky")
     }
 }
 
-public class TraitProficient() : Trait("Proficient")
+public class TraitProficient() : Trait("Proficient", "Pr")
 {
     public override IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
     {
@@ -135,7 +141,7 @@ public class TraitProficient() : Trait("Proficient")
     }
 }
 
-public class TraitBalanced() : Trait("Balanced")
+public class TraitBalanced() : Trait("Balanced", "Ba")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -151,7 +157,7 @@ public class TraitBalanced() : Trait("Balanced")
     }
 }
 
-public class TraitSkilled() : Trait("Skilled")
+public class TraitSkilled() : Trait("Skilled", "Sk")
 {
     public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
@@ -163,7 +169,7 @@ public class TraitSkilled() : Trait("Skilled")
     }
 }
 
-public class TraitPadded() : Trait("Padded")
+public class TraitPadded() : Trait("Padded", "Pd")
 {
     public override IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
@@ -175,7 +181,7 @@ public class TraitPadded() : Trait("Padded")
     }
 }
 
-public class TraitHeavy() : Trait("Heavy")
+public class TraitHeavy() : Trait("Heavy", "Hv")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -196,7 +202,7 @@ public class TraitHeavy() : Trait("Heavy")
     }
 }
 
-public class TraitWise() : Trait("Wise")
+public class TraitWise() : Trait("Wise", "Ws")
 {
     public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {

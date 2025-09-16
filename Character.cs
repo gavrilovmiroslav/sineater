@@ -20,6 +20,29 @@ public enum ECharacterClass
 
 public static class ECharacterClassExtensions
 {
+    public static (int, int) GetPortrait(this ECharacterClass job)
+    {
+        switch (job)
+        {
+            case ECharacterClass.Wizard:
+                return (3, 0);
+            case ECharacterClass.Witch:
+                return (2, 0);
+            case ECharacterClass.Knight:
+                return (4, 0);
+            case ECharacterClass.Monk:
+                return (2, 1);
+            case ECharacterClass.Sage:
+                return (3, 1);
+            case ECharacterClass.Priest:
+                return (1, 1);
+            case ECharacterClass.Thief:
+                return (0, 1);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(job), job, null);
+        }
+    }
+    
     public static (int, int) GetImage(this ECharacterClass job)
     {
         switch (job)
@@ -119,7 +142,9 @@ public interface ICharacter : ICombatFlowParticipant
     public bool IsStunned();
     
     string GetName();
+    (int, int) GetPortait();
     void Die();
+    void RemoveArmor();
 }
 
 public class Character : ICharacter
@@ -191,6 +216,11 @@ public class Character : ICharacter
     public void Die()
     {}
 
+    public void RemoveArmor()
+    {
+        this.Armor = null;
+    }
+
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
         foreach (var trait in Traits) 
@@ -239,6 +269,12 @@ public class Character : ICharacter
             yield return trait.AsDefender_ApplyArmorDented(flow);
     }
 
+    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsDefender_ApplyArmorDestroyed(flow);
+    }
+
     public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
     {
         foreach (var trait in Traits) 
@@ -279,6 +315,11 @@ public class Character : ICharacter
     {
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
+    }
+
+    public (int, int) GetPortait()
+    {
+        return Job.GetPortrait();
     }
 }
 
