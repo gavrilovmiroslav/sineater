@@ -77,6 +77,11 @@ public class Enemy : ICharacter, ICombatFlowParticipant
         return Stats;
     }
 
+    public Color GetTint()
+    {
+        return Tint;
+    }
+    
     public ActionPoints GetAP()
     {
         return AP;

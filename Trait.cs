@@ -131,7 +131,7 @@ public class TraitProficient() : Trait("Proficient", "Pr")
                 flow.HitDieDamage += 1;
                 for (int i = 0; i <= 10; i++)
                 {
-                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + flow.CurrentHitDieIndex + 1, 12,
+                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + flow.CurrentHitDieIndex + 1, 12,
                         new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.CornflowerBlue, (float)i / 10.0f)));
                     yield return new WaitForSeconds(0.01f);
                 }
@@ -220,12 +220,12 @@ public class TraitWise() : Trait("Wise", "Ws")
                 {
                     if (j % 2 == 0)
                     {
-                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
                             new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Gray));
                     }
                     else
                     {
-                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
                             new Glyph(0, 0, Color.Black, Color.Black));
                     }
 
@@ -234,14 +234,14 @@ public class TraitWise() : Trait("Wise", "Ws")
 
                 for (int j = 0; j <= 10; j++)
                 {
-                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
                         new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
                     yield return new WaitForSeconds(0.01f);
                 }
                 var a = flow.AttackDiceRolled[i];
                 a.Value = Rnd.Instance.D6;
                 flow.AttackDiceRolled[i] = a;
-                SineaterGame.Instance.Layers["mrmo"].Set(2 + 24 + i + 1, 9,
+                SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
                     new Glyph(a.Value - 1, 68, Color.Black, Color.Green));
                 yield return new WaitForSeconds(0.1f);
             }

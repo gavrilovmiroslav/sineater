@@ -134,6 +134,7 @@ public record struct Stats
 public interface ICharacter : ICombatFlowParticipant
 {
     public Stats GetStats();
+    public Color GetTint();
     public ActionPoints GetAP();
     public Weapon? GetLeftWeapon();
     public Weapon? GetRightWeapon();
@@ -173,6 +174,11 @@ public class Character : ICharacter
         }
     }
 
+    public Color GetTint()
+    {
+        return Tint;
+    }
+    
     public Stats GetStats()
     {
         return Stats;
@@ -355,10 +361,13 @@ public record struct Party
                 case ECharacterClass.Wizard:
                     Characters[i].LeftWeapon = new Weapon("Staff", 2, EWeightClass.Heavy, 1);
                     Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Heavy, 1);
+                    Characters[i].Stats.Vigor -= 2;
+                    if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].RightWeapon = new Weapon("Dagger", 2,EWeightClass.Small, 4);
                     Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
+                    Characters[i].Traits.Add(new TraitSneaky());
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Large, 4);
@@ -367,6 +376,7 @@ public record struct Party
                 case ECharacterClass.Monk:
                     Characters[i].RightWeapon = new Weapon("Staff", 3, EWeightClass.Heavy, 1);
                     Characters[i].Armor = new Armor("Robe", 1, EWeightClass.Tiny, 1);
+                    Characters[i].Traits.Add(new TraitHeavy());
                     break;
                 case ECharacterClass.Sage:
                     Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 3);
@@ -380,6 +390,9 @@ public record struct Party
                 case ECharacterClass.Thief:
                     Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 7);
                     Characters[i].RightWeapon = new Weapon("Sword", 3, EWeightClass.Medium, 7);
+                    Characters[i].Traits.Add(new TraitSkilled());
+                    Characters[i].Stats.Vigor -= 1;
+                    if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

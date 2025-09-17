@@ -644,8 +644,6 @@ public class CombatMapScreen : IScreen
                     _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
                 }
-                var (u, v) = character.GetPortait();
-                _game.Layers["porsmol"].Set(9, 3, new Glyph(u, v, Color.Black, character.Tint));
             }
             index++;
         }
@@ -692,8 +690,6 @@ public class CombatMapScreen : IScreen
     public void Draw(GameTime gameTime)
     {
         if (_map == null) return;
-        _game.Layers["portrait"].Clear();
-        _game.Layers["porsmol"].Clear();
         
         if (_enemies.Count > 0)
         {
@@ -704,6 +700,8 @@ public class CombatMapScreen : IScreen
 
         if (_coroutineHandler.IsActive()) return;
         
+        _game.Layers["portrait"].Clear();
+        _game.Layers["porsmol"].Clear();
         DrawCombat();
         DrawGui();
     }
@@ -729,6 +727,9 @@ public class CombatMapScreen : IScreen
 
     private IEnumerable CombatAlgebra(CombatFlow flow, ICombatFlowStep step)
     {
+        var dw = 1;
+        var dh = 0;
+        
         if (step is CombatFlow_Notify notif)
         {
             Console.WriteLine(notif.Message);
@@ -736,10 +737,13 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_PresentAttacker att)
         {
-            _game.Layers["ascii"].Set(4 + 2 * _fullWidth - 1, 9, "ATK");
-            _game.Layers["ascii"].Set(4 + 2 * _fullWidth - 1, 10, "DEF");
-            _game.Layers["ascii"].Set(4 + 2 * _fullWidth - 1, 11, "HIT");
-            _game.Layers["ascii"].Set(4 + 2 * _fullWidth - 1, 12, "DMG");
+            var (ua, va) = att.Attacker.GetPortait();
+            _game.Layers["porsmol"].Set(10, 3, new Glyph(ua, va, Color.Black, att.Attacker.GetTint()));
+            _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 9, "ATK");
+            _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 10, "DEF");
+            _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 11, "HIT");
+            _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 12, "DMG");
+            
             if (att.Attacker is Character chr)
             {
                 var cs = _combatStates[chr];
@@ -754,6 +758,8 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_PresentDefender def)
         {
+            var (ud, vd) = def.Defender.GetPortait();
+            _game.Layers["porsmol"].Set(11, 3, new Glyph(ud, vd, Color.Black, def.Defender.GetTint()));
             if (def.Defender is Character chr)
             {
                 var cs = _combatStates[chr];
@@ -770,7 +776,7 @@ public class CombatMapScreen : IScreen
         {
             for (int i = 0; i < 5; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + ra.Index + 1, 9,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + ra.Index + 1, 9 + dh,
                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
             
                 yield return new WaitForSeconds(0.01f);
@@ -780,7 +786,7 @@ public class CombatMapScreen : IScreen
         {
             for (int i = 0; i < 5; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + rd.Index + 1, 10,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + rd.Index + 1, 10 + dh,
                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
             
                 yield return new WaitForSeconds(0.01f);
@@ -788,19 +794,19 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_PresentAttackDie a)
         {
-            _game.Layers["mrmo"].Set(2 + _fullWidth + a.Index + 1, 9,
+            _game.Layers["mrmo"].Set(2 + _fullWidth + dw + a.Index + 1, 9 + dh,
                 new Glyph(a.Value - 1, 68, Color.Black, Color.Gray));
         }
         else if (step is CombatFlow_PresentDefenseDie d)
         {
-            _game.Layers["mrmo"].Set(2 + _fullWidth + d.Index + 1, 10,
+            _game.Layers["mrmo"].Set(2 + _fullWidth + dw + d.Index + 1, 10 + dh,
                 new Glyph(d.Value - 1, 68, Color.Black, Color.Gray));
         }
         else if (step is CombatFlow_SortAttackDice _)
         {
             for (int i = 0; i < flow.AttackDiceRolled.Count; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, 9,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + i + 1, 9 + dh,
                     new Glyph(flow.AttackDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
                 yield return new WaitForSeconds(0.1f);
             }
@@ -809,7 +815,7 @@ public class CombatMapScreen : IScreen
         {
             for (int i = 0; i < flow.DefenseDiceRolled.Count; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + i + 1, 10,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + i + 1, 10 + dh,
                     new Glyph(flow.DefenseDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
                 yield return new WaitForSeconds(0.1f);
             }
@@ -818,12 +824,12 @@ public class CombatMapScreen : IScreen
         {
             for (int i = 0; i <= 10; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + strike.Index + 1, 9,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + strike.Index + 1, 9 + dh,
                     new Glyph(strike.Attack.Value - 1, 68, Color.Black, Color.Lerp(Color.Gold, Color.Gray, (float)i / 10.0f)));
 
                 if (strike.Defense != null)
                 {
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + strike.Index + 1, 10,
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + dw + strike.Index + 1, 10 + dh,
                         new Glyph(strike.Defense.Value - 1, 68, Color.Black,
                             Color.Lerp(Color.Gold, Color.Gray, (float)i / 10.0f)));
                 }
@@ -835,17 +841,17 @@ public class CombatMapScreen : IScreen
         {
             if (hit.Value == 0)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + hit.Index + 1, 11 + dh,
                     new Glyph(9, 68, Color.Black, Color.DarkGray));
             }
             else if (hit.Value == -1)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + hit.Index + 1, 11 + dh,
                     new Glyph(6, 68, Color.Black, Color.CadetBlue));
             }
             else
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + hit.Index + 1, 11,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + hit.Index + 1, 11 + dh,
                     new Glyph(hit.Value - 1, 68, Color.Black, Color.Gray));
             }
         }
@@ -856,7 +862,7 @@ public class CombatMapScreen : IScreen
             {
                 for (int i = 0; i <= 10; i++)
                 {
-                    _game.Layers["mrmo"].Set(2 + _fullWidth + damaging.Index + 1, 11,
+                    _game.Layers["mrmo"].Set(2 + _fullWidth + dw + damaging.Index + 1, 11 + dh,
                         new Glyph(die.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, (float)i / 10.0f)));
                 }
             }
@@ -866,7 +872,7 @@ public class CombatMapScreen : IScreen
         {
             for (int i = 0; i <= 10; i++)
             {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + dmg.Index + 1, 12,
+                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + dmg.Index + 1, 12 + dh,
                     new Glyph(dmg.Value - 1, 68, Color.Black, Color.Lerp(Color.Red, Color.DarkRed, (float)i / 10.0f)));
             }
             yield return new WaitForSeconds(0.1f);
