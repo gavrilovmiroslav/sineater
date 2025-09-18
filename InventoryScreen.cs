@@ -9,12 +9,14 @@ namespace SINEATER;
 public class InventoryScreen : IScreen
 {
     private SineaterGame _game;
-    private bool _showEquipped = false;
+    private bool _showOutfitting = false;
     private int _selected = -1;
-
-    public InventoryScreen(SineaterGame game)
+    private int _toBeEquipped = -1;
+    
+    public InventoryScreen(SineaterGame game, bool showOutfitting = false)
     {
         _game = game;
+        _showOutfitting = showOutfitting;
     }
     
     public void Initialize(SineaterGame game)
@@ -24,34 +26,189 @@ public class InventoryScreen : IScreen
     {
         if (KB.HasBeenPressed(Keys.Escape))
         {
-            _game.ScreenStack.Pop();
+            if (_toBeEquipped >= 0)
+            {
+                _toBeEquipped = -1;
+            }
+            else
+            {
+                _game.ScreenStack.Pop();
+                _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(36, 28), ' ');
+                _game.ScreenStack.Peek().Draw(gameTime);
+            }
         };
 
-        if (KB.HasBeenPressed(Keys.Tab))
+        if (_toBeEquipped >= 0)
         {
-            _showEquipped = !_showEquipped;
-        }
-
-        var oldSelected = _selected;
-        var newSelected = -1;
-        if (KB.HasBeenPressed(Keys.D1)) newSelected = 0;
-        if (KB.HasBeenPressed(Keys.D2)) newSelected = 1;
-        if (KB.HasBeenPressed(Keys.D3)) newSelected = 2;
-        if (KB.HasBeenPressed(Keys.D4)) newSelected = 3;
-        if (KB.HasBeenPressed(Keys.D5)) newSelected = 4;
-        if (KB.HasBeenPressed(Keys.D6)) newSelected = 5;
-        if (KB.HasBeenPressed(Keys.D7)) newSelected = 6;
-        if (KB.HasBeenPressed(Keys.D8)) newSelected = 7;
-        if (KB.HasBeenPressed(Keys.D9)) newSelected = 8;
-        if (KB.HasBeenPressed(Keys.A)) newSelected = 9;
-        if (KB.HasBeenPressed(Keys.B)) newSelected = 10;
-        if (KB.HasBeenPressed(Keys.C)) newSelected = 11;
-        if (newSelected != -1)
-        {
-            _selected = newSelected;
-            if (_selected == oldSelected)
+            var newSelected = -1;
+            if (KB.HasBeenPressed(Keys.D1)) newSelected = 0;
+            if (KB.HasBeenPressed(Keys.D2)) newSelected = 1;
+            if (KB.HasBeenPressed(Keys.D3)) newSelected = 2;
+            if (KB.HasBeenPressed(Keys.D4)) newSelected = 3;
+            if (KB.HasBeenPressed(Keys.D5)) newSelected = 4;
+            if (KB.HasBeenPressed(Keys.D6)) newSelected = 5;
+            if (KB.HasBeenPressed(Keys.D7)) newSelected = 6;
+            if (KB.HasBeenPressed(Keys.D8)) newSelected = 7;
+            if (KB.HasBeenPressed(Keys.D9)) newSelected = 8;
+            if (KB.HasBeenPressed(Keys.A)) newSelected = 9;
+            if (KB.HasBeenPressed(Keys.B)) newSelected = 10;
+            if (KB.HasBeenPressed(Keys.C)) newSelected = 11;
+            if (newSelected != -1)
             {
-                _selected = -1;
+                var charIndex = newSelected / 3;
+                var slotIndex = newSelected % 3;
+                Console.WriteLine($"char = {charIndex}, slot = {slotIndex}");
+                switch (slotIndex)
+                {
+                    case 0:
+                        if (_game.Party.Characters[charIndex].LeftWeapon == null && _game.Inventory.Items[_toBeEquipped] is Weapon lh)
+                        {
+                            _game.Party.Characters[charIndex].LeftWeapon = lh;
+                            _game.Inventory.Drop(_toBeEquipped);
+                            _toBeEquipped = -1;
+                        }
+                        break;
+                    case 1:
+                        if (_game.Party.Characters[charIndex].RightWeapon == null && _game.Inventory.Items[_toBeEquipped] is Weapon rh)
+                        {
+                            _game.Party.Characters[charIndex].RightWeapon = rh;
+                            _game.Inventory.Drop(_toBeEquipped);
+                            _toBeEquipped = -1;
+                        }
+                        break;
+                    case 2:
+                        if (_game.Party.Characters[charIndex].Armor == null && _game.Inventory.Items[_toBeEquipped] is Armor arm)
+                        {
+                            _game.Party.Characters[charIndex].Armor = arm;
+                            _game.Inventory.Drop(_toBeEquipped);
+                            _toBeEquipped = -1;
+                        }
+                        break;
+                }
+            }
+        }
+        else
+        {
+            if (KB.HasBeenPressed(Keys.Tab))
+            {
+                _showOutfitting = !_showOutfitting;
+            }
+
+            if (KB.HasBeenPressed(Keys.I))
+            {
+                _showOutfitting = false;
+            }
+
+            if (KB.HasBeenPressed(Keys.O))
+            {
+                _showOutfitting = true;
+            }
+
+            if (_selected >= 0 && KB.HasBeenPressed(Keys.D))
+            {
+                if (_showOutfitting)
+                {
+                    var charIndex = _selected / 3;
+                    var slotIndex = _selected % 3;
+
+                    switch (slotIndex)
+                    {
+                        case 0:
+                            _game.Party.Characters[charIndex].LeftWeapon = null;
+                            break;
+                        case 1:
+                            _game.Party.Characters[charIndex].RightWeapon = null;
+                            break;
+                        case 2:
+                            _game.Party.Characters[charIndex].Armor = null;
+                            break;
+                    }
+                }
+                else
+                {
+                    _game.Inventory.Drop(_selected);
+                }
+            }
+
+            if (_selected >= 0 && !_showOutfitting && _game.Inventory.Items[_selected] != null &&
+                KB.HasBeenPressed(Keys.P))
+            {
+                _toBeEquipped = _selected;
+                Console.WriteLine($"to be equipped = {_toBeEquipped}");
+                _showOutfitting = true;
+                return;
+            }
+
+            if (_selected >= 0 && _showOutfitting && KB.HasBeenPressed(Keys.U))
+            {
+                var charIndex = _selected / 3;
+                var slotIndex = _selected % 3;
+
+                IAbilitySource? saved = null;
+
+                switch (slotIndex)
+                {
+                    case 0:
+                        saved = _game.Party.Characters[charIndex].LeftWeapon;
+                        break;
+                    case 1:
+                        saved = _game.Party.Characters[charIndex].RightWeapon;
+                        break;
+                    case 2:
+                        saved = _game.Party.Characters[charIndex].Armor;
+                        break;
+                }
+
+                if (saved != null)
+                {
+                    var (okay, index) = _game.Inventory.Put(saved);
+                    if (okay)
+                    {
+                        switch (slotIndex)
+                        {
+                            case 0:
+                                _game.Party.Characters[charIndex].LeftWeapon = null;
+                                break;
+                            case 1:
+                                _game.Party.Characters[charIndex].RightWeapon = null;
+                                break;
+                            case 2:
+                                _game.Party.Characters[charIndex].Armor = null;
+                                break;
+                        }
+                    }
+                }
+            }
+
+            var oldSelected = _selected;
+            var newSelected = -1;
+            if (KB.HasBeenPressed(Keys.D1)) newSelected = 0;
+            if (KB.HasBeenPressed(Keys.D2)) newSelected = 1;
+            if (KB.HasBeenPressed(Keys.D3)) newSelected = 2;
+            if (KB.HasBeenPressed(Keys.D4)) newSelected = 3;
+            if (KB.HasBeenPressed(Keys.D5)) newSelected = 4;
+            if (KB.HasBeenPressed(Keys.D6)) newSelected = 5;
+            if (KB.HasBeenPressed(Keys.D7)) newSelected = 6;
+            if (KB.HasBeenPressed(Keys.D8)) newSelected = 7;
+            if (KB.HasBeenPressed(Keys.D9)) newSelected = 8;
+            if (KB.HasBeenPressed(Keys.A)) newSelected = 9;
+            if (KB.HasBeenPressed(Keys.B)) newSelected = 10;
+            if (KB.HasBeenPressed(Keys.C)) newSelected = 11;
+            if (KB.HasBeenPressed(Keys.Up))
+            {
+                newSelected = oldSelected - 1;
+                if (newSelected < 0)
+                    newSelected = 11;
+            }
+
+            if (KB.HasBeenPressed(Keys.Down)) newSelected = (oldSelected + 1) % 12;
+            if (newSelected != -1)
+            {
+                _selected = newSelected;
+                if (_selected == oldSelected)
+                {
+                    _selected = -1;
+                }
             }
         }
     }
@@ -66,6 +223,7 @@ public class InventoryScreen : IScreen
         var start = new Vector2(10, 0);
         var end = new Vector2(35, 17);
         _game.Layers["mrmo"].SetRect(start - Vector2.One, end + Vector2.One, ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
         _game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
         {
             Top = Glyph.Bw(10, 27),
@@ -80,9 +238,17 @@ public class InventoryScreen : IScreen
             TopRight = Glyph.Bw(10, 31),
         });
 
-        if (_showEquipped)
+        if (_showOutfitting)
         {
-            _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, "INVENTORY - EQUIPPED");
+            if (_toBeEquipped >= 0)
+            {
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, $"EQUIPPING {_game.Inventory.Items[_toBeEquipped].ToString().ToUpper()}");
+            }
+            else
+            {
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, "OUTFITTING");
+            }
+
             int i = 0;
             foreach (var character in _game.Party.Characters)
             {
@@ -90,48 +256,75 @@ public class InventoryScreen : IScreen
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.LeftWeapon is { } lh)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lh.Name} (Attack: {lh.Attack}, Weight: {lh.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lh.Name} (Attack: {lh.Attack}, Weight: {lh.Weight.ToString()})");
                 }
                 else
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   LH --");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH --");
                 }
                 i++;
                 
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.RightWeapon is { } rh)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rh.Name} (Attack: {rh.Attack}, Weight: {rh.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rh.Name} (Attack: {rh.Attack}, Weight: {rh.Weight.ToString()})");
                 }
                 else
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   RH --");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH --");
                 }
                 i++;
                 
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.Armor is { } armor)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   DF {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   DF {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
                 }
                 else
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}.   DF --");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   DF --");
                 }
                 i++;
             }
 
             if (_selected > -1)
             {
-                _game.Layers["ascii"].Set((int)start.X * 2 + 2, (int)start.Y + 3 + _selected, $">");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 3 + _selected, $">");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "[U]nequip [D]rop");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)end.Y - 1, "U", Color.Gold);
+                _game.Layers["ascii"].Set((int)start.X * 2 + 14, (int)end.Y - 1, "D", Color.Gold);
             }
         }
         else
         {
-            _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, "INVENTORY - BAG");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, "INVENTORY");
             for (int i = 0; i < 12; i++)
             {
-                _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)start.Y + 3 + i, $"{Nums[i]}. ");
+                var item = _game.Inventory.Items[i];
+                if (item is Weapon weapon)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. WPN {weapon.Name} (Attack: {weapon.Attack}, Weight: {weapon.Weight.ToString()})");
+                }
+                else if (item is Armor armor)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. ARM {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
+                }
+                else if (item is { } other)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. ??? {other}");
+                }
+                else
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. --");
+                }
+            }
+            
+            if (_selected > -1)
+            {
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 3 + _selected, $">");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "Equi[p] [D]rop");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 8, (int)end.Y - 1, "p", Color.Gold);
+                _game.Layers["ascii"].Set((int)start.X * 2 + 12, (int)end.Y - 1, "D", Color.Gold);
             }
         }
     }

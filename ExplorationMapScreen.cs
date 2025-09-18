@@ -81,6 +81,11 @@ public class ExplorationMapScreen : IScreen
                 _game.ScreenStack.Push(new InventoryScreen(_game));
             };
             
+            if (KB.HasBeenPressed(Keys.O))
+            {
+                _game.ScreenStack.Push(new InventoryScreen(_game, true));
+            };
+            
             if (KB.HasBeenPressed(Keys.F10))
             {
                 _debug = !_debug;
@@ -314,7 +319,7 @@ public class ExplorationMapScreen : IScreen
             _game.Layers["ascii"].Set(20 * index + 4, h - 1, $"{index + 1}. {character.Job}", character.Tint);
             for (int i = 0; i < character.Traits.Count; i++)
             {
-                _game.Layers["ascii"].Set(20 * index + (index > 1 ? -1 : 12), h + i, character.Traits[i].ShortName, character.Tint);
+                _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"[{character.Traits[i].ShortName}]", character.Tint);
             }
 
             _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);

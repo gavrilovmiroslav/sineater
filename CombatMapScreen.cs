@@ -755,17 +755,22 @@ public class CombatMapScreen : IScreen
             _rendered = false;
         }
         
-        if (KB.HasBeenPressed(Keys.F1)) Regenerate(ETerrainKind.Tomb);
-        if (KB.HasBeenPressed(Keys.F2)) Regenerate(ETerrainKind.Temple);
-        if (KB.HasBeenPressed(Keys.F3)) Regenerate(ETerrainKind.Cave);
-        if (KB.HasBeenPressed(Keys.F4)) Regenerate(ETerrainKind.Clearing);
-        if (KB.HasBeenPressed(Keys.F5)) Regenerate(ETerrainKind.Ruin);
-        if (KB.HasBeenPressed(Keys.F6)) Regenerate(ETerrainKind.Unknown);
-        if (KB.HasBeenPressed(Keys.Escape)) Regenerate(true);
+        // if (KB.HasBeenPressed(Keys.F1)) Regenerate(ETerrainKind.Tomb);
+        // if (KB.HasBeenPressed(Keys.F2)) Regenerate(ETerrainKind.Temple);
+        // if (KB.HasBeenPressed(Keys.F3)) Regenerate(ETerrainKind.Cave);
+        // if (KB.HasBeenPressed(Keys.F4)) Regenerate(ETerrainKind.Clearing);
+        // if (KB.HasBeenPressed(Keys.F5)) Regenerate(ETerrainKind.Ruin);
+        // if (KB.HasBeenPressed(Keys.F6)) Regenerate(ETerrainKind.Unknown);
+        // if (KB.HasBeenPressed(Keys.Escape)) Regenerate(true);
 
         if (KB.HasBeenPressed(Keys.I))
         {
             _game.ScreenStack.Push(new InventoryScreen(_game));
+        };
+        
+        if (KB.HasBeenPressed(Keys.O))
+        {
+            _game.ScreenStack.Push(new InventoryScreen(_game, true));
         };
         
         if (KB.HasBeenPressed(Keys.Tab))

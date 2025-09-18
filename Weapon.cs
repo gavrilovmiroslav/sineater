@@ -43,6 +43,11 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     public int Attack{ get; set; } = attack;
     public EWeightClass Weight{ get; set; } = weight;
     public int Quality{ get; set; } = quality;
+
+    public override string ToString()
+    {
+        return $"{Name} ({Attack}{Weight.Short()})";
+    }
 }
 
 public class Armor(string name, int guard, EWeightClass weight, int quality) : IAbilitySource
@@ -51,4 +56,9 @@ public class Armor(string name, int guard, EWeightClass weight, int quality) : I
     public int Guard{ get; set; } = guard;
     public EWeightClass Weight{ get; set; } = weight;
     public int Quality{ get; set; } = quality;
+
+    public override string ToString()
+    {
+        return $"{Name} ({Guard}{Weight.Short()})";
+    }
 }

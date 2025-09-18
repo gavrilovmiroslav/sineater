@@ -40,6 +40,7 @@ public class SineaterGame : Game
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
+    public Inventory Inventory = new();
     
     public SineaterGame()
     {
@@ -103,7 +104,7 @@ public class SineaterGame : Game
         var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 1, new Vector2(75, 0));
         Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 2, new Vector2(75, 0));
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 2, new Vector2(76, 0));
         Layers.Add("portrait", portraitLayer);
         
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 69), new Vector2(2, 1), 2, new Vector2(0, -3));
