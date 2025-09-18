@@ -18,7 +18,7 @@ public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlo
 public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentDamageDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFlowStep;
-public record struct CombatFlow_PresentArmorDestroyed() : ICombatFlowStep;
+public record struct CombatFlow_PresentArmorDestroyed : ICombatFlowStep;
 
 
 public record struct Die(IAbilitySource Source)
@@ -47,6 +47,8 @@ public interface ICombatFlowParticipant
     
     public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow);
     public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow);
+    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow);
+    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow);
     public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow);
     
     public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow);
@@ -243,5 +245,29 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         yield return attacker.AsAttacker_ApplyTotalIncomingDamageModifiers(this);
         yield return defender.AsDefender_ApplyTotalIncomingDamageModifiers(this);
         yield return new CombatFlow_TotalIncomingDamage(TotalIncomingDamage);
+
+        if (attacker.GetLeftWeapon() is Weapon lh && TotalIncomingDamage > lh.Attack)
+        {
+            if (Rnd.Instance.D100 < 10 - lh.Quality)
+            {
+                lh.Attack--;
+                if (lh.Attack == 0)
+                {
+                    yield return attacker.AsAttacker_ApplyLeftWeaponShattered(this);
+                }
+            }
+        }
+        
+        if (attacker.GetLeftWeapon() is Weapon rh && TotalIncomingDamage > rh.Attack)
+        {
+            if (Rnd.Instance.D100 < 10 - rh.Quality)
+            {
+                rh.Attack--;
+                if (rh.Attack == 0)
+                {
+                    yield return attacker.AsAttacker_ApplyRightWeaponShattered(this);
+                }
+            }
+        } 
     }
 }

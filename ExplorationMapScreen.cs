@@ -70,6 +70,7 @@ public class ExplorationMapScreen : IScreen
 
     public void Update(GameTime gameTime)
     {
+        _game.Party.Selected = -1;
         if (_coroutineHandler.IsActive())
         {
             _coroutineHandler.Update();
@@ -227,7 +228,12 @@ public class ExplorationMapScreen : IScreen
             yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
+                    var pot = new PotionBloodReliquary();
                     bnd.Add($"{_locations[(x, y)].GetName()} You found...");
+                    bnd.Newline();
+                    bnd.Add($"  a {pot}!");
+                    _game.Inventory.Put(pot);
+                    _locations.Remove((x, y));
                 });
         }
         else if (l is LocationNPC npc)

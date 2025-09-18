@@ -275,6 +275,20 @@ public class Character : ICharacter
             yield return trait.AsDefender_ApplyArmorDented(flow);
     }
 
+    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsAttacker_ApplyLeftWeaponShattered(flow);
+        this.LeftWeapon = null;
+    }
+
+    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsAttacker_ApplyRightWeaponShattered(flow);
+        this.RightWeapon = null;
+    }
+
     public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
     {
         foreach (var trait in Traits)
@@ -368,6 +382,7 @@ public record struct Party
                     Characters[i].RightWeapon = new Weapon("Dagger", 2,EWeightClass.Small, 4);
                     Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
                     Characters[i].Traits.Add(new TraitSneaky());
+                    SineaterGame.Instance.Inventory.Put(new PotionBloodReliquary());
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Large, 4);
@@ -382,6 +397,8 @@ public record struct Party
                     Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 3);
                     Characters[i].RightWeapon = new Weapon("Book", 2, EWeightClass.Heavy, 5);
                     Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 1);
+                    for (var n = 0; n < 3; n++)
+                        SineaterGame.Instance.Inventory.Put(new PotionBloodReliquary());
                     break;
                 case ECharacterClass.Priest:
                     Characters[i].LeftWeapon = new Weapon("Sceptre", 3, EWeightClass.Heavy, 8);
@@ -416,4 +433,6 @@ public record struct Party
             return max;
         }
     }
+
+    public int Selected { get; set; } = -1;
 }

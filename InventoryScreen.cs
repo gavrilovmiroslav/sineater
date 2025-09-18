@@ -12,6 +12,7 @@ public class InventoryScreen : IScreen
     private bool _showOutfitting = false;
     private int _selected = -1;
     private int _toBeEquipped = -1;
+    private CoroutineHandler _coroutineHandler = new();
     
     public InventoryScreen(SineaterGame game, bool showOutfitting = false)
     {
@@ -24,6 +25,12 @@ public class InventoryScreen : IScreen
 
     public void Update(GameTime gameTime)
     {
+        if (_coroutineHandler.IsActive())
+        {
+            _coroutineHandler.Update();
+            return;
+        }
+        
         if (KB.HasBeenPressed(Keys.Escape))
         {
             if (_toBeEquipped >= 0)
@@ -161,7 +168,7 @@ public class InventoryScreen : IScreen
 
                 if (saved != null)
                 {
-                    var (okay, index) = _game.Inventory.Put(saved);
+                    var (okay, _) = _game.Inventory.Put(saved);
                     if (okay)
                     {
                         switch (slotIndex)
@@ -179,7 +186,22 @@ public class InventoryScreen : IScreen
                     }
                 }
             }
-
+            else if (_selected >= 0 && !_showOutfitting && KB.HasBeenPressed(Keys.U))
+            {
+                if (_game.Inventory.Items[_selected] is IItem item)
+                {
+                    if (_game.Party.Selected == -1)
+                    {
+                        _coroutineHandler.Run(item.ApplyItemUsed(_game.Party.Characters[0]));
+                    }
+                    else
+                    {
+                        _coroutineHandler.Run(item.ApplyItemUsed(_game.Party.Characters[_game.Party.Selected]));
+                    }
+                    _game.Inventory.Drop(_selected);
+                }
+            }
+            
             var oldSelected = _selected;
             var newSelected = -1;
             if (KB.HasBeenPressed(Keys.D1)) newSelected = 0;
@@ -290,9 +312,10 @@ public class InventoryScreen : IScreen
             if (_selected > -1)
             {
                 _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 3 + _selected, $">");
-                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "[U]nequip [D]rop");
+                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "[U]NEQUIP [D]ROP [T]HROW");
                 _game.Layers["ascii"].Set((int)start.X * 2 + 4, (int)end.Y - 1, "U", Color.Gold);
                 _game.Layers["ascii"].Set((int)start.X * 2 + 14, (int)end.Y - 1, "D", Color.Gold);
+                _game.Layers["ascii"].Set((int)start.X * 2 + 21, (int)end.Y - 1, "T", Color.Gold);
             }
         }
         else
@@ -309,22 +332,36 @@ public class InventoryScreen : IScreen
                 {
                     _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. ARM {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
                 }
-                else if (item is { } other)
+                else if (item is Item other)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. ??? {other}");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {other}");
                 }
                 else
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}. --");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     --");
                 }
             }
             
             if (_selected > -1)
             {
                 _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 3 + _selected, $">");
-                _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "Equi[p] [D]rop");
-                _game.Layers["ascii"].Set((int)start.X * 2 + 8, (int)end.Y - 1, "p", Color.Gold);
+                if (_game.Inventory.Items[_selected] is IEquippable eq)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)end.Y - 1, "EQUI[P]");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 8, (int)end.Y - 1, "P", Color.Gold);
+                }
+
+                _game.Layers["ascii"].Set((int)start.X * 2 + 11, (int)end.Y - 1, "[D]ROP");
                 _game.Layers["ascii"].Set((int)start.X * 2 + 12, (int)end.Y - 1, "D", Color.Gold);
+
+                if (_game.Inventory.Items[_selected] is IItem item)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 18, (int)end.Y - 1, "[T]HROW");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 19, (int)end.Y - 1, "T", Color.Gold);
+                    
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 26, (int)end.Y - 1, "[U]SE");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 27, (int)end.Y - 1, "U", Color.Gold);
+                }
             }
         }
     }

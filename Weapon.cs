@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 namespace SINEATER;
 
 public interface IAbilitySource {}
+public interface IEquippable {}
 
 public enum EWeightClass
 {
@@ -37,7 +38,7 @@ public static class WeightClassExtensions
     }
 }
 
-public class Weapon(string name, int attack, EWeightClass weight, int quality) : IAbilitySource
+public class Weapon(string name, int attack, EWeightClass weight, int quality) : IAbilitySource, IEquippable
 {
     public string Name { get; set; } = name;
     public int Attack{ get; set; } = attack;
@@ -50,7 +51,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     }
 }
 
-public class Armor(string name, int guard, EWeightClass weight, int quality) : IAbilitySource
+public class Armor(string name, int guard, EWeightClass weight, int quality) : IAbilitySource, IEquippable
 {
     public string Name { get; set; } = name;
     public int Guard{ get; set; } = guard;

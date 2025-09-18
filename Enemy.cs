@@ -180,10 +180,25 @@ public class Enemy : ICharacter, ICombatFlowParticipant
             yield return trait.AsDefender_ApplyArmorDented(flow);
     }
 
+    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsAttacker_ApplyLeftWeaponShattered(flow);
+        this.LeftWeapon = null;
+    }
+
+    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsAttacker_ApplyRightWeaponShattered(flow);
+        this.RightWeapon = null;
+    }
+
     public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
     {
         foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyArmorDestroyed(flow);
+        this.Armor = null;
     }
 
     public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)

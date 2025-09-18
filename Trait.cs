@@ -64,6 +64,16 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
         yield break;
     }
 
+    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
+    {
+        yield break;
+    }
+
     public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
     {
         yield break;
@@ -239,7 +249,7 @@ public class TraitWise() : Trait("Wise", "Ws")
                     yield return new WaitForSeconds(0.01f);
                 }
                 var a = flow.AttackDiceRolled[i];
-                a.Value = Rnd.Instance.D6;
+                a.Value = Math.Min(6, a.Value + 1);
                 flow.AttackDiceRolled[i] = a;
                 SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
                     new Glyph(a.Value - 1, 68, Color.Black, Color.Green));
