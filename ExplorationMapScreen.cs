@@ -76,6 +76,11 @@ public class ExplorationMapScreen : IScreen
         }
         else
         {
+            if (KB.HasBeenPressed(Keys.I))
+            {
+                _game.ScreenStack.Push(new InventoryScreen(_game));
+            };
+            
             if (KB.HasBeenPressed(Keys.F10))
             {
                 _debug = !_debug;
@@ -327,7 +332,7 @@ public class ExplorationMapScreen : IScreen
         var index = 0;
         foreach (var character in _game.Party.Characters)
         {
-            var c = index % 2 == 0 ? Color.White : Color.CadetBlue; 
+            var c = character.Tint;
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + w / 2 - 3, h + 1 + index, new Glyph(ix, iy, Color.Black, c));
             _game.Layers["ascii"].Set(w + 2, h + 1 + index, $"{index + 1}. {character.Job}", c);

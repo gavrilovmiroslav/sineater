@@ -13,8 +13,6 @@ public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlow
 public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_PresentRollingDefenseDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentDefenseDie(int Index, int Value) : ICombatFlowStep;
-public record struct CombatFlow_SortAttackDice() : ICombatFlowStep;
-public record struct CombatFlow_SortDefenseDice() : ICombatFlowStep;
 public record struct CombatFlow_PresentStrike(int Index, RolledDie Attack, RolledDie? Defense) : ICombatFlowStep; 
 public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
@@ -71,10 +69,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     public List<RolledDie> AttackDiceRolled = [];
     public List<RolledDie> DefenseDiceRolled = [];
     public List<RolledDie?> HitDice = [];
-    public Dictionary<int, int> HitHistogram = [];
     
-    public bool SortAttackDice = false;
-    public bool SortDefenseDice = false;
     public int TotalStrikeCount = 0;
     public int CurrentStrikeCount = 0;
     public AttackDefensePair CurrentPair;
@@ -135,12 +130,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
 
         yield return attacker.AsAttacker_ApplyCombatModifiers(this);
-        if (SortAttackDice)
-        {
-            AttackDiceRolled.Sort((a, b) => -a.Value.CompareTo(b.Value));
-            yield return new CombatFlow_SortAttackDice();
-        }
-
+        
         n = 0;
         foreach (var die in DefenseDicePreRoll)
         {
@@ -151,13 +141,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
             n++;
         }
         
-        if (defender.IsStunned()) SortDefenseDice = false;
         yield return defender.AsDefender_ApplyCombatModifiers(this);
-        if (SortDefenseDice)
-        {
-            DefenseDiceRolled.Sort((a, b) => -a.Value.CompareTo(b.Value));
-            yield return new CombatFlow_SortDefenseDice();
-        }
         
         // 4
         
@@ -225,29 +209,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
         
         // 5
-        
-        for (var index = 0; index < HitDice.Count; index++)
-        {
-            var d = HitDice[index];
-            if (d == null) continue;
-            var v = d.Value;
-            if (!HitHistogram.ContainsKey(v))
-            {
-                HitHistogram[v] = 0;
-            }
-            HitHistogram[v]++;
-        }
-
-        // 6
-        
-        var maxValue = 0;
-        for (var i = 1; i <= 6; i++)
-        {
-            if (HitHistogram.ContainsKey(i))
-            {
-                maxValue = i;
-            }
-        }
         
         yield return attacker.AsAttacker_ApplyHitModifiers(this);
         yield return defender.AsDefender_ApplyHitModifiers(this);

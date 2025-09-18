@@ -51,6 +51,13 @@ public class CombatConfig
     public ETerrainKind Terrain;
 }
 
+public enum EStatDisplay
+{
+    Stats = 0,
+    Details = 1,
+    Equipment = 2,
+}
+
 public class CombatMapScreen : IScreen
 {
     private readonly int _fullWidth = 24, _fullHeight = 22;
@@ -72,7 +79,7 @@ public class CombatMapScreen : IScreen
     private Dictionary<Character, CombatState> _combatStates = new();
     private List<Character> _party = new();
     private List<Enemy> _enemies = new();
-    private bool _showStats = false;
+    private EStatDisplay _showStats = EStatDisplay.Stats;
     private ECombatState _combatState = ECombatState.PlayerPhase;
     private EPresentationState _presentation = EPresentationState.Preparing;
     private int _playerSelectedIndex = -1;
@@ -592,16 +599,50 @@ public class CombatMapScreen : IScreen
         _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 0), new Vector2(2 + _fullWidth + 40, 2 + 10), ' ');
         _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 0), new Vector2(2 * _fullWidth + 40, 2 + 6), ' ');
 
-        if (_showStats)
+        if (_showStats == EStatDisplay.Stats)
         {
             DrawStats();
         }
-        else
+        else if (_showStats == EStatDisplay.Details)
         {
             DrawDetails();
         }
+        else
+        {
+            DrawLoadout();
+        }
     }
 
+    private void DrawLoadout()
+    {
+        _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SKILLS     ITEMS");
+        var index = 0;
+        foreach (var character in _party)
+        {
+            var (ix, iy) = character.Job.GetImage();
+            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
+                new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
+            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
+                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            
+            var traits = string.Join(" ", character.Traits.Select(t => t.ShortName));
+            if (traits.Length == 0) traits = "--";
+            _game.Layers["ascii"].Set(2 * _fullWidth + 10, 1 + index, traits,
+                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            
+            if (_playerSelectedIndex == index)
+            {
+                _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
+                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
+                {
+                    _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
+                        new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
+                }
+            }
+            index++;
+        }
+    }
+    
     private void DrawDetails()
     {
         _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SEE MOV LH RH DF");
@@ -722,7 +763,15 @@ public class CombatMapScreen : IScreen
         if (KB.HasBeenPressed(Keys.F6)) Regenerate(ETerrainKind.Unknown);
         if (KB.HasBeenPressed(Keys.Escape)) Regenerate(true);
 
-        _showStats = KB.IsPressed(Keys.LeftAlt);
+        if (KB.HasBeenPressed(Keys.I))
+        {
+            _game.ScreenStack.Push(new InventoryScreen(_game));
+        };
+        
+        if (KB.HasBeenPressed(Keys.Tab))
+        {
+            _showStats = (EStatDisplay) (((int)_showStats + 1) % 3);
+        }
     }
 
     private IEnumerable CombatAlgebra(CombatFlow flow, ICombatFlowStep step)
@@ -759,7 +808,8 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_PresentDefender def)
         {
             var (ud, vd) = def.Defender.GetPortait();
-            _game.Layers["porsmol"].Set(11, 3, new Glyph(ud, vd, Color.Black, def.Defender.GetTint()));
+            _game.Layers["mrmo"].Set(2 + _fullWidth + dw + 1, 9 + dh - 2, "vs");
+            _game.Layers["porsmol"].Set(12, 3, new Glyph(ud, vd, Color.Black, def.Defender.GetTint()));
             if (def.Defender is Character chr)
             {
                 var cs = _combatStates[chr];
@@ -801,24 +851,6 @@ public class CombatMapScreen : IScreen
         {
             _game.Layers["mrmo"].Set(2 + _fullWidth + dw + d.Index + 1, 10 + dh,
                 new Glyph(d.Value - 1, 68, Color.Black, Color.Gray));
-        }
-        else if (step is CombatFlow_SortAttackDice _)
-        {
-            for (int i = 0; i < flow.AttackDiceRolled.Count; i++)
-            {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + i + 1, 9 + dh,
-                    new Glyph(flow.AttackDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
-        else if (step is CombatFlow_SortDefenseDice _)
-        {
-            for (int i = 0; i < flow.DefenseDiceRolled.Count; i++)
-            {
-                _game.Layers["mrmo"].Set(2 + _fullWidth + dw + i + 1, 10 + dh,
-                    new Glyph(flow.DefenseDiceRolled[i].Value - 1, 68, Color.Black, Color.Gray));
-                yield return new WaitForSeconds(0.1f);
-            }
         }
         else if (step is CombatFlow_PresentStrike strike)
         {
@@ -938,6 +970,7 @@ public class CombatMapScreen : IScreen
         
         if (defender is Enemy { IsDead: true } e)
         {
+            _game.Layers["porsmol"].Clear();
             var (u, v) = e.DeadIcon;
             _enemies.Remove(e);
             _game.Layers["mrmo"].Set(e.X + _offsetX, e.Y + _offsetY, new Glyph(u, v, Color.Black, Color.Red));
@@ -959,8 +992,6 @@ public class CombatMapScreen : IScreen
             }, true);
             Draw(new GameTime());
         }
-        
-        yield return new WaitForKey(Keys.Space);
     }
     
     // private IEnumerable Attack(ICharacter attacker, ICharacter defender)
@@ -1218,13 +1249,13 @@ public class CombatMapScreen : IScreen
     
     private void CheckPlayerInputs()
     {
-        if (KB.HasBeenPressed(Keys.Tab))
+        if (KB.HasBeenPressed(Keys.Space))
         {
             _playerSelectedIndex = (_playerSelectedIndex + 1) % 4;
             _secondCounter = 0;
         }
 
-        if (KB.HasBeenPressed(Keys.Space))
+        if (KB.HasBeenPressed(Keys.Enter))
         {
             _coroutineHandler.Run(Coroutine_EndTurn());
         }

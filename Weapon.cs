@@ -37,15 +37,17 @@ public static class WeightClassExtensions
     }
 }
 
-public class Weapon(string Name, int attack, EWeightClass weight, int quality) : IAbilitySource
+public class Weapon(string name, int attack, EWeightClass weight, int quality) : IAbilitySource
 {
+    public string Name { get; set; } = name;
     public int Attack{ get; set; } = attack;
     public EWeightClass Weight{ get; set; } = weight;
     public int Quality{ get; set; } = quality;
 }
 
-public class Armor(string Name, int guard, EWeightClass weight, int quality) : IAbilitySource
+public class Armor(string name, int guard, EWeightClass weight, int quality) : IAbilitySource
 {
+    public string Name { get; set; } = name;
     public int Guard{ get; set; } = guard;
     public EWeightClass Weight{ get; set; } = weight;
     public int Quality{ get; set; } = quality;
