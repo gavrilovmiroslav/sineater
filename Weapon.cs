@@ -4,7 +4,12 @@ using System.Runtime.Versioning;
 
 namespace SINEATER;
 
-public interface IAbilitySource {}
+public interface IAbilitySource
+{
+    public string GetName();
+    public Glyph GetIcon();
+}
+
 public interface IEquippable {}
 
 public enum EWeightClass
@@ -49,6 +54,16 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     {
         return $"{Name} ({Attack}{Weight.Short()})";
     }
+
+    public string GetName()
+    {
+        return Name;
+    }
+
+    public virtual Glyph GetIcon()
+    {
+        return Glyph.Bw(14, 67);
+    }
 }
 
 public class Armor(string name, int guard, EWeightClass weight, int quality) : IAbilitySource, IEquippable
@@ -61,5 +76,15 @@ public class Armor(string name, int guard, EWeightClass weight, int quality) : I
     public override string ToString()
     {
         return $"{Name} ({Guard}{Weight.Short()})";
+    }
+
+    public string GetName()
+    {
+        return Name;
+    }
+
+    public Glyph GetIcon()
+    {
+        return Glyph.Bw(8, 68);
     }
 }

@@ -32,7 +32,6 @@
     </ItemGroup>
     <ItemGroup>
       <ClCompile Include="Content\crt.fx" />
-      <ClCompile Include="Content\scanline.fx" />
     </ItemGroup>
     <ItemGroup>
       <Reference Include="wvcs">

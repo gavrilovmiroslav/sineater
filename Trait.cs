@@ -108,6 +108,16 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
     {
         yield break;
     }
+
+    public string GetName()
+    {
+        return Name;
+    }
+
+    public virtual Glyph GetIcon()
+    {
+        return Glyph.Bw(0, 0);
+    }
 }
 
 public class TraitSneaky() : Trait("Sneaky", "Sn")

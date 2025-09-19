@@ -146,6 +146,22 @@ public class InventoryScreen : IScreen
                 return;
             }
 
+            if (_selected >= 0 && _game.Inventory.Items[_selected] != null 
+                               && _game.ScreenStack.Any(i => i is CombatMapScreen) 
+                               && KB.HasBeenPressed(Keys.T))
+            {
+                _game.ScreenStack.Pop();
+                var cmb = _game.ScreenStack.Peek() as CombatMapScreen;
+                var owner = _game.Party.Characters[cmb.PlayerSelectedIndex];
+                cmb.RangedActionConfig = new RangedTargetting
+                {
+                    Source = _game.Inventory.Items[_selected],
+                    Owner = owner,
+                    X = cmb.CombatStates[owner].X,
+                    Y = cmb.CombatStates[owner].Y
+                };
+            }
+            
             if (_selected >= 0 && _showOutfitting && KB.HasBeenPressed(Keys.U))
             {
                 var charIndex = _selected / 3;
@@ -351,14 +367,20 @@ public class InventoryScreen : IScreen
                     _game.Layers["ascii"].Set((int)start.X * 2 + 8, (int)end.Y - 1, "P", Color.Gold);
                 }
 
-                _game.Layers["ascii"].Set((int)start.X * 2 + 11, (int)end.Y - 1, "[D]ROP");
-                _game.Layers["ascii"].Set((int)start.X * 2 + 12, (int)end.Y - 1, "D", Color.Gold);
+                if (_game.Inventory.Items[_selected] is not null)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 11, (int)end.Y - 1, "[D]ROP");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 12, (int)end.Y - 1, "D", Color.Gold);
+                }
 
                 if (_game.Inventory.Items[_selected] is IItem item)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 18, (int)end.Y - 1, "[T]HROW");
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 19, (int)end.Y - 1, "T", Color.Gold);
-                    
+                    if (_game.ScreenStack.Any(i => i is CombatMapScreen))
+                    {
+                        _game.Layers["ascii"].Set((int)start.X * 2 + 18, (int)end.Y - 1, "[T]HROW");
+                        _game.Layers["ascii"].Set((int)start.X * 2 + 19, (int)end.Y - 1, "T", Color.Gold);
+                    }
+
                     _game.Layers["ascii"].Set((int)start.X * 2 + 26, (int)end.Y - 1, "[U]SE");
                     _game.Layers["ascii"].Set((int)start.X * 2 + 27, (int)end.Y - 1, "U", Color.Gold);
                 }

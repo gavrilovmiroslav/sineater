@@ -1,4 +1,5 @@
 using System.Collections;
+using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
@@ -29,6 +30,16 @@ public class Item(string name) : IAbilitySource, IItem
     {
         yield break;
     }
+
+    public string GetName()
+    {
+        return Name;
+    }
+
+    public virtual Glyph GetIcon()
+    {
+        return Glyph.Bw(0, 0);
+    }
 }
 
 public class Potion(string name) : Item(name)
@@ -41,6 +52,11 @@ public class Potion(string name) : Item(name)
     public override string ToString()
     {
         return $"{name} (Potion)";
+    }
+
+    public override Glyph GetIcon()
+    {
+        return Glyph.Bw(1, 0);
     }
 }
 
@@ -71,5 +87,10 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
     public override IEnumerable ApplyItemShattered(int X, int Y)
     {
         yield break;
+    }
+    
+    public override Glyph GetIcon()
+    {
+        return new Glyph(1, 0, Color.Black, Color.Red);
     }
 }

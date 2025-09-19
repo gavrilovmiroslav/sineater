@@ -22,9 +22,10 @@ public class SineaterGame : Game
     private Texture2D[] _room = new Texture2D[24];
     private float _dHour;
     private Texture2D _monitor;
-
+    
     private Effect _crt;
-    private RenderTarget2D _renderTarget;
+    private RenderTarget2D _renderTargetGame;
+    private RenderTarget2D _renderTargetMonitor;
     
     private const int Width = 1280;
     private const int Height = 960;
@@ -88,7 +89,8 @@ public class SineaterGame : Game
         _graphics.ApplyChanges();
         
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _renderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+        _renderTargetGame = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+        _renderTargetMonitor = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
     
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
@@ -155,14 +157,13 @@ public class SineaterGame : Game
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
-        //ScreenStack.Push(new CombatMapScreen(this, ETerrainKind.Cave, title: "GOBLIN CAVE"));
     }
     
     protected override void Update(GameTime gameTime)
     {
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
-        _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
+        _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
         
         if (_currentMinutes > HourLengthMillis)
         {
@@ -203,33 +204,38 @@ public class SineaterGame : Game
         ActionPoints.Draw(10, 25);
         
         var focus = _focus.Get();
-        GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.Black);
 
+        GraphicsDevice.Clear(Color.Black);
+        GraphicsDevice.SetRenderTarget(_renderTargetGame);
         foreach (var layer in new[]{ "ascii", "mrmo", "portrait", "porsmol" })
         {
             Layers[layer].Draw(_spriteBatch);
         }
+        GraphicsDevice.SetRenderTarget(null);
         
+        GraphicsDevice.SetRenderTarget(_renderTargetMonitor);
+        _spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
+        _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+            new Color(1.0f, 1.0f, 1.0f, 1.0f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            SpriteEffects.None, 0.0f);
+        _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+            new Color(1.0f, 1.0f, 1.0f, _dHour), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            SpriteEffects.None, 0.0f);
+        _spriteBatch.End();
         GraphicsDevice.SetRenderTarget(null);
         
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp, effect: _crt);
-        _spriteBatch.Draw(_renderTarget, Vector2.Zero, Color.White);
+        _spriteBatch.Draw(_renderTargetGame, Vector2.Zero, Color.White);
+        _spriteBatch.End();
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.5f));
         _spriteBatch.End();
         
-        _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        var f = 1 - focus * 0.8f;
-        _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, Math.Clamp(1 - _dHour, 0, 1)) * 0.35f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
-            SpriteEffects.None, 0.0f);
-        _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, Math.Clamp(_dHour, 0, 1)) * 0.35f, 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
-            SpriteEffects.None, 0.0f);
-        _spriteBatch.End();
+        this.Window.Title = $"SINEATER | {_dHour}";
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
         _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(f, f, f, 0.01f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+            new Color(1, 1, 1, 0.2f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         base.Draw(gameTime);

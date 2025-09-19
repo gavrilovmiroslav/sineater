@@ -80,9 +80,8 @@ public class ExplorationMapScreen : IScreen
             if (KB.HasBeenPressed(Keys.I))
             {
                 _game.ScreenStack.Push(new InventoryScreen(_game));
-            };
-            
-            if (KB.HasBeenPressed(Keys.O))
+            }
+            else if (KB.HasBeenPressed(Keys.O))
             {
                 _game.ScreenStack.Push(new InventoryScreen(_game, true));
             };

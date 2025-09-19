@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
@@ -58,6 +59,13 @@ public enum EStatDisplay
     Equipment = 2,
 }
 
+public struct RangedTargetting
+{
+    public IAbilitySource Source;
+    public ICharacter Owner;
+    public int X, Y;
+}
+
 public class CombatMapScreen : IScreen
 {
     private readonly int _fullWidth = 24, _fullHeight = 22;
@@ -76,16 +84,17 @@ public class CombatMapScreen : IScreen
     private bool[,] _visited;
     ReadOnlyCollection<Cell>? _fov = null;
     HashSet<(int, int)>? _isInActivePartyFOV = new();
-    private Dictionary<Character, CombatState> _combatStates = new();
+    public Dictionary<Character, CombatState> CombatStates = new();
     private List<Character> _party = new();
     private List<Enemy> _enemies = new();
     private EStatDisplay _showStats = EStatDisplay.Stats;
     private ECombatState _combatState = ECombatState.PlayerPhase;
     private EPresentationState _presentation = EPresentationState.Preparing;
-    private int _playerSelectedIndex = -1;
+    public int PlayerSelectedIndex = -1;
     private Glyph[,] _groundGlyphs;
     private CoroutineHandler _coroutineHandler = new();
     private ActionPoints _enemyActionPoints;
+    public RangedTargetting? RangedActionConfig = null;
     
     private void Regenerate(bool resize) {
         if (resize)
@@ -127,7 +136,7 @@ public class CombatMapScreen : IScreen
         _coroutineHandler.Clear();
         _presentation = EPresentationState.Preparing;
         _combatState = ECombatState.PlayerPhase;
-        _combatStates.Clear();
+        CombatStates.Clear();
         _kind = kind;
         var (a, b, c, d, e) = (0, 0, 0, _width, _height);
         switch (_kind)
@@ -242,7 +251,7 @@ public class CombatMapScreen : IScreen
             var v = vs.Current;
             entryPositions.Add((v.X, v.Y));
             var character = _game.Party.Characters[idx];
-            _combatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
+            CombatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
             _party.Add(character);
             var freeTiles = new HashSet<Cell>(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
             idx++;
@@ -265,7 +274,7 @@ public class CombatMapScreen : IScreen
                 entryPositions.Add((v.X, v.Y));
                 toDeleteEntries.Add(v);
                 character = _game.Party.Characters[idx];
-                _combatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
+                CombatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
                 _party.Add(character);
                 freeTiles.UnionWith(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
                 freeTiles.RemoveWhere(t => entryPositions.Contains((t.X, t.Y)));
@@ -309,11 +318,12 @@ public class CombatMapScreen : IScreen
         _extraFill = 0;
     }
 
-    private void UpdateFov()
+    private void UpdateFov(bool onlyOneChar = false)
     {
         _fov = null;
-        foreach (var (chr, combatState) in _combatStates)
+        foreach (var (chr, combatState) in CombatStates)
         {
+            if (onlyOneChar && _game.Party.Characters[PlayerSelectedIndex] != chr) continue;
             if (_fov == null)
             {
                 _fov = _fieldOfView.ComputeFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);
@@ -329,7 +339,7 @@ public class CombatMapScreen : IScreen
         
         _perspectives = new ReadOnlyCollection<Cell>?[4];
         int i = 0;
-        foreach (var (chr, combatState) in _combatStates)
+        foreach (var (chr, combatState) in CombatStates)
         {
             _perspectives[i] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);
             i++;
@@ -343,7 +353,7 @@ public class CombatMapScreen : IScreen
             }
         }
         
-        foreach (var (chr, _) in _combatStates)
+        foreach (var (chr, _) in CombatStates)
         {
             foreach (var cell in _perspectives[chr.Index])
             {
@@ -372,19 +382,19 @@ public class CombatMapScreen : IScreen
                 {
                     var ci = 0;
                     var cs = new[] {Color.White, Color.White};
-                    if (c.R > 0) cs[ci++] = _combatStates[_game.Party.Characters[0]].Tint;
-                    if (c.G > 0) cs[ci++] = _combatStates[_game.Party.Characters[1]].Tint;
-                    if (c.B > 0) cs[ci++] = _combatStates[_game.Party.Characters[2]].Tint;
-                    if (c.A > 0) cs[ci++] = _combatStates[_game.Party.Characters[3]].Tint;
+                    if (c.R > 0) cs[ci++] = CombatStates[_game.Party.Characters[0]].Tint;
+                    if (c.G > 0) cs[ci++] = CombatStates[_game.Party.Characters[1]].Tint;
+                    if (c.B > 0) cs[ci++] = CombatStates[_game.Party.Characters[2]].Tint;
+                    if (c.A > 0) cs[ci++] = CombatStates[_game.Party.Characters[3]].Tint;
                     _coloredMap[i, j] = Color.Lerp(Color.White, Color.Lerp(cs[0], cs[1], 0.5f), 0.5f);
                 }
                 else if (o == 1)
                 {
                     var cs = Color.White;
-                    if (c.R > 0) cs = _combatStates[_game.Party.Characters[0]].Tint;
-                    if (c.G > 0) cs = _combatStates[_game.Party.Characters[1]].Tint;
-                    if (c.B > 0) cs = _combatStates[_game.Party.Characters[2]].Tint;
-                    if (c.A > 0) cs = _combatStates[_game.Party.Characters[3]].Tint;
+                    if (c.R > 0) cs = CombatStates[_game.Party.Characters[0]].Tint;
+                    if (c.G > 0) cs = CombatStates[_game.Party.Characters[1]].Tint;
+                    if (c.B > 0) cs = CombatStates[_game.Party.Characters[2]].Tint;
+                    if (c.A > 0) cs = CombatStates[_game.Party.Characters[3]].Tint;
                     _coloredMap[i, j] = Color.Lerp(Color.White, cs, 0.35f);
                 }
             }
@@ -398,7 +408,7 @@ public class CombatMapScreen : IScreen
         //_enemyActionPoints.Free(_enemies.Count);
 
         var gm = new GoalMap<Cell>(_map, false);
-        foreach (var (ch, cs) in _combatStates)
+        foreach (var (ch, cs) in CombatStates)
         {
             gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
         }
@@ -457,19 +467,29 @@ public class CombatMapScreen : IScreen
     
     public void Update(GameTime gameTime)
     {
+        if (_coroutineHandler.IsActive())
+        {
+            _coroutineHandler.Update();
+            return;
+        }
+        
         _secondCounter += gameTime.ElapsedGameTime.Milliseconds;
         if (_secondCounter > 1600)
         {
             _secondCounter = 0;
         }
-        
-        CheckInputs();
 
-        if (_coroutineHandler.IsActive())
+        if (RangedActionConfig == null)
         {
-            _coroutineHandler.Update();
+            CheckInputs();
         }
-        else if (_presentation == EPresentationState.Preparing)
+        else
+        {
+            CheckTargetingInputs();
+            return;
+        }
+
+        if (_presentation == EPresentationState.Preparing)
         {
             UpdateFov();
             
@@ -480,8 +500,8 @@ public class CombatMapScreen : IScreen
                     
                     break;
                 case ECombatState.PlayerPhase:
-                    _playerSelectedIndex = 0;
-                    foreach (var (chr, st) in _combatStates)
+                    PlayerSelectedIndex = 0;
+                    foreach (var (chr, st) in CombatStates)
                     {
                         _game.ActionPoints.Free(st.Move);
                         st.Move = chr.Stats.Will + 5;
@@ -529,7 +549,7 @@ public class CombatMapScreen : IScreen
         }
     }
 
-    private void DrawCombat()
+    internal void DrawCombat(bool onlyNow = false)
     {
         var index = 0;
         
@@ -552,6 +572,7 @@ public class CombatMapScreen : IScreen
                     }
                     else if (_visited[i, j])
                     {
+                        if (onlyNow) continue;
                         var g = _groundGlyphs[i, j];
                         _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, new Glyph(g.U, g.V, Color.Black, Color.SlateGray));
                     }
@@ -572,15 +593,29 @@ public class CombatMapScreen : IScreen
             _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, c));
         }
         
-        foreach (var (chr, cs) in _combatStates)
+        foreach (var (chr, cs) in CombatStates)
         {
             var (ix, iy) = chr.Job.GetImage();
             _game.Layers["mrmo"].Set(cs.X + _offsetX, cs.Y + _offsetY, new Glyph(ix, iy, Color.Black, 
-                _combatStates[chr].Move > 0 ? _combatStates[chr].Tint : Color.DarkGray));
+                CombatStates[chr].Move > 0 ? CombatStates[chr].Tint : Color.DarkGray));
             index++;
         }
     }
 
+    private void DrawTargetting()
+    {
+        UpdateFov(true);
+        DrawCombat(true);
+        if (RangedActionConfig.HasValue)
+        {
+            var config = RangedActionConfig.Value;
+            if ((_secondCounter / 200) % 2 == 0)
+            {
+                _game.Layers["mrmo"].Set(config.X, config.Y + _offsetY, "_", CombatStates[config.Owner as Character].Tint);
+            }
+        }
+    }
+    
     private void DrawGui()
     {
         for (int i = 0; i < 22; i++)
@@ -621,22 +656,22 @@ public class CombatMapScreen : IScreen
         {
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
-                new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
+                new Glyph(ix, iy, Color.Black, CombatStates[character].Tint));
             _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             var traits = string.Join(" ", character.Traits.Select(t => t.ShortName));
             if (traits.Length == 0) traits = "--";
             _game.Layers["ascii"].Set(2 * _fullWidth + 10, 1 + index, traits,
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
-            if (_playerSelectedIndex == index)
+            if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
                 {
-                    _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
-                        new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
+                    _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
+                        new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
                 }
             }
             index++;
@@ -652,38 +687,38 @@ public class CombatMapScreen : IScreen
         {
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
-                new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
+                new Glyph(ix, iy, Color.Black, CombatStates[character].Tint));
             _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, _combatStates[character].Move.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, CombatStates[character].Move.ToString(),
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, character.LeftWeapon?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, character.RightWeapon?.Attack.ToString() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 18, 1 + index, character.RightWeapon?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 20, 1 + index, character.Armor?.Guard.ToString() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 21, 1 + index, character.Armor?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (_playerSelectedIndex == index)
+            if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
                 {
-                    _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
-                        new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
+                    _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
+                        new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
                 }
             }
             index++;
@@ -699,29 +734,29 @@ public class CombatMapScreen : IScreen
         {
             var (ix, iy) = character.Job.GetImage();
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 1 + index,
-                new Glyph(ix, iy, Color.Black, _combatStates[character].Tint));
+                new Glyph(ix, iy, Color.Black, CombatStates[character].Tint));
             _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, character.Stats.Will.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, character.Stats.Clarity.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, character.Stats.Poise.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 1 + index, character.Stats.Vigor.ToString(),
-                Color.Lerp(Color.White, _combatStates[character].Tint, 0.5f));
+                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (_playerSelectedIndex == index)
+            if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
                 {
-                    _game.Layers["mrmo"].Set(_combatStates[character].X, _combatStates[character].Y + 1, 
-                        new Glyph(12, 25, Color.Black, _combatStates[character].Tint));
+                    _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
+                        new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
                 }
             }
             index++;
@@ -745,6 +780,11 @@ public class CombatMapScreen : IScreen
         _game.Layers["porsmol"].Clear();
         DrawCombat();
         DrawGui();
+        
+        if (RangedActionConfig != null)
+        {
+            DrawTargetting();
+        }
     }
 
     private void CheckInputs()
@@ -758,16 +798,55 @@ public class CombatMapScreen : IScreen
         if (KB.HasBeenPressed(Keys.I))
         {
             _game.ScreenStack.Push(new InventoryScreen(_game));
-        };
-        
-        if (KB.HasBeenPressed(Keys.O))
+        }
+        else if (KB.HasBeenPressed(Keys.O))
         {
             _game.ScreenStack.Push(new InventoryScreen(_game, true));
-        };
+        }
         
         if (KB.HasBeenPressed(Keys.Tab))
         {
             _showStats = (EStatDisplay) (((int)_showStats + 1) % 3);
+        }
+    }
+
+    private void CheckTargetingInputs()
+    {
+        if (RangedActionConfig.HasValue)
+        {
+            if (KB.HasBeenPressed(Keys.Escape))
+            {
+                RangedActionConfig = null;
+                return;
+            }
+            
+            var config = RangedActionConfig.Value;
+            if (KB.HasBeenPressed(Keys.Enter))
+            {
+                var cs = CombatStates[config.Owner as Character];
+                Console.WriteLine("TOSSED!");
+                _coroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
+                return;
+            }
+            
+            var up = KB.HasBeenPressed(Keys.Up);
+            var down = KB.HasBeenPressed(Keys.Down);
+            var left = KB.HasBeenPressed(Keys.Left);
+            var right = KB.HasBeenPressed(Keys.Right);
+
+            if (up || down || left || right)
+            {
+                var dx = (left ? -1 : 0) + (right ? 1 : 0);
+                var dy = (up ? -1 : 0) + (down ? 1 : 0);
+                if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
+                {
+                    config.X += dx;
+                    config.Y += dy;
+                    if (!_map?.IsWalkable(config.X, config.Y) ?? false) return;
+                    if (!_isInActivePartyFOV?.Contains((config.X, config.Y)) ?? false) return;
+                    RangedActionConfig = config;
+                }
+            }
         }
     }
 
@@ -792,7 +871,7 @@ public class CombatMapScreen : IScreen
             
             if (att.Attacker is Character chr)
             {
-                var cs = _combatStates[chr];
+                var cs = CombatStates[chr];
                 var (u, v) = chr.Job.GetImage();
                 _game.Layers["mrmo"].Set(cs.X, cs.Y + 2, new Glyph(u, v, Color.Black, Color.White));
             }
@@ -809,7 +888,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["porsmol"].Set(12, 3, new Glyph(ud, vd, Color.Black, def.Defender.GetTint()));
             if (def.Defender is Character chr)
             {
-                var cs = _combatStates[chr];
+                var cs = CombatStates[chr];
                 var (u, v) = chr.Job.GetImage();
                 _game.Layers["mrmo"].Set(cs.X, cs.Y + 2, new Glyph(u, v, Color.Black, Color.Red));
             }
@@ -1003,7 +1082,7 @@ public class CombatMapScreen : IScreen
 
     private Character? IsCharacterAt(int x, int y)
     {
-        foreach (var (chr, cs) in _combatStates)
+        foreach (var (chr, cs) in CombatStates)
         {
             if (cs.X == x && cs.Y == y) return chr;
         }
@@ -1021,8 +1100,8 @@ public class CombatMapScreen : IScreen
     {
         if (KB.HasBeenPressed(Keys.Space))
         {
-            _playerSelectedIndex = (_playerSelectedIndex + 1) % 4;
-            _game.Party.Selected = _playerSelectedIndex;
+            PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
+            _game.Party.Selected = PlayerSelectedIndex;
             _secondCounter = 0;
         }
 
@@ -1032,10 +1111,10 @@ public class CombatMapScreen : IScreen
         }
         
         // MOVE
-        if (_playerSelectedIndex > -1)
+        if (PlayerSelectedIndex > -1)
         {
-            var current = _party[_playerSelectedIndex];
-            if (_combatStates[current].Move > 0 && _game.ActionPoints.Remaining > 0)
+            var current = _party[PlayerSelectedIndex];
+            if (CombatStates[current].Move > 0 && _game.ActionPoints.Remaining > 0)
             {
                 var up = KB.HasBeenPressed(Keys.Up);
                 var down = KB.HasBeenPressed(Keys.Down);
@@ -1048,35 +1127,66 @@ public class CombatMapScreen : IScreen
                     var dy = (up ? -1 : 0) + (down ? 1 : 0);
                     if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
                     {
-                        var x = _combatStates[current].X;
-                        var y = _combatStates[current].Y;
+                        var x = CombatStates[current].X;
+                        var y = CombatStates[current].Y;
 
                         if (IsCharacterAt(x + dx, y + dy) is { } c)
                         {
-                            var cs = _combatStates[c];
+                            var cs = CombatStates[c];
                             cs.X = x;
                             cs.Y = y;
-                            var pos = _combatStates[current];
+                            var pos = CombatStates[current];
                             pos.X += dx;
                             pos.Y += dy;
                         }
                         else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
                             _coroutineHandler.Run(Attack(current, e));
-                            _combatStates[current].Move = 0;
+                            CombatStates[current].Move = 0;
                         } 
                         else if (_map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
-                            var pos = _combatStates[current];
+                            var pos = CombatStates[current];
                             pos.X += dx;
                             pos.Y += dy;
-                            _combatStates[current].Move--;
+                            CombatStates[current].Move--;
                             _game.ActionPoints.Spend(1);
                             UpdateFov();
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+public class FlyingObject : IEnumerable
+{
+    private int _ox, _oy;
+    private RangedTargetting _config;
+    public FlyingObject(int ox, int oy, RangedTargetting config)
+    {
+        _ox = ox;
+        _oy = oy;
+        _config = config;
+    }
+
+    public IEnumerator GetEnumerator()
+    {
+        var l = SineaterGame.Instance.Layers["mrmo"];
+        var px = _ox;
+        var py = _oy;
+        foreach (var (x, y) in Bresenham.Line(_ox, _oy, _config.X, _config.Y))
+        {
+            if (SineaterGame.Instance.ScreenStack.Peek() is CombatMapScreen cmb)
+            {
+                cmb.DrawCombat(true);
+            }
+            l.Set(x, y + 2, _config.Source.GetIcon());
+            px = x;
+            py = y;
+            yield return new WaitForSeconds(0.1f);
+            // TODO: land item and maybe shatter
         }
     }
 }
