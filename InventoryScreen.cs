@@ -146,20 +146,69 @@ public class InventoryScreen : IScreen
                 return;
             }
 
-            if (_selected >= 0 && _game.Inventory.Items[_selected] != null 
-                               && _game.ScreenStack.Any(i => i is CombatMapScreen) 
-                               && KB.HasBeenPressed(Keys.T))
+            if (_selected >= 0
+                && _game.ScreenStack.Any(i => i is CombatMapScreen) 
+                && KB.HasBeenPressed(Keys.T))
             {
-                _game.ScreenStack.Pop();
-                var cmb = _game.ScreenStack.Peek() as CombatMapScreen;
-                var owner = _game.Party.Characters[cmb.PlayerSelectedIndex];
-                cmb.RangedActionConfig = new RangedTargetting
+                if (!_showOutfitting && _game.Inventory.Items[_selected] != null)
                 {
-                    Source = _game.Inventory.Items[_selected],
-                    Owner = owner,
-                    X = cmb.CombatStates[owner].X,
-                    Y = cmb.CombatStates[owner].Y
-                };
+                    _game.ScreenStack.Pop();
+                    var cmb = _game.ScreenStack.Peek() as CombatMapScreen;
+                    var owner = _game.Party.Characters[cmb.PlayerSelectedIndex];
+                    cmb.RangedActionConfig = new RangedTargetting
+                    {
+                        Source = _game.Inventory.Items[_selected],
+                        Owner = owner,
+                        X = cmb.CombatStates[owner].X,
+                        Y = cmb.CombatStates[owner].Y
+                    };
+                }
+                else if (_showOutfitting)
+                {
+                    var charIndex = _selected / 3;
+                    var slotIndex = _selected % 3;
+                    IAbilitySource? item = null;
+
+                    switch (slotIndex)
+                    {
+                        case 0:
+                            item = _game.Party.Characters[charIndex].LeftWeapon;
+                            break;
+                        case 1:
+                            item = _game.Party.Characters[charIndex].RightWeapon;
+                            break;
+                        case 2:
+                            item = _game.Party.Characters[charIndex].Armor;
+                            break;
+                    }
+
+                    if (item != null)
+                    {
+                        switch (slotIndex)
+                        {
+                            case 0:
+                                _game.Party.Characters[charIndex].LeftWeapon = null;
+                                break;
+                            case 1:
+                                _game.Party.Characters[charIndex].RightWeapon = null;
+                                break;
+                            case 2:
+                                _game.Party.Characters[charIndex].Armor = null;
+                                break;
+                        }
+                        _game.ScreenStack.Pop();
+                        var cmb = _game.ScreenStack.Peek() as CombatMapScreen;
+                        cmb.PlayerSelectedIndex = charIndex;
+                        var owner = _game.Party.Characters[cmb.PlayerSelectedIndex];
+                        cmb.RangedActionConfig = new RangedTargetting
+                        {
+                            Source = item,
+                            Owner = owner,
+                            X = cmb.CombatStates[owner].X,
+                            Y = cmb.CombatStates[owner].Y
+                        };
+                    }
+                }
             }
             
             if (_selected >= 0 && _showOutfitting && KB.HasBeenPressed(Keys.U))

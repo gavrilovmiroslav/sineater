@@ -74,7 +74,7 @@ public class CombatMapScreen : IScreen
     private SineaterGame _game;
     private ETerrainKind _kind;
     private string _title;
-    private IMap? _map;
+    public IMap? Map;
     private bool _rendered = false;
     private bool _debugView = false;
     private int _secondCounter = 0;
@@ -84,9 +84,13 @@ public class CombatMapScreen : IScreen
     private bool[,] _visited;
     ReadOnlyCollection<Cell>? _fov = null;
     HashSet<(int, int)>? _isInActivePartyFOV = new();
+    public HashSet<(int, int)>? IsInActivePartyFOV => _isInActivePartyFOV;
     public Dictionary<Character, CombatState> CombatStates = new();
     private List<Character> _party = new();
+    public List<Character> Party => _party;
     private List<Enemy> _enemies = new();
+    public List<Enemy> Enemies => _enemies;
+    public Dictionary<(int, int), IItem> Floor = new();
     private EStatDisplay _showStats = EStatDisplay.Stats;
     private ECombatState _combatState = ECombatState.PlayerPhase;
     private EPresentationState _presentation = EPresentationState.Preparing;
@@ -208,17 +212,17 @@ public class CombatMapScreen : IScreen
             enemy.AP = _enemyActionPoints;
         }
         
-        var inner = Map.Create(mapCreationStrategy);
-        _map = Map.Create(new FilledMapCreationStrategy<Map>(_fullWidth, _fullHeight));
-        _map.Copy(inner, 1 + Rnd.Instance.Next(0, _fullWidth - 2 - _width), Rnd.Instance.Next(0, 1 + (_fullHeight - 2 - _height)));
+        var inner = RogueSharp.Map.Create(mapCreationStrategy);
+        Map = RogueSharp.Map.Create(new FilledMapCreationStrategy<Map>(_fullWidth, _fullHeight));
+        Map.Copy(inner, 1 + Rnd.Instance.Next(0, _fullWidth - 2 - _width), Rnd.Instance.Next(0, 1 + (_fullHeight - 2 - _height)));
 
-        _fieldOfView = new FieldOfView(_map);
+        _fieldOfView = new FieldOfView(Map);
         for (int i = 0; i < _fullWidth; i++)
         {
             for (int j = 0; j < _fullHeight; j++)
             {
                 var g = Glyph.Bw(0, 0);
-                if (_map.IsWalkable(i, j))
+                if (Map.IsWalkable(i, j))
                 {
                     (g.U, g.V) = _game.Layers["mrmo"].Char('.');
                 }
@@ -232,7 +236,7 @@ public class CombatMapScreen : IScreen
         }
         _rendered = false;
 
-        var vas = _map.GetAllCells().Where(t => t.IsWalkable).ToArray();
+        var vas = Map.GetAllCells().Where(t => t.IsWalkable).ToArray();
         if (vas.Length <= 50)
         {
             _extraFill++;
@@ -253,7 +257,7 @@ public class CombatMapScreen : IScreen
             var character = _game.Party.Characters[idx];
             CombatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
             _party.Add(character);
-            var freeTiles = new HashSet<Cell>(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
+            var freeTiles = new HashSet<Cell>(Map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
             idx++;
             for (int i = 0; i < 3; i++)
             {
@@ -276,7 +280,7 @@ public class CombatMapScreen : IScreen
                 character = _game.Party.Characters[idx];
                 CombatStates[character] = new CombatState(v.X, v.Y, Rnd.Instance.Next(character.Stats.Mod(EStat.Vigor), 5 + character.Stats.Vigor), character.Tint, 0);
                 _party.Add(character);
-                freeTiles.UnionWith(_map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
+                freeTiles.UnionWith(Map.GetAdjacentCells(v.X, v.Y).Where(t => t.IsWalkable));
                 freeTiles.RemoveWhere(t => entryPositions.Contains((t.X, t.Y)));
                 idx++;
             }
@@ -407,7 +411,7 @@ public class CombatMapScreen : IScreen
         _presentation = EPresentationState.Preparing;
         //_enemyActionPoints.Free(_enemies.Count);
 
-        var gm = new GoalMap<Cell>(_map, false);
+        var gm = new GoalMap<Cell>(Map, false);
         foreach (var (ch, cs) in CombatStates)
         {
             gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
@@ -584,6 +588,12 @@ public class CombatMapScreen : IScreen
             }
         }
 
+        foreach (var ((x, y), item) in Floor)
+        {
+            if (!_isInActivePartyFOV.Contains((x, y))) continue;
+            _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, item.GetIcon());
+        }
+        
         foreach (var enemy in _enemies)
         {
             if (!_isInActivePartyFOV.Contains((enemy.X, enemy.Y))) continue;
@@ -765,7 +775,7 @@ public class CombatMapScreen : IScreen
     
     public void Draw(GameTime gameTime)
     {
-        if (_map == null) return;
+        if (Map == null) return;
         
         if (_enemies.Count > 0)
         {
@@ -824,8 +834,34 @@ public class CombatMapScreen : IScreen
             if (KB.HasBeenPressed(Keys.Enter))
             {
                 var cs = CombatStates[config.Owner as Character];
-                Console.WriteLine("TOSSED!");
                 _coroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
+                var foundInInventory = false;
+                for (int i = 0; i < _game.Inventory.Items.Length; i++)
+                {
+                    if (_game.Inventory.Items[i] == config.Source)
+                    {
+                        _game.Inventory.Items[i] = null;
+                        foundInInventory = true;
+                        break;
+                    }
+                }
+
+                if (!foundInInventory)
+                {
+                    var chr = config.Owner as Character;
+                    if (chr.GetLeftWeapon() == config.Source)
+                    {
+                        chr.LeftWeapon = null;
+                    }
+                    else if (chr.GetRightWeapon() == config.Source)
+                    {
+                        chr.RightWeapon = null;
+                    }
+                    else if (chr.GetArmor() == config.Source)
+                    {
+                        chr.Armor = null;
+                    }
+                }
                 return;
             }
             
@@ -842,7 +878,7 @@ public class CombatMapScreen : IScreen
                 {
                     config.X += dx;
                     config.Y += dy;
-                    if (!_map?.IsWalkable(config.X, config.Y) ?? false) return;
+                    if (!Map?.IsWalkable(config.X, config.Y) ?? false) return;
                     if (!_isInActivePartyFOV?.Contains((config.X, config.Y)) ?? false) return;
                     RangedActionConfig = config;
                 }
@@ -1109,6 +1145,17 @@ public class CombatMapScreen : IScreen
         {
             _coroutineHandler.Run(Coroutine_EndTurn());
         }
+
+        if (KB.HasBeenPressed(Keys.OemComma))
+        {
+            var current = _party[PlayerSelectedIndex];
+            var x = CombatStates[current].X;
+            var y = CombatStates[current].Y;
+            if (Floor.ContainsKey((x, y)))
+            {
+                _coroutineHandler.Run(Floor[(x, y)].ApplyItemPickedUp(this, x, y, current));
+            }
+        }
         
         // MOVE
         if (PlayerSelectedIndex > -1)
@@ -1144,7 +1191,7 @@ public class CombatMapScreen : IScreen
                             _coroutineHandler.Run(Attack(current, e));
                             CombatStates[current].Move = 0;
                         } 
-                        else if (_map?.IsWalkable(x + dx, y + dy) ?? false)
+                        else if (Map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
                             var pos = CombatStates[current];
                             pos.X += dx;
@@ -1173,20 +1220,37 @@ public class FlyingObject : IEnumerable
 
     public IEnumerator GetEnumerator()
     {
-        var l = SineaterGame.Instance.Layers["mrmo"];
-        var px = _ox;
-        var py = _oy;
-        foreach (var (x, y) in Bresenham.Line(_ox, _oy, _config.X, _config.Y))
+        if (SineaterGame.Instance.ScreenStack.Peek() is CombatMapScreen cmb)
         {
-            if (SineaterGame.Instance.ScreenStack.Peek() is CombatMapScreen cmb)
+            var l = SineaterGame.Instance.Layers["mrmo"];
+
+            var px = _ox;
+            var py = _oy;
+
+            foreach (var (x, y) in Bresenham.Line(_ox, _oy, _config.X, _config.Y))
             {
                 cmb.DrawCombat(true);
+                l.Set(x, y + 2, _config.Source.GetIcon());
+                px = x;
+                py = y;
+                yield return new WaitForSeconds(0.1f);
             }
-            l.Set(x, y + 2, _config.Source.GetIcon());
-            px = x;
-            py = y;
-            yield return new WaitForSeconds(0.1f);
-            // TODO: land item and maybe shatter
+
+            if (_config.Source is IItem item)
+            {
+                if (item.CanBeShattered())
+                {
+                    yield return item.ApplyItemShattered(cmb, _config.X, _config.Y);
+                }
+                else
+                {
+                    yield return item.ApplyItemLanded(cmb, _config.X, _config.Y);
+                }
+            }
+            else if (_config.Source is Weapon weapon)
+            {
+                
+            }
         }
     }
 }

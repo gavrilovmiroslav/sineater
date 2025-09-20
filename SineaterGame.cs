@@ -228,15 +228,16 @@ public class SineaterGame : Game
         _spriteBatch.Draw(_renderTargetGame, Vector2.Zero, Color.White);
         _spriteBatch.End();
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.5f));
+        _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.45f));
         _spriteBatch.End();
         
         this.Window.Title = $"SINEATER | {_dHour}";
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(1, 1, 1, 0.2f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
-            SpriteEffects.None, 0.0f);
+        // var cos = MathF.Cos(((float)_currentHour / 12) * 3.14f) * 0.5f + 0.5f;
+        // _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
+        //     new Color(1, 1, 1, cos), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+        //     SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         base.Draw(gameTime);
     }
