@@ -2,10 +2,10 @@ namespace SINEATER;
 
 public class Inventory
 {
-    private IAbilitySource?[] _items = [ null, null, null, null, null, null, null, null, null, null, null, null ];
-    public IAbilitySource?[] Items => _items;
+    private IItem?[] _items = [ null, null, null, null, null, null, null, null, null, null, null, null ];
+    public IItem?[] Items => _items;
 
-    public (bool, int) Put(IAbilitySource source)
+    public (bool, int) Put(IItem source)
     {
         for (int i = 0; i < _items.Length; i++)
         {

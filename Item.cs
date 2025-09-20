@@ -8,6 +8,7 @@ public interface IItem : IAbilitySource
 {
     public string Name { get; }
     public Glyph Glyph { get; }
+    public bool CanBeUsed();
     public bool CanBeShattered();
     public IEnumerable ApplyItemUsed(ICharacter character);
     public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character);
@@ -21,6 +22,11 @@ public class Pile : IAbilitySource, IItem
     
     public string Name { get; } = "Pile";
     public Glyph Glyph { get; } = Glyph.Bw(1, 1);
+    public bool CanBeUsed()
+    {
+        return false;
+    }
+
     public bool CanBeShattered()
     {
         return false;
@@ -103,7 +109,12 @@ public class Item(string name) : IItem
     public string Name => name;
 
     public Glyph Glyph => Glyph.Bw(0, 0);
-    
+
+    public bool CanBeUsed()
+    {
+        return true;
+    }
+
     public virtual bool CanBeShattered()
     {
         return false;
