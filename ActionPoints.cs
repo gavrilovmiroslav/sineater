@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
@@ -24,7 +25,7 @@ public class BarPiece : IBarPiece {
 
 public class ActionPoints(int width, TextLayer layer, IBarPiece def)
 {
-    public int Total => width;
+    public int Total { get; } = width;
     public TextLayer Layer => layer;
     private readonly List<IBarPiece> _pieces = new();
     public (int, int) Points => (Remaining, _empty);
@@ -110,6 +111,24 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
         return n;
     }
 
+    public void Reduce(int n)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            var piece = _pieces.Last();
+            if (piece != null)
+            {
+                piece.Width -= 1;
+                _empty += 1;
+
+                if (piece.Width == 0)
+                {
+                    _pieces.Remove(piece);
+                }
+            }
+        }
+    }
+    
     public void Reduce<T>(int w) where T : class, IBarPiece, new()
     {
         T piece = null;
@@ -124,6 +143,7 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
         
         if (piece != null)
         {
+            if (w > piece.Width) w = piece.Width;
             piece.Width -= w;
             _empty += w;
 

@@ -430,6 +430,27 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
 
+    public void Set(int x, int y, Color fg)
+    {
+        var p = ToPosition(x, y);
+        if (!_glyphs.ContainsKey(p))
+            return;
+        var g = _glyphs[p];
+        g.Fg = fg;
+        Set(x, y, g);
+    }
+
+    public void Set(int x, int y, Color fg, Color bg)
+    {
+        var p = ToPosition(x, y);
+        if (!_glyphs.ContainsKey(p))
+            return;
+        var g = _glyphs[p];
+        g.Fg = fg;
+        g.Bg = bg;
+        Set(x, y, g);
+    }
+
     public void Set(int x, int y, string s, Color fg)
     {
         var chars = s.ToCharArray();

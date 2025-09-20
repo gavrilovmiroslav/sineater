@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
@@ -77,7 +76,7 @@ public class CombatMapScreen : IScreen
     public IMap? Map;
     private bool _rendered = false;
     private bool _debugView = false;
-    private int _secondCounter = 0;
+    private int _time = 0;
     private FieldOfView _fieldOfView;
     private ReadOnlyCollection<Cell>?[] _perspectives;
     private Color[,] _coloredMap;
@@ -477,10 +476,10 @@ public class CombatMapScreen : IScreen
             return;
         }
         
-        _secondCounter += gameTime.ElapsedGameTime.Milliseconds;
-        if (_secondCounter > 1600)
+        _time += gameTime.ElapsedGameTime.Milliseconds;
+        if (_time > 1600)
         {
-            _secondCounter = 0;
+            _time = 0;
         }
 
         if (RangedActionConfig == null)
@@ -544,6 +543,7 @@ public class CombatMapScreen : IScreen
                 case ECombatState.EnemyPhase:
                     break;
                 case ECombatState.PlayerPhase:
+                    _coroutineHandler.Run(new Frenzy(_game, this));
                     _combatState = ECombatState.EnemyPhase;
                     _presentation = EPresentationState.Preparing;
                     break;
@@ -619,7 +619,7 @@ public class CombatMapScreen : IScreen
         if (RangedActionConfig.HasValue)
         {
             var config = RangedActionConfig.Value;
-            if ((_secondCounter / 200) % 2 == 0)
+            if ((_time / 200) % 2 == 0)
             {
                 _game.Layers["mrmo"].Set(config.X, config.Y + _offsetY, "_", CombatStates[config.Owner as Character].Tint);
             }
@@ -642,7 +642,7 @@ public class CombatMapScreen : IScreen
         }
         
         _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 0), new Vector2(2 + _fullWidth + 40, 2 + 10), ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth + 2, 0), new Vector2(2 * _fullWidth + 40, 2 + 6), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth * 2 + 2, 0), new Vector2(2 * _fullWidth * 2 + 40, 2 + 6), ' ');
 
         if (_showStats == EStatDisplay.Stats)
         {
@@ -660,7 +660,7 @@ public class CombatMapScreen : IScreen
 
     private void DrawLoadout()
     {
-        _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SKILLS     ITEMS");
+        _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SKILLS");
         var index = 0;
         foreach (var character in _party)
         {
@@ -678,7 +678,7 @@ public class CombatMapScreen : IScreen
             if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
-                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
+                if (_time < 400 || _time is > 800 and < 1200)
                 {
                     _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
@@ -725,7 +725,7 @@ public class CombatMapScreen : IScreen
             if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
-                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
+                if (_time < 400 || _time is > 800 and < 1200)
                 {
                     _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
@@ -763,7 +763,7 @@ public class CombatMapScreen : IScreen
             if (PlayerSelectedIndex == index)
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
-                if (_secondCounter < 400 || _secondCounter is > 800 and < 1200)
+                if (_time < 400 || _time is > 800 and < 1200)
                 {
                     _game.Layers["mrmo"].Set(CombatStates[character].X, CombatStates[character].Y + 1, 
                         new Glyph(12, 25, Color.Black, CombatStates[character].Tint));
@@ -777,6 +777,13 @@ public class CombatMapScreen : IScreen
     {
         if (Map == null) return;
         
+        if (_coroutineHandler.IsActive()) return;
+        
+        _game.Layers["portrait"].Clear();
+        _game.Layers["porsmol"].Clear();
+        _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth + 40, 40), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth * 2 + 40, 40), ' ');
+
         if (_enemies.Count > 0)
         {
             _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(40, 2), ' ');
@@ -784,10 +791,6 @@ public class CombatMapScreen : IScreen
             _enemyActionPoints.Draw(_title.Length + 3, 1);
         }
 
-        if (_coroutineHandler.IsActive()) return;
-        
-        _game.Layers["portrait"].Clear();
-        _game.Layers["porsmol"].Clear();
         DrawCombat();
         DrawGui();
         
@@ -862,6 +865,8 @@ public class CombatMapScreen : IScreen
                         chr.Armor = null;
                     }
                 }
+
+                cs.Move = 0;
                 return;
             }
             
@@ -1030,7 +1035,13 @@ public class CombatMapScreen : IScreen
                 var woundsBefore = ap.Count<StatusWounds>();
                 ap.Add<StatusWounds>(inc.TotalDamage);
                 var totalWounds = ap.Count<StatusWounds>();
-
+                var applied = totalWounds - woundsBefore;
+                if (applied < inc.TotalDamage)
+                {
+                    var diff = inc.TotalDamage - applied;
+                    ap.Reduce(diff);
+                    ap.Add<StatusWounds>(diff);
+                }
                 if (totalWounds - woundsBefore > stats.Vigor && flow.Defender is Enemy enm)
                 {
                     ap.Reduce<StatusWounds>(stats.Vigor);
@@ -1136,9 +1147,18 @@ public class CombatMapScreen : IScreen
     {
         if (KB.HasBeenPressed(Keys.Space))
         {
-            PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
-            _game.Party.Selected = PlayerSelectedIndex;
-            _secondCounter = 0;
+            var p = PlayerSelectedIndex;
+            while (true)
+            {
+                PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
+                _game.Party.Selected = PlayerSelectedIndex;
+                if (CombatStates[_game.Party.Characters[PlayerSelectedIndex]].Move > 0)
+                {
+                    _time = 0;
+                    break;
+                }
+                if (p == PlayerSelectedIndex) break;
+            }
         }
 
         if (KB.HasBeenPressed(Keys.Enter))
@@ -1202,54 +1222,6 @@ public class CombatMapScreen : IScreen
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-public class FlyingObject : IEnumerable
-{
-    private int _ox, _oy;
-    private RangedTargetting _config;
-    public FlyingObject(int ox, int oy, RangedTargetting config)
-    {
-        _ox = ox;
-        _oy = oy;
-        _config = config;
-    }
-
-    public IEnumerator GetEnumerator()
-    {
-        if (SineaterGame.Instance.ScreenStack.Peek() is CombatMapScreen cmb)
-        {
-            var l = SineaterGame.Instance.Layers["mrmo"];
-
-            var px = _ox;
-            var py = _oy;
-
-            foreach (var (x, y) in Bresenham.Line(_ox, _oy, _config.X, _config.Y))
-            {
-                cmb.DrawCombat(true);
-                l.Set(x, y + 2, _config.Source.GetIcon());
-                px = x;
-                py = y;
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            if (_config.Source is IItem item)
-            {
-                if (item.CanBeShattered())
-                {
-                    yield return item.ApplyItemShattered(cmb, _config.X, _config.Y);
-                }
-                else
-                {
-                    yield return item.ApplyItemLanded(cmb, _config.X, _config.Y);
-                }
-            }
-            else if (_config.Source is Weapon weapon)
-            {
-                
             }
         }
     }

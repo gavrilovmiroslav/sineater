@@ -1,0 +1,133 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using RogueSharp;
+
+namespace SINEATER;
+
+public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var fields = new Dictionary<(int, int), ICharacter>();
+        foreach (var e in level.Enemies)
+        {
+            fields.Add((e.X, e.Y), e);
+        }
+
+        foreach (var ch in level.Party)
+        {
+            var x = level.CombatStates[ch].X;
+            var y = level.CombatStates[ch].Y;
+            if (!fields.ContainsKey((x, y)))
+                fields.Add((x, y), ch);
+        }
+
+        List<ICharacter> chars = [];
+        chars.AddRange(game.Party.Characters);
+        chars.AddRange(level.Enemies);
+        foreach (var chr in chars)
+        {
+            var insanity = chr.GetAP().Count<StatusInsanity>();
+
+            if (Rnd.Instance.Next(0, insanity) > chr.GetStats().Clarity)
+            {
+                var x = 0;
+                var y = 0;
+
+                if (chr is Character c)
+                {
+                    var cs = level.CombatStates[c];
+                    x = cs.X;
+                    y = cs.Y;
+                } 
+                else if (chr is Enemy e)
+                {
+                    x = e.X;
+                    y = e.Y;
+                }
+
+                if (!level.IsInActivePartyFOV.Contains((x, y))) continue;
+                
+                var letters = "!@#$%^&*+!";
+                for (int i = 0; i < 10; i++)
+                {
+                    game.Layers["mrmo"].Set(x, y + 2, letters[i].ToString(), Color.Yellow);
+                    yield return new WaitForSeconds((10 - i) * 0.01f);
+                }
+                
+                // FRENZY!
+                var dst = Math.Max(2, 2 + chr.GetStats().Mod(EStat.Clarity));
+                var edge = level.Map.GetCellsInCircle(x, y, dst)
+                    .Where(t => Vector2.Distance(new Vector2(t.X, t.Y), new Vector2(x, y)) >= dst - 2)
+                    .ToList();
+                edge.Shuffle();
+                
+                var goals = new GoalMap<Cell>(level.Map, true);
+                var pathCount = edge.Count;
+                List<Path> paths = [];
+                List<int> pause = [];
+                for (var i = 0; i < pathCount; i++)
+                {
+                    goals.ClearGoals();
+                    if (!level.Map.IsWalkable(edge[i].X, edge[i].Y))
+                    {
+                        continue;
+                    }
+
+                    if (Rnd.Instance.Next(0, 6) < 2)
+                        continue;
+                    
+                    goals.AddGoal(edge[i].X, edge[i].Y, 100);
+                    goals.ClearObstacles();
+
+                    var path = goals.TryFindPath(x, y);
+                    if (path != null)
+                    {
+                        paths.Add(path);
+                        pause.Add(Rnd.Instance.Next(0, 3));
+                    }
+                }
+
+                while (true)
+                {
+                    bool anyPathTaken = false;
+                    for (int ip = paths.Count - 1; ip >= 0; ip--)
+                    {
+                        if (pause[ip] > 0)
+                        {
+                            pause[ip] -= 1;
+                            continue;
+                        }
+                        
+                        var p = paths[ip];
+                        var cell = p.TryStepForward();
+                        
+                        if (cell != null)
+                        {
+                            var dist = Vector2.Distance(new Vector2(x, y), new Vector2(cell.X, cell.Y)) / dst;
+                            if (level.IsInActivePartyFOV.Contains((x, y)))
+                            {
+                                game.Layers["mrmo"].Set(cell.X, cell.Y + 2, "z",
+                                    Color.Lerp(Color.Yellow, Color.Red, dist));
+                            }
+
+                            if (fields.ContainsKey((cell.X, cell.Y)))
+                            {
+                                fields[(cell.X, cell.Y)].GetAP().Reduce<StatusInsanity>(1);
+                                fields[(cell.X, cell.Y)].GetAP().Add<StatusWounds>(1);
+                            }
+                            anyPathTaken = true;
+                        }
+                    }
+                    yield return new WaitForSeconds(0.003f);
+                    if (!anyPathTaken) break;
+                }
+                
+                chr.GetAP().Reduce<StatusInsanity>(paths.Count);
+            }
+        }
+    }
+}

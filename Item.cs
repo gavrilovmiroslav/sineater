@@ -214,7 +214,8 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
 
         foreach (var e in level.Enemies)
         {
-            fields.Add((e.X, e.Y), e);
+            if (!fields.ContainsKey((e.X, e.Y)))
+                fields.Add((e.X, e.Y), e);
         }
         
         var game = SineaterGame.Instance;
