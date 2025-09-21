@@ -75,7 +75,7 @@ public enum EStat
     Vigor
 }
 
-public record struct Stats
+public class Stats
 {
     public int Will;
     public int Clarity;
@@ -118,7 +118,7 @@ public record struct Stats
         }
     }
     
-    public readonly int Mod(EStat stat)
+    public int Mod(EStat stat)
     {
         return this[stat] switch
         {
@@ -133,7 +133,7 @@ public record struct Stats
 
 public interface ICharacter : ICombatFlowParticipant
 {
-    public Stats GetStats();
+    public Stats Stats { get; set; }
     public Color GetTint();
     public ActionPoints GetAP();
     public Weapon? GetLeftWeapon();
@@ -154,7 +154,6 @@ public class Character : ICharacter
     public Color Tint;
     public ActionPoints AP;
     public ECharacterClass Job;
-    public Stats Stats = new();
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
@@ -178,11 +177,8 @@ public class Character : ICharacter
     {
         return Tint;
     }
-    
-    public Stats GetStats()
-    {
-        return Stats;
-    }
+
+    public Stats Stats { get; set; } = new();
 
     public ActionPoints GetAP()
     {

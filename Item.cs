@@ -219,7 +219,7 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
         }
         
         var game = SineaterGame.Instance;
-        game.Layers["mrmo"].Set(x, y, "o");
+        game.Layers["mrmo"].Set(x, y + 2, "o", Color.Red);
         yield return new WaitForSeconds(0.1f);
         for (int i = 1; i < 3; i++)
         {
@@ -281,5 +281,63 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
     public override Glyph GetIcon()
     {
         return new Glyph(1, 0, Color.Black, Color.Red);
+    }
+}
+
+public class PotionEyeOfNewt() : Potion("Eye of Newt")
+{
+    public override IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    {
+        var fields = new Dictionary<(int, int), ICharacter>();
+        foreach (var ch in level.Party)
+        {
+            fields.Add((level.CombatStates[ch].X, level.CombatStates[ch].Y), ch);
+        }
+
+        foreach (var e in level.Enemies)
+        {
+            if (!fields.ContainsKey((e.X, e.Y)))
+                fields.Add((e.X, e.Y), e);
+        }
+        
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].Set(x, y + 2, "o", Color.Blue);
+        yield return new WaitForSeconds(0.1f);
+        for (int i = 1; i < 3; i++)
+        {
+            foreach (var cell in level.Map.GetCellsInCircle(x, y, i))
+            {
+                if (level.Map.IsTransparent(cell.X, cell.Y))
+                {
+                    if (level.IsInActivePartyFOV.Contains((cell.X, cell.Y)))
+                    {
+                        game.Layers["mrmo"].Set(cell.X, cell.Y + 2, "o", Color.Blue);
+                    }
+
+                    if (fields.ContainsKey((cell.X, cell.Y)))
+                    {
+                        var blind = new TraitBlind(2);
+                        fields[(cell.X, cell.Y)].GetTraits().Add(blind);
+                        yield return blind.ApplyOnReceived(fields[(cell.X, cell.Y)]);
+                    }
+                }
+            }
+            
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    public override IEnumerable ApplyItemUsed(ICharacter character)
+    {
+        var eye = new TraitEagleEyed(5);
+        character.GetTraits().Add(eye);
+        yield return eye.ApplyOnReceived(character);
+    }
+    
+    public override Glyph GetIcon()
+    {
+        return new Glyph(1, 0, Color.Black, Color.Blue);
     }
 }

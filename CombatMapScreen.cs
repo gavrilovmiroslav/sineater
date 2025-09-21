@@ -327,17 +327,18 @@ public class CombatMapScreen : IScreen
         foreach (var (chr, combatState) in CombatStates)
         {
             if (onlyOneChar && _game.Party.Characters[PlayerSelectedIndex] != chr) continue;
-            if (_fov == null)
+            if (_fov == null && chr.Stats.Clarity > 0)
             {
                 _fov = _fieldOfView.ComputeFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);
             }
-            else
+            else if (chr.Stats.Clarity > 0)
             {
                 _fov = _fieldOfView.AppendFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);    
             }
         }
 
         _isInActivePartyFOV.Clear();
+        if (_fov == null) return;
         foreach (var f in _fov) _isInActivePartyFOV.Add((f.X, f.Y));
         
         _perspectives = new ReadOnlyCollection<Cell>?[4];
@@ -544,6 +545,19 @@ public class CombatMapScreen : IScreen
                     break;
                 case ECombatState.PlayerPhase:
                     _coroutineHandler.Run(new Frenzy(_game, this));
+                    
+                    foreach (var enemy in _enemies)
+                    {
+                        for (int i = enemy.Traits.Count - 1; i >= 0; i--)
+                            _coroutineHandler.Run(enemy.Traits[i].ApplyOnEndTurn(enemy));
+                    }
+                    
+                    foreach (var chr in _game.Party.Characters)
+                    {
+                        for (int i = chr.Traits.Count - 1; i >= 0; i--)
+                            _coroutineHandler.Run(chr.Traits[i].ApplyOnEndTurn(chr));
+                    }
+
                     _combatState = ECombatState.EnemyPhase;
                     _presentation = EPresentationState.Preparing;
                     break;
@@ -1029,7 +1043,7 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_TotalIncomingDamage inc)
         {
             var ap = flow.Defender.GetAP();
-            var stats = flow.Defender.GetStats();
+            var stats = flow.Defender.Stats;
             if (inc.TotalDamage > 0)
             {
                 var woundsBefore = ap.Count<StatusWounds>();
@@ -1106,13 +1120,17 @@ public class CombatMapScreen : IScreen
                 bnd.Add($"  {((Character)attacker).GetRandomBark()}");
                 bnd.Newline();
                 bnd.Newline();
-                if (e.Traits.Count > 0)
-                {
-                    var t = e.Traits[Rnd.Instance.Next(0, e.Traits.Count)];
-                    bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!");
-                    attacker.GetTraits().Add(t);
-                }
             }, true);
+            if (e.Traits.Count > 0)
+            {
+                var t = e.Traits[Rnd.Instance.Next(0, e.Traits.Count)];
+                yield return new ShowPopupWindowAndWaitForKey((_, bnd) =>
+                {
+                    bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!");
+                }, true);
+                attacker.GetTraits().Add(t);
+                yield return t.ApplyOnReceived(attacker);
+            }
             Draw(new GameTime());
         }
     }

@@ -32,7 +32,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
         {
             var insanity = chr.GetAP().Count<StatusInsanity>();
 
-            if (Rnd.Instance.Next(0, insanity) > chr.GetStats().Clarity)
+            if (Rnd.Instance.Next(0, insanity) > chr.Stats.Clarity)
             {
                 var x = 0;
                 var y = 0;
@@ -59,7 +59,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                 }
                 
                 // FRENZY!
-                var dst = Math.Max(2, 2 + chr.GetStats().Mod(EStat.Clarity));
+                var dst = Math.Max(2, 4 + chr.Stats.Mod(EStat.Clarity));
                 var edge = level.Map.GetCellsInCircle(x, y, dst)
                     .Where(t => Vector2.Distance(new Vector2(t.X, t.Y), new Vector2(x, y)) >= dst - 2)
                     .ToList();
@@ -94,6 +94,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                 while (true)
                 {
                     bool anyPathTaken = false;
+                    level.DrawCombat();
                     for (int ip = paths.Count - 1; ip >= 0; ip--)
                     {
                         if (pause[ip] > 0)
@@ -101,7 +102,8 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                             pause[ip] -= 1;
                             continue;
                         }
-                        
+
+                        HashSet<Cell> light = [];
                         var p = paths[ip];
                         var cell = p.TryStepForward();
                         
@@ -112,6 +114,8 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                             {
                                 game.Layers["mrmo"].Set(cell.X, cell.Y + 2, "z",
                                     Color.Lerp(Color.Yellow, Color.Red, dist));
+                                var adjacent = level.Map.GetAdjacentCells(cell.X, cell.Y, true);
+                                if (adjacent != null) foreach (var a in adjacent) light.Add(a);
                             }
 
                             if (fields.ContainsKey((cell.X, cell.Y)))
@@ -120,13 +124,24 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                                 fields[(cell.X, cell.Y)].GetAP().Add<StatusWounds>(1);
                             }
                             anyPathTaken = true;
+
+                            foreach (var l in light)
+                            {
+                                game.Layers["mrmo"].Set(l.X, l.Y + 2, Color.Lerp(Color.Yellow, Color.Red, dist), Color.Red);
+                                game.Layers["mrmo"].Lighten(l.X, l.Y + 2, 0.25f);
+                            }
                         }
                     }
-                    yield return new WaitForSeconds(0.003f);
+                    yield return new WaitForSeconds(0.05f);
                     if (!anyPathTaken) break;
                 }
-                
-                chr.GetAP().Reduce<StatusInsanity>(paths.Count);
+
+                if (!chr.GetTraits().Any(t => t is TraitFrenzied))
+                {
+                    chr.GetTraits().Add(new TraitFrenzied(5));
+                }
+
+                yield return new WaitForSeconds(0.1f);
             }
         }
     }

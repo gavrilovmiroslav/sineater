@@ -217,19 +217,19 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         
         TotalIncomingDamage = 0;
         yield return new CombatFlow_Notify(
-            $"The {defender.GetName()}'s POISE is {defender.GetStats().Poise}, nothing under that does damage.");
+            $"The {defender.GetName()}'s POISE is {defender.Stats.Poise}, nothing under that does damage.");
         
         for (var index = 0; index < HitDice.Count; index++)
         {
             CurrentHitDieIndex = index;
-            if (HitDice[index] != null && HitDice[index].Value >= defender.GetStats().Poise)
+            if (HitDice[index] != null && HitDice[index].Value >= defender.Stats.Poise)
             {
                 yield return new CombatFlow_PresentDamagingHitDie(index);
                 HitDieDamage = 1;
                 if (HitDice[index].Die.Source is Weapon wpn)
                 {
-                    Console.WriteLine((int)wpn.Weight + ", " + attacker.GetStats().Vigor);
-                    if ((int)wpn.Weight >= 5 && attacker.GetStats().Vigor >= 5)
+                    Console.WriteLine((int)wpn.Weight + ", " + attacker.Stats.Vigor);
+                    if ((int)wpn.Weight >= 5 && attacker.Stats.Vigor >= 5)
                     {
                         HitDieDamage += 1;
                     }

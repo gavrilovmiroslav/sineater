@@ -12,7 +12,6 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     public Color Tint;
     public ActionPoints AP;
     public int HP;
-    public Stats Stats;
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
@@ -23,10 +22,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     public int Sin;
     public bool IsDead = false;
     
-    public Enemy()
-    {
-        
-    }
+    public Enemy() {}
 
     public static Enemy Goblin()
     {
@@ -72,10 +68,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
         return gob;
     }
 
-    public Stats GetStats()
-    {
-        return Stats;
-    }
+    public Stats Stats { get; set; } = new();
 
     public Color GetTint()
     {

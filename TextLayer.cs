@@ -110,9 +110,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         var index = ToPosition(x, y);
         if (_glyphs.ContainsKey(index))
         {
-            _glyphs[index].Fg.ToHSL(out var h, out var s, out var l);
-            var g = _glyphs[index];
-            g.Fg = g.Fg.FromHSL(h, s, Math.Min(1, l + lp));
+            _glyphs[index].Fg.Lighten(lp);
         }
     }
     
@@ -132,7 +130,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         foreach (var (_, g) in _glyphs)
         {
             g.Fg.ToHSV(out var h, out var s, out var l);
-            g.Fg = g.Fg.FromHSV(h, s, Math.Min(1, l + lp * 100));
+            g.Fg = g.Fg.FromHSV(h, Math.Max(0, s + lp * 100), Math.Max(0, l + lp * 100));
         }
     }
     
