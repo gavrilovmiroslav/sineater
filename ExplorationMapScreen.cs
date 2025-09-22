@@ -227,7 +227,7 @@ public class ExplorationMapScreen : IScreen
             yield return new ShowPopupWindowAndWaitForKey(
                 (_, bnd) =>
                 {
-                    IItem pot = Rnd.Instance.D4 < 2 ? new PotionBloodReliquary() : new PotionEyeOfNewt();
+                    IItem pot = Rnd.Instance.D4 < 2 ? new PotionBloodReliquary() : new GhylagsTear();
                     bnd.Add($"{_locations[(x, y)].GetName()} You found...");
                     bnd.Newline();
                     bnd.Add($"  a {pot}!");

@@ -52,14 +52,14 @@ public class Rnd : IRandom
     {
     }
 
-    public int D2 => Next(1, 2);
-    public int D4 => Next(1, 4);
-    public int D6 => Next(1, 6);
-    public int D8 => Next(1, 8);
-    public int D10 => Next(1, 10);
-    public int D12 => Next(1, 12);
-    public int D20 => Next(1, 20);
-    public int D100 => Next(1, 100);
+    public int D2 => Next(1, 3);
+    public int D4 => Next(1, 5);
+    public int D6 => Next(1, 7);
+    public int D8 => Next(1, 9);
+    public int D10 => Next(1, 11);
+    public int D12 => Next(1, 13);
+    public int D20 => Next(1, 21);
+    public int D100 => Next(1, 101);
 
     public int[] Bag(Func<int, bool> filter, params int[] dice)
     {

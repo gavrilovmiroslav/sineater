@@ -26,9 +26,18 @@ public class FlyingObject : IEnumerable
             {
                 cmb.DrawCombat(true);
                 l.Set(x, y + 2, _config.Source.GetIcon());
-                px = x;
-                py = y;
-                yield return new WaitForSeconds(0.1f);
+                if (cmb.Map.IsWalkable(x, y))
+                {
+                    px = x;
+                    py = y;
+                    yield return new WaitForSeconds(0.1f);
+                }
+                else
+                {
+                    _config.X = x;
+                    _config.Y = y;
+                    break;
+                }
             }
 
             if (_config.Source is IItem item)

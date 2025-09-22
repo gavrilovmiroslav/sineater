@@ -188,17 +188,22 @@ public class CombatMapScreen : IScreen
         _enemies.Clear();
         var count = Rnd.Instance.D2 + (_config.Reward != null ? 4 : 2);
         var chosen = Rnd.Instance.Next(0, count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
-            var en = Enemy.Goblin();
+            var en = Bestiary.Goblin();
             _enemies.Add(en);
             if (i == chosen && _config.Reward != null)
             {
                 en.Traits.Add(_config.Reward);
             }
         }
+
+        for (var i = 0; i < 3; i++)
+        {
+            _enemies.Add(Bestiary.Bat());
+        }
         
-        _enemies.Add(Enemy.Hobgoblin());
+        _enemies.Add(Bestiary.Hobgoblin());
         
         var hp = 0;
         foreach (var enemy in _enemies)
@@ -409,63 +414,18 @@ public class CombatMapScreen : IScreen
     {
         _combatState = ECombatState.PlayerPhase;
         _presentation = EPresentationState.Preparing;
-        //_enemyActionPoints.Free(_enemies.Count);
 
-        var gm = new GoalMap<Cell>(Map, false);
-        foreach (var (ch, cs) in CombatStates)
-        {
-            gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
-        }
-                    
         foreach (var enemy in _enemies)
         {
-            gm.ClearObstacles();
-            foreach (var e in _enemies.Where(e => e != enemy))
+            if (enemy.Stats.Clarity == 0)
             {
-                gm.AddObstacle(e.X, e.Y);
+                yield return new BehaviorBlind().Do(enemy, this, enemy.X, enemy.Y);
+                continue;
             }
-            var path = gm.TryFindPath(enemy.X, enemy.Y);
-                        
-            if (path != null)
-            {
-                int ap = enemy.Stats.Will;
-                for (var i = 0; i < ap; i++)
-                {
-                    var next = path.TryStepForward();
-                    if (next == null) continue;
-                    
-                    if (IsCharacterAt(next.X, next.Y) is {} chr)
-                    {
-                        var (ex, ey) = enemy.Icon;
-                        var (cx, cy) = chr.Job.GetImage();
-                        for (int f = 0; f < 10; f++)
-                        {
-                            _game.Layers["mrmo"].Set(enemy.X, enemy.Y + _offsetY,
-                                new Glyph(ex, ey, Color.Black, f % 2 == 0 ? Color.Red : enemy.Tint));
-                            _game.Layers["mrmo"].Set(next.X, next.Y + _offsetY,
-                                new Glyph(cx, cy, Color.Black, f % 2 == 1 ? Color.Red : chr.Tint));
-                            yield return new WaitForSeconds(0.01f);
-                        }
-                        yield return Attack(enemy, chr);
-                        ap = 0;
-                    }
-                    else
-                    {
-                        enemy.X = next.X;
-                        enemy.Y = next.Y;
-                        //enemy.AP.Spend(1);
-                        ap -= 1;
-                    }
-
-                    DrawGui();
-                    DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
-                }
-            }
-            else
-            {
-                Console.WriteLine("NO PATH!");
-            }
+            
+            var beh = enemy.Behaviors[Rnd.Instance.Next(0, enemy.Behaviors.Count)];
+            Console.WriteLine($"{enemy} does {beh}");
+            yield return beh.Do(enemy, this, enemy.X, enemy.Y);
         }
     }
     
@@ -639,8 +599,8 @@ public class CombatMapScreen : IScreen
             }
         }
     }
-    
-    private void DrawGui()
+
+    public void DrawGui()
     {
         for (int i = 0; i < 22; i++)
         {
@@ -1060,7 +1020,8 @@ public class CombatMapScreen : IScreen
                 {
                     ap.Reduce<StatusWounds>(stats.Vigor);
                     flow.Attacker.GetAP().Add<StatusSin>(enm.Sin);
-                    enm.Die();
+                    if (flow.Attacker is Character _)
+                        enm.Die();
                 }
                 else if (totalWounds > 0 && flow.Defender is Enemy enemy)
                 {
@@ -1070,7 +1031,8 @@ public class CombatMapScreen : IScreen
                     {
                         ap.Reduce<StatusWounds>(stats.Vigor);
                         flow.Attacker.GetAP().Add<StatusSin>(enemy.Sin);
-                        enemy.Die();
+                        if (flow.Attacker is Character _)
+                            enemy.Die();
                     }
                 }
             }
@@ -1099,8 +1061,8 @@ public class CombatMapScreen : IScreen
             }
         }
     }
-    
-    private IEnumerable Attack(ICharacter attacker, ICharacter defender)
+
+    public IEnumerable Attack(ICharacter attacker, ICharacter defender)
     {
         var flow = new CombatFlow(attacker, defender);
         yield return ResolveAttack(flow, flow.Attack());
@@ -1117,25 +1079,32 @@ public class CombatMapScreen : IScreen
                 bnd.Add($"The {attacker.GetName()} kills the {defender.GetName()}:");
                 bnd.Newline();
                 bnd.Newline();
-                bnd.Add($"  {((Character)attacker).GetRandomBark()}");
+                if (attacker is Character chr)
+                {
+                    bnd.Add($"  {chr.GetRandomBark()}");
+                }
+
                 bnd.Newline();
                 bnd.Newline();
             }, true);
-            if (e.Traits.Count > 0)
+            if (attacker is Character chr)
             {
-                var t = e.Traits[Rnd.Instance.Next(0, e.Traits.Count)];
-                yield return new ShowPopupWindowAndWaitForKey((_, bnd) =>
+                var transferable = e.Traits.Where(t => !(t is LimitedTrait)).ToList();
+                if (transferable.Count > 0)
                 {
-                    bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!");
-                }, true);
-                attacker.GetTraits().Add(t);
-                yield return t.ApplyOnReceived(attacker);
+                    var t = transferable[Rnd.Instance.Next(0, transferable.Count)];
+                    yield return new ShowPopupWindowAndWaitForKey(
+                        (_, bnd) => { bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!"); }, true);
+                    attacker.GetTraits().Add(t);
+                    yield return t.ApplyOnReceived(attacker);
+                }
             }
+
             Draw(new GameTime());
         }
     }
 
-    private Enemy? IsEnemyAt(int x, int y)
+    public Enemy? IsEnemyAt(int x, int y)
     {
         foreach (var enemy in _enemies)
         {
@@ -1145,7 +1114,7 @@ public class CombatMapScreen : IScreen
         return null;
     }
 
-    private Character? IsCharacterAt(int x, int y)
+    public Character? IsCharacterAt(int x, int y)
     {
         foreach (var (chr, cs) in CombatStates)
         {
