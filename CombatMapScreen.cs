@@ -99,6 +99,8 @@ public class CombatMapScreen : IScreen
     private ActionPoints _enemyActionPoints;
     public RangedTargetting? RangedActionConfig = null;
     
+    public Domains Domains = new();
+    
     private void Regenerate(bool resize) {
         if (resize)
         {
@@ -184,6 +186,7 @@ public class CombatMapScreen : IScreen
             mapCreationStrategy = new CaveMapCreationStrategy<Map>( _width, _height, a, b, c, Rnd.Instance);
         }
 
+        //******************************************************************
         // todo: move from here!
         _enemies.Clear();
         var count = Rnd.Instance.D2 + (_config.Reward != null ? 4 : 2);
@@ -204,6 +207,7 @@ public class CombatMapScreen : IScreen
         }
         
         _enemies.Add(Bestiary.Hobgoblin());
+        //******************************************************************
         
         var hp = 0;
         foreach (var enemy in _enemies)
@@ -534,6 +538,16 @@ public class CombatMapScreen : IScreen
         _game.Layers["mrmo"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth + _offsetX, _fullHeight + _offsetY), ' ');
         _game.Layers["ascii"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth * 2 + _offsetX, _fullHeight * 2 + _offsetY), ' ');
         
+        _game.ActionPoints.Draw(1, 25);
+
+        foreach (var w in _game.Party.Characters)
+        {
+            if (w.Job == ECharacterClass.Witch)
+            {
+                _game.ActionPoints.DrawCursor(CombatStates[w].X * 2 + 1, 25);
+            }
+        }
+
         index = 0;
         if (_fov != null)
         {
@@ -764,7 +778,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(1, 1, _title);
             _enemyActionPoints.Draw(_title.Length + 3, 1);
         }
-
+        
         DrawCombat();
         DrawGui();
         
@@ -1148,6 +1162,17 @@ public class CombatMapScreen : IScreen
             }
         }
 
+        if (KB.HasBeenPressed(Keys.A))
+        {
+            var chr = _game.Party.Characters[PlayerSelectedIndex];
+            var ability = chr.Ability;
+            if (ability != null && ability.CanBeUsed(chr) && chr.AP.Remaining > 0)
+            {
+                _coroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
+                chr.AP.Spend(1);
+            }
+        }
+        
         if (KB.HasBeenPressed(Keys.Enter))
         {
             _coroutineHandler.Run(Coroutine_EndTurn());

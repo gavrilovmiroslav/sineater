@@ -6,6 +6,20 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
+public enum Status
+{
+    Stamina,
+    Void,
+    Wound,
+    Fire,
+    Tired,
+    Insanity,
+    Poison,
+    Sin,
+    Stunned,
+    Frozen,
+}
+
 public interface IBarPiece
 {
     public int Width { get; set; }
@@ -13,14 +27,16 @@ public interface IBarPiece
     
     public void Update(GameTime gameTime);
     public void Draw(int xMin, int xMax, int y);
+    public Status ToStatus();
 }
 
-public class BarPiece : IBarPiece {
+public abstract class BarPiece : IBarPiece {
     public int Width { get; set; }
     public ActionPoints ActionPoints { get; set; }
 
     public virtual void Update(GameTime gameTime) {}
     public virtual void Draw(int xMin, int xMax, int y) {}
+    public abstract Status ToStatus();
 }
 
 public class ActionPoints(int width, TextLayer layer, IBarPiece def)
@@ -199,6 +215,30 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
             bar.Update(gameTime);
         }
     }
+
+    public Status GetAt(int at)
+    {
+        var cursor = 0;
+        var next = this.Remaining;
+        if (at >= cursor && at <= next) return def.ToStatus();
+        cursor = next + 1;
+        next += this._spent;
+        if (at >= cursor && at <= next) return Status.Void;
+        cursor = next + 1;
+        foreach (var p in _pieces)
+        {
+            next += p.Width;
+            if (at >= cursor && at <= next) return p.ToStatus();
+            cursor = next + 1;
+        }
+
+        throw new Exception("CAN'T BE THIS!");
+    }
+
+    public void DrawCursor(int i, int y)
+    {
+        Layer.Set(i, y - 1, "v");
+    }
 }
 
 public static class Bars
@@ -233,6 +273,11 @@ public class StatusStamina : BarPiece
         var (ap, tot) = ActionPoints.Points;
         ActionPoints.Layer.Set(xMin, y + 1, $"{ap}/{tot}");
     }
+
+    public override Status ToStatus()
+    {
+        return Status.Stamina;
+    }
 }
 
 public class StatusWounds : BarPiece
@@ -246,6 +291,11 @@ public class StatusWounds : BarPiece
         }
         ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(3, 0, Color.Black, Color.Red));
     }
+    
+    public override Status ToStatus()
+    {
+        return Status.Wound;
+    }
 }
 
 public class StatusFire : BarPiece
@@ -255,6 +305,11 @@ public class StatusFire : BarPiece
     public override void Update(GameTime gameTime)
     {
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.002f;
+    }
+    
+    public override Status ToStatus()
+    {
+        return Status.Fire;
     }
     
     public override void Draw(int xMin, int xMax, int y)
@@ -278,6 +333,11 @@ public class StatusTired : BarPiece
     public override void Update(GameTime gameTime)
     {
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.0005f;
+    }
+    
+    public override Status ToStatus()
+    {
+        return Status.Tired;
     }
     
     public override void Draw(int xMin, int xMax, int y)
@@ -309,6 +369,11 @@ public class StatusInsanity : BarPiece
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.001f;
     }
     
+    public override Status ToStatus()
+    {
+        return Status.Insanity;
+    }
+    
     public override void Draw(int xMin, int xMax, int y)
     {
         var (ux, uy) = Bars.Offset(xMin, xMax);
@@ -333,6 +398,11 @@ public class StatusPoison : BarPiece
     public override void Update(GameTime gameTime)
     {
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.001f;
+    }
+    
+    public override Status ToStatus()
+    {
+        return Status.Poison;
     }
     
     public override void Draw(int xMin, int xMax, int y)
@@ -365,6 +435,11 @@ public class StatusSin : BarPiece
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.003f;
     }
     
+    public override Status ToStatus()
+    {
+        return Status.Sin;
+    }
+    
     public override void Draw(int xMin, int xMax, int y)
     {
         var (ux, uy) = Bars.Offset(xMin, xMax);
@@ -390,6 +465,11 @@ public class StatusStunned : BarPiece
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.01f;
     }
     
+    public override Status ToStatus()
+    {
+        return Status.Stunned;
+    }
+    
     public override void Draw(int xMin, int xMax, int y)
     {
         var (ux, uy) = Bars.Offset(xMin, xMax);
@@ -413,6 +493,11 @@ public class StatusFrozen : BarPiece
     public override void Update(GameTime gameTime)
     {
         _time += gameTime.ElapsedGameTime.Milliseconds * 0.007f;
+    }
+    
+    public override Status ToStatus()
+    {
+        return Status.Frozen;
     }
     
     public override void Draw(int xMin, int xMax, int y)

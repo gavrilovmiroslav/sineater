@@ -376,6 +376,8 @@ public class ExplorationMapScreen : IScreen
         _game.Layers["mrmo"].Clear();
         _game.Layers["portrait"].Clear();
 
+        _game.ActionPoints.Draw(10, 25);
+        
         Time += SineaterGame.DeltaTime * 0.001f;
         for (var i = 3; i < _fullHeight; i++)
         {

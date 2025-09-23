@@ -200,7 +200,6 @@ public class SineaterGame : Game
         {
             screen.Draw(gameTime);
         }
-        ActionPoints.Draw(10, 25);
         
         var focus = _focus.Get();
 

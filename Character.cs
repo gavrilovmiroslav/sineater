@@ -157,8 +157,9 @@ public class Character : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
+    public Ability? Ability = null;
     public List<Trait> Traits = [];
-
+    
     public Character(ECharacterClass? job = null)
     {
         if (job == null)
@@ -378,7 +379,7 @@ public record struct Party
                     Characters[i].RightWeapon = new Weapon("Dagger", 2,EWeightClass.Small, 4);
                     Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
                     Characters[i].Traits.Add(new TraitSneaky());
-                    SineaterGame.Instance.Inventory.Put(new PotionBloodReliquary());
+                    Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Large, 4);
