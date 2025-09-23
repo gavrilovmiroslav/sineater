@@ -208,7 +208,7 @@ public class InventoryScreen : IScreen
             {
                 _showOutfitting = !_showOutfitting;
             }
-
+            
             if (KB.HasBeenPressed(Keys.I))
             {
                 _showOutfitting = false;
@@ -455,10 +455,10 @@ public class InventoryScreen : IScreen
         var stack = _game.ScreenStack.ToArray();
         stack[1].Draw(gameTime);
         
-        var start = new Vector2(10, 0);
+        var start = new Vector2(10, 1);
         var end = new Vector2(35, 17);
         _game.Layers["mrmo"].SetRect(start - Vector2.One, end + Vector2.One, ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(start.X * 2, start.Y), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
         _game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
         {
             Top = Glyph.Bw(10, 27),

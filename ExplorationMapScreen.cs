@@ -77,7 +77,11 @@ public class ExplorationMapScreen : IScreen
         }
         else
         {
-            if (KB.HasBeenPressed(Keys.I))
+            if (KB.HasBeenPressed(Keys.C))
+            {
+                _game.ScreenStack.Push(new CharacterSheetScreen(_game));
+            }
+            else if (KB.HasBeenPressed(Keys.I))
             {
                 _game.ScreenStack.Push(new InventoryScreen(_game));
             }

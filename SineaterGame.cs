@@ -46,10 +46,6 @@ public class SineaterGame : Game
     public SineaterGame()
     {
         Instance = this;
-        for (int i = 0; i < 100; i++)
-        {
-            Console.Write($"{Rnd.Instance.D6} ");
-        }
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
