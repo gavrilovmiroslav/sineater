@@ -60,9 +60,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                 
                 // FRENZY!
                 var dst = Math.Max(2, 4 + chr.Stats.Mod(EStat.Clarity));
-                var edge = level.Map.GetCellsInCircle(x, y, dst)
-                    .Where(t => Vector2.Distance(new Vector2(t.X, t.Y), new Vector2(x, y)) >= dst - 2)
-                    .ToList();
+                var edge = level.Map.GetBorderCellsInCircle(x, y, dst).ToList();
                 edge.Shuffle();
                 
                 var goals = new GoalMap<Cell>(level.Map, true);

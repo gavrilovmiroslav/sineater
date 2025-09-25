@@ -415,6 +415,14 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         SetFrame(start, end, h, v);
         SetCorners(start, end, corners);
     }
+
+    public Color GetFg(int x, int y)
+    {
+        var p = ToPosition(x, y);
+        if (!_glyphs.ContainsKey(p))
+            return Color.Black;
+        return _glyphs[p].Fg;
+    }
     
     public void Set(int x, int y, string s)
     {
@@ -538,6 +546,8 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         foreach (var (xy, glyph) in _glyphs)
         {
             var (x, y) = FromPosition(xy);
+            src.X = 15 * (tx + ox);
+            src.Y = 63 * (ty + oy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
             spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, 

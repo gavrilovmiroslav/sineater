@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
@@ -29,6 +30,7 @@ public class DomainExpansion : Ability
         switch (kind)
         {
             case Status.Stamina:
+                yield return level.Domains.Add(new DomainOfHealing(character, x, y, Math.Clamp(character.Stats.Clarity, 3, 6)));
                 break;
             case Status.Void:
                 break;

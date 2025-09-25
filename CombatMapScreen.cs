@@ -98,8 +98,8 @@ public class CombatMapScreen : IScreen
     private CoroutineHandler _coroutineHandler = new();
     private ActionPoints _enemyActionPoints;
     public RangedTargetting? RangedActionConfig = null;
-    
-    public Domains Domains = new();
+
+    public Domains Domains;
     
     private void Regenerate(bool resize) {
         if (resize)
@@ -123,6 +123,8 @@ public class CombatMapScreen : IScreen
         _title = title;
         _coloredMap = new Color[_fullWidth, _fullHeight];
         _visited = new bool[_fullWidth, _fullHeight];
+            
+        Domains = new(this);
         
         _kind = _config?.Terrain ?? ETerrainKind.Cave;
         _game = game;
@@ -522,6 +524,11 @@ public class CombatMapScreen : IScreen
                             _coroutineHandler.Run(chr.Traits[i].ApplyOnEndTurn(chr));
                     }
 
+                    foreach (var domain in Domains._domains)
+                    {
+                        domain.Update(this);
+                    }
+                    
                     _combatState = ECombatState.EnemyPhase;
                     _presentation = EPresentationState.Preparing;
                     break;
@@ -575,7 +582,12 @@ public class CombatMapScreen : IScreen
                 }
             }
         }
-
+        
+        foreach (var domain in Domains._domains)
+        {
+            domain.Draw(this);
+        }
+        
         foreach (var ((x, y), item) in Floor)
         {
             if (!_isInActivePartyFOV.Contains((x, y))) continue;

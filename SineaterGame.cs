@@ -205,7 +205,7 @@ public class SineaterGame : Game
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-        foreach (var layer in new[]{ "ascii", "mrmo", "portrait", "porsmol" })
+        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "porsmol" })
         {
             Layers[layer].Draw(_spriteBatch);
         }
