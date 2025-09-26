@@ -33,6 +33,7 @@ public class DomainExpansion : Ability
                 yield return level.Domains.Add(new DomainOfHealing(character, x, y, Math.Clamp(character.Stats.Clarity, 3, 6)));
                 break;
             case Status.Void:
+                yield return level.Domains.Add(new DomainOfDarkness(character, x, y, Math.Clamp(character.Stats.Clarity, 3, 6)));
                 break;
             case Status.Wound:
                 break;

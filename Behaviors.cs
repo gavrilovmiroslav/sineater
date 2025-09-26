@@ -90,8 +90,7 @@ public class BehaviorBlind : IBehavior
         }
         else if (level.Map.IsWalkable(nextX, nextY))
         {
-            self.X = nextX;
-            self.Y = nextY;
+            yield return self.MoveTo(level, nextX, nextY);
             yield return new WaitForSeconds(0.01f);
         }
     }
@@ -111,6 +110,7 @@ public class BehaviorFlyAbout : IBehavior
             if (level.IsCharacterAt(nextX, nextY) is { } chr)
             {
                 yield return level.Attack(self, chr);
+                break;
             }
             else if (level.IsEnemyAt(nextX, nextY) is { } enm)
             {
@@ -118,8 +118,7 @@ public class BehaviorFlyAbout : IBehavior
             }
             else if (level.Map.IsWalkable(nextX, nextY))
             {
-                self.X = nextX;
-                self.Y = nextY;
+                yield return self.MoveTo(level, nextX, nextY);
                 yield return new WaitForSeconds(0.01f);
             }
         }
@@ -169,8 +168,7 @@ public class BehaviorAggro : IBehavior
                 }
                 else
                 {
-                    self.X = next.X;
-                    self.Y = next.Y;
+                    yield return self.MoveTo(level, next.X, next.Y);
                     ap -= 1;
                 }
 
@@ -214,8 +212,7 @@ public class BehaviorGoTo(int gx, int gy) : IBehavior
 
                 if (level.Map.IsWalkable(next.X, next.Y))
                 {
-                    self.X = next.X;
-                    self.Y = next.Y;
+                    yield return self.MoveTo(level, next.X, next.Y);
                     yield return new WaitForSeconds(0.05f);
                 }
             }

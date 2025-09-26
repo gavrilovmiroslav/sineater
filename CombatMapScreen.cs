@@ -332,7 +332,7 @@ public class CombatMapScreen : IScreen
         _extraFill = 0;
     }
 
-    private void UpdateFov(bool onlyOneChar = false)
+    public void UpdateFov(bool onlyOneChar = false)
     {
         _fov = null;
         foreach (var (chr, combatState) in CombatStates)
@@ -524,9 +524,16 @@ public class CombatMapScreen : IScreen
                             _coroutineHandler.Run(chr.Traits[i].ApplyOnEndTurn(chr));
                     }
 
+                    List<Domain> toClose = [];
                     foreach (var domain in Domains._domains)
                     {
                         domain.Update(this);
+                        if (domain.ShouldClose) toClose.Add(domain);
+                    }
+
+                    foreach (var close in toClose)
+                    {
+                        Domains._domains.Remove(close);
                     }
                     
                     _combatState = ECombatState.EnemyPhase;
@@ -776,8 +783,17 @@ public class CombatMapScreen : IScreen
     public void Draw(GameTime gameTime)
     {
         if (Map == null) return;
-        
-        if (_coroutineHandler.IsActive()) return;
+
+        if (_coroutineHandler.IsActive())
+        {
+            if (_enemies.Count > 0)
+            {
+                _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(40, 2), ' ');
+                _game.Layers["ascii"].Set(1, 1, _title);
+                _enemyActionPoints.Draw(_title.Length + 3, 1);
+            }
+            return;
+        }
         
         _game.Layers["portrait"].Clear();
         _game.Layers["porsmol"].Clear();
@@ -1243,6 +1259,12 @@ public class CombatMapScreen : IScreen
                             CombatStates[current].Move--;
                             _game.ActionPoints.Spend(1);
                             UpdateFov();
+                            if (Domains._tiles.ContainsKey(((int)pos.X, (int)pos.Y)))
+                            {
+                                DrawCombat();
+                                _coroutineHandler.Run(Domains._tiles[((int)pos.X, (int)pos.Y)]
+                                    .ApplyOnDomainStepped(this, current, pos.X, pos.Y));
+                            }
                         }
                     }
                 }

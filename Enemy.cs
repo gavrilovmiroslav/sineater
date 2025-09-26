@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
+using RogueSharp;
 
 namespace SINEATER;
 
@@ -184,5 +185,17 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     {
         foreach (var trait in Traits) 
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
+    }
+
+    public IEnumerable MoveTo(CombatMapScreen level, int x, int y)
+    {
+        X = x;
+        Y = y;
+        if (level.Domains._tiles.ContainsKey(((int)X, (int)Y)))
+        {
+            level.DrawCombat();
+            yield return level.Domains._tiles[((int)X, (int)Y)]
+                .ApplyOnDomainStepped(level, this, X, Y);
+        }
     }
 }
