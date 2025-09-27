@@ -221,7 +221,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         
         circle.Shuffle();
         
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 10; i++)
         {
             int c = 0;
             foreach (var cell in circle)
@@ -277,7 +277,6 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         }
     }
 }
-
 
 public class DomainOfAction(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
 {
@@ -467,8 +466,106 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
 {
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
+        level.SkipGUI = true;
+        level.DrawCombat();
         yield return DefaultDomainOpening(level);
+        var mrmo = SineaterGame.Instance.Layers["mrmo"];
+        var circle = level.Map?.GetCellsInCircle(x, y, Radius).ToList() ?? [];
+        List<(ICharacter, (int, int))> cursed = [];
+        var set = circle.Select(c => (c.X, c.Y)).ToHashSet();
+
+        foreach (var chr in SineaterGame.Instance.Party.Characters)
+        {
+            if (chr == Caster) continue;
+            var cs = level.CombatStates[chr];
+            if (set.Contains((cs.X, cs.Y)))
+            {
+                cursed.Add((chr, (cs.X, cs.Y)));
+            }
+        }
         
+        foreach (var chr in level.Enemies)
+        {
+            if (set.Contains((chr.X, chr.Y)))
+            {
+                cursed.Add((chr, (chr.X, chr.Y)));
+            }
+        }
+        
+        List<Path> paths = [];
+        var maxLength = 0;
+        var goals = new GoalMap(level.Map);
+        foreach (var (chr, (cx, cy)) in cursed)
+        {
+            var dist = Vector2.Distance(new Vector2(x, y), new Vector2(cx, cy));
+            goals.ClearGoals();
+            goals.AddGoal(cx, cy, 100);
+            if (dist > 1.42f)
+            {
+                var path = goals.TryFindPath(x, y);
+                if (path != null)
+                {
+                    paths.Add(path);
+                    if (maxLength < path.Length)
+                    {
+                        maxLength = path.Length;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < maxLength; i++)
+        {
+            foreach (var path in paths)
+            {
+                var c = path.TryStepForward();
+                if (c == null) continue;
+                
+                mrmo.Set(c.X, c.Y + 2,
+                    new Glyph(5 + Rnd.Instance.D4, 72, Color.Black,
+                        Color.White));
+
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        
+        // for (int i = 0; i < 10; i++)
+        // {
+        //     for (int j = 0; j < 5; j++)
+        //     {
+        //         foreach (var c in circle)
+        //         {
+        //             var alpha = 0.1f * i;
+        //             if (Rnd.Instance.D8 == 1)
+        //             {
+        //                 mrmo.Set(c.X, c.Y + 2, ' ');
+        //             }
+        //             else
+        //             {
+        //                 mrmo.Set(c.X, c.Y + 2,
+        //                     new Glyph(5 + Rnd.Instance.D4, 72, Color.Black,
+        //                         Color.Lerp(Color.Black, Color.White, alpha)));
+        //             }
+        //         }
+        //         yield return new WaitForSeconds(0.1f);
+        //     }
+        // }
+
+        // for (int i = 7; i < 11; i++)
+        // {
+        //     circle.Shuffle();
+        //     circle = circle.Take(circle.Count * 3 / 4).ToList();
+        //     foreach (var c in circle)
+        //     {
+        //         mrmo.Set(c.X, c.Y + 2, new Glyph(i, 72, Color.Black,Color.White));
+        //         yield return new WaitForSeconds(0.01f);
+        //     }
+        //
+        //     yield return new WaitForSeconds(0.1f);
+        // }
+        
+        yield return new WaitForSeconds(1f);
         yield return Blink(level);
+        level.SkipGUI = false;
     }
 }

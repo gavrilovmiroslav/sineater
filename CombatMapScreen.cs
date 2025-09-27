@@ -554,11 +554,14 @@ public class CombatMapScreen : IScreen
         
         _game.ActionPoints.Draw(1, 25);
 
-        foreach (var w in _game.Party.Characters)
+        if (!SkipGUI)
         {
-            if (w.Job == ECharacterClass.Witch)
+            foreach (var w in _game.Party.Characters)
             {
-                _game.ActionPoints.DrawCursor(CombatStates[w].X * 2 + 1, 25);
+                if (w.Job == ECharacterClass.Witch)
+                {
+                    _game.ActionPoints.DrawCursor(CombatStates[w].X * 2 + 1, 25);
+                }
             }
         }
 
@@ -618,6 +621,8 @@ public class CombatMapScreen : IScreen
             index++;
         }
     }
+
+    public bool SkipGUI { get; set; } = false;
 
     private void DrawTargetting()
     {
