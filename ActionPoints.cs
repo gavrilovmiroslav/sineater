@@ -131,16 +131,15 @@ public class ActionPoints(int width, TextLayer layer, IBarPiece def)
     {
         for (int i = 0; i < n; i++)
         {
+            if (_pieces.Count == 0) return;
             var piece = _pieces.Last();
-            if (piece != null)
-            {
-                piece.Width -= 1;
-                _empty += 1;
+            
+            piece.Width -= 1;
+            _empty += 1;
 
-                if (piece.Width == 0)
-                {
-                    _pieces.Remove(piece);
-                }
+            if (piece.Width == 0)
+            {
+                _pieces.Remove(piece);
             }
         }
     }

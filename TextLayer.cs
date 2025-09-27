@@ -585,4 +585,12 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
     {
         _glyphs.Clear();
     }
+
+    public (int, int)? GetUV(int cx, int cy)
+    {
+        var p = ToPosition(cx, cy);
+        if (!_glyphs.ContainsKey(p))
+            return null;
+        return (_glyphs[p].U, _glyphs[p].V);
+    }
 }

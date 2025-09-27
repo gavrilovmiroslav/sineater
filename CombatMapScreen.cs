@@ -93,7 +93,7 @@ public class CombatMapScreen : IScreen
     private EStatDisplay _showStats = EStatDisplay.Stats;
     private ECombatState _combatState = ECombatState.PlayerPhase;
     private EPresentationState _presentation = EPresentationState.Preparing;
-    public int PlayerSelectedIndex = -1;
+    public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
     private CoroutineHandler _coroutineHandler = new();
     private ActionPoints _enemyActionPoints;
@@ -461,8 +461,6 @@ public class CombatMapScreen : IScreen
 
         if (_presentation == EPresentationState.Preparing)
         {
-            UpdateFov();
-            
             switch (_combatState)
             {
                 case ECombatState.EnemyPhase:
@@ -483,6 +481,8 @@ public class CombatMapScreen : IScreen
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            
+            UpdateFov();
         }
         else if (_presentation == EPresentationState.Executing)
         {
@@ -549,8 +549,8 @@ public class CombatMapScreen : IScreen
     {
         var index = 0;
         
-        _game.Layers["mrmo"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth + _offsetX, _fullHeight + _offsetY), ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth * 2 + _offsetX, _fullHeight * 2 + _offsetY), ' ');
+        _game.Layers["mrmo"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth + _offsetX - 1, _fullHeight + _offsetY), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(_offsetX, _offsetY), new Vector2(_fullWidth * 2 + _offsetX - 2, _fullHeight * 2 + _offsetY), ' ');
         
         _game.ActionPoints.Draw(1, 25);
 
@@ -648,8 +648,8 @@ public class CombatMapScreen : IScreen
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 2 + i, " ");
         }
         
-        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 0), new Vector2(2 + _fullWidth + 40, 2 + 10), ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth * 2 + 2, 0), new Vector2(2 * _fullWidth * 2 + 40, 2 + 6), ' ');
+        _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth - 4, 0), new Vector2(2 + _fullWidth + 40, 6), ' ');
+        _game.Layers["ascii"].SetRect(new Vector2(2 * _fullWidth * 2 + 2, 0), new Vector2(2 * _fullWidth * 2 + 40, 6), ' ');
 
         if (_showStats == EStatDisplay.Stats)
         {
@@ -792,6 +792,7 @@ public class CombatMapScreen : IScreen
                 _game.Layers["ascii"].Set(1, 1, _title);
                 _enemyActionPoints.Draw(_title.Length + 3, 1);
             }
+            DrawGui();
             return;
         }
         
@@ -799,13 +800,6 @@ public class CombatMapScreen : IScreen
         _game.Layers["porsmol"].Clear();
         _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth + 40, 40), ' ');
         _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth * 2 + 40, 40), ' ');
-
-        if (_enemies.Count > 0)
-        {
-            _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(40, 2), ' ');
-            _game.Layers["ascii"].Set(1, 1, _title);
-            _enemyActionPoints.Draw(_title.Length + 3, 1);
-        }
         
         DrawCombat();
         DrawGui();
@@ -813,6 +807,11 @@ public class CombatMapScreen : IScreen
         if (RangedActionConfig != null)
         {
             DrawTargetting();
+        }
+        
+        if (_enemies.Count > 0)
+        {
+            _enemyActionPoints.Draw(_title.Length + 3, 1);
         }
     }
 
@@ -1253,17 +1252,19 @@ public class CombatMapScreen : IScreen
                         } 
                         else if (Map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
+                            var oldX = CombatStates[current].X;
+                            var oldY = CombatStates[current].Y;
                             var pos = CombatStates[current];
                             pos.X += dx;
                             pos.Y += dy;
                             CombatStates[current].Move--;
                             _game.ActionPoints.Spend(1);
                             UpdateFov();
-                            if (Domains._tiles.ContainsKey(((int)pos.X, (int)pos.Y)))
+                            if (Domains.Tiles.ContainsKey(((int)pos.X, (int)pos.Y)))
                             {
                                 DrawCombat();
-                                _coroutineHandler.Run(Domains._tiles[((int)pos.X, (int)pos.Y)]
-                                    .ApplyOnDomainStepped(this, current, pos.X, pos.Y));
+                                _coroutineHandler.Run(Domains.Tiles[((int)pos.X, (int)pos.Y)]
+                                    .ApplyOnDomainStepped(this, current, pos.X, pos.Y, oldX, oldY));
                             }
                         }
                     }

@@ -189,13 +189,15 @@ public class Enemy : ICharacter, ICombatFlowParticipant
 
     public IEnumerable MoveTo(CombatMapScreen level, int x, int y)
     {
+        var oldX = X;
+        var oldY = Y;
         X = x;
         Y = y;
-        if (level.Domains._tiles.ContainsKey(((int)X, (int)Y)))
+        if (level.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
         {
             level.DrawCombat();
-            yield return level.Domains._tiles[((int)X, (int)Y)]
-                .ApplyOnDomainStepped(level, this, X, Y);
+            yield return level.Domains.Tiles[((int)X, (int)Y)]
+                .ApplyOnDomainStepped(level, this, X, Y, oldX, oldY);
         }
     }
 }

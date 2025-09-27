@@ -108,7 +108,7 @@ public class SineaterGame : Game
         var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 2, new Vector2(76, 0));
         Layers.Add("portrait", portraitLayer);
         
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 69), new Vector2(2, 1), 2, new Vector2(0, -3));
+        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
@@ -133,7 +133,12 @@ public class SineaterGame : Game
                      (0, 64), (1, 64),
                      (1, 65), (2, 65), (3, 65), (4, 65), (6, 65),
                      (4, 66), 
-                     (4, 67), (5, 67) 
+                     (4, 67), (5, 67),
+                     
+                     (0, 69), (1, 69),
+                     (1, 70), (2, 70), (3, 70), (4, 70), (6, 70),
+                     (4, 71), 
+                     (4, 72), (5, 72)
                  })
         {
             mrmoLayer.SetFlip(u, v, SpriteEffects.FlipHorizontally);
