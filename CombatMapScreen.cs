@@ -95,7 +95,7 @@ public class CombatMapScreen : IScreen
     private EPresentationState _presentation = EPresentationState.Preparing;
     public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
-    private CoroutineHandler _coroutineHandler = new();
+    internal CoroutineHandler CoroutineHandler = new();
     private ActionPoints _enemyActionPoints;
     public RangedTargetting? RangedActionConfig = null;
 
@@ -140,7 +140,7 @@ public class CombatMapScreen : IScreen
     
     private void Regenerate(ETerrainKind kind)
     {
-        _coroutineHandler.Clear();
+        CoroutineHandler.Clear();
         _presentation = EPresentationState.Preparing;
         _combatState = ECombatState.PlayerPhase;
         CombatStates.Clear();
@@ -429,17 +429,22 @@ public class CombatMapScreen : IScreen
                 continue;
             }
             
-            var beh = enemy.Behaviors[Rnd.Instance.Next(0, enemy.Behaviors.Count)];
-            Console.WriteLine($"{enemy} does {beh}");
+            var beh = enemy.Behaviors[0];
+            enemy.Behaviors.RemoveAt(0);
+            if (!beh.ShouldFizzleOut())
+            {
+                enemy.Behaviors.Add(beh);
+            }
+
             yield return beh.Do(enemy, this, enemy.X, enemy.Y);
         }
     }
     
     public void Update(GameTime gameTime)
     {
-        if (_coroutineHandler.IsActive())
+        if (CoroutineHandler.IsActive())
         {
-            _coroutineHandler.Update();
+            CoroutineHandler.Update();
             return;
         }
         
@@ -469,10 +474,10 @@ public class CombatMapScreen : IScreen
                         e.IsDone = false;
 
                         for (int i = e.Traits.Count - 1; i >= 0; i--)
-                            _coroutineHandler.Run(e.Traits[i].ApplyOnStartTurn(this, e));
+                            CoroutineHandler.Run(e.Traits[i].ApplyOnStartTurn(this, e));
                     }
 
-                    _coroutineHandler.Run(EnemyMoves());
+                    CoroutineHandler.Run(EnemyMoves());
                     
                     break;
                 case ECombatState.PlayerPhase:
@@ -483,7 +488,7 @@ public class CombatMapScreen : IScreen
                         st.Move = chr.Stats.Will + 5;
                         
                         for (int i = chr.Traits.Count - 1; i >= 0; i--)
-                            _coroutineHandler.Run(chr.Traits[i].ApplyOnStartTurn(this, chr));
+                            CoroutineHandler.Run(chr.Traits[i].ApplyOnStartTurn(this, chr));
                     }
 
                     _combatState = ECombatState.PlayerPhase;
@@ -499,7 +504,7 @@ public class CombatMapScreen : IScreen
         {
             if (_enemies.Count == 0)
             {
-                _coroutineHandler.Run(new FadeOutAndLeaveScreen(1));
+                CoroutineHandler.Run(new FadeOutAndLeaveScreen(1));
             }
             
             switch (_combatState)
@@ -521,18 +526,18 @@ public class CombatMapScreen : IScreen
                 case ECombatState.EnemyPhase:
                     break;
                 case ECombatState.PlayerPhase:
-                    _coroutineHandler.Run(new Frenzy(_game, this));
+                    CoroutineHandler.Run(new Frenzy(_game, this));
                     
                     foreach (var enemy in _enemies)
                     {
                         for (int i = enemy.Traits.Count - 1; i >= 0; i--)
-                            _coroutineHandler.Run(enemy.Traits[i].ApplyOnEndTurn(enemy));
+                            CoroutineHandler.Run(enemy.Traits[i].ApplyOnEndTurn(enemy));
                     }
                     
                     foreach (var chr in _game.Party.Characters)
                     {
                         for (int i = chr.Traits.Count - 1; i >= 0; i--)
-                            _coroutineHandler.Run(chr.Traits[i].ApplyOnEndTurn(chr));
+                            CoroutineHandler.Run(chr.Traits[i].ApplyOnEndTurn(chr));
                     }
 
                     List<Domain> toClose = [];
@@ -614,6 +619,7 @@ public class CombatMapScreen : IScreen
         
         foreach (var enemy in _enemies)
         {
+            if (!enemy.Render) continue;
             if (!_isInActivePartyFOV.Contains((enemy.X, enemy.Y))) continue;
             var (ix, iy) = enemy.Icon;
             var c = enemy.Tint;
@@ -623,6 +629,7 @@ public class CombatMapScreen : IScreen
         
         foreach (var (chr, cs) in CombatStates)
         {
+            if (!chr.Render) continue;
             var (ix, iy) = chr.Job.GetImage();
             _game.Layers["mrmo"].Set(cs.X + _offsetX, cs.Y + _offsetY, new Glyph(ix, iy, Color.Black, 
                 CombatStates[chr].Move > 0 ? CombatStates[chr].Tint : Color.DarkGray));
@@ -695,7 +702,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 10, 1 + index, traits,
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
-            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
+            if (PlayerSelectedIndex == index && !CoroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)
@@ -742,7 +749,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 21, 1 + index, character.Armor?.Weight.Short() ?? "-",
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
+            if (PlayerSelectedIndex == index && !CoroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)
@@ -780,7 +787,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 1 + index, character.Stats.Vigor.ToString(),
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
+            if (PlayerSelectedIndex == index && !CoroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)
@@ -797,7 +804,7 @@ public class CombatMapScreen : IScreen
     {
         if (Map == null) return;
 
-        if (_coroutineHandler.IsActive())
+        if (CoroutineHandler.IsActive())
         {
             if (_enemies.Count > 0)
             {
@@ -865,7 +872,7 @@ public class CombatMapScreen : IScreen
             if (KB.HasBeenPressed(Keys.Enter))
             {
                 var cs = CombatStates[config.Owner as Character];
-                _coroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
+                CoroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
                 var foundInInventory = false;
                 for (int i = 0; i < _game.Inventory.Items.Length; i++)
                 {
@@ -1208,14 +1215,14 @@ public class CombatMapScreen : IScreen
             var ability = chr.Ability;
             if (ability != null && ability.CanBeUsed(chr) && chr.AP.Remaining > 0)
             {
-                _coroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
+                CoroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
                 chr.AP.Spend(1);
             }
         }
         
         if (KB.HasBeenPressed(Keys.Enter))
         {
-            _coroutineHandler.Run(Coroutine_EndTurn());
+            CoroutineHandler.Run(Coroutine_EndTurn());
         }
 
         if (KB.HasBeenPressed(Keys.OemComma))
@@ -1225,7 +1232,7 @@ public class CombatMapScreen : IScreen
             var y = CombatStates[current].Y;
             if (Floor.ContainsKey((x, y)))
             {
-                _coroutineHandler.Run(Floor[(x, y)].ApplyItemPickedUp(this, x, y, current));
+                CoroutineHandler.Run(Floor[(x, y)].ApplyItemPickedUp(this, x, y, current));
             }
         }
         
@@ -1260,7 +1267,7 @@ public class CombatMapScreen : IScreen
                         }
                         else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
-                            _coroutineHandler.Run(Attack(current, e));
+                            CoroutineHandler.Run(Attack(current, e));
                             CombatStates[current].Move = 0;
                         } 
                         else if (Map?.IsWalkable(x + dx, y + dy) ?? false)
@@ -1276,7 +1283,7 @@ public class CombatMapScreen : IScreen
                             if (Domains.Tiles.ContainsKey(((int)pos.X, (int)pos.Y)))
                             {
                                 DrawCombat();
-                                _coroutineHandler.Run(Domains.Tiles[((int)pos.X, (int)pos.Y)]
+                                CoroutineHandler.Run(Domains.Tiles[((int)pos.X, (int)pos.Y)]
                                     .ApplyOnDomainStepped(this, current, pos.X, pos.Y, oldX, oldY));
                             }
                         }

@@ -41,6 +41,7 @@ public class DomainExpansion : Ability
             case Status.Fire:
                 break;
             case Status.Tired:
+                yield return level.Domains.Add(new DomainOfSkulls(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 2, 6)));
                 break;
             case Status.Insanity:
                 break;

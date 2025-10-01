@@ -23,8 +23,10 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     public int Sin;
     public bool IsDead = false;
     public List<IBehavior> Behaviors = [];
-    public Enemy() {}
     
+    public Enemy() {}
+
+    public bool Render { get; set; } = true;
     public Stats Stats { get; set; } = new();
     public bool IsDone { get; set; } = false;
 

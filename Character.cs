@@ -133,6 +133,7 @@ public class Stats
 
 public interface ICharacter : ICombatFlowParticipant
 {
+    public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Color GetTint();
     public ActionPoints GetAP();
@@ -179,6 +180,8 @@ public class Character : ICharacter
         return Tint;
     }
 
+    public bool Render { get; set; } = true;
+    
     public Stats Stats { get; set; } = new();
 
     public ActionPoints GetAP()

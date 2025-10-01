@@ -468,7 +468,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
     private float _dy;
     private float _t = 0;
     private long _seed;
-    private int _shrinking = radius / 2 + 1;
+    private int _shrinking = radius;
     
     private Dictionary<(int, int), Glyph> _glyphs = [];
 
@@ -518,13 +518,13 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                     var xy = (cell.X, cell.Y);
                     drawn.Add(xy);
                     var d20 = Rnd.Instance.D100 / 2;
-                    if (d20 == 1)
+                    if (level.Map.IsWalkable(cell.X, cell.Y) && d20 <= 4)
                     {
                         _glyphs[xy] = new Glyph(Rnd.Instance.D4 - 1, 20,
                             new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
                         mrmo.Set(cell.X, cell.Y + 2, _glyphs[xy]);
                     }
-                    else if (d20 == 2)
+                    else if (level.Map.IsWalkable(cell.X, cell.Y) && d20 == 5)
                     {
                         _glyphs[xy] = new Glyph(13 + Rnd.Instance.D2, 40 + Rnd.Instance.D2,
                             new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
@@ -548,6 +548,14 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             level.Domains.Tiles[(cell.X, cell.Y)] = this;
         }
 
+        foreach (var enemy in level.Enemies)
+        {
+            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+            {
+                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
+            }
+        }
+        
         yield return new WaitForSeconds(1f);
         yield return Blink(level);
     }
@@ -590,6 +598,14 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             if (level.Domains.Tiles.ContainsKey(xy) && level.Domains.Tiles[xy] == this)
             {
                 level.Domains.Tiles.Remove(xy);
+            }
+        }
+        
+        foreach (var enemy in level.Enemies)
+        {
+            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+            {
+                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
             }
         }
     }
@@ -663,11 +679,12 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
 
 public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
 {
-    private int _time = 0;
     private int _t = 0;
     Dictionary<(int, int), int> _shadows = [];
     Dictionary<(int, int), Color> _shadowColors = [];
     internal List<(int, int)> _totems = [];
+    Dictionary<ICharacter, int> _moves = [];
+    private int _turns = 5;
     
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
@@ -713,58 +730,67 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
     public IEnumerable SkullTotem(DomainOfSkulls domain, CombatMapScreen level, int x, int y)
     {
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
-        for (var i = 0; i < 10; i++)
-        {
-            mrmo.Set(x, y + 2, new Glyph(11, 72, 
-                Color.Lerp(Color.Black, Color.White, i / 10.0f), 
-                _shadowColors[(x, y)]));
-            yield return new WaitForSeconds(0.01f);
-        }
-
-        mrmo.Set(x, y + 1, new Glyph(13, 71, Color.Black, Color.White));
+        mrmo.Set(x, y + 2, new Glyph(13, 71, Color.Black, Color.White));
         yield return new WaitForSeconds(0.5f);
         
         for (int i = 0; i < 3; i++)
         {
-            mrmo.Set(x, y, new Glyph(13 + i, 71, Color.Black, Color.White));
-            mrmo.Set(x, y + 1, new Glyph(13 + i, 72, Color.Black, Color.White));
+            mrmo.Set(x, y + 1, new Glyph(13 + i, 71, Color.Black, Color.White));
+            mrmo.Set(x, y + 2, new Glyph(13 + i, 72, Color.Black, Color.White));
             yield return new WaitForSeconds(0.5f);
         }
 
         yield return new WaitForSeconds(2.0f);
         domain._totems.Add((x, y));
     }
+
+    public IEnumerable Disappear(CombatMapScreen level)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            yield return Blink(level);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        Close();
+    }
     
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        _t += 1;
-        var totem = false;
-        var s = _shadows[(x, y)];
-        s = 6 + (s - 6 + _t) % 6;
-        if (s == 12)
+        if (!_moves.ContainsKey(character))
         {
-            totem = true;
-            yield return SkullTotem(this, level, x, y);
+            _moves[character] = 0;
         }
         
-        if (character is Character c)
+        _moves[character]++;
+        if (_moves[character] == character.Stats.Clarity)
         {
-            if (totem)
+            character.Render = false;
+            yield return SkullTotem(this, level, x, y);
+            if (character is Character c)
             {
                 level.CombatStates[c].Move = 0;
                 c.Traits.Add(new TraitCaptured(3));
+                _moves[character] = 0;
             }
-            else
+            else if (character is Enemy e)
             {
-                level.CombatStates[c].Move /= 2;
+                e.IsDone = true;
+                _moves[character] = 0;
             }
         }
-        else if (character is Enemy e)
-        {
-            e.IsDone = true;
-        }
-
+        
         yield return new WaitForSeconds(0.5f);
+    }
+
+    public override void Update(CombatMapScreen level)
+    {
+        _moves.Clear();
+        _turns--;
+        if (_turns == 0)
+        {
+            level.CoroutineHandler.Run(Disappear(level));
+        }
     }
 
     public override void Draw(CombatMapScreen level)
@@ -783,8 +809,8 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
 
         foreach (var (tx, ty) in _totems)
         {
-            mrmo.Set(tx, ty, new Glyph(15, 71, Color.Black, Color.White));
-            mrmo.Set(tx, ty + 1, new Glyph(15, 72, Color.Black, Color.White));
+            mrmo.Set(tx, ty + 1, new Glyph(15, 71, Color.Black, Color.White));
+            mrmo.Set(tx, ty + 2, new Glyph(15, 72, Color.Black, Color.White));
         }
     }
 }
