@@ -183,6 +183,23 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
     }
 }
 
+public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", duration)
+{
+    public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    {
+        if (character is Character c)
+        {
+            level.CombatStates[c].Move = 0;
+        }
+        else if (character is Enemy e)
+        {
+            e.IsDone = true;
+        }
+
+        yield return new WaitForSeconds(0.5f);
+    }
+}
+
 public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
 {
     public TraitBlind() : this(5)

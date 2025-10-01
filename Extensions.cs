@@ -8,6 +8,11 @@ namespace SINEATER;
 
 internal static class Extensions
 {
+    public static float Lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
+    
     public static IEnumerable<string> ReadLines(this Stream stream, Encoding encoding)
     {
         using var reader = new StreamReader(stream, encoding);

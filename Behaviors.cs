@@ -103,6 +103,8 @@ public class BehaviorFlyAbout : IBehavior
         var ap = self.Stats.Will;
         for (var i = 0; i < ap; i++)
         {
+            if (self.IsDone) yield break;
+            
             var dx = Rnd.Instance.Next(-1, 2);
             var dy = dx == 0 ? Rnd.Instance.Next(-1, 2) : 0;
             var nextX = x + dx;
@@ -147,6 +149,8 @@ public class BehaviorAggro : IBehavior
             int ap = self.Stats.Will;
             for (var i = 0; i < ap; i++)
             {
+                if (self.IsDone) yield break;
+                
                 var next = path.TryStepForward();
                 if (next == null) continue;
                     
@@ -207,6 +211,8 @@ public class BehaviorGoTo(int gx, int gy) : IBehavior
         {
             for (var i = 0; i < self.Stats.Will; i++)
             {
+                if (self.IsDone) yield break;
+                
                 var next = path.TryStepForward();
                 if (next == null) yield break;
 

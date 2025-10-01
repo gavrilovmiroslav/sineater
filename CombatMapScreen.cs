@@ -464,6 +464,14 @@ public class CombatMapScreen : IScreen
             switch (_combatState)
             {
                 case ECombatState.EnemyPhase:
+                    foreach (var e in _enemies)
+                    {
+                        e.IsDone = false;
+
+                        for (int i = e.Traits.Count - 1; i >= 0; i--)
+                            _coroutineHandler.Run(e.Traits[i].ApplyOnStartTurn(this, e));
+                    }
+
                     _coroutineHandler.Run(EnemyMoves());
                     
                     break;
@@ -473,6 +481,9 @@ public class CombatMapScreen : IScreen
                     {
                         _game.ActionPoints.Free(st.Move);
                         st.Move = chr.Stats.Will + 5;
+                        
+                        for (int i = chr.Traits.Count - 1; i >= 0; i--)
+                            _coroutineHandler.Run(chr.Traits[i].ApplyOnStartTurn(this, chr));
                     }
 
                     _combatState = ECombatState.PlayerPhase;
@@ -554,14 +565,11 @@ public class CombatMapScreen : IScreen
         
         _game.ActionPoints.Draw(1, 25);
 
-        if (!SkipGUI)
+        foreach (var w in _game.Party.Characters)
         {
-            foreach (var w in _game.Party.Characters)
+            if (w.Job == ECharacterClass.Witch)
             {
-                if (w.Job == ECharacterClass.Witch)
-                {
-                    _game.ActionPoints.DrawCursor(CombatStates[w].X * 2 + 1, 25);
-                }
+                _game.ActionPoints.DrawCursor(CombatStates[w].X * 2 + 1, 25);
             }
         }
 
@@ -687,7 +695,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 10, 1 + index, traits,
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
-            if (PlayerSelectedIndex == index)
+            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)
@@ -734,7 +742,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 21, 1 + index, character.Armor?.Weight.Short() ?? "-",
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (PlayerSelectedIndex == index)
+            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)
@@ -772,7 +780,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 1 + index, character.Stats.Vigor.ToString(),
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
-            if (PlayerSelectedIndex == index)
+            if (PlayerSelectedIndex == index && !_coroutineHandler.IsActive())
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth - 4, 1 + index, ">");
                 if (_time < 400 || _time is > 800 and < 1200)

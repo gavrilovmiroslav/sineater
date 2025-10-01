@@ -29,6 +29,11 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
         yield break;
     }
 
+    public virtual IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    {
+        yield break;
+    }
+
     public virtual IEnumerable ApplyOnEndTurn(ICharacter character)
     {
         yield break;

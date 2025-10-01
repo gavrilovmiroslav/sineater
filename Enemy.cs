@@ -26,6 +26,7 @@ public class Enemy : ICharacter, ICombatFlowParticipant
     public Enemy() {}
     
     public Stats Stats { get; set; } = new();
+    public bool IsDone { get; set; } = false;
 
     public Color GetTint()
     {
