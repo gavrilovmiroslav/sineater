@@ -105,7 +105,7 @@ public class BehaviorBlind : Behavior
         }
         else if (level.Map.IsWalkable(nextX, nextY))
         {
-            yield return self.MoveTo(level, nextX, nextY);
+            yield return self.MoveTo(level, nextX, nextY, x, y);
             yield return new WaitForSeconds(0.01f);
         }
     }
@@ -140,7 +140,7 @@ public class BehaviorFlyAbout : Behavior
             }
             else if (level.Map.IsWalkable(nextX, nextY))
             {
-                yield return self.MoveTo(level, nextX, nextY);
+                yield return self.MoveTo(level, nextX, nextY, x, y);
                 yield return new WaitForSeconds(0.01f);
             }
         }
@@ -174,6 +174,8 @@ public class BehaviorAggro : Behavior
                 var next = path.TryStepForward();
                 if (next == null) continue;
 
+                var ox = self.X;
+                var oy = self.Y;
                 if (level.IsCharacterAt(next.X, next.Y) is {} chr)
                 {
                     var (ex, ey) = self.Icon;
@@ -192,7 +194,7 @@ public class BehaviorAggro : Behavior
                 }
                 else
                 {
-                    yield return self.MoveTo(level, next.X, next.Y);
+                    yield return self.MoveTo(level, next.X, next.Y, ox, oy);
                     ap -= 1;
                 }
 
@@ -214,6 +216,8 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
     {
         var gm = new GoalMap<Cell>(level.Map, false);
         gm.AddGoal(gx, gy, 100);
+        var ox = self.X;
+        var oy = self.Y;
         
         gm.ClearObstacles();
         foreach (var e in level.Enemies.Where(e => e != self))
@@ -248,7 +252,7 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
 
                 if (level.Map?.IsWalkable(next.X, next.Y) ?? false)
                 {
-                    yield return self.MoveTo(level, next.X, next.Y);
+                    yield return self.MoveTo(level, next.X, next.Y, ox, oy);
                     yield return new WaitForSeconds(0.05f);
                 }
             }

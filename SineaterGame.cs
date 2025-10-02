@@ -114,7 +114,8 @@ public class SineaterGame : Game
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
         mrmoLayer.Map("ABCDEFGHIJKLMNO", 1, 55);
         mrmoLayer.Map("`{|}~", 0, 56);
-        mrmoLayer.Map("0123456789:;<=>?", 0, 59);
+        mrmoLayer.Map(":;<=>?", 10, 59);
+        mrmoLayer.Map("0123456789", 0, 61);
         mrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
         mrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
         foreach (var (u, v) in new[]

@@ -550,8 +550,17 @@ public class CombatMapScreen : IScreen
                     foreach (var close in toClose)
                     {
                         Domains._domains.Remove(close);
+
+                        foreach (var (tx, ty) in Domains.Tiles.Keys.ToList())
+                        {
+                            if (Domains.Tiles[(tx, ty)] == close)
+                            {
+                                Domains.Tiles.Remove((tx, ty));
+                            }
+                        }
                     }
                     
+                    this.DrawCombat();
                     _combatState = ECombatState.EnemyPhase;
                     _presentation = EPresentationState.Preparing;
                     break;

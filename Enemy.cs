@@ -190,17 +190,17 @@ public class Enemy : ICharacter, ICombatFlowParticipant
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
 
-    public IEnumerable MoveTo(CombatMapScreen level, int x, int y)
+    public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
     {
-        var oldX = X;
-        var oldY = Y;
+        var ox = X;
+        var oy = Y;
         X = x;
         Y = y;
         if (level.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
         {
             level.DrawCombat();
             yield return level.Domains.Tiles[((int)X, (int)Y)]
-                .ApplyOnDomainStepped(level, this, X, Y, oldX, oldY);
+                .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
         }
     }
 }

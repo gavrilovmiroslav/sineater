@@ -680,11 +680,11 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
 public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
 {
     private int _t = 0;
+    internal List<(int, int, ICharacter)> _totems = [];
     Dictionary<(int, int), int> _shadows = [];
     Dictionary<(int, int), Color> _shadowColors = [];
-    internal List<(int, int)> _totems = [];
     Dictionary<ICharacter, int> _moves = [];
-    private int _turns = 5;
+    private int _turns = 3;
     
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
@@ -727,8 +727,9 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
         yield return Blink(level);
     }
 
-    public IEnumerable SkullTotem(DomainOfSkulls domain, CombatMapScreen level, int x, int y)
+    public IEnumerable SkullTotem(DomainOfSkulls domain, CombatMapScreen level, ICharacter c, int x, int y)
     {
+        c.Render = false;
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
         mrmo.Set(x, y + 2, new Glyph(13, 71, Color.Black, Color.White));
         yield return new WaitForSeconds(0.5f);
@@ -741,17 +742,38 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
         }
 
         yield return new WaitForSeconds(2.0f);
-        domain._totems.Add((x, y));
+        domain._totems.Add((x, y, c));
     }
 
     public IEnumerable Disappear(CombatMapScreen level)
     {
-        for (int i = 0; i < 5; i++)
+        yield return Blink(level);
+        yield return new WaitForSeconds(0.01f);
+        
+        _totems.Clear();
+
+        foreach (var (tx, ty) in level.Domains.Tiles.Keys.ToList())
         {
-            yield return Blink(level);
-            yield return new WaitForSeconds(0.1f);
+            if (level.Domains.Tiles[(tx, ty)] == this)
+            {
+                level.Domains.Tiles.Remove((tx, ty));
+            }
+        }
+        
+        _shadows.Clear();
+        _shadowColors.Clear();
+        
+        foreach (var e in level.Enemies)
+        {
+            e.Render = true;
         }
 
+        foreach (var c in SineaterGame.Instance.Party.Characters)
+        {
+            c.Render = true;
+        }
+        
+        level.DrawCombat();
         Close();
     }
     
@@ -762,11 +784,22 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
             _moves[character] = 0;
         }
         
+        var mrmo = SineaterGame.Instance.Layers["mrmo"];
         _moves[character]++;
+        
+        var uv = mrmo.GetUV(oldX, oldY + 2);
+        var fg = mrmo.GetFg(oldX, oldY + 2);
+        mrmo.Set(oldX, oldY + 2, $"{character.Stats.Clarity - _moves[character]}");
+        yield return new WaitForSeconds(0.3f);
+        if (uv.HasValue)
+        {
+            var (u, v) = uv.Value;
+            mrmo.Set(oldX, oldY + 2, new Glyph(u, v, Color.Black, fg));
+        }
+
         if (_moves[character] == character.Stats.Clarity)
         {
-            character.Render = false;
-            yield return SkullTotem(this, level, x, y);
+            yield return SkullTotem(this, level, character, x, y);
             if (character is Character c)
             {
                 level.CombatStates[c].Move = 0;
@@ -776,11 +809,12 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
             else if (character is Enemy e)
             {
                 e.IsDone = true;
+                e.Traits.Add(new TraitCaptured(3));
                 _moves[character] = 0;
             }
         }
         
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.1f);
     }
 
     public override void Update(CombatMapScreen level)
@@ -807,7 +841,7 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
                 Color.Black, Color.Lerp(_shadowColors[(sx, sy)], Color.MediumPurple, MathF.Pow(s / 12.0f, 3))));
         }
 
-        foreach (var (tx, ty) in _totems)
+        foreach (var (tx, ty, _) in _totems)
         {
             mrmo.Set(tx, ty + 1, new Glyph(15, 71, Color.Black, Color.White));
             mrmo.Set(tx, ty + 2, new Glyph(15, 72, Color.Black, Color.White));
