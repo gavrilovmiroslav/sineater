@@ -143,6 +143,11 @@ public class Domain(ICharacter caster, int x, int y, int radius)
 
         yield return new WaitForSeconds(0.15f);
     }
+
+    public virtual IEnumerable ApplyOnDeath(CombatMapScreen combatMapScreen, int eX, int eY)
+    {
+        yield break;
+    }
 }
 
 public class DomainOfHealing(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
@@ -685,7 +690,27 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
     Dictionary<(int, int), Color> _shadowColors = [];
     Dictionary<ICharacter, int> _moves = [];
     private int _turns = 3;
-    
+
+    public override IEnumerable ApplyOnDeath(CombatMapScreen level, int eX, int eY)
+    {
+        List<(int, int, ICharacter)> toRemove = [];
+        foreach (var (tx, ty, t) in _totems)
+        {
+            if (tx == eX && ty == eY)
+            {
+                toRemove.Add((tx, ty, t));
+            }
+        }
+
+        foreach (var rem in toRemove)
+        {
+            _totems.Remove(rem);
+        }
+
+        level.DrawCombat();
+        yield break;
+    }
+
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
         List<(int, int)> shadows = [];
@@ -765,11 +790,19 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
         
         foreach (var e in level.Enemies)
         {
+            if (e.Traits.Any(t => t is TraitCaptured))
+            {
+                e.Traits.RemoveAll(t => t is TraitCaptured);
+            }
             e.Render = true;
         }
 
         foreach (var c in SineaterGame.Instance.Party.Characters)
         {
+            if (c.Traits.Any(t => t is TraitCaptured))
+            {
+                c.Traits.RemoveAll(t => t is TraitCaptured);
+            }
             c.Render = true;
         }
         

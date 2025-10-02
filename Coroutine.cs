@@ -202,10 +202,10 @@ public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> con
 {
     public IEnumerator GetEnumerator()
     {
-        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(28, 16), content);
+        yield return new ShowPopupAndWaitForKey(new Vector2(5, 8), new Vector2(28, 16), content);
         var game = SineaterGame.Instance;
-        game.Layers["mrmo"].SetRect(new Vector2(5, 5), new Vector2(28, 16), ' ');
-        game.Layers["ascii"].SetRect(new Vector2(5, 5), new Vector2(28 * 2, 16), ' ');
+        game.Layers["mrmo"].SetRect(new Vector2(5, 8), new Vector2(28, 16), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(5, 8), new Vector2(28 * 2, 16), ' ');
     }
 }
 

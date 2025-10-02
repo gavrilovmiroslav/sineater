@@ -1170,6 +1170,10 @@ public class CombatMapScreen : IScreen
                 }
             }
 
+            if (Domains.Tiles.ContainsKey((e.X, e.Y)))
+            {
+                yield return Domains.Tiles[(e.X, e.Y)].ApplyOnDeath(this, e.X, e.Y);
+            }
             Draw(new GameTime());
         }
     }

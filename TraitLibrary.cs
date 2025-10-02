@@ -198,6 +198,18 @@ public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", durati
 
         yield return new WaitForSeconds(0.5f);
     }
+
+    public override IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        flow.DefenseDicePreRoll.Clear();
+        yield break;
+    }
+
+    public override IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
+    {
+        flow.HitDieDamage++;
+        yield break;
+    }
 }
 
 public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
