@@ -30,6 +30,8 @@ public class InventoryScreen : IScreen
 
     public void ChooseToEquipPrevious()
     {
+        if (_game.Inventory.Items.Length == 0) return;
+        
         _chooseToEquipIndex--;
         if (_chooseToEquipIndex < 0)
         {
@@ -41,7 +43,7 @@ public class InventoryScreen : IScreen
             if (_game.Inventory.Items[_chooseToEquipIndex] != null)
             {
                 var item = _game.Inventory.Items[_chooseToEquipIndex];
-                if (item.GetType() != _chooseToEquipType)
+                if (!(item.GetType() == _chooseToEquipType || item.GetType().IsSubclassOf(_chooseToEquipType)))
                 {
                     ChooseToEquipPrevious();
                 }
@@ -55,6 +57,8 @@ public class InventoryScreen : IScreen
 
     public void ChooseToEquipNext()
     {
+        if (_game.Inventory.Items.Length == 0) return;
+        
         _chooseToEquipIndex++;
         if (_chooseToEquipIndex < 0)
         {
@@ -70,7 +74,7 @@ public class InventoryScreen : IScreen
             if (_game.Inventory.Items[_chooseToEquipIndex] != null)
             {
                 var item = _game.Inventory.Items[_chooseToEquipIndex];
-                if (item.GetType() != _chooseToEquipType)
+                if (!(item.GetType() == _chooseToEquipType || item.GetType().IsSubclassOf(_chooseToEquipType)))
                 {
                     ChooseToEquipNext();
                 }
@@ -142,7 +146,7 @@ public class InventoryScreen : IScreen
                     case 0:
                         if (_game.Party.Characters[charIndex].LeftWeapon == null && _game.Inventory.Items[_toBeEquipped] is Weapon lh)
                         {
-                            _game.Party.Characters[charIndex].LeftWeapon = lh;
+                            _game.Party.Characters[charIndex].EquipLeftWeapon(lh);
                             _game.Inventory.Drop(_toBeEquipped);
                             _toBeEquipped = -1;
                         }
@@ -150,7 +154,7 @@ public class InventoryScreen : IScreen
                     case 1:
                         if (_game.Party.Characters[charIndex].RightWeapon == null && _game.Inventory.Items[_toBeEquipped] is Weapon rh)
                         {
-                            _game.Party.Characters[charIndex].RightWeapon = rh;
+                            _game.Party.Characters[charIndex].EquipRightWeapon(rh);
                             _game.Inventory.Drop(_toBeEquipped);
                             _toBeEquipped = -1;
                         }
@@ -158,7 +162,7 @@ public class InventoryScreen : IScreen
                     case 2:
                         if (_game.Party.Characters[charIndex].Armor == null && _game.Inventory.Items[_toBeEquipped] is Armor arm)
                         {
-                            _game.Party.Characters[charIndex].Armor = arm;
+                            _game.Party.Characters[charIndex].EquipArmor(arm);
                             _game.Inventory.Drop(_toBeEquipped);
                             _toBeEquipped = -1;
                         }
@@ -185,13 +189,13 @@ public class InventoryScreen : IScreen
                     switch (slot)
                     {
                         case 0:
-                            _game.Party.Characters[chr].LeftWeapon = item as Weapon;
+                            _game.Party.Characters[chr].EquipLeftWeapon(item as Weapon);
                             break;
                         case 1:
-                            _game.Party.Characters[chr].RightWeapon = item as Weapon;
+                            _game.Party.Characters[chr].EquipRightWeapon(item as Weapon);
                             break;
                         case 2:
-                            _game.Party.Characters[chr].Armor = item as Armor;
+                            _game.Party.Characters[chr].EquipArmor(item as Armor);
                             break;
                     }
                     _game.Inventory.Items[_chooseToEquipIndex] = null;
@@ -229,13 +233,13 @@ public class InventoryScreen : IScreen
                     switch (slotIndex)
                     {
                         case 0:
-                            _game.Party.Characters[charIndex].LeftWeapon = null;
+                            _game.Party.Characters[charIndex].EquipLeftWeapon(null);
                             break;
                         case 1:
-                            _game.Party.Characters[charIndex].RightWeapon = null;
+                            _game.Party.Characters[charIndex].EquipRightWeapon(null);
                             break;
                         case 2:
-                            _game.Party.Characters[charIndex].Armor = null;
+                            _game.Party.Characters[charIndex].EquipArmor(null);
                             break;
                     }
                 }
@@ -282,7 +286,8 @@ public class InventoryScreen : IScreen
 
                     for (var i = 0; i < _game.Inventory.Items.Length; i++)
                     {
-                        if (_game.Inventory.Items[i]?.GetType() == _chooseToEquipType)
+                        var t = _game.Inventory.Items[i].GetType();
+                        if (t == _chooseToEquipType || t.IsSubclassOf(_chooseToEquipType))
                         {
                             _chooseToEquipIndex = i;
                             break;
@@ -335,13 +340,13 @@ public class InventoryScreen : IScreen
                         switch (slotIndex)
                         {
                             case 0:
-                                _game.Party.Characters[charIndex].LeftWeapon = null;
+                                _game.Party.Characters[charIndex].EquipLeftWeapon(null);
                                 break;
                             case 1:
-                                _game.Party.Characters[charIndex].RightWeapon = null;
+                                _game.Party.Characters[charIndex].EquipRightWeapon(null);
                                 break;
                             case 2:
-                                _game.Party.Characters[charIndex].Armor = null;
+                                _game.Party.Characters[charIndex].EquipArmor(null);
                                 break;
                         }
                         _game.ScreenStack.Pop();
@@ -387,13 +392,13 @@ public class InventoryScreen : IScreen
                         switch (slotIndex)
                         {
                             case 0:
-                                _game.Party.Characters[charIndex].LeftWeapon = null;
+                                _game.Party.Characters[charIndex].EquipLeftWeapon(null);
                                 break;
                             case 1:
-                                _game.Party.Characters[charIndex].RightWeapon = null;
+                                _game.Party.Characters[charIndex].EquipRightWeapon(null);
                                 break;
                             case 2:
-                                _game.Party.Characters[charIndex].Armor = null;
+                                _game.Party.Characters[charIndex].EquipArmor(null);
                                 break;
                         }
                     }
@@ -489,7 +494,11 @@ public class InventoryScreen : IScreen
             {
                 var (u, v) = character.Job.GetImage();
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
-                if (character.LeftWeapon is { } lh)
+                if (character.LeftWeapon is Shield lshield)
+                { 
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lshield.Name} (Guard: {lshield.Defense}, Weight: {lshield.Weight.ToString()})");
+                }
+                else if (character.LeftWeapon is { } lh)
                 {
                     _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lh.Name} (Attack: {lh.Attack}, Weight: {lh.Weight.ToString()})");
                 }
@@ -500,7 +509,11 @@ public class InventoryScreen : IScreen
                 i++;
                 
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
-                if (character.RightWeapon is { } rh)
+                if (character.RightWeapon is Shield rshield)
+                { 
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rshield.Name} (Guard: {rshield.Defense}, Weight: {rshield.Weight.ToString()})");
+                }
+                else if (character.RightWeapon is { } rh)
                 {
                     _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rh.Name} (Attack: {rh.Attack}, Weight: {rh.Weight.ToString()})");
                 }
@@ -592,7 +605,11 @@ public class InventoryScreen : IScreen
             for (int i = 0; i < 12; i++)
             {
                 var item = _game.Inventory.Items[i];
-                if (item is Weapon weapon)
+                if (item is Shield shield)
+                {
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {shield.Name} (Guard: {shield.Defense}, Weight: {shield.Weight.ToString()})");
+                }
+                else if (item is Weapon weapon)
                 {
                     _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {weapon.Name} (Attack: {weapon.Attack}, Weight: {weapon.Weight.ToString()})");
                 }

@@ -137,7 +137,9 @@ public interface ICharacter : ICombatFlowParticipant
     public Stats Stats { get; set; }
     public Color GetTint();
     public ActionPoints GetAP();
+    public void EquipLeftWeapon(Weapon? weapon);
     public Weapon? GetLeftWeapon();
+    public void EquipRightWeapon(Weapon? weapon);
     public Weapon? GetRightWeapon();
     public Armor? GetArmor();
     public List<Trait> GetTraits();
@@ -224,7 +226,7 @@ public class Character : ICharacter
 
     public void RemoveArmor()
     {
-        this.Armor = null;
+        this.EquipArmor(null);
     }
 
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -279,14 +281,14 @@ public class Character : ICharacter
     {
         foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyLeftWeaponShattered(flow);
-        this.LeftWeapon = null;
+        this.EquipLeftWeapon(null);
     }
 
     public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
     {
         foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyRightWeaponShattered(flow);
-        this.RightWeapon = null;
+        this.EquipRightWeapon(null);
     }
 
     public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
@@ -341,6 +343,42 @@ public class Character : ICharacter
     {
         return Job.GetPortrait();
     }
+
+    public void EquipLeftWeapon(Weapon? weapon)
+    {
+        if (LeftWeapon != null)
+        {
+            foreach (var e in LeftWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        LeftWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
+    }
+    
+    public void EquipRightWeapon(Weapon? weapon)
+    {
+        if (RightWeapon != null)
+        {
+            foreach (var e in RightWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        
+        RightWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
+    }
+    
+    public void EquipArmor(Armor? armor)
+    {
+        Armor = armor;
+    }
 }
 
 public record struct Party
@@ -373,40 +411,42 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].LeftWeapon = new Weapon("Staff", 2, EWeightClass.Heavy, 1);
-                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Heavy, 1);
+                    Characters[i].EquipLeftWeapon(new Weapon("Staff", 2, EWeightClass.Heavy, 1));
+                    Characters[i].EquipArmor(new Armor("Robe", 2, EWeightClass.Heavy, 1));
                     Characters[i].Stats.Vigor -= 2;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].RightWeapon = new Weapon("Dagger", 2,EWeightClass.Small, 4);
-                    Characters[i].Armor = new Armor("Veil", 3, EWeightClass.Medium, 2);
-                    Characters[i].Traits.Add(new TraitSneaky());
+                    Characters[i].EquipRightWeapon(new Weapon("Dagger", 2,EWeightClass.Small, 4));
+                    Characters[i].EquipArmor(new Armor("Veil", 3, EWeightClass.Medium, 2));
+                    Characters[i].Stats.Clarity++;
                     Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].RightWeapon = new Weapon("Sword", 4, EWeightClass.Large, 4);
-                    Characters[i].Armor = new Armor("Plate", 5, EWeightClass.Heavy, 4);
+                    Characters[i].EquipLeftWeapon(new Shield("Tower Shield", 2, EWeightClass.Medium, 4));
+                    Characters[i].EquipRightWeapon(new Weapon("Claymore", 4, EWeightClass.Large, 4));
+                    Characters[i].EquipArmor(new Armor("Plate Armor", 4, EWeightClass.Heavy, 4));
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].RightWeapon = new Weapon("Staff", 3, EWeightClass.Heavy, 1);
-                    Characters[i].Armor = new Armor("Robe", 1, EWeightClass.Tiny, 1);
+                    Characters[i].EquipRightWeapon(new Weapon("Skolem Staff", 3, EWeightClass.Heavy, 1));
+                    Characters[i].EquipArmor(new Armor("Heavy Robe", 3, EWeightClass.Heavy, 1));
                     Characters[i].Traits.Add(new TraitHeavy());
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 3);
-                    Characters[i].RightWeapon = new Weapon("Book", 2, EWeightClass.Heavy, 5);
-                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 1);
+                    Characters[i].EquipLeftWeapon(new Weapon("Needle Sword", 3, EWeightClass.Medium, 7));
+                    Characters[i].EquipRightWeapon(new Weapon("Tome", 2, EWeightClass.Heavy, 5));
+                    Characters[i].EquipArmor(new Armor("Fine Clothes", 2, EWeightClass.Medium, 6));
                     for (var n = 0; n < 3; n++)
                         SineaterGame.Instance.Inventory.Put(new PotionBloodReliquary());
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].LeftWeapon = new Weapon("Sceptre", 3, EWeightClass.Heavy, 8);
-                    Characters[i].Armor = new Armor("Robe", 2, EWeightClass.Medium, 4);
+                    Characters[i].EquipLeftWeapon(new Weapon("Odic Thorn Whip", 4, EWeightClass.Heavy, 2));
+                    Characters[i].EquipArmor(new Armor("Bloodied Tunic", 2, EWeightClass.Medium, 4));
+                    Characters[i].Stats.Vigor++;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].LeftWeapon = new Weapon("Dagger", 2, EWeightClass.Tiny, 7);
-                    Characters[i].RightWeapon = new Weapon("Sword", 3, EWeightClass.Medium, 7);
+                    Characters[i].EquipLeftWeapon(new Weapon("Worn Dagger", 2, EWeightClass.Tiny, 7));
+                    Characters[i].EquipRightWeapon(new Weapon("Broken Sword", 2, EWeightClass.Small, 1));
                     Characters[i].Traits.Add(new TraitSkilled());
                     Characters[i].Stats.Vigor -= 1;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;

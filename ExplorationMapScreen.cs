@@ -328,7 +328,10 @@ public class ExplorationMapScreen : IScreen
             _game.Layers["ascii"].Set(20 * index + 4, h - 1, $"{index + 1}. {character.Job}", character.Tint);
             for (int i = 0; i < character.Traits.Count; i++)
             {
-                _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"[{character.Traits[i].ShortName}]", character.Tint);
+                if (character.Traits[i] is ItemTrait)
+                    _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"<{character.Traits[i].ShortName}>", character.Tint);
+                else
+                    _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"[{character.Traits[i].ShortName}]", character.Tint);
             }
 
             _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);

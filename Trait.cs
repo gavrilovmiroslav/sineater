@@ -135,6 +135,11 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
     }
 }
 
+public class ItemTrait(string name, string shortName, IItem item) : Trait(name, shortName)
+{
+    
+}
+
 public class LimitedTrait(string name, string shortName, int duration) : Trait(name, shortName)
 {
     private int _duration = duration;

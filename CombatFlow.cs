@@ -19,7 +19,8 @@ public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowSt
 public record struct CombatFlow_PresentDamageDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFlowStep;
 public record struct CombatFlow_PresentArmorDestroyed : ICombatFlowStep;
-
+public record struct CombatFlow_ShatteredLeftWeapon : ICombatFlowStep;
+public record struct CombatFlow_ShatteredRightWeapon : ICombatFlowStep;
 
 public record struct Die(IAbilitySource Source)
 {
@@ -79,6 +80,8 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     public int HitDieDamage = 0;
     public int TotalIncomingDamage = 0;
     public bool ArmorDented = false;
+    public bool ShatteredLeftWeapon = false;
+    public bool ShatteredRightWeapon = false;
     
     public IEnumerable Attack()
     {
@@ -253,7 +256,9 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 lh.Attack--;
                 if (lh.Attack == 0)
                 {
+                    ShatteredLeftWeapon = true;
                     yield return attacker.AsAttacker_ApplyLeftWeaponShattered(this);
+                    yield return new CombatFlow_ShatteredLeftWeapon();
                 }
             }
         }
@@ -265,7 +270,9 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 rh.Attack--;
                 if (rh.Attack == 0)
                 {
+                    ShatteredRightWeapon = true;
                     yield return attacker.AsAttacker_ApplyRightWeaponShattered(this);
+                    yield return new CombatFlow_ShatteredRightWeapon();
                 }
             }
         } 

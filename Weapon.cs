@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 
 namespace SINEATER;
@@ -49,6 +51,8 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(14, 67);
 
+    public List<Trait> Traits { get; set; } = [];
+    
     public bool CanBeUsed()
     {
         return false;
@@ -60,6 +64,16 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     }
 
     public IEnumerable ApplyItemUsed(ICharacter character)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable ApplyItemEquipped(ICharacter character)
+    {
+        yield break;
+    }
+    
+    public virtual IEnumerable ApplyItemUnequipped(ICharacter character)
     {
         yield break;
     }
@@ -135,7 +149,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
         yield break;
     }
 
-    public int Attack{ get; set; } = attack;
+    public virtual int Attack{ get; set; } = attack;
     public EWeightClass Weight{ get; set; } = weight;
     public int Quality{ get; set; } = quality;
 
@@ -144,7 +158,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
         return $"{Name} ({Attack}{Weight.Short()})";
     }
     
-    public string ToLongString()
+    public virtual string ToLongString()
     {
         return $"{Name} (Attack: {Attack}, Weight: {Weight.ToString()})";
     }
@@ -157,5 +171,67 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
     public virtual Glyph GetIcon()
     {
         return Glyph;
+    }
+}
+
+public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield)
+{
+    public Shield Owner { get; set; } = shield;
+    public override IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        for (var i = 0; i < Owner.Defense; i++)
+        {
+            flow.DefenseDicePreRoll.Add(new Die());    
+        }
+
+        yield break;
+    }
+
+    public override IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
+    {
+        if (Rnd.Instance.D100 < 20)
+        {
+            flow.ArmorDented = false;
+            this.Owner.Defense--;
+            
+            yield return this.Owner.ApplyItemUnequipped(flow.Defender);
+            yield return this.Owner.ApplyItemEquipped(flow.Defender);
+        }
+    }
+}
+
+public class Shield(string name, int defense, EWeightClass weight, int quality)
+    : Weapon(name, 0, weight, quality)
+{
+    public int Defense { get; set; } = defense;
+    
+    public override string ToString()
+    {
+        return $"{Name} ({Defense}G)";
+    }
+    
+    public override string ToLongString()
+    {
+        return $"{Name} (Guard: {Defense}, Weight: {Weight.ToString()})";
+    }
+
+    public override IEnumerable ApplyItemEquipped(ICharacter character)
+    {
+        if (this.Defense > 0)
+        {
+            character.GetTraits().Add(new TraitShielded(this));
+        }
+
+        yield break;
+    }
+
+    public override IEnumerable ApplyItemUnequipped(ICharacter character)
+    {
+        foreach (var trait in character.GetTraits().Where(t => t is TraitShielded s && s.Owner == this).ToArray())
+        {
+            character.GetTraits().Remove(trait);
+        }
+
+        yield break;
     }
 }

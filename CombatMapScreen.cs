@@ -745,14 +745,36 @@ public class CombatMapScreen : IScreen
             
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-",
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, character.LeftWeapon?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
+            if (character.LeftWeapon is Shield leftShield)
+            {
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 1 + index, leftShield.Defense.ToString() ?? "-",
+                    Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, "G", Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+            }
+            else
+            {
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index,
+                    character.LeftWeapon?.Weight.Short() ?? "-",
+                    Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+            }
+
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, character.RightWeapon?.Attack.ToString() ?? "-",
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 18, 1 + index, character.RightWeapon?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
+            if (character.RightWeapon is Shield rightShield)
+            {
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 1 + index, rightShield.Defense.ToString() ?? "-",
+                    Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 1 + index, "G", Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+            }
+            else
+            {
+                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 18, 1 + index,
+                    character.RightWeapon?.Weight.Short() ?? "-",
+                    Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
+            }
+
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 20, 1 + index, character.Armor?.Guard.ToString() ?? "-",
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 21, 1 + index, character.Armor?.Weight.Short() ?? "-",
@@ -1110,6 +1132,14 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_PresentArmorDestroyed pad)
         {
             flow.Defender.RemoveArmor();
+        }
+        else if (step is CombatFlow_ShatteredLeftWeapon lw)
+        {
+            flow.Attacker.EquipLeftWeapon(null);
+        }
+        else if (step is CombatFlow_ShatteredRightWeapon rw)
+        {
+            flow.Attacker.EquipRightWeapon(null);
         }
     }
 

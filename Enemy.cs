@@ -40,9 +40,40 @@ public class Enemy : ICharacter, ICombatFlowParticipant
         return AP;
     }
 
+    public void EquipLeftWeapon(Weapon? weapon)
+    {
+        if (LeftWeapon != null)
+        {
+            foreach (var e in LeftWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        LeftWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
+    }
+
     public Weapon? GetLeftWeapon()
     {
         return LeftWeapon;
+    }
+
+    public void EquipRightWeapon(Weapon? weapon)
+    {
+        if (RightWeapon != null)
+        {
+            foreach (var e in RightWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        
+        RightWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
     }
 
     public Weapon? GetRightWeapon()
