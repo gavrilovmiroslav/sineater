@@ -30,7 +30,8 @@ public class DomainExpansion : Ability
         switch (kind)
         {
             case Status.Stamina:
-                yield return level.Domains.Add(new DomainOfAction(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 2, 6)));
+                yield return level.Domains.Add(new DomainOfFire(character, x, y, 4));
+                //yield return level.Domains.Add(new DomainOfAction(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 2, 6)));
                 break;
             case Status.Void:
                 yield return level.Domains.Add(new DomainOfDarkness(character, x, y, 2 + character.Stats.Clarity));
@@ -41,7 +42,7 @@ public class DomainExpansion : Ability
             case Status.Fire:
                 break;
             case Status.Tired:
-                yield return level.Domains.Add(new DomainOfSkulls(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 2, 6)));
+                yield return level.Domains.Add(new DomainOfFatigue(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 2, 6)));
                 break;
             case Status.Insanity:
                 break;

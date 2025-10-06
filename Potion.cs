@@ -13,7 +13,7 @@ public class Potion(string name) : Item(name)
 
     public override string ToString()
     {
-        return $"{name} (Potion)";
+        return $"{Name} (Potion)";
     }
 
     public override Glyph GetIcon()

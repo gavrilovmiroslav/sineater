@@ -80,7 +80,7 @@ public class CombatMapScreen : IScreen
     private FieldOfView _fieldOfView;
     private ReadOnlyCollection<Cell>?[] _perspectives;
     private Color[,] _coloredMap;
-    private bool[,] _visited;
+    public bool[,] Visited;
     ReadOnlyCollection<Cell>? _fov = null;
     HashSet<(int, int)>? _isInActivePartyFOV = new();
     public HashSet<(int, int)>? IsInActivePartyFOV => _isInActivePartyFOV;
@@ -122,7 +122,7 @@ public class CombatMapScreen : IScreen
         _height = height;
         _title = title;
         _coloredMap = new Color[_fullWidth, _fullHeight];
-        _visited = new bool[_fullWidth, _fullHeight];
+        Visited = new bool[_fullWidth, _fullHeight];
             
         Domains = new(this);
         
@@ -149,13 +149,13 @@ public class CombatMapScreen : IScreen
         switch (_kind)
         {
             case ETerrainKind.Tomb:
-                (a, b, c, d, e) = (32, 2, 2, 22, 20);//36
+                (a, b, c, d, e) = (36, 2, 2, 22, 20);//36
                 break;
             case ETerrainKind.Temple:
                 (a, b, c, d, e) = (40, 1, 1, 22, 20); //45
                 break;
             case ETerrainKind.Cave:
-                (a, b, c) = (52, 3, 3); //47
+                (a, b, c) = (52, 4, 7); //47
                 break;
             case ETerrainKind.Clearing:
                 (a, b, c) = (54, 3, 1); //49
@@ -340,11 +340,11 @@ public class CombatMapScreen : IScreen
             if (onlyOneChar && _game.Party.Characters[PlayerSelectedIndex] != chr) continue;
             if (_fov == null && chr.Stats.Clarity > 0)
             {
-                _fov = _fieldOfView.ComputeFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);
+                _fov = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
             }
             else if (chr.Stats.Clarity > 0)
             {
-                _fov = _fieldOfView.AppendFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);    
+                _fov = _fieldOfView.AppendFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);    
             }
         }
 
@@ -356,7 +356,7 @@ public class CombatMapScreen : IScreen
         int i = 0;
         foreach (var (chr, combatState) in CombatStates)
         {
-            _perspectives[i] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, 5 + chr.Stats.Mod(EStat.Clarity), true);
+            _perspectives[i] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
             i++;
         }
 
@@ -372,7 +372,7 @@ public class CombatMapScreen : IScreen
         {
             foreach (var cell in _perspectives[chr.Index])
             {
-                _visited[cell.X, cell.Y] = true;
+                Visited[cell.X, cell.Y] = true;
                 switch (chr.Index)
                 {
                     case 0: _coloredMap[cell.X, cell.Y].R++; break;
@@ -601,7 +601,7 @@ public class CombatMapScreen : IScreen
                 
                         _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, g);
                     }
-                    else if (_visited[i, j])
+                    else if (Visited[i, j])
                     {
                         if (onlyNow) continue;
                         var g = _groundGlyphs[i, j];
@@ -737,7 +737,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(2 * _fullWidth + 2, 1 + index, character.Job.ToString(),
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
             
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(),
+            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 1 + index, character.Stats.Clarity.ToString(),
                 Color.Lerp(Color.White, CombatStates[character].Tint, 0.5f));
 
             _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 1 + index, CombatStates[character].Move.ToString(),

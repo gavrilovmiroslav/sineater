@@ -89,14 +89,13 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         var border = map.GetBorderCellsInCircle(x, y, Radius).ToList();
         border.Shuffle();
         var raise = false;
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 15; i++)
         {
             foreach (var cell in border)
             {
                 mrmo.Set(cell.X, cell.Y + 2, new Glyph(raise ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
-                yield return new WaitForSeconds(0.001f);
             }
-
+            yield return new WaitForSeconds(0.01f);
             raise = !raise;
         }
         
@@ -682,7 +681,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
 }
 
 
-public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
+public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
 {
     private int _t = 0;
     internal List<(int, int, ICharacter)> _totems = [];
@@ -752,7 +751,7 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
         yield return Blink(level);
     }
 
-    public IEnumerable SkullTotem(DomainOfSkulls domain, CombatMapScreen level, ICharacter c, int x, int y)
+    public IEnumerable SkullTotem(DomainOfFatigue domain, CombatMapScreen level, ICharacter c, int x, int y)
     {
         c.Render = false;
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
@@ -878,6 +877,111 @@ public class DomainOfSkulls(ICharacter character, int x, int y, int radius) : Do
         {
             mrmo.Set(tx, ty + 1, new Glyph(15, 71, Color.Black, Color.White));
             mrmo.Set(tx, ty + 2, new Glyph(15, 72, Color.Black, Color.White));
+        }
+    }
+}
+
+public class DomainOfFire(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
+{
+    IEnumerable ClearScreen(CombatMapScreen level, IMap map, TextLayer mrmo, int r)
+    {
+        level.DrawCombat();
+        for (int i = 0; i < 24; i++)
+        {
+            for (int j = 0; j < 22; j++)
+            {
+                if (i == x && j == y) continue;
+                var fg = mrmo.GetFg(i, j + 2);
+                mrmo.Set(i, j + 2, Color.Lerp(fg, Color.Black, 1.0f / 4.0f));
+            }
+        }
+        
+        foreach (var cell in map.GetCellsInCircle(x, y, r))
+        {
+            if (cell.X == x && cell.Y == y) continue;
+            mrmo.Set(cell.X, cell.Y + 2, " ", Color.Black);
+        }
+
+        yield return new WaitForSeconds(0.01f);
+    }
+    
+    public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
+    {
+        var mrmo = SineaterGame.Instance.Layers["mrmo"];
+        var map = level.Map;
+
+        for (int k = 0; k < 10; k++)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                for (int j = 0; j < 22; j++)
+                {
+                    if (i == x && j == y) continue;
+                    var fg = mrmo.GetFg(i, j + 2);
+                    mrmo.Set(i, j + 2, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
+                }
+            }
+            
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+        yield return ClearScreen(level, map, mrmo, Radius);
+        
+        yield return new WaitForSeconds(0.5f);
+
+        for (var r = Radius; r >= 1; r--)
+        {
+            yield return ClearScreen(level, map, mrmo, r);
+            var border = map.GetBorderCellsInCircle(x, y, r).ToList();
+            border.Shuffle();
+            var raise = false;
+            for (var i = 0; i < 15; i++)
+            {
+                foreach (var cell in border)
+                {
+                    mrmo.Set(cell.X, cell.Y + 2,
+                        new Glyph(raise ? 12 : 13, 8, 
+                            Color.Lerp(Color.Black, Color.Red, 1.0f - (float)r / Radius),
+                            Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
+                }
+                yield return new WaitForSeconds(0.01f * r);
+                raise = !raise;
+            }
+        }
+
+        if (map != null)
+        {
+            var distances = new DistanceMap(map, false, x, y);
+            for (int i = 1; i < distances.MaxDistance(); i++)
+            {
+                level.DrawCombat();
+                foreach (var (rx, ry) in distances.GetAllAt(i - 2))
+                {
+                    mrmo.Set(rx, ry + 2, ".", Color.White, Color.Black);
+                }
+
+                for (int n = 0; n < 3; n++)
+                {
+                    foreach (var (rx, ry) in distances.GetAllAt(i - 1))
+                    {
+                        mrmo.Set(rx, ry + 2, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
+                    }
+
+                    yield return new WaitForSeconds(0.001f);
+                }
+
+                foreach (var (rx, ry) in distances.GetAllAt(i))
+                {
+                    mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
+                    level.Visited[rx, ry] = true;
+                }
+                foreach (var (rx, ry) in distances.GetAllAt(i + 1))
+                {
+                    mrmo.Set(rx, ry + 2, ".", Color.Yellow, Color.Black);
+                }
+
+                yield return new WaitForSeconds(0.005f);
+            }
         }
     }
 }
