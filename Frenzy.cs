@@ -37,7 +37,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                 var x = 0;
                 var y = 0;
 
-                if (chr is Character c)
+                if (chr is PartyMember c)
                 {
                     var cs = level.CombatStates[c];
                     x = cs.X;
@@ -136,7 +136,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
 
                 if (!chr.GetTraits().Any(t => t is TraitFrenzied))
                 {
-                    chr.GetTraits().Add(new TraitFrenzied(5));
+                    yield return chr.AddTrait(new TraitFrenzied(5));
                 }
 
                 yield return new WaitForSeconds(0.1f);

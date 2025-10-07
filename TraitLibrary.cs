@@ -187,7 +187,7 @@ public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", durati
 {
     public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
     {
-        if (character is Character c)
+        if (character is PartyMember c)
         {
             level.CombatStates[c].Move = 0;
         }
@@ -230,5 +230,91 @@ public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
     {
         character.Stats.Clarity = _oldClarity;
         yield break;
+    }
+}
+
+public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", duration)
+{
+    public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    {
+        if (flow.TotalIncomingDamage == 0)
+        {
+            flow.Attacker.GetAP().Add<StatusDeath>(2);
+        }
+
+        yield break;
+    }
+
+    public override IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow)
+    {
+        if (flow.CurrentRoll is { } att)
+        {
+            if (att.Value == 6 || Rnd.Instance.D100 <= 5 * this.Duration)
+            {
+                flow.CurrentRoll.Value = 6;
+                for (int i = 0; i < 10; i++)
+                {
+                    SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + flow.CurrentHitDieIndex + 1, 9,
+                        new Glyph(5, 68, Color.Black, Color.Lerp(Color.Red, Color.Gray, 1 - ((float)i / 10.0f))));
+                    yield return new WaitForSeconds(0.001f);
+                }
+            }
+        }
+    }
+
+    public override IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
+    {
+        var (att, def) = flow.CurrentPair;
+        if (att.Value == 6)
+        {
+            if (def != null)
+            {
+                def.Value = 0;
+                flow.Defender.Stats.Poise = Math.Max(1, flow.Defender.Stats.Poise - 1);
+                for (int i = 0; i < 10; i++)
+                {
+                    if (i > 3)
+                    {
+                        SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + flow.CurrentStrikeCount + 1, 10,
+                            new Glyph(9, 68, Color.Black, Color.Lerp(Color.Gray, Color.Red, (float)i / 10.0f)));
+                    }
+                    yield return new WaitForSeconds(0.001f);
+                }
+            }
+        }
+    }
+}
+
+public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL")
+{
+    public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetLeftWeapon());
+        yield break;
+    }
+}
+
+public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR")
+{
+    public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
+    {
+        flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetRightWeapon());
+        yield break;
+    }
+}
+
+public class TraitParalyzed() : Trait("Paralyzed", "Pa")
+{
+    public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    {
+        if (character is PartyMember c)
+        {
+            level.CombatStates[c].Move = 1;
+        }
+        else if (character is Enemy e)
+        {
+            e.IsDone = true;
+        }
+        yield  break;
     }
 }

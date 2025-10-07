@@ -40,6 +40,8 @@ public interface ICombatFlowParticipant
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow);
     public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow);
     
+    public IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow);
+    public IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow);
     public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow);
     public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow);
     
@@ -69,6 +71,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     
     public List<Die> AttackDicePreRoll = [];
     public List<Die> DefenseDicePreRoll = [];
+    public RolledDie CurrentRoll;
     public List<RolledDie> AttackDiceRolled = [];
     public List<RolledDie> DefenseDiceRolled = [];
     public List<RolledDie?> HitDice = [];
@@ -127,10 +130,12 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         int n = 0;
         foreach (var die in AttackDicePreRoll)
         {
+            CurrentHitDieIndex = n;
             yield return new CombatFlow_PresentRollingAttackDie(n);
-            var r = die.Roll;
-            AttackDiceRolled.Add(r);
-            yield return new CombatFlow_PresentAttackDie(n, r.Value);
+            CurrentRoll = die.Roll;
+            yield return attacker.AsAttacker_ModifyAttackRollDie(this);
+            AttackDiceRolled.Add(CurrentRoll);
+            yield return new CombatFlow_PresentAttackDie(n, CurrentRoll.Value);
             n++;
         }
 
@@ -139,10 +144,12 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         n = 0;
         foreach (var die in DefenseDicePreRoll)
         {
+            CurrentHitDieIndex = n;
             yield return new CombatFlow_PresentRollingDefenseDie(n);
-            var r = die.Roll;
-            DefenseDiceRolled.Add(r);
-            yield return new CombatFlow_PresentDefenseDie(n, r.Value);
+            CurrentRoll = die.Roll;
+            yield return defender.AsDefender_ModifyDefenseRollDie(this);
+            DefenseDiceRolled.Add(CurrentRoll);
+            yield return new CombatFlow_PresentDefenseDie(n, CurrentRoll.Value);
             n++;
         }
         

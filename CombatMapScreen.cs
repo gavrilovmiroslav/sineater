@@ -84,9 +84,9 @@ public class CombatMapScreen : IScreen
     ReadOnlyCollection<Cell>? _fov = null;
     HashSet<(int, int)>? _isInActivePartyFOV = new();
     public HashSet<(int, int)>? IsInActivePartyFOV => _isInActivePartyFOV;
-    public Dictionary<Character, CombatState> CombatStates = new();
-    private List<Character> _party = new();
-    public List<Character> Party => _party;
+    public Dictionary<PartyMember, CombatState> CombatStates = new();
+    private List<PartyMember> _party = new();
+    public List<PartyMember> Party => _party;
     private List<Enemy> _enemies = new();
     public List<Enemy> Enemies => _enemies;
     public Dictionary<(int, int), IItem> Floor = new();
@@ -216,7 +216,7 @@ public class CombatMapScreen : IScreen
         {
             hp += enemy.Sin;
         }
-        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusSin());
+        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusStamina());
         foreach (var enemy in _enemies)
         {
             enemy.AP = _enemyActionPoints;
@@ -485,7 +485,7 @@ public class CombatMapScreen : IScreen
                     foreach (var (chr, st) in CombatStates)
                     {
                         _game.ActionPoints.Free(st.Move);
-                        st.Move = chr.Stats.Will + 5;
+                        st.Move = chr.Stats.Will + chr.Stats.Mod(EStat.Clarity);
                         
                         for (int i = chr.Traits.Count - 1; i >= 0; i--)
                             CoroutineHandler.Run(chr.Traits[i].ApplyOnStartTurn(this, chr));
@@ -498,7 +498,7 @@ public class CombatMapScreen : IScreen
                     throw new ArgumentOutOfRangeException();
             }
             
-            UpdateFov();
+            UpdateFov(true);
         }
         else if (_presentation == EPresentationState.Executing)
         {
@@ -657,7 +657,7 @@ public class CombatMapScreen : IScreen
             var config = RangedActionConfig.Value;
             if ((_time / 200) % 2 == 0)
             {
-                _game.Layers["mrmo"].Set(config.X, config.Y + _offsetY, "_", CombatStates[config.Owner as Character].Tint);
+                _game.Layers["mrmo"].Set(config.X, config.Y + _offsetY, "_", CombatStates[config.Owner as PartyMember].Tint);
             }
         }
     }
@@ -902,7 +902,7 @@ public class CombatMapScreen : IScreen
             var config = RangedActionConfig.Value;
             if (KB.HasBeenPressed(Keys.Enter))
             {
-                var cs = CombatStates[config.Owner as Character];
+                var cs = CombatStates[config.Owner as PartyMember];
                 CoroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
                 var foundInInventory = false;
                 for (int i = 0; i < _game.Inventory.Items.Length; i++)
@@ -917,7 +917,7 @@ public class CombatMapScreen : IScreen
 
                 if (!foundInInventory)
                 {
-                    var chr = config.Owner as Character;
+                    var chr = config.Owner as PartyMember;
                     if (chr.GetLeftWeapon() == config.Source)
                     {
                         chr.LeftWeapon = null;
@@ -976,7 +976,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 11, "HIT");
             _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 12, "DMG");
             
-            if (att.Attacker is Character chr)
+            if (att.Attacker is PartyMember chr)
             {
                 var cs = CombatStates[chr];
                 var (u, v) = chr.Job.GetImage();
@@ -993,7 +993,7 @@ public class CombatMapScreen : IScreen
             var (ud, vd) = def.Defender.GetPortait();
             _game.Layers["mrmo"].Set(2 + _fullWidth + dw + 1, 9 + dh - 2, "vs");
             _game.Layers["porsmol"].Set(12, 3, new Glyph(ud, vd, Color.Black, def.Defender.GetTint()));
-            if (def.Defender is Character chr)
+            if (def.Defender is PartyMember chr)
             {
                 var cs = CombatStates[chr];
                 var (u, v) = chr.Job.GetImage();
@@ -1098,35 +1098,60 @@ public class CombatMapScreen : IScreen
             var stats = flow.Defender.Stats;
             if (inc.TotalDamage > 0)
             {
-                var woundsBefore = ap.Count<StatusWounds>();
-                ap.Add<StatusWounds>(inc.TotalDamage);
-                var totalWounds = ap.Count<StatusWounds>();
-                var applied = totalWounds - woundsBefore;
-                if (applied < inc.TotalDamage)
+                var wnd = ap.Count<StatusWounds>();
+                var min = Math.Max(inc.TotalDamage, wnd);
+                var effect = Rnd.Instance.Next(min, inc.TotalDamage + wnd);
+                if (effect < 3)
                 {
-                    var diff = inc.TotalDamage - applied;
-                    ap.Reduce(diff);
-                    ap.Add<StatusWounds>(diff);
+                    ap.Add<StatusWounds>(inc.TotalDamage);
                 }
-                if (totalWounds - woundsBefore > stats.Vigor && flow.Defender is Enemy enm)
+                else if (effect < 4)
                 {
-                    ap.Reduce<StatusWounds>(stats.Vigor);
-                    flow.Attacker.GetAP().Add<StatusSin>(enm.Sin);
-                    if (flow.Attacker is Character _)
-                        enm.Die();
+                    ap.Add<StatusWounds>((int)Math.Ceiling(inc.TotalDamage * 1.5f));
                 }
-                else if (totalWounds > 0 && flow.Defender is Enemy enemy)
+                else if (effect < 7)
                 {
-                    var min = 0;
-                    if (ap.Remaining <= 0) min = 3;
-                    if (Rnd.Instance.Next(min, totalWounds) >= stats.Vigor)
+                    ap.Add<StatusWounds>(inc.TotalDamage);
+                    flow.Defender.Stats.Poise = Math.Max(0, flow.Defender.Stats.Poise - 1);
+                    Console.WriteLine($"{flow.Defender.GetName()} loses poise ({flow.Defender.Stats.Poise})!");
+                    if (flow.Defender.Stats.Poise == 0)
                     {
-                        ap.Reduce<StatusWounds>(stats.Vigor);
-                        flow.Attacker.GetAP().Add<StatusSin>(enemy.Sin);
-                        if (flow.Attacker is Character _)
-                            enemy.Die();
+                        flow.Defender.Stats.Poise = flow.Defender.HP;
+                        Console.WriteLine($"{flow.Defender.GetName()} recovers a bit to poise {flow.Defender.Stats.Poise}");
+                        MaybeDie(flow, ap);
                     }
                 }
+                else
+                {
+                    ap.Add<StatusWounds>(inc.TotalDamage);
+                    MaybeDie(flow, ap);
+                }
+                
+                // if (applied < inc.TotalDamage)
+                // {
+                //     var diff = inc.TotalDamage - applied;
+                //     ap.Reduce(diff);
+                //     ap.Add<StatusWounds>(diff);
+                // }
+                // if (totalWounds - woundsBefore > stats.Vigor && flow.Defender is Enemy enm)
+                // {
+                //     ap.Reduce<StatusWounds>(stats.Vigor);
+                //     flow.Attacker.GetAP().Add<StatusSin>(enm.Sin);
+                //     if (flow.Attacker is PartyMember _)
+                //         enm.Die();
+                // }
+                // else if (totalWounds > 0 && flow.Defender is Enemy enemy)
+                // {
+                //     var min = 0;
+                //     if (ap.Remaining <= 0) min = 3;
+                //     if (Rnd.Instance.Next(min, totalWounds) >= enemy.HP)
+                //     {
+                //         ap.Reduce<StatusWounds>(enemy.HP);
+                //         flow.Attacker.GetAP().Add<StatusSin>(enemy.Sin);
+                //         if (flow.Attacker is PartyMember _)
+                //             enemy.Die();
+                //     }
+                // }
             }
         } 
         else if (step is CombatFlow_PresentArmorDestroyed pad)
@@ -1140,6 +1165,43 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_ShatteredRightWeapon rw)
         {
             flow.Attacker.EquipRightWeapon(null);
+        }
+    }
+
+    private void MaybeDie(CombatFlow flow, ActionPoints ap)
+    {
+        flow.Defender.HP--;
+        Console.WriteLine($"{flow.Defender.GetName()} loses health ({flow.Defender.HP})!");
+        if (flow.Defender.HP <= 0)
+        {
+            if (flow.Defender is Enemy enm)
+            {
+                Console.WriteLine($"{flow.Defender.GetName()} dies!");
+                enm.Die();
+                ap.Reduce(enm.Sin);
+            }
+            else if (flow.Defender is PartyMember _)
+            {
+                var rnd = Rnd.Instance.D6;
+                var hpGain = Rnd.Instance.D4;
+                flow.Defender.HP += hpGain;
+
+                switch (rnd)
+                {
+                    case <= 2:
+                        ap.Add<StatusDeath>(hpGain);
+                        break;
+                    case <= 3:
+                        flow.Defender.AddTrait(new TraitCrippledLeftHand());
+                        break;
+                    case <= 4:
+                        flow.Defender.AddTrait(new TraitCrippledRightHand());
+                        break;
+                    default:
+                        flow.Defender.AddTrait(new TraitParalyzed());
+                        break;
+                }
+            }
         }
     }
 
@@ -1179,7 +1241,7 @@ public class CombatMapScreen : IScreen
                 bnd.Add($"The {attacker.GetName()} kills the {defender.GetName()}:");
                 bnd.Newline();
                 bnd.Newline();
-                if (attacker is Character chr)
+                if (attacker is PartyMember chr)
                 {
                     bnd.Add($"  {chr.GetRandomBark()}");
                 }
@@ -1187,7 +1249,7 @@ public class CombatMapScreen : IScreen
                 bnd.Newline();
                 bnd.Newline();
             }, true);
-            if (attacker is Character chr)
+            if (attacker is PartyMember chr)
             {
                 var transferable = e.Traits.Where(t => !(t is LimitedTrait)).ToList();
                 if (transferable.Count > 0)
@@ -1195,8 +1257,7 @@ public class CombatMapScreen : IScreen
                     var t = transferable[Rnd.Instance.Next(0, transferable.Count)];
                     yield return new ShowPopupWindowAndWaitForKey(
                         (_, bnd) => { bnd.Add($"The {attacker.GetName()} acquires {t.Name.ToUpper()}!"); }, true);
-                    attacker.GetTraits().Add(t);
-                    yield return t.ApplyOnReceived(attacker);
+                    yield return attacker.AddTrait(t);
                 }
             }
 
@@ -1218,7 +1279,7 @@ public class CombatMapScreen : IScreen
         return null;
     }
 
-    public Character? IsCharacterAt(int x, int y)
+    public PartyMember? IsCharacterAt(int x, int y)
     {
         foreach (var (chr, cs) in CombatStates)
         {
@@ -1243,6 +1304,7 @@ public class CombatMapScreen : IScreen
             {
                 PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
                 _game.Party.Selected = PlayerSelectedIndex;
+                UpdateFov(true);
                 if (CombatStates[_game.Party.Characters[PlayerSelectedIndex]].Move > 0)
                 {
                     _time = 0;
@@ -1259,7 +1321,6 @@ public class CombatMapScreen : IScreen
             if (ability != null && ability.CanBeUsed(chr) && chr.AP.Remaining > 0)
             {
                 CoroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
-                chr.AP.Spend(1);
             }
         }
         
@@ -1322,7 +1383,7 @@ public class CombatMapScreen : IScreen
                             pos.Y += dy;
                             CombatStates[current].Move--;
                             _game.ActionPoints.Spend(1);
-                            UpdateFov();
+                            UpdateFov(true);
                             if (Domains.Tiles.ContainsKey(((int)pos.X, (int)pos.Y)))
                             {
                                 DrawCombat();

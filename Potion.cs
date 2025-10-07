@@ -132,9 +132,8 @@ public class GhylagsTear() : Potion("Ghylag's Tear")
             if (fields.ContainsKey((x, y)))
             {
                 var blind = new TraitBlind(2);
-                fields[(x, y)].GetTraits().Add(blind);
+                yield return fields[(x, y)].AddTrait(blind);
                 SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(10, 67, Color.Black, Color.White));
-                yield return blind.ApplyOnReceived(fields[(x, y)]);
             }
         }
     }

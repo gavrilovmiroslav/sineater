@@ -24,7 +24,7 @@ public class Armor(string name, int guard, EWeightClass weight, int quality) : I
 
     public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
     {
-        if (character is Character chr)
+        if (character is PartyMember chr)
         {
             if (chr.Armor == null || chr.Armor.Guard < this.Guard)
             {

@@ -16,7 +16,7 @@ public enum Status
     Insanity,
     Poison,
     Sin,
-    Stunned,
+    Death,
     Frozen,
 }
 
@@ -455,7 +455,7 @@ public class StatusSin : BarPiece
     }
 }
 
-public class StatusStunned : BarPiece
+public class StatusDeath : BarPiece
 {
     private float _time = 0;
     
@@ -466,7 +466,7 @@ public class StatusStunned : BarPiece
     
     public override Status ToStatus()
     {
-        return Status.Stunned;
+        return Status.Death;
     }
     
     public override void Draw(int xMin, int xMax, int y)

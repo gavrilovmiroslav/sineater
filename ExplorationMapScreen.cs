@@ -358,8 +358,8 @@ public class ExplorationMapScreen : IScreen
             _game.Layers["ascii"].Set(w + 5 + 16, h + 1 + index, character.Stats.Poise.ToString(), c);
             _game.Layers["ascii"].Set(w + 5 + 20, h + 1 + index, character.Stats.Vigor.ToString(), c);
             
-            _game.Layers["ascii"].Set(w + 6 + 7 + 17, h + 1 + index, (5 + character.Stats.Mod(EStat.Clarity)).ToString(), c);
-            _game.Layers["ascii"].Set(w + 6 + 11 + 17, h + 1 + index, (character.Stats.Will + 5).ToString(), c);
+            _game.Layers["ascii"].Set(w + 6 + 7 + 17, h + 1 + index, character.Stats.Clarity.ToString(), c);
+            _game.Layers["ascii"].Set(w + 6 + 11 + 17, h + 1 + index, (character.Stats.Will + character.Stats.Mod(EStat.Clarity)).ToString(), c);
             _game.Layers["ascii"].Set(w + 5 + 14 + 18, h + 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-", c);
             _game.Layers["ascii"].Set(w + 5 + 14 + 19, h + 1 + index, character.LeftWeapon?.Weight.Short() ?? "-", c);
             _game.Layers["ascii"].Set(w + 5 + 17 + 18, h + 1 + index, character.RightWeapon?.Attack.ToString() ?? "-", c);

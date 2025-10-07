@@ -50,13 +50,14 @@ public class DomainExpansion : Ability
                 break;
             case Status.Sin:
                 break;
-            case Status.Stunned:
+            case Status.Death:
                 break;
             case Status.Frozen:
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        character.GetAP().Spend(1);
         yield break;
     }
 }

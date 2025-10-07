@@ -106,7 +106,10 @@ public class BehaviorBlind : Behavior
         else if (level.Map.IsWalkable(nextX, nextY))
         {
             yield return self.MoveTo(level, nextX, nextY, x, y);
-            yield return new WaitForSeconds(0.01f);
+            if (level.IsInActivePartyFOV?.Contains((nextX, nextY)) ?? false)
+            {
+                yield return new WaitForSeconds(0.01f);
+            }
         }
     }
 
@@ -253,7 +256,10 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
                 if (level.Map?.IsWalkable(next.X, next.Y) ?? false)
                 {
                     yield return self.MoveTo(level, next.X, next.Y, ox, oy);
-                    yield return new WaitForSeconds(0.05f);
+                    if (level.IsInActivePartyFOV?.Contains((next.X, next.Y)) ?? false)
+                    {
+                        yield return new WaitForSeconds(0.05f);
+                    }
                 }
             }
         }

@@ -80,7 +80,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
 
     public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
     {
-        if (character is Character chr)
+        if (character is PartyMember chr)
         {
             if (chr.LeftWeapon == null)
             {
@@ -193,9 +193,7 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield)
         {
             flow.ArmorDented = false;
             this.Owner.Defense--;
-            
-            yield return this.Owner.ApplyItemUnequipped(flow.Defender);
-            yield return this.Owner.ApplyItemEquipped(flow.Defender);
+            yield break;
         }
     }
 }

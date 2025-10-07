@@ -49,6 +49,16 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
         yield break;
     }
 
+    public virtual IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow)
+    {
+        yield break;
+    }
+
+    public virtual IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow)
+    {
+        yield break;
+    }
+
     public virtual IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
         yield break;
@@ -142,9 +152,7 @@ public class ItemTrait(string name, string shortName, IItem item) : Trait(name, 
 
 public class LimitedTrait(string name, string shortName, int duration) : Trait(name, shortName)
 {
-    private int _duration = duration;
-
-    public int Duration => _duration;
+    public int Duration = duration;
 
     public virtual IEnumerable ApplyOnExpires(ICharacter character)
     {
@@ -153,8 +161,8 @@ public class LimitedTrait(string name, string shortName, int duration) : Trait(n
     
     public override IEnumerable ApplyOnEndTurn(ICharacter character)
     {
-        _duration--;
-        if (_duration <= 0)
+        Duration--;
+        if (Duration <= 0)
         {
             yield return ApplyOnExpires(character);
             character.GetTraits().Remove(this);

@@ -319,7 +319,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        if (character is Character c)
+        if (character is PartyMember c)
             level.CombatStates[c].Move++;
 
         if (!_steps.ContainsKey((oldX, oldY)))
@@ -832,16 +832,16 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         if (_moves[character] == character.Stats.Clarity)
         {
             yield return SkullTotem(this, level, character, x, y);
-            if (character is Character c)
+            if (character is PartyMember c)
             {
                 level.CombatStates[c].Move = 0;
-                c.Traits.Add(new TraitCaptured(3));
+                yield return c.AddTrait(new TraitCaptured(3));
                 _moves[character] = 0;
             }
             else if (character is Enemy e)
             {
                 e.IsDone = true;
-                e.Traits.Add(new TraitCaptured(3));
+                yield return e.AddTrait(new TraitCaptured(3));
                 _moves[character] = 0;
             }
         }
@@ -949,39 +949,58 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             }
         }
 
-        if (map != null)
+        Dictionary<(int, int), ICharacter> chars = [];
+        foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
-            var distances = new DistanceMap(map, false, x, y);
-            for (int i = 1; i < distances.MaxDistance(); i++)
+            var cs = level.CombatStates[ch];
+            chars[(cs.X, cs.Y)] = ch; 
+        }
+        
+        foreach (var ch in level.Enemies)
+        {
+            chars[(ch.X, ch.Y)] = ch; 
+        }
+        
+        var distances = new DistanceMap(map, false, x, y);
+        for (int i = 1; i < distances.MaxDistance(); i++)
+        {
+            level.DrawCombat();
+            foreach (var (rx, ry) in distances.GetAllAt(i - 2))
             {
-                level.DrawCombat();
-                foreach (var (rx, ry) in distances.GetAllAt(i - 2))
-                {
-                    mrmo.Set(rx, ry + 2, ".", Color.White, Color.Black);
-                }
-
-                for (int n = 0; n < 3; n++)
-                {
-                    foreach (var (rx, ry) in distances.GetAllAt(i - 1))
-                    {
-                        mrmo.Set(rx, ry + 2, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
-                    }
-
-                    yield return new WaitForSeconds(0.001f);
-                }
-
-                foreach (var (rx, ry) in distances.GetAllAt(i))
-                {
-                    mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
-                    level.Visited[rx, ry] = true;
-                }
-                foreach (var (rx, ry) in distances.GetAllAt(i + 1))
-                {
-                    mrmo.Set(rx, ry + 2, ".", Color.Yellow, Color.Black);
-                }
-
-                yield return new WaitForSeconds(0.005f);
+                mrmo.Set(rx, ry + 2, ".", Color.White, Color.Black);
             }
+
+            for (int n = 0; n < 3; n++)
+            {
+                foreach (var (rx, ry) in distances.GetAllAt(i - 1))
+                {
+                    mrmo.Set(rx, ry + 2, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
+                }
+
+                yield return new WaitForSeconds(0.001f);
+            }
+
+            foreach (var (rx, ry) in distances.GetAllAt(i))
+            {
+                mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
+
+                if (level.IsInActivePartyFOV?.Contains((rx, ry)) ?? false)
+                {
+                    if (chars.ContainsKey((rx, ry)))
+                    {
+                        yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
+                    }
+                }
+                
+                level.Visited[rx, ry] = true;
+            }
+            
+            foreach (var (rx, ry) in distances.GetAllAt(i + 1))
+            {
+                mrmo.Set(rx, ry + 2, ".", Color.Yellow, Color.Black);
+            }
+
+            yield return new WaitForSeconds(0.005f);
         }
     }
 }

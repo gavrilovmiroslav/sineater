@@ -86,7 +86,7 @@ public class Stats
 
     public Stats()
     {
-        var bag = Rnd.Instance.Bag((i => i >= 2), 6, 6, 6, 8);
+        var bag = Rnd.Instance.Bag((i => i > 1), 6, 6, 6, 6);
         
         Will = bag[0];
         Clarity = bag[1];
@@ -133,6 +133,9 @@ public class Stats
 
 public interface ICharacter : ICombatFlowParticipant
 {
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int HP { get; set; }
     public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Color GetTint();
@@ -143,15 +146,16 @@ public interface ICharacter : ICombatFlowParticipant
     public Weapon? GetRightWeapon();
     public Armor? GetArmor();
     public List<Trait> GetTraits();
+    public IEnumerable AddTrait(Trait trait);
     public bool IsStunned();
     
-    string GetName();
+    public string GetName();
     (int, int) GetPortait();
     void Die();
     void RemoveArmor();
 }
 
-public class Character : ICharacter
+public abstract class Character : ICharacter
 {
     public int Index;
     public Color Tint;
@@ -161,27 +165,36 @@ public class Character : ICharacter
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
     public Ability? Ability = null;
-    public List<Trait> Traits = [];
-    
-    public Character(ECharacterClass? job = null)
+    public readonly List<Trait> Traits = [];
+
+    public IEnumerable AddTrait(Trait trait)
     {
-        if (job == null)
+        var alreadyHasIt = Traits.Any(t => t.GetName() == trait.GetName());
+        if (trait is LimitedTrait lt && alreadyHasIt)
         {
-            Job = Enum<ECharacterClass>.Random();
-            Console.WriteLine($"Created character with {Stats} and random class: {Job}");
+            foreach (var lim in Traits.Where(t => t.GetName() == trait.GetName()))
+            {
+                if (lim is LimitedTrait limt)
+                {
+                    limt.Duration += lt.Duration;
+                }
+            }
         }
-        else
+        else if (!alreadyHasIt)
         {
-            Job = job.Value;
-            Console.WriteLine($"Created character with {Stats} and class: {Job}");
+            Traits.Add(trait);
+            yield return trait.ApplyOnReceived(this);
         }
     }
 
-    public Color GetTint()
+        public Color GetTint()
     {
         return Tint;
     }
 
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int HP { get; set; }
     public bool Render { get; set; } = true;
     
     public Stats Stats { get; set; } = new();
@@ -210,19 +223,61 @@ public class Character : ICharacter
     {
         return Traits;
     }
-
+    
     public bool IsStunned()
     {
-        return AP.Contains<StatusStunned>();
+        return AP.Contains<StatusDeath>();
     }
     
-    public string GetName()
+    public virtual string GetName()
     {
         return Job.ToString();
     }
 
-    public void Die()
+    
+    public virtual (int, int) GetPortait()
+    {
+        return Job.GetPortrait();
+    }
+
+    public virtual void Die()
     {}
+
+    public void EquipLeftWeapon(Weapon? weapon)
+    {
+        if (LeftWeapon != null)
+        {
+            foreach (var e in LeftWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        LeftWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
+    }
+    
+    public void EquipRightWeapon(Weapon? weapon)
+    {
+        if (RightWeapon != null)
+        {
+            foreach (var e in RightWeapon.ApplyItemUnequipped(this))
+            { }
+        }
+        
+        RightWeapon = weapon;
+        if (weapon != null)
+        {
+            foreach (var e in weapon.ApplyItemEquipped(this))
+            { }
+        }
+    }
+    
+    public void EquipArmor(Armor? armor)
+    {
+        Armor = armor;
+    }
 
     public void RemoveArmor()
     {
@@ -239,6 +294,18 @@ public class Character : ICharacter
     {
         foreach (var trait in Traits) 
             yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
+    }
+
+    public IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsAttacker_ModifyAttackRollDie(flow);
+    }
+
+    public IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow)
+    {
+        foreach (var trait in Traits)
+            yield return trait.AsDefender_ModifyDefenseRollDie(flow);
     }
 
     public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
@@ -273,7 +340,7 @@ public class Character : ICharacter
 
     public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyArmorDented(flow);
     }
 
@@ -332,59 +399,37 @@ public class Character : ICharacter
         foreach (var trait in Traits) 
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
+}
 
+public class PartyMember : Character
+{
+    public PartyMember(ECharacterClass? job = null)
+    {
+        if (job == null)
+        {
+            Job = Enum<ECharacterClass>.Random();
+            Console.WriteLine($"Created character with {Stats} and random class: {Job}");
+        }
+        else
+        {
+            Job = job.Value;
+            Console.WriteLine($"Created character with {Stats} and class: {Job}");
+        }
+
+        HP = Stats.Poise + Rnd.Instance.D2;
+    }
+    
     public string GetRandomBark()
     {
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
-    }
-
-    public (int, int) GetPortait()
-    {
-        return Job.GetPortrait();
-    }
-
-    public void EquipLeftWeapon(Weapon? weapon)
-    {
-        if (LeftWeapon != null)
-        {
-            foreach (var e in LeftWeapon.ApplyItemUnequipped(this))
-            { }
-        }
-        LeftWeapon = weapon;
-        if (weapon != null)
-        {
-            foreach (var e in weapon.ApplyItemEquipped(this))
-            { }
-        }
-    }
-    
-    public void EquipRightWeapon(Weapon? weapon)
-    {
-        if (RightWeapon != null)
-        {
-            foreach (var e in RightWeapon.ApplyItemUnequipped(this))
-            { }
-        }
-        
-        RightWeapon = weapon;
-        if (weapon != null)
-        {
-            foreach (var e in weapon.ApplyItemEquipped(this))
-            { }
-        }
-    }
-    
-    public void EquipArmor(Armor? armor)
-    {
-        Armor = armor;
     }
 }
 
 public record struct Party
 {
     private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Crimson];
-    public Character[] Characters = new Character[4];
+    public PartyMember[] Characters = new PartyMember[4];
 
     public Party(ActionPoints AP)
     {
@@ -402,7 +447,7 @@ public record struct Party
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {
-            Characters[i] = new Character(queue.Dequeue())
+            Characters[i] = new PartyMember(queue.Dequeue())
             {
                 Index = i,
                 Tint = Colors[i],
