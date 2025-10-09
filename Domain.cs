@@ -1004,3 +1004,13 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
         }
     }
 }
+
+public class DomainOfControl(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
+{
+    public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
+    {
+        yield return DefaultDomainOpening(level);
+        yield return new WaitForSeconds(1f);
+        yield return Blink(level);
+    }
+}
