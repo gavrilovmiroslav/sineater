@@ -66,7 +66,7 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
 {
     public override IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {
-        if (level.IsInActivePartyFOV.Contains((x, y)))
+        if (level.IsInActivePartyMemberFOV.Contains((x, y)))
         {
             SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.Red));
         }
@@ -124,7 +124,7 @@ public class GhylagsTear() : Potion("Ghylag's Tear")
     {
         if (level.Map.IsTransparent(x, y))
         {
-            if (level.IsInActivePartyFOV.Contains((x, y)))
+            if (level.IsInActivePartyMemberFOV.Contains((x, y)))
             {
                 SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.White));
             }

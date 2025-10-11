@@ -286,13 +286,13 @@ public abstract class Character : ICharacter
 
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyDiceCountModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
     }
 
@@ -310,31 +310,31 @@ public abstract class Character : ICharacter
 
     public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyCombatModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyCombatModifiers(flow);
     }
 
     public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyStrikeModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyStrikeModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyStrikeBlocked(flow);
     }
 
@@ -378,25 +378,25 @@ public abstract class Character : ICharacter
 
     public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_DetermineHitDieDamage(flow);
     }
 
     public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_DetermineHitDieDamage(flow);
     }
 
     public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyTotalIncomingDamageModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
 }

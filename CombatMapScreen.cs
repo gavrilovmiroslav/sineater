@@ -78,12 +78,12 @@ public class CombatMapScreen : IScreen
     private bool _debugView = false;
     private int _time = 0;
     private FieldOfView _fieldOfView;
-    private ReadOnlyCollection<Cell>?[] _perspectives;
+    public ReadOnlyCollection<Cell>?[] Perspectives;
     private Color[,] _coloredMap;
     public bool[,] Visited;
-    ReadOnlyCollection<Cell>? _fov = null;
-    HashSet<(int, int)>? _isInActivePartyFOV = new();
-    public HashSet<(int, int)>? IsInActivePartyFOV => _isInActivePartyFOV;
+    ReadOnlyCollection<Cell>?[] _fovs = new ReadOnlyCollection<Cell>?[4];
+    public readonly HashSet<(int, int)> IsInActivePartyMemberFOV = [];
+    public readonly HashSet<(int, int)> IsInActivePartyFOV = [];
     public Dictionary<PartyMember, CombatState> CombatStates = new();
     private List<PartyMember> _party = new();
     public List<PartyMember> Party => _party;
@@ -334,29 +334,48 @@ public class CombatMapScreen : IScreen
 
     public void UpdateFov(bool onlyOneChar = false)
     {
-        _fov = null;
+        int n = 0;
         foreach (var (chr, combatState) in CombatStates)
         {
-            if (onlyOneChar && _game.Party.Characters[PlayerSelectedIndex] != chr) continue;
-            if (_fov == null && chr.Stats.Clarity > 0)
+            _fovs[n] = null;
+            if (_fovs[n] == null && chr.Stats.Clarity > 0)
             {
-                _fov = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
+                _fovs[n] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
             }
             else if (chr.Stats.Clarity > 0)
             {
-                _fov = _fieldOfView.AppendFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);    
+                _fovs[n] = _fieldOfView.AppendFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
+            }
+
+            n++;
+        }
+
+        IsInActivePartyFOV.Clear();
+        IsInActivePartyMemberFOV.Clear();
+
+        if (SineaterGame.Instance.Party.Selected > -1)
+        {
+            if (_fovs[SineaterGame.Instance.Party.Selected] != null)
+            {
+                foreach (var f in _fovs[SineaterGame.Instance.Party.Selected]!)
+                    IsInActivePartyMemberFOV.Add((f.X, f.Y));
             }
         }
 
-        _isInActivePartyFOV.Clear();
-        if (_fov == null) return;
-        foreach (var f in _fov) _isInActivePartyFOV.Add((f.X, f.Y));
+        for (int fi = 0; fi < 4; fi++)
+        {
+            if (_fovs[fi] != null)
+            {
+                foreach (var f in _fovs[fi]!)
+                    IsInActivePartyFOV.Add((f.X, f.Y));
+            }   
+        }
         
-        _perspectives = new ReadOnlyCollection<Cell>?[4];
+        Perspectives = new ReadOnlyCollection<Cell>?[4];
         int i = 0;
         foreach (var (chr, combatState) in CombatStates)
         {
-            _perspectives[i] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
+            Perspectives[i] = _fieldOfView.ComputeFov(combatState.X, combatState.Y, chr.Stats.Clarity, true);
             i++;
         }
 
@@ -370,7 +389,7 @@ public class CombatMapScreen : IScreen
         
         foreach (var (chr, _) in CombatStates)
         {
-            foreach (var cell in _perspectives[chr.Index])
+            foreach (var cell in Perspectives[chr.Index])
             {
                 Visited[cell.X, cell.Y] = true;
                 switch (chr.Index)
@@ -421,7 +440,7 @@ public class CombatMapScreen : IScreen
         _combatState = ECombatState.PlayerPhase;
         _presentation = EPresentationState.Preparing;
 
-        foreach (var enemy in _enemies)
+        foreach (var enemy in _enemies.Where(e => IsInActivePartyFOV.Contains((e.X, e.Y))))
         {
             if (enemy.Stats.Clarity == 0)
             {
@@ -589,29 +608,26 @@ public class CombatMapScreen : IScreen
         }
 
         index = 0;
-        if (_fov != null)
+        for (int i = 0; i < _fullWidth; i++)
         {
-            for (int i = 0; i < _fullWidth; i++)
+            for (int j = 0; j < _fullHeight; j++)
             {
-                for (int j = 0; j < _fullHeight; j++)
+                if (IsInActivePartyMemberFOV.Contains((i, j)))
                 {
-                    if (_isInActivePartyFOV.Contains((i, j)))
-                    {
-                        var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
-                        g.Fg = _coloredMap[i, j];
-                
-                        _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, g);
-                    }
-                    else if (Visited[i, j])
-                    {
-                        if (onlyNow) continue;
-                        var g = _groundGlyphs[i, j];
-                        _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, new Glyph(g.U, g.V, Color.Black, Color.SlateGray));
-                    }
-                    else
-                    {
-                        _game.Layers["mrmo"].Unset(i + _offsetX, j + _offsetY);
-                    }
+                    var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
+                    g.Fg = _coloredMap[i, j];
+            
+                    _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, g);
+                }
+                else if (Visited[i, j])
+                {
+                    if (onlyNow) continue;
+                    var g = _groundGlyphs[i, j];
+                    _game.Layers["mrmo"].Set(i + _offsetX, j + _offsetY, new Glyph(g.U, g.V, Color.Black, Color.SlateGray));
+                }
+                else
+                {
+                    _game.Layers["mrmo"].Unset(i + _offsetX, j + _offsetY);
                 }
             }
         }
@@ -623,14 +639,14 @@ public class CombatMapScreen : IScreen
         
         foreach (var ((x, y), item) in Floor)
         {
-            if (!_isInActivePartyFOV.Contains((x, y))) continue;
+            if (!IsInActivePartyMemberFOV.Contains((x, y))) continue;
             _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, item.GetIcon());
         }
         
         foreach (var enemy in _enemies)
         {
             if (!enemy.Render) continue;
-            if (!_isInActivePartyFOV.Contains((enemy.X, enemy.Y))) continue;
+            if (!IsInActivePartyMemberFOV.Contains((enemy.X, enemy.Y))) continue;
             var (ix, iy) = enemy.Icon;
             var c = enemy.Tint;
             if (enemy.Traits.Count > 0) c = Color.Lerp(c, Color.Gold, 0.6f);
@@ -667,7 +683,7 @@ public class CombatMapScreen : IScreen
     {
         for (int i = 0; i < 22; i++)
         {
-            for (int j = 0; j < _fullHeight + _offsetY; j++)
+            for (int j = 0; j < 6 + _offsetY; j++)
             {
                 _game.Layers["ascii"].Set(i + 2 * _fullWidth + 2, j, " ");
             }
@@ -951,7 +967,7 @@ public class CombatMapScreen : IScreen
                     config.X += dx;
                     config.Y += dy;
                     if (!Map?.IsWalkable(config.X, config.Y) ?? false) return;
-                    if (!_isInActivePartyFOV?.Contains((config.X, config.Y)) ?? false) return;
+                    if (!IsInActivePartyMemberFOV?.Contains((config.X, config.Y)) ?? false) return;
                     RangedActionConfig = config;
                 }
             }

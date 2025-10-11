@@ -5,10 +5,6 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public interface ITrait : IAbilitySource
-{
-}
-
 public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbilitySource
 {
     public string Name => name;

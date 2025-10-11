@@ -262,7 +262,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
         foreach (var cell in circle)
         {
-            if (!level.IsInActivePartyFOV.Contains((cell.X, cell.Y))) continue;
+            if (!level.IsInActivePartyMemberFOV.Contains((cell.X, cell.Y))) continue;
             var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y));
             var dx = 0;
             var fg = Color.DarkRed;
@@ -626,7 +626,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             var xnoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Cos(MathF.PI + _t));
             var ynoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Sin(MathF.PI / 2 + _t));
             var dist = Vector2.Distance(new Vector2(cx, cy), new Vector2(x, y)) / Radius;
-            if (level.IsInActivePartyFOV?.Contains((cx, cy)) ?? false)
+            if (level.IsInActivePartyMemberFOV?.Contains((cx, cy)) ?? false)
             {
                 var fg = Color.White;
                 var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
@@ -984,7 +984,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             {
                 mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
 
-                if (level.IsInActivePartyFOV?.Contains((rx, ry)) ?? false)
+                if (level.IsInActivePartyMemberFOV?.Contains((rx, ry)) ?? false)
                 {
                     if (chars.ContainsKey((rx, ry)))
                     {
