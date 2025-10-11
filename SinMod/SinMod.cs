@@ -74,10 +74,8 @@ public static class System
         {
             return GetEvent(guid);
         }
-        else
-        {
-            throw new Exception($"FMOD GetEvent fail: {RESULT.ERR_EVENT_NOTFOUND}");
-        }
+        
+        throw new Exception($"FMOD GetEvent fail: {RESULT.ERR_EVENT_NOTFOUND}");
     }
 
     public static EventDescription GetEvent(GUID guid)
