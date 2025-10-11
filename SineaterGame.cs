@@ -7,9 +7,6 @@ using SINEATER.Content;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
-using YamlDotNet.Serialization;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
@@ -48,6 +45,9 @@ public class SineaterGame : Game
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public Inventory Inventory = new();
+    
+    public float fmodParamMusicMood = 0.0f;
+    public EventInstance fmodInstanceMusic;
     
     public SineaterGame()
     {
@@ -89,7 +89,7 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
-        FmodManager.Init(new DesktopNativeFmodLibrary(), FmodInitMode.CoreAndStudio, "Content", enableLogging: true);
+        SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;
         _graphics.PreferredBackBufferHeight = Height;
@@ -171,20 +171,17 @@ public class SineaterGame : Game
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
 
-        var filePath = Path.Combine(Content.RootDirectory, $"audio//Master.bank");
-        using var stream = TitleContainer.OpenStream(filePath);
-
-
-        var bank = StudioSystem.LoadBank("audio//Master.bank", FMOD.Studio.LOAD_BANK_FLAGS.);
-        bank.LoadSampleData();
-        var ev = StudioSystem.GetEvent("event:/BGMusic");
-        var inst = ev.CreateInstance();
-        inst.SetParameterValue("Mood", 0);
-        inst.Start();
+        SinMod.System.LoadBank(@"audio/Desktop/Master.bank");
+        var ev = SinMod.System.GetEvent("event:/BGMusic");
+        fmodInstanceMusic = SinMod.System.CreateInstance(ev);
+        var p = ev.GetParameterDescription(0);
+        SinMod.System.SetParam(fmodInstanceMusic, "BGMusicMood", 0);
+        fmodInstanceMusic.Start();
     }
     
     protected override void Update(GameTime gameTime)
     {
+        FmodForFoxes.FmodManager.Update();
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
@@ -210,6 +207,18 @@ public class SineaterGame : Game
         if (ScreenStack?.Peek() is { } screen)
         {
             screen.Update(gameTime);
+            if (screen is CombatMapScreen && fmodParamMusicMood < 1.0f)
+            {
+                fmodParamMusicMood += 0.01f;
+                if (fmodParamMusicMood > 1.0f) fmodParamMusicMood = 1.0f;
+            }
+            else if (screen is ExplorationMapScreen && fmodParamMusicMood > 0.0f)
+            {
+                fmodParamMusicMood -= 0.01f;
+                if (fmodParamMusicMood < 0.0f) fmodParamMusicMood = 0.0f;
+            }
+            Console.WriteLine(fmodParamMusicMood);
+            SinMod.System.SetParam(fmodInstanceMusic, "BGMusicMood", fmodParamMusicMood);
         }
         ActionPoints.Update(gameTime);
 

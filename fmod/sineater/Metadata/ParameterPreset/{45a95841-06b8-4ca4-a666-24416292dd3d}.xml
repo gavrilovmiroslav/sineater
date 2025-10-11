@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="ParameterPreset" id="{45a95841-06b8-4ca4-a666-24416292dd3d}">
+		<property name="name">
+			<value>BGMusicMood</value>
+		</property>
+		<relationship name="folder">
+			<destination>{71c3651b-3884-4b70-9915-b668dd212cd9}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{5d68bda2-b968-4370-af37-5f5921cf5957}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{5d68bda2-b968-4370-af37-5f5921cf5957}">
+		<property name="initialValue">
+			<value>0.5</value>
+		</property>
+	</object>
+</objects>

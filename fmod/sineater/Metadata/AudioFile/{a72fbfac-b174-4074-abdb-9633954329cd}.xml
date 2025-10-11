@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{a72fbfac-b174-4074-abdb-9633954329cd}">
+		<property name="assetPath">
+			<value>4. Grave.wav</value>
+		</property>
+		<property name="isStreaming">
+			<value>true</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>38.399999999999999</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{23cc8b37-f613-49bc-8ae1-28970a46aca6}</destination>
+		</relationship>
+	</object>
+</objects>

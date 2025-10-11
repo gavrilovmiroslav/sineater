@@ -1,0 +1,6 @@
+{fcf7e28e-d90b-4d23-8909-a4832dd85408} bank:/Master
+{64eac25a-a870-0161-0f40-2e7ddc2b5290} bank:/Master.strings
+{fc891473-cb2e-4d96-a652-8311690c8524} bus:/
+{5a4cc563-84c4-4485-869c-30f2212bad55} bus:/Reverb
+{4f9dc117-e630-4634-94f4-4dff1cf57a1c} event:/BGMusic
+{5d68bda2-b968-4370-af37-5f5921cf5957} parameter:/BGMusicMood
