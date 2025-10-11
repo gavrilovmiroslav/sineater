@@ -962,7 +962,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
         }
         
         var distances = new DistanceMap(map, false, x, y);
-        for (int i = 1; i < distances.MaxDistance(); i++)
+        for (var i = 1; i < distances.MaxDistance(); i++)
         {
             level.DrawCombat();
             foreach (var (rx, ry) in distances.GetAllAt(i - 2))
@@ -970,7 +970,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
                 mrmo.Set(rx, ry + 2, ".", Color.White, Color.Black);
             }
 
-            for (int n = 0; n < 3; n++)
+            for (var n = 0; n < 3; n++)
             {
                 foreach (var (rx, ry) in distances.GetAllAt(i - 1))
                 {

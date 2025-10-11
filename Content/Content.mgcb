@@ -301,6 +301,12 @@
 /processorParam:TextureFormat=Color
 /build:23.png
 
+#begin audio/Master.bank
+/copy:audio/Master.bank
+
+#begin audio/Master.strings.bank
+/copy:audio/Master.strings.bank
+
 #begin barks.yaml
 /copy:barks.yaml
 
@@ -327,9 +333,6 @@
 
 #begin dragon.xp
 /copy:dragon.xp
-
-#begin dragon2.xp
-/copy:dragon2.xp
 
 #begin monitor.png
 /importer:TextureImporter
