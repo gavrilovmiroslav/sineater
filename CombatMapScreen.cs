@@ -504,6 +504,7 @@ public class CombatMapScreen : IScreen
         {
             if (_enemies.Count == 0)
             {
+                SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 0);
                 CoroutineHandler.Run(new FadeOutAndLeaveScreen(1));
             }
             

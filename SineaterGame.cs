@@ -7,6 +7,7 @@ using SINEATER.Content;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
@@ -45,9 +46,9 @@ public class SineaterGame : Game
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public Inventory Inventory = new();
-    
-    public float fmodParamMusicMood = 0.0f;
-    public EventInstance fmodInstanceMusic;
+
+    private IScreen _lastScreen;
+    public SinEventInstance fmodInstanceMusic;
     
     public SineaterGame()
     {
@@ -65,26 +66,6 @@ public class SineaterGame : Game
         _dHour += (float)time.Second * 1000.0f;
 
         Barks.Load(Content);
-    }
-    
-    private void SetupCrt(int w, int h)
-    {
-        _crt.Parameters["hardScan"]?.SetValue(-5.0f);
-        _crt.Parameters["hardPix"]?.SetValue(-3.0f);
-        _crt.Parameters["warpX"]?.SetValue(0.05f);
-        _crt.Parameters["warpY"]?.SetValue(0.07f);
-        _crt.Parameters["maskDark"]?.SetValue(0.25f);
-        _crt.Parameters["maskLight"]?.SetValue(2.5f);
-        _crt.Parameters["scaleInLinearGamma"]?.SetValue(0.1f);
-        _crt.Parameters["shadowMask"]?.SetValue(3.0f);
-        _crt.Parameters["brightboost"]?.SetValue(1.0f);
-        _crt.Parameters["hardBloomScan"]?.SetValue(-1.5f);
-        _crt.Parameters["hardBloomPix"]?.SetValue(-2.0f);
-        _crt.Parameters["bloomAmount"]?.SetValue(0.15f);
-        _crt.Parameters["shape"]?.SetValue(2.0f);
-        _crt.Parameters["textureSize"].SetValue(new Vector2(w, h));
-        _crt.Parameters["videoSize"].SetValue(new Vector2(w, h));
-        _crt.Parameters["outputSize"].SetValue(new Vector2(w, h));
     }
 
     protected override void LoadContent()
@@ -172,16 +153,13 @@ public class SineaterGame : Game
         ScreenStack.Push(new ExplorationMapScreen(this));
 
         SinMod.System.LoadBank(@"audio/Desktop/Master");
-        var ev = SinMod.System.GetEvent("event:/BGMusic");
-        fmodInstanceMusic = SinMod.System.CreateInstance(ev);
-        var p = ev.GetParameterDescription(0);
-        SinMod.System.SetParam(fmodInstanceMusic, "BGMusicMood", 0);
-        fmodInstanceMusic.Start();
+        fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
+        fmodInstanceMusic.Play();
     }
     
     protected override void Update(GameTime gameTime)
     {
-        FmodForFoxes.FmodManager.Update();
+        SinMod.System.Update(gameTime);
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
@@ -197,6 +175,16 @@ public class SineaterGame : Game
         {
             Exit();
         }
+
+        if (KB.HasBeenPressed(Keys.PageUp))
+        {
+            fmodInstanceMusic.ModVolume(0.1f);
+        }
+        
+        if (KB.HasBeenPressed(Keys.PageDown))
+        {
+            fmodInstanceMusic.ModVolume(-0.1f);
+        }
         
         if (KB.HasBeenPressed(Keys.F1))
         {
@@ -207,18 +195,6 @@ public class SineaterGame : Game
         if (ScreenStack?.Peek() is { } screen)
         {
             screen.Update(gameTime);
-            if (screen is CombatMapScreen && fmodParamMusicMood < 1.0f)
-            {
-                fmodParamMusicMood += 0.01f;
-                if (fmodParamMusicMood > 1.0f) fmodParamMusicMood = 1.0f;
-            }
-            else if (screen is ExplorationMapScreen && fmodParamMusicMood > 0.0f)
-            {
-                fmodParamMusicMood -= 0.01f;
-                if (fmodParamMusicMood < 0.0f) fmodParamMusicMood = 0.0f;
-            }
-            Console.WriteLine(fmodParamMusicMood);
-            SinMod.System.SetParam(fmodInstanceMusic, "BGMusicMood", fmodParamMusicMood);
         }
         ActionPoints.Update(gameTime);
 
@@ -272,5 +248,25 @@ public class SineaterGame : Game
         //     SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         base.Draw(gameTime);
+    }
+    
+    private void SetupCrt(int w, int h)
+    {
+        _crt.Parameters["hardScan"]?.SetValue(-5.0f);
+        _crt.Parameters["hardPix"]?.SetValue(-3.0f);
+        _crt.Parameters["warpX"]?.SetValue(0.05f);
+        _crt.Parameters["warpY"]?.SetValue(0.07f);
+        _crt.Parameters["maskDark"]?.SetValue(0.25f);
+        _crt.Parameters["maskLight"]?.SetValue(2.5f);
+        _crt.Parameters["scaleInLinearGamma"]?.SetValue(0.1f);
+        _crt.Parameters["shadowMask"]?.SetValue(3.0f);
+        _crt.Parameters["brightboost"]?.SetValue(1.0f);
+        _crt.Parameters["hardBloomScan"]?.SetValue(-1.5f);
+        _crt.Parameters["hardBloomPix"]?.SetValue(-2.0f);
+        _crt.Parameters["bloomAmount"]?.SetValue(0.15f);
+        _crt.Parameters["shape"]?.SetValue(2.0f);
+        _crt.Parameters["textureSize"].SetValue(new Vector2(w, h));
+        _crt.Parameters["videoSize"].SetValue(new Vector2(w, h));
+        _crt.Parameters["outputSize"].SetValue(new Vector2(w, h));
     }
 }

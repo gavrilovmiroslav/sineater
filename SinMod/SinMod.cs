@@ -7,7 +7,6 @@ using FMOD.Studio;
 using FmodForFoxes;
 using FmodForFoxes.Studio;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Bank = FmodForFoxes.Studio.Bank;
 using EventDescription = FmodForFoxes.Studio.EventDescription;
 using EventInstance = FmodForFoxes.Studio.EventInstance;
@@ -16,7 +15,10 @@ namespace SINEATER.SinMod;
 
 public static class System
 {
+    private static readonly Dictionary<string, SinEventInstance> _labels = [];
+    
     private static readonly Dictionary<string, GUID> _guids = [];
+    private static readonly List<SinEventInstance> _events = [];
     
     public static void Init(string path)
     {
@@ -29,6 +31,15 @@ public static class System
             {
                 _guids.Add(parts[1], guid);
             }
+        }
+    }
+
+    public static void Update(GameTime gameTime)
+    {
+        FmodManager.Update();
+        foreach (var ev in _events)
+        {
+            ev.Update(gameTime);
         }
     }
     
@@ -89,22 +100,44 @@ public static class System
         
         return new EventDescription(_event);
     }
+
+    public static SinEventInstance CreateInstance(string description)
+    {
+        var ev = SinMod.System.GetEvent($"event:/{description}");
+        return CreateInstance(ev);
+    }
+
+    public static SinEventInstance CreateInstance(string description, string label)
+    {
+        var ev = SinMod.System.GetEvent($"event:/{description}");
+        var inst = CreateInstance(ev);
+        _labels[label] = inst;
+        return inst;
+    }
+
+    public static SinEventInstance? GetLabelledInstance(string label)
+    {
+        return _labels[label];
+    }
     
-    public static EventInstance CreateInstance(EventDescription eventDescription)
+    public static SinEventInstance CreateInstance(EventDescription eventDescription)
     {
         RESULT result = eventDescription.Native.createInstance(out var instance);
         if (result != RESULT.OK)
         {
             throw new Exception($"FMOD CreateInstance fail: {result}");
         }
-        return new EventInstance(eventDescription, instance);
+        var e = new SinEventInstance(new EventInstance(eventDescription, instance));
+        _events.Add(e);
+        
+        return e;
     }
 
-    public static void SetParam(EventInstance instance, string param, float value, bool ignoreSeekSpeed = false)
+    public static void SetParam(SinEventInstance instance, string param, float value, bool ignoreSeekSpeed = false)
     {
-        var desc = instance.Description;
+        var desc = instance.Event.Description;
         var prm = desc.GetParameterDescription(param);
-        var num = instance.Native.setParameterByID(prm.id, value, ignoreSeekSpeed);
+        var num = instance.Event.Native.setParameterByID(prm.id, value, ignoreSeekSpeed);
         if (num != RESULT.OK)
         {
             throw new Exception($"FMOD SetParam fail: {num}");

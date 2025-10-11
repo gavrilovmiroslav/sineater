@@ -184,6 +184,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
+                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
                 }, true);
 
             Trait? p = null;
@@ -200,6 +201,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You hear voices from within...");
+                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
                 });
         
             Trait? p = null;
@@ -216,6 +218,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} It might contain some precious bones.");
+                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
                 });
         
             Trait? p = null;
