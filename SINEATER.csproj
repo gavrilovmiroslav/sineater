@@ -24,6 +24,8 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="FmodForFoxes" Version="3.2.0" />
+        <PackageReference Include="FmodForFoxes.Desktop" Version="3.2.0" />
         <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5-develop.11" />
         <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.5-develop.11" />
         <PackageReference Include="RogueSharp" Version="5.0.0-pre4" />
@@ -40,6 +42,20 @@
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Content\audio\" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Update="fmod.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="fmodL.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="fmodstudio.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="fmodstudioL.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
     <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
         <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />

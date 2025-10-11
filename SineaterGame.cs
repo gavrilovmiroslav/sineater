@@ -1,9 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FmodForFoxes;
+using FmodForFoxes.Studio;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using YamlDotNet.Serialization;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
@@ -83,6 +89,8 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
+        FmodManager.Init(new DesktopNativeFmodLibrary(), FmodInitMode.CoreAndStudio, "Content", enableLogging: true);
+
         _graphics.PreferredBackBufferWidth = Width;
         _graphics.PreferredBackBufferHeight = Height;
         _graphics.ApplyChanges();
@@ -162,6 +170,17 @@ public class SineaterGame : Game
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
+
+        var filePath = Path.Combine(Content.RootDirectory, $"audio//Master.bank");
+        using var stream = TitleContainer.OpenStream(filePath);
+
+
+        var bank = StudioSystem.LoadBank("audio//Master.bank", FMOD.Studio.LOAD_BANK_FLAGS.);
+        bank.LoadSampleData();
+        var ev = StudioSystem.GetEvent("event:/BGMusic");
+        var inst = ev.CreateInstance();
+        inst.SetParameterValue("Mood", 0);
+        inst.Start();
     }
     
     protected override void Update(GameTime gameTime)
