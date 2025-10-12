@@ -24,7 +24,9 @@ public static class ItemLibrary
     public static readonly Armor BreastPlate = new Armor("Breast Plate", 3, EWeightClass.Medium, 3, (3, 1));
     public static readonly Armor Robe = new Armor("Robe", 2, EWeightClass.Light, 4, (5, 1));
     
-    public static readonly Shield RoundShield = new Shield("RoundShield", 2, EWeightClass.Medium, 4, (5, 3));
+    public static readonly Shield RoundShield = new Shield("Round Shield", 2, EWeightClass.Medium, 4, (5, 3));
     
     public static readonly Item BrokenSword = new Item("Sword of Old", (3, 0));
+    public static readonly Item FamilyRing = new Item("Family Ring", (4, 4));
+    public static readonly Item AncientScroll = new Item("Ancient Scroll", (2, 2));
 }

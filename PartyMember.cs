@@ -470,6 +470,7 @@ public record struct Party
                 case ECharacterClass.Wizard:
                     Characters[i].EquipLeftWeapon(ItemLibrary.WizardStaff);
                     Characters[i].EquipArmor(ItemLibrary.Chainmail);
+                    Characters[i].EquipItem(ItemLibrary.AncientScroll);
                     Characters[i].Stats.Vigor -= 2;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
@@ -483,6 +484,7 @@ public record struct Party
                     Characters[i].EquipLeftWeapon(ItemLibrary.RoundShield);
                     Characters[i].EquipRightWeapon(ItemLibrary.Claymore);
                     Characters[i].EquipArmor(ItemLibrary.PlateArmor);
+                    Characters[i].EquipItem(ItemLibrary.FamilyRing);
                     break;
                 case ECharacterClass.Monk:
                     Characters[i].EquipRightWeapon(ItemLibrary.SkolemStaff);

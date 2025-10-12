@@ -177,14 +177,19 @@ public class SineaterGame : Game
 
         if (KB.HasBeenPressed(Keys.PageUp))
         {
-            fmodInstanceMusic.ModVolume(0.1f);
+            fmodInstanceMusic.ModVolume(0.1f, true);
         }
         
         if (KB.HasBeenPressed(Keys.PageDown))
         {
-            fmodInstanceMusic.ModVolume(-0.1f);
+            fmodInstanceMusic.ModVolume(-0.1f, true);
         }
-        
+
+        if (KB.HasBeenPressed(Keys.End))
+        {
+            fmodInstanceMusic.SetVolume(0, true);
+        }
+
         if (KB.HasBeenPressed(Keys.F1))
         {
             ScreenStack.Pop();
