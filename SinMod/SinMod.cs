@@ -14,7 +14,6 @@ namespace SINEATER.SinMod;
 public static class System
 {
     private static readonly Dictionary<string, SinEventInstance> _labels = [];
-    
     private static readonly Dictionary<string, GUID> _guids = [];
     private static readonly List<SinEventInstance> _events = [];
     

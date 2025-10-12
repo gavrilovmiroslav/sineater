@@ -6,6 +6,7 @@ namespace SINEATER;
 
 public interface IItem : IAbilitySource
 {
+    public (int, int) Picture { get; }
     public string Name { get; }
     public Glyph Glyph { get; }
     public bool CanBeUsed();
@@ -20,6 +21,7 @@ public class Pile : IAbilitySource, IItem
 {
     public List<IItem> Things { get; private set; } = []; 
     
+    public (int, int) Picture => ItemLibrary.EmptyUv;
     public string Name { get; } = "Pile";
     public Glyph Glyph { get; } = Glyph.Bw(1, 1);
     public bool CanBeUsed()
@@ -43,7 +45,7 @@ public class Pile : IAbilitySource, IItem
         {
             var thing = Things[i];
             
-            var (isSuccess, _) = SineaterGame.Instance.Inventory.Put(thing);
+            var (isSuccess, _) = character.Inventory.Put(thing);
             if (isSuccess)
             {
                 Things.RemoveAt(i);
@@ -104,13 +106,15 @@ public class Pile : IAbilitySource, IItem
     }
 }
 
-public class Item(string name) : IItem
+public class Item(string name, (int, int) uv) : IItem
 {
     public string Name => name;
 
-    public Glyph Glyph => Glyph.Bw(0, 0);
+    public virtual (int, int) Picture => (uv.Item1, uv.Item2 + 5);
+    
+    public virtual Glyph Glyph => Glyph.Bw(0, 0);
 
-    public bool CanBeUsed()
+    public virtual bool CanBeUsed()
     {
         return true;
     }
@@ -127,7 +131,7 @@ public class Item(string name) : IItem
 
     public virtual IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
     {
-        var (isSuccess, _) = SineaterGame.Instance.Inventory.Put(this);
+        var (isSuccess, _) = character.Inventory.Put(this);
         if (isSuccess)
         {
             if (level.Floor.ContainsKey((x, y)))
@@ -143,7 +147,7 @@ public class Item(string name) : IItem
         yield break;
     }
 
-    public IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
     {
         if (level.Floor.ContainsKey((x, y)))
         {
@@ -173,7 +177,7 @@ public class Item(string name) : IItem
         yield break;
     }
 
-    public string GetName()
+    public virtual string GetName()
     {
         return Name;
     }
@@ -181,5 +185,69 @@ public class Item(string name) : IItem
     public virtual Glyph GetIcon()
     {
         return Glyph;
+    }
+}
+
+public class ItemStack(Item item, int count) : Item(item.Name, item.Picture)
+{
+    public override (int, int) Picture => item.Picture;
+    public override Glyph Glyph => item.Glyph;
+
+    public override bool CanBeUsed()
+    {
+        if (count == 0) return false;
+        return item.CanBeUsed();
+    }
+
+    public override bool CanBeShattered()
+    {
+        if (count == 0) return false;
+        return item.CanBeShattered();
+    }
+
+    public override IEnumerable ApplyItemUsed(ICharacter character)
+    {
+        if (count == 0) yield break;
+        foreach (var i in item.ApplyItemUsed(character))
+        {
+            yield return i;
+        }
+    }
+
+    public override IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    {
+        if (count == 0) yield break;
+        foreach (var i in item.ApplyItemPickedUp(level, x, y, character))
+        {
+            yield return i;
+        }
+    }
+
+    public override IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    {
+        if (count == 0) yield break;
+        foreach (var i in item.ApplyItemLanded(level, x, y))
+        {
+            yield return i;
+        }
+    }
+
+    public override IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    {
+        if (count == 0) yield break;
+        foreach (var i in item.ApplyItemShattered(level, x, y))
+        {
+            yield return i;
+        }
+    }
+
+    public override string GetName()
+    {
+        return $"{count}x {item.Name}";
+    }
+
+    public override Glyph GetIcon()
+    {
+        return item.Glyph;
     }
 }

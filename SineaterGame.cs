@@ -45,7 +45,6 @@ public class SineaterGame : Game
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
-    public Inventory Inventory = new();
 
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
@@ -89,10 +88,10 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("fingerprints");
 
-        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 1, new Vector2(75, 0));
+        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 1, new Vector2(75, 0));
         Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 5), new Vector2(0, 0), 2, new Vector2(76, 0));
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 2, new Vector2(76, 0));
         Layers.Add("portrait", portraitLayer);
         
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3));
@@ -180,14 +179,19 @@ public class SineaterGame : Game
 
         if (KB.HasBeenPressed(Keys.PageUp))
         {
-            fmodInstanceMusic.ModVolume(0.1f);
+            fmodInstanceMusic.ModVolume(0.1f, true);
         }
         
         if (KB.HasBeenPressed(Keys.PageDown))
         {
-            fmodInstanceMusic.ModVolume(-0.1f);
+            fmodInstanceMusic.ModVolume(-0.1f, true);
         }
-        
+
+        if (KB.HasBeenPressed(Keys.End))
+        {
+            fmodInstanceMusic.SetVolume(0, true);
+        }
+
         if (KB.HasBeenPressed(Keys.F1))
         {
             ScreenStack.Pop();

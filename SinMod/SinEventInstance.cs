@@ -24,9 +24,19 @@ public class SinEventInstanceDelta(Action<float> action, float target, float spe
     public float Speed { get; set; } = speed;
     public float Min => min;
     public float Max => max;
+
+    public bool Jump = false;
     
     public void Update(GameTime gameTime)
     {
+        if (Jump)
+        {
+            Current = _target;
+            action(Current);
+            Jump = false;
+            return;
+        }
+        
         if (!(Math.Abs(Current - Target) > 0.0000001f)) return;
         var dt = 0.01f;
         if (Current > _target) dt *= -1;
@@ -68,14 +78,22 @@ public class SinEventInstance
         }
     }
 
-    public void SetVolume(float volume)
+    public void SetVolume(float volume, bool immediate = false)
     {
         _deltas[VOLUME].Target = volume;
+        if (immediate)
+        {
+            _deltas[VOLUME].Jump = true;
+        }
     }
 
-    public void ModVolume(float volume)
+    public void ModVolume(float volume, bool immediate = false)
     {
-        _deltas[VOLUME].Target += volume;
+        _deltas[VOLUME].Target = _deltas[VOLUME].Current + volume;
+        if (immediate)
+        {
+            _deltas[VOLUME].Jump = true;
+        }
     }
 
     public void SetParam(string name, float value)

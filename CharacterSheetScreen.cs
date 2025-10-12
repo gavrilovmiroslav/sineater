@@ -54,8 +54,8 @@ public class CharacterSheetScreen : IScreen
         var stack = _game.ScreenStack.ToArray();
         stack[1].Draw(gameTime);
         
-        var start = new Vector2(1, 1);
-        var end = new Vector2(25, 17);
+        var start = new Vector2(2, 3);
+        var end = new Vector2(33, 16);
         _game.Layers["mrmo"].SetRect(start - Vector2.One, end + Vector2.One, ' ');
         _game.Layers["ascii"].SetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
         _game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
@@ -73,6 +73,44 @@ public class CharacterSheetScreen : IScreen
         });
         
         var chr = _game.Party.Characters[_charIndex];
-        _game.Layers["ascii"].Set((int)start.X * 2 + 3, (int)start.Y + 1, $"CHARACTER PROFILE - {chr.Job}");
+        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 1, $"CHARACTER PROFILE - {chr.Job}");
+        var prt = chr.GetPortait();
+        _game.Layers["portrait"].Set(1, 1, new Glyph(prt.Item1, prt.Item2, Color.Black, chr.Tint));
+
+        var (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: --");
+        if (chr.LeftWeapon is { } lw)
+        {
+            (u, v) = lw.Picture;
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: {lw.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
+        
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: --");
+        if (chr.Armor is { } arm)
+        {
+            (u, v) = arm.Picture;
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: {arm.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(2, 4, new Glyph(u, v, Color.Black, chr.Tint));
+
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: --");
+        if (chr.Item is { } item)
+        {
+            (u, v) = item.Picture;
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(3, 4, new Glyph(u, v, Color.Black, chr.Tint));
+
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: --");
+        if (chr.RightWeapon is { } rw)
+        {
+            (u, v) = rw.Picture;
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: {rw.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(4, 2, new Glyph(u, v, Color.Black, chr.Tint));
     }
 }

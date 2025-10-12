@@ -133,6 +133,7 @@ public class Stats
 
 public interface ICharacter : ICombatFlowParticipant
 {
+    public Inventory Inventory { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int HP { get; set; }
@@ -164,8 +165,10 @@ public abstract class Character : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
+    public IItem? Item = null;
     public Ability? Ability = null;
     public readonly List<Trait> Traits = [];
+    public Inventory Inventory { get; set; } = new();
 
     public IEnumerable AddTrait(Trait trait)
     {
@@ -233,7 +236,6 @@ public abstract class Character : ICharacter
     {
         return Job.ToString();
     }
-
     
     public virtual (int, int) GetPortait()
     {
@@ -278,21 +280,31 @@ public abstract class Character : ICharacter
     {
         Armor = armor;
     }
+    
+    public void EquipItem(IItem? item)
+    {
+        Item = item;
+    }
 
     public void RemoveArmor()
     {
         this.EquipArmor(null);
     }
+    
+    public void RemoveItem()
+    {
+        this.EquipItem(null);
+    }
 
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyDiceCountModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
     }
 
@@ -310,31 +322,31 @@ public abstract class Character : ICharacter
 
     public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyCombatModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyCombatModifiers(flow);
     }
 
     public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyStrikeModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyStrikeModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyStrikeBlocked(flow);
     }
 
@@ -378,25 +390,25 @@ public abstract class Character : ICharacter
 
     public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_DetermineHitDieDamage(flow);
     }
 
     public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_DetermineHitDieDamage(flow);
     }
 
     public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsAttacker_ApplyTotalIncomingDamageModifiers(flow);
     }
 
     public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
-        foreach (var trait in Traits) 
+        foreach (var trait in Traits)
             yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
 }
@@ -428,7 +440,7 @@ public class PartyMember : Character
 
 public record struct Party
 {
-    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Crimson];
+    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Coral];
     public PartyMember[] Characters = new PartyMember[4];
 
     public Party(ActionPoints AP)
@@ -456,43 +468,46 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipLeftWeapon(new Weapon("Staff", 2, EWeightClass.Heavy, 1));
-                    Characters[i].EquipArmor(new Armor("Robe", 2, EWeightClass.Heavy, 1));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.WizardStaff);
+                    Characters[i].EquipArmor(ItemLibrary.Chainmail);
+                    Characters[i].EquipItem(ItemLibrary.AncientScroll);
                     Characters[i].Stats.Vigor -= 2;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].EquipRightWeapon(new Weapon("Dagger", 2,EWeightClass.Small, 4));
-                    Characters[i].EquipArmor(new Armor("Veil", 3, EWeightClass.Medium, 2));
+                    Characters[i].EquipRightWeapon(ItemLibrary.Dagger);
+                    Characters[i].EquipArmor(ItemLibrary.Tunic);
                     Characters[i].Stats.Clarity++;
                     Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].EquipLeftWeapon(new Shield("Tower Shield", 2, EWeightClass.Medium, 4));
-                    Characters[i].EquipRightWeapon(new Weapon("Claymore", 4, EWeightClass.Large, 4));
-                    Characters[i].EquipArmor(new Armor("Plate Armor", 4, EWeightClass.Heavy, 4));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.RoundShield);
+                    Characters[i].EquipRightWeapon(ItemLibrary.Claymore);
+                    Characters[i].EquipArmor(ItemLibrary.PlateArmor);
+                    Characters[i].EquipItem(ItemLibrary.FamilyRing);
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].EquipRightWeapon(new Weapon("Skolem Staff", 3, EWeightClass.Heavy, 1));
-                    Characters[i].EquipArmor(new Armor("Heavy Robe", 3, EWeightClass.Heavy, 1));
+                    Characters[i].EquipRightWeapon(ItemLibrary.SkolemStaff);
+                    Characters[i].EquipArmor(ItemLibrary.LeatherArmor);
                     Characters[i].Traits.Add(new TraitHeavy());
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].EquipLeftWeapon(new Weapon("Needle Sword", 3, EWeightClass.Medium, 7));
-                    Characters[i].EquipRightWeapon(new Weapon("Tome", 2, EWeightClass.Heavy, 5));
-                    Characters[i].EquipArmor(new Armor("Fine Clothes", 2, EWeightClass.Medium, 6));
-                    for (var n = 0; n < 3; n++)
-                        SineaterGame.Instance.Inventory.Put(new PotionBloodReliquary());
+                    Characters[i].EquipLeftWeapon(ItemLibrary.NeedleSword);
+                    Characters[i].EquipRightWeapon(ItemLibrary.ScrollTome);
+                    Characters[i].EquipArmor(ItemLibrary.BreastPlate);
+                    Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].EquipLeftWeapon(new Weapon("Odic Thorn Whip", 4, EWeightClass.Heavy, 2));
-                    Characters[i].EquipArmor(new Armor("Bloodied Tunic", 2, EWeightClass.Medium, 4));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.ThornWhip);
+                    Characters[i].EquipArmor(ItemLibrary.Robe);
                     Characters[i].Stats.Vigor++;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].EquipLeftWeapon(new Weapon("Worn Dagger", 2, EWeightClass.Tiny, 7));
-                    Characters[i].EquipRightWeapon(new Weapon("Broken Sword", 2, EWeightClass.Small, 1));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.Gladius);
+                    Characters[i].EquipArmor(ItemLibrary.Cloak);
+                    Characters[i].EquipItem(new PotionGhylagsTear());
                     Characters[i].Traits.Add(new TraitSkilled());
+                    Characters[i].EquipItem(ItemLibrary.BrokenSword);
                     Characters[i].Stats.Vigor -= 1;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
