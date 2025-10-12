@@ -1,9 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
 public static class Bestiary
 {
+    public static void Consume(IEnumerable e)
+    {
+        foreach (var item in e)
+        {
+        }
+    }
+    
     public static Enemy Bat()
     {
         var bat = new Enemy
@@ -19,7 +28,7 @@ public static class Bestiary
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
         
-        bat.LeftWeapon = ItemLibrary.Dagger;
+        bat.LeftWeapon = new Weapon("Fang", 2, EWeightClass.Tiny, 1, ItemLibrary.EmptyUv);
         if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
         return bat;
     }
@@ -66,16 +75,13 @@ public static class Bestiary
 
         gob.LeftWeapon = ItemLibrary.ThornWhip;
         if (Rnd.Instance.D6 <= 2)
-            foreach (var _ in gob.AddTrait(new TraitWise()))
-            {}
+            Consume(gob.AddTrait(new TraitWise()));
 
         if (Rnd.Instance.D6 <= 2)
-            foreach (var _ in gob.AddTrait(new TraitSneaky()))
-            {}
+            Consume(gob.AddTrait(new TraitSneaky()));
 
         if (Rnd.Instance.D6 <= 2)
-            foreach (var _ in gob.AddTrait(new TraitProficient()))
-            {}
+            Consume(gob.AddTrait(new TraitProficient()));
 
         return gob;
     }

@@ -1122,23 +1122,7 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_TotalIncomingDamage inc)
         {
-            var mrmo = SineaterGame.Instance.Layers["mrmo"];
-            for (var k = 0; k < inc.TotalDamage; k++)
-            {
-                for (int i = 0; i < 24; i++)
-                {
-                    for (int j = 0; j < 22; j++)
-                    {
-                        mrmo.Set(i, j + 2, " ", Color.Black, Color.Black);
-                    }
-                }
-                yield return new WaitForSeconds(0.01f * (6 - k));
-                UpdateFov();
-                DrawCombat();
-                yield return new WaitForSeconds(0.001f);
-            }
-
-            yield return new WaitForSeconds(0.15f);
+            //
         } 
         else if (step is CombatFlow_PresentArmorDestroyed pad)
         {

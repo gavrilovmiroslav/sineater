@@ -93,7 +93,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         
         yield return new CombatFlow_PresentAttacker(attacker);
         yield return new CombatFlow_PresentDefender(defender);
-        yield return new CombatFlow_Notify($"{attacker.GetName()} attacks {defender.GetName()}");
+        yield return new CombatFlow_Notify($"{attacker.GetName()} attacks {defender.GetName()}...");
 
         // 1
         
