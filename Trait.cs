@@ -5,8 +5,9 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbilitySource
+public class Trait(string name, string shortName, string description) : ICombatFlowParticipant, IAbilitySource
 {
+    public string Description => description;
     public string Name => name;
     public virtual string ShortName => shortName;
     
@@ -141,12 +142,12 @@ public class Trait(string name, string shortName) : ICombatFlowParticipant, IAbi
     }
 }
 
-public class ItemTrait(string name, string shortName, IItem item) : Trait(name, shortName)
+public class ItemTrait(string name, string shortName, IItem item, string description) : Trait(name, shortName, description)
 {
     
 }
 
-public class LimitedTrait(string name, string shortName, int duration) : Trait(name, shortName)
+public class LimitedTrait(string name, string shortName, int duration, string description) : Trait(name, shortName, description)
 {
     public int Duration = duration;
 

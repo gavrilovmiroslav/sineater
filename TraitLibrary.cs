@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public class TraitSneaky() : Trait("Sneaky", "Sn")
+public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are light-weight, +1 attack die.")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -12,15 +12,15 @@ public class TraitSneaky() : Trait("Sneaky", "Sn")
         var right = flow.Attacker.GetRightWeapon();
         if (left == null || right == null) yield break;
 
-        if ((int)left.Weight <= 6 && (int)right.Weight <= 6)
+        if ((int)left.Weight < 6 && (int)right.Weight < 6)
         {
             flow.AttackDicePreRoll.Add(new Die(this));
-            yield return new CombatFlow_Notify($"SNEAKY: Added another attack dice to {flow.Attacker.GetName()}");
+            yield return new CombatFlow_Notify(Description);
         }
     }
 }
 
-public class TraitProficient() : Trait("Proficient", "Pr")
+public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damage on first hit!")
 {
     public override IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
     {
@@ -39,13 +39,13 @@ public class TraitProficient() : Trait("Proficient", "Pr")
                         new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.CornflowerBlue, (float)i / 10.0f)));
                     yield return new WaitForSeconds(0.01f);
                 }
-                yield return new CombatFlow_Notify($"PROFICIENT: +1 damage on proficient hit!");
+                yield return new CombatFlow_Notify(this.Description);
             }
         }
     }
 }
 
-public class TraitBalanced() : Trait("Balanced", "Ba")
+public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: If both weapons are the same weight, +1 attack die.")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -56,36 +56,36 @@ public class TraitBalanced() : Trait("Balanced", "Ba")
         if (left.Weight == right.Weight)
         {
             flow.AttackDicePreRoll.Add(new Die(this));
-            yield return new CombatFlow_Notify($"BALANCED: Added dice for balanced strike.");
+            yield return new CombatFlow_Notify(Description);
         }
     }
 }
 
-public class TraitSkilled() : Trait("Skilled", "Sk")
+public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deals 1 damage.")
 {
     public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
         if (flow.TotalIncomingDamage == 0)
         {
             flow.TotalIncomingDamage += 1;
-            yield return new CombatFlow_Notify($"SKILLED: Skilled shot deals 1 damage.");
+            yield return new CombatFlow_Notify(Description);
         }
     }
 }
 
-public class TraitPadded() : Trait("Padded", "Pd")
+public class TraitPadded() : Trait("Padded", "Pd", "PADDED: Reducing incoming damage by 1.")
 {
     public override IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
         if (flow.TotalIncomingDamage > 0)
         {
             flow.TotalIncomingDamage -= 1;
-            yield return new CombatFlow_Notify($"PADDED: Reducing damage by 1.");
+            yield return new CombatFlow_Notify(Description);
         }
     }
 }
 
-public class TraitHeavy() : Trait("Heavy", "Hv")
+public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for each heavy weapon.")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
@@ -101,25 +101,27 @@ public class TraitHeavy() : Trait("Heavy", "Hv")
             flow.AttackDicePreRoll.Add(new Die(right));
         }
         
-        yield return new CombatFlow_Notify($"HEAVY: Added some dice if heavy weapons, probably");
-
+        yield return new CombatFlow_Notify(Description);
     }
 }
 
-public class TraitWise() : Trait("Wise", "Ws")
+public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack dice.")
 {
     public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
+        yield return new CombatFlow_Notify(Description);
         var min = 100;
         for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
         {
             if (flow.AttackDiceRolled[i].Value < min) min = flow.AttackDiceRolled[i].Value;
         }
+        // find minimal attack die value
         
         for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
         {
             if (flow.AttackDiceRolled[i].Value == min)
             {
+                // reroll minimal values
                 for (int j = 0; j < 10; j++)
                 {
                     if (j % 2 == 0)
@@ -153,16 +155,17 @@ public class TraitWise() : Trait("Wise", "Ws")
     }
 }
 
-public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", duration)
+public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", duration, "FRENZIED: +1 attack die while insane!")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        yield return new CombatFlow_Notify(Description);
         flow.AttackDicePreRoll.Add(new Die { Source = this });
         yield break;
     }
 }
 
-public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", duration)
+public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", duration, "EAGLE-EYED: +3 CLARITY for a short duration.")
 {
     public TraitEagleEyed() : this(5)
     {
@@ -171,6 +174,7 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
     private int _oldClarity = 0;
     public override IEnumerable ApplyOnReceived(ICharacter character)
     {
+        yield return new CombatFlow_Notify(Description);
         _oldClarity = character.Stats.Clarity;
         character.Stats.Clarity += 3;
         yield break;
@@ -178,13 +182,19 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
 
     public override IEnumerable ApplyOnExpires(ICharacter character)
     {
+        yield return new CombatFlow_Notify($"{character.GetName()} loses EAGLE-EYED.");
         character.Stats.Clarity = _oldClarity;
         yield break;
     }
 }
 
-public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", duration)
+public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", duration, "CAPTURED: Cannot move, have no defenses, receives +1 damage per hit!")
 {
+    public override IEnumerable ApplyOnReceived(ICharacter character)
+    {
+        yield return new CombatFlow_Notify(Description);
+    }
+
     public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
     {
         if (character is PartyMember c)
@@ -212,7 +222,7 @@ public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", durati
     }
 }
 
-public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
+public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration, "BLIND: Character's CLARITY becomes 0 for a number of turns.")
 {
     public TraitBlind() : this(5)
     {
@@ -221,6 +231,7 @@ public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
     private int _oldClarity = 0;
     public override IEnumerable ApplyOnReceived(ICharacter character)
     {
+        yield return new CombatFlow_Notify($"{character}'s CLARITY becomes 0 for {Duration} turns!");
         _oldClarity = character.Stats.Clarity;
         character.Stats.Clarity = 0;
         yield break;
@@ -228,12 +239,13 @@ public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration)
 
     public override IEnumerable ApplyOnExpires(ICharacter character)
     {
+        yield return new CombatFlow_Notify($"{character} can see again!");
         character.Stats.Clarity = _oldClarity;
         yield break;
     }
 }
 
-public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", duration)
+public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", duration, "CRITICAL: Gives a chance to raise an attack roll to 6, or else...")
 {
     public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
     {
@@ -285,28 +297,31 @@ public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", durati
     }
 }
 
-public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL")
+public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL", "CRIPPLED (LEFT): Your left-hand weapon can no longer roll attacks.")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        yield return new CombatFlow_Notify(Description);
         flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetLeftWeapon());
         yield break;
     }
 }
 
-public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR")
+public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLED (RIGHT): Your left-hand weapon can no longer roll attacks.")
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        yield return new CombatFlow_Notify(Description);
         flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetRightWeapon());
         yield break;
     }
 }
 
-public class TraitParalyzed() : Trait("Paralyzed", "Pa")
+public class TraitParalyzed() : Trait("Paralyzed", "Pa", "PARALYZED: Your body can hardly move an inch...")
 {
     public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
     {
+        yield return new CombatFlow_Notify(Description);
         if (character is PartyMember c)
         {
             level.CombatStates[c].Move = 1;

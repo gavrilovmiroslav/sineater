@@ -175,11 +175,12 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality, (
     }
 }
 
-public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield)
+public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor.")
 {
     public Shield Owner { get; set; } = shield;
     public override IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        yield return new CombatFlow_Notify($"SHIELD: {Owner.Defense} defense dice are added because of the {Owner.GetName()}!");
         for (var i = 0; i < Owner.Defense; i++)
         {
             flow.DefenseDicePreRoll.Add(new Die());    

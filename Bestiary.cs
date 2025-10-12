@@ -21,7 +21,6 @@ public static class Bestiary
         
         bat.LeftWeapon = ItemLibrary.Dagger;
         if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
-        
         return bat;
     }
 
@@ -64,7 +63,7 @@ public static class Bestiary
                 new BehaviorIfWounded(4, new BehaviorThrowHealing(), new BehaviorAggro())
             ],
         };
-        
+
         gob.LeftWeapon = ItemLibrary.ThornWhip;
         if (Rnd.Instance.D6 <= 2)
             foreach (var _ in gob.AddTrait(new TraitWise()))
