@@ -988,7 +988,12 @@ public class CombatMapScreen : IScreen
         if (step is CombatFlow_Notify notif)
         {
             Console.WriteLine(notif.Message);
-            yield return new WaitForSeconds(0.1f);
+            yield return new ShowPopupAndWaitForKey(new Vector2(2, 8), new Vector2(18, 15), (_, bnd) =>
+            {
+                bnd.Newline();
+                bnd.Add(notif.Message);
+                bnd.Newline();
+            });
         }
         else if (step is CombatFlow_PresentAttacker att)
         {
@@ -1117,65 +1122,23 @@ public class CombatMapScreen : IScreen
         }
         else if (step is CombatFlow_TotalIncomingDamage inc)
         {
-            var ap = flow.Defender.GetAP();
-            var stats = flow.Defender.Stats;
-            if (inc.TotalDamage > 0)
+            var mrmo = SineaterGame.Instance.Layers["mrmo"];
+            for (var k = 0; k < inc.TotalDamage; k++)
             {
-                var wnd = ap.Count<StatusWounds>();
-                var min = Math.Max(inc.TotalDamage, wnd);
-                var effect = Rnd.Instance.Next(min, inc.TotalDamage + wnd);
-                if (effect < 3)
+                for (int i = 0; i < 24; i++)
                 {
-                    ap.Add<StatusWounds>(inc.TotalDamage);
-                }
-                else if (effect < 4)
-                {
-                    ap.Add<StatusWounds>((int)Math.Ceiling(inc.TotalDamage * 1.5f));
-                }
-                else if (effect < 7)
-                {
-                    ap.Add<StatusWounds>(inc.TotalDamage);
-                    flow.Defender.Stats.Poise = Math.Max(0, flow.Defender.Stats.Poise - 1);
-                    Console.WriteLine($"{flow.Defender.GetName()} loses poise ({flow.Defender.Stats.Poise})!");
-                    if (flow.Defender.Stats.Poise == 0)
+                    for (int j = 0; j < 22; j++)
                     {
-                        flow.Defender.Stats.Poise = flow.Defender.HP;
-                        Console.WriteLine($"{flow.Defender.GetName()} recovers a bit to poise {flow.Defender.Stats.Poise}");
-                        MaybeDie(flow, ap);
+                        mrmo.Set(i, j + 2, " ", Color.Black, Color.Black);
                     }
                 }
-                else
-                {
-                    ap.Add<StatusWounds>(inc.TotalDamage);
-                    MaybeDie(flow, ap);
-                }
-                
-                // if (applied < inc.TotalDamage)
-                // {
-                //     var diff = inc.TotalDamage - applied;
-                //     ap.Reduce(diff);
-                //     ap.Add<StatusWounds>(diff);
-                // }
-                // if (totalWounds - woundsBefore > stats.Vigor && flow.Defender is Enemy enm)
-                // {
-                //     ap.Reduce<StatusWounds>(stats.Vigor);
-                //     flow.Attacker.GetAP().Add<StatusSin>(enm.Sin);
-                //     if (flow.Attacker is PartyMember _)
-                //         enm.Die();
-                // }
-                // else if (totalWounds > 0 && flow.Defender is Enemy enemy)
-                // {
-                //     var min = 0;
-                //     if (ap.Remaining <= 0) min = 3;
-                //     if (Rnd.Instance.Next(min, totalWounds) >= enemy.HP)
-                //     {
-                //         ap.Reduce<StatusWounds>(enemy.HP);
-                //         flow.Attacker.GetAP().Add<StatusSin>(enemy.Sin);
-                //         if (flow.Attacker is PartyMember _)
-                //             enemy.Die();
-                //     }
-                // }
+                yield return new WaitForSeconds(0.01f * (6 - k));
+                UpdateFov();
+                DrawCombat();
+                yield return new WaitForSeconds(0.001f);
             }
+
+            yield return new WaitForSeconds(0.15f);
         } 
         else if (step is CombatFlow_PresentArmorDestroyed pad)
         {
@@ -1188,43 +1151,6 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_ShatteredRightWeapon rw)
         {
             flow.Attacker.EquipRightWeapon(null);
-        }
-    }
-
-    private void MaybeDie(CombatFlow flow, ActionPoints ap)
-    {
-        flow.Defender.HP--;
-        Console.WriteLine($"{flow.Defender.GetName()} loses health ({flow.Defender.HP})!");
-        if (flow.Defender.HP <= 0)
-        {
-            if (flow.Defender is Enemy enm)
-            {
-                Console.WriteLine($"{flow.Defender.GetName()} dies!");
-                enm.Die();
-                ap.Reduce(enm.Sin);
-            }
-            else if (flow.Defender is PartyMember _)
-            {
-                var rnd = Rnd.Instance.D6;
-                var hpGain = Rnd.Instance.D4;
-                flow.Defender.HP += hpGain;
-
-                switch (rnd)
-                {
-                    case <= 2:
-                        ap.Add<StatusDeath>(hpGain);
-                        break;
-                    case <= 3:
-                        flow.Defender.AddTrait(new TraitCrippledLeftHand());
-                        break;
-                    case <= 4:
-                        flow.Defender.AddTrait(new TraitCrippledRightHand());
-                        break;
-                    default:
-                        flow.Defender.AddTrait(new TraitParalyzed());
-                        break;
-                }
-            }
         }
     }
 
@@ -1250,11 +1176,12 @@ public class CombatMapScreen : IScreen
     public IEnumerable Attack(ICharacter attacker, ICharacter defender)
     {
         var flow = new CombatFlow(attacker, defender);
-        yield return ResolveAttack(flow, flow.Attack());
-        yield return new WaitForKey(Keys.Space);
+        var attackFlow = flow.Attack();
+        yield return ResolveAttack(flow, attackFlow);
         
         if (defender is Enemy { IsDead: true } e)
         {
+            DrawCombat();
             _game.Layers["porsmol"].Clear();
             var (u, v) = e.DeadIcon;
             _enemies.Remove(e);

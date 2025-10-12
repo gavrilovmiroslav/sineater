@@ -96,9 +96,13 @@ public class SinEventInstance
         }
     }
 
-    public void SetParam(string name, float value)
+    public void SetParam(string name, float value, bool immediate = false)
     {
         _deltas[_parameters[name]].Target = value;
+        if (immediate)
+        {
+            _deltas[_parameters[name]].Jump = true;
+        }
     }
 
     public void Play()

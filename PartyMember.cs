@@ -503,10 +503,13 @@ public record struct Party
                     Characters[i].Stats.Vigor++;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.Gladius);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.Dagger);
+                    Characters[i].EquipRightWeapon(ItemLibrary.Dagger);
                     Characters[i].EquipArmor(ItemLibrary.Cloak);
                     Characters[i].EquipItem(new PotionGhylagsTear());
                     Characters[i].Traits.Add(new TraitSkilled());
+                    Characters[i].Traits.Add(new TraitBalanced());
+                    Characters[i].Traits.Add(new TraitSneaky());
                     Characters[i].EquipItem(ItemLibrary.BrokenSword);
                     Characters[i].Stats.Vigor -= 1;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
