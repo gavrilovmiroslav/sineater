@@ -492,7 +492,7 @@ public record struct Party
                     Characters[i].Traits.Add(new TraitHeavy());
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.NeedleSword);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.Misericorde);
                     Characters[i].EquipRightWeapon(ItemLibrary.ScrollTome);
                     Characters[i].EquipArmor(ItemLibrary.BreastPlate);
                     Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));

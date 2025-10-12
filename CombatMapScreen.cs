@@ -1251,6 +1251,7 @@ public class CombatMapScreen : IScreen
     {
         var flow = new CombatFlow(attacker, defender);
         yield return ResolveAttack(flow, flow.Attack());
+        yield return new WaitForKey(Keys.Space);
         
         if (defender is Enemy { IsDead: true } e)
         {
