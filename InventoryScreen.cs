@@ -296,6 +296,7 @@ public class InventoryScreen : IScreen
 
                     for (var i = 0; i < inventory.Items.Length; i++)
                     {
+                        if (inventory.Items[i] == null) continue;
                         var t = inventory.Items[i].GetType();
                         if (t == _chooseToEquipType || t.IsSubclassOf(_chooseToEquipType))
                         {

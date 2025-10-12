@@ -896,14 +896,14 @@ public class CombatMapScreen : IScreen
             _game.ScreenStack.Push(new CharacterSheetScreen(_game));
         }
         
-        // if (KB.HasBeenPressed(Keys.I))
-        // {
-        //     _game.ScreenStack.Push(new InventoryScreen(_game));
-        // }
-        // else if (KB.HasBeenPressed(Keys.O))
-        // {
-        //     _game.ScreenStack.Push(new InventoryScreen(_game, true));
-        // }
+        if (KB.HasBeenPressed(Keys.I))
+        {
+            _game.ScreenStack.Push(new InventoryScreen(_game));
+        }
+        else if (KB.HasBeenPressed(Keys.O))
+        {
+            _game.ScreenStack.Push(new InventoryScreen(_game, true));
+        }
         
         if (KB.HasBeenPressed(Keys.Tab))
         {
