@@ -54,7 +54,7 @@ public class CharacterSheetScreen : IScreen
         var stack = _game.ScreenStack.ToArray();
         stack[1].Draw(gameTime);
         
-        var start = new Vector2(1, 0);
+        var start = new Vector2(1, 3);
         var end = new Vector2(25, 17);
         _game.Layers["mrmo"].SetRect(start - Vector2.One, end + Vector2.One, ' ');
         _game.Layers["ascii"].SetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
@@ -73,41 +73,38 @@ public class CharacterSheetScreen : IScreen
         });
         
         var chr = _game.Party.Characters[_charIndex];
-        _game.Layers["ascii"].Set((int)start.X * 2 + 15, (int)start.Y + 1, $"CHARACTER PROFILE - {chr.Job}");
+        //_game.Layers["ascii"].Set((int)start.X * 2 + 15, (int)start.Y + 1, $"CHARACTER PROFILE - {chr.Job}");
         var prt = chr.GetPortait();
-        _game.Layers["portrait"].Set(0, 0, new Glyph(prt.Item1, prt.Item2, Color.Black, chr.Tint));
+        _game.Layers["portrait"].Set(1, 1, new Glyph(prt.Item1, prt.Item2, Color.Black, chr.Tint));
 
+        var (u, v) = ItemLibrary.EmptyUv;
         if (chr.LeftWeapon is { } lw)
         {
-            var (u, v) = lw.Picture;
-            _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
+            (u, v) = lw.Picture;
         }
-        else
-        {
-            var (u, v) = ItemLibrary.EmptyUv;
-            _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
-        }
+        _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
         
+        (u, v) = ItemLibrary.EmptyUv;
         if (chr.Armor is { } arm)
         {
-            var (u, v) = arm.Picture;
-            _game.Layers["porsmol"].Set(2, 2, new Glyph(u, v, Color.Black, chr.Tint));
+            (u, v) = arm.Picture;
+            
         }
-        else
+        _game.Layers["porsmol"].Set(2, 4, new Glyph(u, v, Color.Black, chr.Tint));
+
+        (u, v) = ItemLibrary.EmptyUv;
+        if (chr.Item is { } item)
         {
-            var (u, v) = ItemLibrary.EmptyUv;
-            _game.Layers["porsmol"].Set(2, 2, new Glyph(u, v, Color.Black, chr.Tint));
+            (u, v) = item.Picture;
+            
         }
-        
+        _game.Layers["porsmol"].Set(3, 4, new Glyph(u, v, Color.Black, chr.Tint));
+
+        (u, v) = ItemLibrary.EmptyUv;
         if (chr.RightWeapon is { } rw)
         {
-            var (u, v) = rw.Picture;
-            _game.Layers["porsmol"].Set(3, 2, new Glyph(u, v, Color.Black, chr.Tint));
+            (u, v) = rw.Picture;
         }
-        else
-        {
-            var (u, v) = ItemLibrary.EmptyUv;
-            _game.Layers["porsmol"].Set(3, 2, new Glyph(u, v, Color.Black, chr.Tint));
-        }
+        _game.Layers["porsmol"].Set(4, 2, new Glyph(u, v, Color.Black, chr.Tint));
     }
 }

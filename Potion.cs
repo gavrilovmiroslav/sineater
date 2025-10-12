@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
     
-public class Potion(string name) : Item(name)
+public class Potion(string name, (int, int) uv) : Item(name, uv)
 {
     public override bool CanBeShattered()
     {
@@ -62,7 +62,7 @@ public class Potion(string name) : Item(name)
     }
 }
 
-public class PotionBloodReliquary() : Potion("Blood Reliquary")
+public class PotionBloodReliquary() : Potion("Blood Reliquary", (0, 2))
 {
     public override IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {
@@ -118,7 +118,7 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary")
     }
 }
 
-public class GhylagsTear() : Potion("Ghylag's Tear")
+public class PotionGhylagsTear() : Potion("Ghylag's Tear", (1, 2))
 {
     public override IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {

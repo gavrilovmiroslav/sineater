@@ -41,7 +41,7 @@ public static class Bestiary
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout() ],
         };
         if (Rnd.Instance.D4 > gob.Sin)
-            gob.LeftWeapon = ItemLibrary.BrokenSword;
+            gob.LeftWeapon = ItemLibrary.Dagger;
         gob.RightWeapon = ItemLibrary.Dagger;
         return gob;
     }

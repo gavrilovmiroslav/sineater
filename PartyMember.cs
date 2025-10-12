@@ -165,6 +165,7 @@ public abstract class Character : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public Armor? Armor = null;
+    public IItem? Item = null;
     public Ability? Ability = null;
     public readonly List<Trait> Traits = [];
     public Inventory Inventory { get; set; } = new();
@@ -235,7 +236,6 @@ public abstract class Character : ICharacter
     {
         return Job.ToString();
     }
-
     
     public virtual (int, int) GetPortait()
     {
@@ -280,10 +280,20 @@ public abstract class Character : ICharacter
     {
         Armor = armor;
     }
+    
+    public void EquipItem(IItem? item)
+    {
+        Item = item;
+    }
 
     public void RemoveArmor()
     {
         this.EquipArmor(null);
+    }
+    
+    public void RemoveItem()
+    {
+        this.EquipItem(null);
     }
 
     public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -430,7 +440,7 @@ public class PartyMember : Character
 
 public record struct Party
 {
-    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Crimson];
+    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Coral];
     public PartyMember[] Characters = new PartyMember[4];
 
     public Party(ActionPoints AP)
@@ -483,8 +493,7 @@ public record struct Party
                     Characters[i].EquipLeftWeapon(ItemLibrary.NeedleSword);
                     Characters[i].EquipRightWeapon(ItemLibrary.ScrollTome);
                     Characters[i].EquipArmor(ItemLibrary.BreastPlate);
-                    for (var n = 0; n < 3; n++)
-                        Characters[i].Inventory.Put(new PotionBloodReliquary());
+                    Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
                     break;
                 case ECharacterClass.Priest:
                     Characters[i].EquipLeftWeapon(ItemLibrary.ThornWhip);
@@ -492,8 +501,11 @@ public record struct Party
                     Characters[i].Stats.Vigor++;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.BrokenSword);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.Gladius);
+                    Characters[i].EquipArmor(ItemLibrary.Cloak);
+                    Characters[i].EquipItem(new PotionGhylagsTear());
                     Characters[i].Traits.Add(new TraitSkilled());
+                    Characters[i].EquipItem(ItemLibrary.BrokenSword);
                     Characters[i].Stats.Vigor -= 1;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
