@@ -10,17 +10,19 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:..\FMOD_Extension.dll
 
 #---------------------------------- Content ---------------------------------#
 
 #begin audio/Desktop/Master.bank
-/copy:audio/Desktop/Master.bank;audio/Desktop/Master
-
-#begin audio/Desktop/Master.strings.bank
-/copy:audio/Desktop/Master.strings.bank;audio/Desktop/Master.strings
+/importer:FMODBankImporter
+/processor:FMODBankProcessor
+/build:audio/Desktop/Master.bank;audio/Desktop/Master
 
 #begin audio/GUIDs.txt
-/copy:audio/GUIDs.txt
+/importer:FMODGuidImporter
+/processor:FMODGuidsProcessor
+/build:audio/GUIDs.txt
 
 #begin barks.yaml
 /copy:barks.yaml

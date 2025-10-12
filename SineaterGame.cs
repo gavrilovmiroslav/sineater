@@ -70,8 +70,6 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
-        SinMod.System.Init("audio/GUIDs.txt");
-
         _graphics.PreferredBackBufferWidth = Width;
         _graphics.PreferredBackBufferHeight = Height;
         _graphics.ApplyChanges();
@@ -152,7 +150,11 @@ public class SineaterGame : Game
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
 
-        SinMod.System.LoadBank(@"audio/Desktop/Master");
+        var guids = Content.Load<FMODExtension.Types.FMODGuidsCollection>(@"audio/GUIDs");
+        SinMod.System.Init(guids);
+
+        var masterBank = Content.Load<FMODExtension.Types.FMODSoundBank>(@"audio/Desktop/Master");
+        SinMod.System.LoadBank(masterBank);
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
         fmodInstanceMusic.Play();
     }

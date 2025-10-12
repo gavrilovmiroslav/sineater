@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using FMOD;
 using FMOD.Studio;
 using FmodForFoxes;
 using FmodForFoxes.Studio;
 using Microsoft.Xna.Framework;
+using System;
+using System.Collections.Generic;
 using Bank = FmodForFoxes.Studio.Bank;
 using EventDescription = FmodForFoxes.Studio.EventDescription;
 using EventInstance = FmodForFoxes.Studio.EventInstance;
@@ -20,18 +18,18 @@ public static class System
     private static readonly Dictionary<string, GUID> _guids = [];
     private static readonly List<SinEventInstance> _events = [];
     
-    public static void Init(string path)
+    public static void Init(FMODExtension.Types.FMODGuidsCollection collection)
     {
         FmodManager.Init(new DesktopNativeFmodLibrary(), FmodInitMode.CoreAndStudio, "Content", enableLogging: true);
-        using var stream = TitleContainer.OpenStream(Path.Combine(FileLoader.RootDirectory, path));
-        foreach (var line in stream.ReadLines(Encoding.Default))
+
+        foreach (var (key, value) in collection.GUIDS)
         {
-            var parts = line.Split(" ");
-            if (FMOD.Studio.Util.parseID(parts[0], out var guid) == RESULT.OK)
+            if (FMOD.Studio.Util.parseID($"{{{value.ToString()}}}", out var guid) == RESULT.OK)
             {
-                _guids.Add(parts[1], guid);
+                _guids.Add(key, guid);
             }
         }
+
     }
 
     public static void Update(GameTime gameTime)
@@ -58,6 +56,22 @@ public static class System
             {
                 return new Bank(bank);
             }
+        }
+    }
+
+    public static Bank LoadBank(FMODExtension.Types.FMODSoundBank fmodBank)
+    {
+        var buffer = fmodBank.Data;
+
+        FMOD.Studio.Bank bank;
+        RESULT num = StudioSystem.Native.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out bank);
+        if (num != RESULT.OK)
+        {
+            throw new Exception($"FMOD LoadBank fail: {num}");
+        }
+        else
+        {
+            return new Bank(bank);
         }
     }
 

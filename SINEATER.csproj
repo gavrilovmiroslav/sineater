@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
@@ -37,6 +37,9 @@
       <ClCompile Include="Content\crt.fx" />
     </ItemGroup>
     <ItemGroup>
+      <Reference Include="FMOD_Extension">
+        <HintPath>FMOD_Extension.dll</HintPath>
+      </Reference>
       <Reference Include="wvcs">
         <HintPath>..\..\wv\wvcs\bin\Debug\net8.0\wvcs.dll</HintPath>
       </Reference>
