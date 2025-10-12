@@ -891,14 +891,19 @@ public class CombatMapScreen : IScreen
             _rendered = false;
         }
 
-        if (KB.HasBeenPressed(Keys.I))
+        if (KB.HasBeenPressed(Keys.C))
         {
-            _game.ScreenStack.Push(new InventoryScreen(_game));
+            _game.ScreenStack.Push(new CharacterSheetScreen(_game));
         }
-        else if (KB.HasBeenPressed(Keys.O))
-        {
-            _game.ScreenStack.Push(new InventoryScreen(_game, true));
-        }
+        
+        // if (KB.HasBeenPressed(Keys.I))
+        // {
+        //     _game.ScreenStack.Push(new InventoryScreen(_game));
+        // }
+        // else if (KB.HasBeenPressed(Keys.O))
+        // {
+        //     _game.ScreenStack.Push(new InventoryScreen(_game, true));
+        // }
         
         if (KB.HasBeenPressed(Keys.Tab))
         {
@@ -922,11 +927,12 @@ public class CombatMapScreen : IScreen
                 var cs = CombatStates[config.Owner as PartyMember];
                 CoroutineHandler.Run(new FlyingObject(cs.X, cs.Y, config));
                 var foundInInventory = false;
-                for (int i = 0; i < _game.Inventory.Items.Length; i++)
+                var inventory = _game.Party.Characters[PlayerSelectedIndex].Inventory;
+                for (int i = 0; i < inventory.Items.Length; i++)
                 {
-                    if (_game.Inventory.Items[i] == config.Source)
+                    if (inventory.Items[i] == config.Source)
                     {
-                        _game.Inventory.Items[i] = null;
+                        inventory.Items[i] = null;
                         foundInInventory = true;
                         break;
                     }

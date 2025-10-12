@@ -43,7 +43,7 @@ public class Pile : IAbilitySource, IItem
         {
             var thing = Things[i];
             
-            var (isSuccess, _) = SineaterGame.Instance.Inventory.Put(thing);
+            var (isSuccess, _) = character.Inventory.Put(thing);
             if (isSuccess)
             {
                 Things.RemoveAt(i);
@@ -127,7 +127,7 @@ public class Item(string name) : IItem
 
     public virtual IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
     {
-        var (isSuccess, _) = SineaterGame.Instance.Inventory.Put(this);
+        var (isSuccess, _) = character.Inventory.Put(this);
         if (isSuccess)
         {
             if (level.Floor.ContainsKey((x, y)))

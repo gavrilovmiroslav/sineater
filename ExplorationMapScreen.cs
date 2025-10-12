@@ -70,7 +70,7 @@ public class ExplorationMapScreen : IScreen
 
     public void Update(GameTime gameTime)
     {
-        _game.Party.Selected = -1;
+        _game.Party.Selected = 0;
         if (_coroutineHandler.IsActive())
         {
             _coroutineHandler.Update();
@@ -81,14 +81,14 @@ public class ExplorationMapScreen : IScreen
             {
                 _game.ScreenStack.Push(new CharacterSheetScreen(_game));
             }
-            else if (KB.HasBeenPressed(Keys.I))
-            {
-                _game.ScreenStack.Push(new InventoryScreen(_game));
-            }
-            else if (KB.HasBeenPressed(Keys.O))
-            {
-                _game.ScreenStack.Push(new InventoryScreen(_game, true));
-            };
+            // else if (KB.HasBeenPressed(Keys.I))
+            // {
+            //     _game.ScreenStack.Push(new InventoryScreen(_game));
+            // }
+            // else if (KB.HasBeenPressed(Keys.O))
+            // {
+            //     _game.ScreenStack.Push(new InventoryScreen(_game, true));
+            // };
             
             if (KB.HasBeenPressed(Keys.F10))
             {
@@ -238,7 +238,7 @@ public class ExplorationMapScreen : IScreen
                     bnd.Add($"{_locations[(x, y)].GetName()} You found...");
                     bnd.Newline();
                     bnd.Add($"  a {pot}!");
-                    _game.Inventory.Put(pot);
+                    _game.Party.Characters[Rnd.Instance.D4 - 1].Inventory.Put(pot);
                     _locations.Remove((x, y));
                 });
         }

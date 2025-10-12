@@ -6,7 +6,7 @@ public static class Bestiary
 {
     public static Enemy Bat()
     {
-        var gob = new Enemy
+        var bat = new Enemy
         {
             Name = "Bat",
             Icon = (7, 65),
@@ -15,15 +15,14 @@ public static class Bestiary
             Sin = 1,
             HP = 1,
             Tint = Color.Red,
-            Armor = new Armor("Hide", 1, EWeightClass.Tiny, 1),
             Stats = new Stats(10, 2, 1, 2),
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
         
-        gob.LeftWeapon = new Weapon("Bite", 2, EWeightClass.Small, 1);
-        if (Rnd.Instance.D6 <= 2) gob.Traits.Add(new TraitFrenzied(20));
+        bat.LeftWeapon = ItemLibrary.Dagger;
+        if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
         
-        return gob;
+        return bat;
     }
 
     public static Enemy Goblin()
@@ -37,13 +36,13 @@ public static class Bestiary
             Sin = Rnd.Instance.D4,
             HP = 3,
             Tint = Color.LightGreen,
-            Armor = new Armor("Rags", Rnd.Instance.Next(3, 4), EWeightClass.Tiny, 1),
+            Armor = ItemLibrary.Robe,
             Stats = new Stats(2, 2, 2, Rnd.Instance.Next(3, 4)),
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout() ],
         };
         if (Rnd.Instance.D4 > gob.Sin)
-            gob.LeftWeapon = new Weapon("Stick", Rnd.Instance.D4 + 1, EWeightClass.Small, 1);
-        gob.RightWeapon = new Weapon("Bone dagger", Rnd.Instance.D4, EWeightClass.Tiny, 1);
+            gob.LeftWeapon = ItemLibrary.BrokenSword;
+        gob.RightWeapon = ItemLibrary.Dagger;
         return gob;
     }
     
@@ -58,7 +57,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 3,
             Tint = Color.Red,
-            Armor = new Armor("Rags", 4, EWeightClass.Tiny, 1),
+            Armor = ItemLibrary.Robe,
             Stats = new Stats(6, 3, 3, 4),
             Behaviors = [ 
                 new BehaviorAggro(),  
@@ -66,8 +65,7 @@ public static class Bestiary
             ],
         };
         
-        gob.LeftWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
-        gob.RightWeapon = new Weapon("Obsidian dagger", 3, EWeightClass.Small, 1);
+        gob.LeftWeapon = ItemLibrary.ThornWhip;
         if (Rnd.Instance.D6 <= 2)
             foreach (var _ in gob.AddTrait(new TraitWise()))
             {}

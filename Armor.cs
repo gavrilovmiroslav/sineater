@@ -2,8 +2,9 @@ using System.Collections;
 
 namespace SINEATER;
 
-public class Armor(string name, int guard, EWeightClass weight, int quality) : IEquippable, IItem
+public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
+    public (int, int) Picture => (uv.Item1, 5 + uv.Item2); 
     public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(8, 68);
     
@@ -30,13 +31,13 @@ public class Armor(string name, int guard, EWeightClass weight, int quality) : I
             {
                 if (chr.Armor != null)
                 {
-                    SineaterGame.Instance.Inventory.Put(chr.Armor);
+                    character.Inventory.Put(chr.Armor);
                 }
                 chr.Armor = this;
             }
             else
             {
-                SineaterGame.Instance.Inventory.Put(this);
+                character.Inventory.Put(this);
             }
         }
         

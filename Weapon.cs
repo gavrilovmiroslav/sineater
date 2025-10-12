@@ -18,7 +18,7 @@ public interface IEquippable {}
 public enum EWeightClass
 {
     Tiny = 2,
-    Small = 4,
+    Light = 4,
     Medium = 6,
     Heavy = 8,
     Large = 10
@@ -32,7 +32,7 @@ public static class WeightClassExtensions
         {
             case EWeightClass.Tiny:
                 return "T";
-            case EWeightClass.Small:
+            case EWeightClass.Light:
                 return "S";
             case EWeightClass.Medium:
                 return "M";
@@ -46,8 +46,9 @@ public static class WeightClassExtensions
     }
 }
 
-public class Weapon(string name, int attack, EWeightClass weight, int quality) : IEquippable, IItem
+public class Weapon(string name, int attack, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
+    public (int, int) Picture => (uv.Item1, 5 + uv.Item2);
     public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(14, 67);
 
@@ -92,7 +93,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality) :
             }
             else
             {
-                SineaterGame.Instance.Inventory.Put(this);
+                character.Inventory.Put(this);
             }
         }
         
@@ -198,8 +199,8 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield)
     }
 }
 
-public class Shield(string name, int defense, EWeightClass weight, int quality)
-    : Weapon(name, 0, weight, quality)
+public class Shield(string name, int defense, EWeightClass weight, int quality, (int, int) uv)
+    : Weapon(name, 0, weight, quality, uv)
 {
     public int Defense { get; set; } = defense;
     
