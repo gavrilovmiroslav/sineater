@@ -789,18 +789,18 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         
         foreach (var e in level.Enemies)
         {
-            if (e.Traits.Any(t => t is TraitCaptured))
+            if (e.Traits.Any(t => t is TraitProne))
             {
-                e.Traits.RemoveAll(t => t is TraitCaptured);
+                e.Traits.RemoveAll(t => t is TraitProne);
             }
             e.Render = true;
         }
 
         foreach (var c in SineaterGame.Instance.Party.Characters)
         {
-            if (c.Traits.Any(t => t is TraitCaptured))
+            if (c.Traits.Any(t => t is TraitProne))
             {
-                c.Traits.RemoveAll(t => t is TraitCaptured);
+                c.Traits.RemoveAll(t => t is TraitProne);
             }
             c.Render = true;
         }
@@ -835,13 +835,13 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             if (character is PartyMember c)
             {
                 level.CombatStates[c].Move = 0;
-                yield return c.AddTrait(new TraitCaptured(3));
+                yield return c.AddTrait(new TraitProne(3));
                 _moves[character] = 0;
             }
             else if (character is Enemy e)
             {
                 e.IsDone = true;
-                yield return e.AddTrait(new TraitCaptured(3));
+                yield return e.AddTrait(new TraitProne(3));
                 _moves[character] = 0;
             }
         }

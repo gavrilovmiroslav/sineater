@@ -23,6 +23,11 @@ public class Coroutine
     protected Coroutine()
     {
     }
+
+    public static void Consume(IEnumerable en)
+    {
+        foreach (var e in en) {}
+    }
 }
 
 public class CoroutineHandler

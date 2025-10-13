@@ -1075,6 +1075,14 @@ public class CombatMapScreen : IScreen
             _game.Layers["mrmo"].Set(2 + _fullWidth + dw + d.Index + 1, 10 + dh,
                 new Glyph(d.Value - 1, 68, Color.Black, Color.Gray));
         }
+        else if (step is CombatFlow_DefenderArmorDented)
+        {
+            if (flow.Defender.GetArmor() is {} armor)
+            {
+                armor.Guard--;
+                if (armor.Guard < 0) armor.Guard = 0;
+            }
+        }
         else if (step is CombatFlow_PresentStrike strike)
         {
             for (int i = 0; i <= 10; i++)
@@ -1148,8 +1156,50 @@ public class CombatMapScreen : IScreen
         {
             flow.Attacker.EquipRightWeapon(null);
         }
+        else if (step is CombatFlow_DefenderApplyWounds aw)
+        {
+            flow.Defender.GetAP().Add<StatusWounds>(aw.Count);
+        }
+        else if (step is CombatFlow_DefenderStumble s)
+        {
+            flow.Defender.Stats.Poise = Math.Max(0, flow.Defender.Stats.Poise - 1);
+            if (flow.Defender.Stats.Poise == 0)
+            {
+                flow.Defender.Stats.Poise = flow.Defender.HP;
+            }
+        }
+        else if (step is CombatFlow_DefenderApplyStatus ass)
+        {
+            flow.Defender.AddTrait(ass.trait);
+        }
     }
 
+    private IEnumerable PreviewAttack(CombatFlow flow, IEnumerable log)
+    {
+        foreach (var part in log)
+        {
+            if (part is IEnumerable enm)
+            {
+                // PROCESS TRAITS COMPLETELY
+                foreach (var p in enm)
+                {
+                    if (p is IEnumerable e)
+                    {
+                        Coroutine.Consume(e);
+                    }
+                }
+            }
+            else if (part is ICombatFlowStep step) 
+            {
+                // SKIP COMBAT ON PURPOSE!
+            }
+            else
+            {
+                yield return part;
+            }
+        }
+    }
+    
     private IEnumerable ResolveAttack(CombatFlow flow, IEnumerable log)
     {
         foreach (var part in log)
@@ -1169,9 +1219,11 @@ public class CombatMapScreen : IScreen
         }
     }
 
-    public IEnumerable Attack(ICharacter attacker, ICharacter defender)
+    public IEnumerable Attack(CombatFlow flow)
     {
-        var flow = new CombatFlow(attacker, defender);
+        var attacker = flow.Attacker;
+        var defender = flow.Defender;
+        
         var attackFlow = flow.Attack();
         yield return ResolveAttack(flow, attackFlow);
         
@@ -1241,6 +1293,8 @@ public class CombatMapScreen : IScreen
         yield return new WaitForSeconds(0.5f);
         _presentation = EPresentationState.Done;
     }
+
+    private CombatFlow? _confirmedAttack = null;
     
     private void CheckPlayerInputs()
     {
@@ -1309,6 +1363,7 @@ public class CombatMapScreen : IScreen
 
                         if (IsCharacterAt(x + dx, y + dy) is { } c)
                         {
+                            _confirmedAttack = null;
                             // SWAP CHARACTERS
                             var cs = CombatStates[c];
                             cs.X = x;
@@ -1316,16 +1371,31 @@ public class CombatMapScreen : IScreen
                             var pos = CombatStates[current];
                             pos.X += dx;
                             pos.Y += dy;
-                            UpdateFov(true);
                         }
                         else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
-                            // ATTACK ENEMY
-                            CoroutineHandler.Run(Attack(current, e));
-                            CombatStates[current].Move = 0;
-                        } 
+                            if (_confirmedAttack != null)
+                            {
+                                // ATTACK ENEMY
+                                var flow = new CombatFlow(current, e);
+                                CoroutineHandler.Run(Attack(flow));
+                                CombatStates[current].Move = 0;
+                            }
+                            else
+                            {
+                                _confirmedAttack = new CombatFlow(current, e);
+                                for (int i = 0; i < 10; i++)
+                                {
+                                    Coroutine.Consume(PreviewAttack(_confirmedAttack, _confirmedAttack.Attack()));
+                                    Console.WriteLine($"{_confirmedAttack.AttackDicePreRoll.Count} vs {_confirmedAttack.DefenseDicePreRoll.Count}");
+                                    Console.WriteLine($"ATK TRAITS: {string.Join(", ", _confirmedAttack.AttackerTraits)}");
+                                    Console.WriteLine($"DEF TRAITS: {string.Join(", ", _confirmedAttack.DefenderTraits)}");
+                                }
+                            }
+                        }
                         else if (Map?.IsWalkable(x + dx, y + dy) ?? false)
                         {
+                            _confirmedAttack = null;
                             var oldX = CombatStates[current].X;
                             var oldY = CombatStates[current].Y;
                             var pos = CombatStates[current];
@@ -1341,6 +1411,7 @@ public class CombatMapScreen : IScreen
                                     .ApplyOnDomainStepped(this, current, pos.X, pos.Y, oldX, oldY));
                             }
                         }
+                        UpdateFov(true);
                     }
                 }
             }

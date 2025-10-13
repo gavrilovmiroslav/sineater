@@ -13,6 +13,7 @@ public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlow
 public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_PresentRollingDefenseDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentDefenseDie(int Index, int Value) : ICombatFlowStep;
+public record struct CombatFlow_DefenderArmorDented : ICombatFlowStep;
 public record struct CombatFlow_PresentStrike(int Index, RolledDie Attack, RolledDie? Defense) : ICombatFlowStep; 
 public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
@@ -21,6 +22,9 @@ public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFl
 public record struct CombatFlow_PresentArmorDestroyed : ICombatFlowStep;
 public record struct CombatFlow_ShatteredLeftWeapon : ICombatFlowStep;
 public record struct CombatFlow_ShatteredRightWeapon : ICombatFlowStep;
+public record struct CombatFlow_DefenderApplyWounds(int Count) : ICombatFlowStep;
+public record struct CombatFlow_DefenderStumble : ICombatFlowStep;
+public record struct CombatFlow_DefenderApplyStatus(Trait trait) : ICombatFlowStep;
 
 public record struct Die(IAbilitySource Source)
 {
@@ -68,6 +72,9 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
 {
     public ICharacter Attacker => attacker;
     public ICharacter Defender => defender;
+
+    public HashSet<Trait> AttackerTraits = [];
+    public HashSet<Trait> DefenderTraits = [];
     
     public List<Die> AttackDicePreRoll = [];
     public List<Die> DefenseDicePreRoll = [];
@@ -89,6 +96,23 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     
     public IEnumerable Attack()
     {
+        AttackDicePreRoll.Clear();
+        DefenseDicePreRoll.Clear();
+        CurrentRoll = null;
+        AttackDiceRolled.Clear();
+        DefenseDiceRolled.Clear();
+        HitDice.Clear();
+    
+        TotalStrikeCount = 0;
+        CurrentStrikeCount = 0;
+        CurrentHitDieIndex = 0;
+        HitDieDamage = 0;
+        TotalIncomingDamage = 0;
+        ArmorDented = false;
+        TotalArmorDentage = 0;
+        ShatteredLeftWeapon = false;
+        ShatteredRightWeapon = false;
+        
         // 0
         
         yield return new CombatFlow_PresentAttacker(attacker);
@@ -114,7 +138,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         var guard = 0;
         if (defender.GetArmor() is { } armor)
         {
-            guard = armor.Guard;
             for (var i = 0; i < armor.Guard; i++)
             {
                 this.DefenseDicePreRoll.Add(new Die(armor));
@@ -185,16 +208,8 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                     yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, -1);
                     ArmorDented = true;
                     TotalArmorDentage++;
+                    yield return new CombatFlow_DefenderArmorDented();
                     yield return defender.AsDefender_ApplyArmorDented(this);
-                    if (ArmorDented)
-                    {
-                        var a = defender.GetArmor();
-                        if (a != null)
-                        {
-                            a.Guard--;
-                            if (a.Guard < 0) a.Guard = 0;
-                        }
-                    }
                 }
                 else if (atk > dfn)
                 {
@@ -227,7 +242,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 yield return defender.AsDefender_ApplyArmorDestroyed(this);
                 yield return new CombatFlow_PresentArmorDestroyed();
             }
-
         }
 
         // 5
@@ -248,7 +262,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 HitDieDamage = 1;
                 if (HitDice[index].Die.Source is Weapon wpn)
                 {
-                    Console.WriteLine((int)wpn.Weight + ", " + attacker.Stats.Vigor);
                     if ((int)wpn.Weight >= 5 && attacker.Stats.Vigor >= 5)
                     {
                         HitDieDamage += 1;
@@ -278,7 +291,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
 
         var ap = Defender.GetAP();
-        var stats = Defender.Stats;
         if (TotalIncomingDamage > 0)
         {
             var wnd = ap.Count<StatusWounds>();
@@ -286,109 +298,29 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
             var effect = Rnd.Instance.Next(min, TotalIncomingDamage + wnd);
             if (effect < 3)
             {
-                ap.Add<StatusWounds>(TotalIncomingDamage);
+                yield return new CombatFlow_DefenderApplyWounds(TotalIncomingDamage);
                 yield return new CombatFlow_Notify(
                     $"{Defender.GetName()} accrues {TotalIncomingDamage} wounds.");
             }
             else if (effect < 4)
             {
                 var ws = (int)Math.Ceiling(TotalIncomingDamage * 1.5f);
-                ap.Add<StatusWounds>(ws);
+                yield return new CombatFlow_DefenderApplyWounds(ws);
                 yield return new CombatFlow_Notify(
                     $"A solid blow! {Defender.GetName()} receives {ws} wounds.");
             }
             else if (effect < 7)
             {
-                ap.Add<StatusWounds>(TotalIncomingDamage);
-                Defender.Stats.Poise = Math.Max(0, Defender.Stats.Poise - 1);
-                yield return new CombatFlow_Notify($"{Defender.GetName()} stumbles. (POISE {Defender.Stats.Poise + 1}->{Defender.Stats.Poise})");
+                yield return new CombatFlow_DefenderApplyWounds(TotalIncomingDamage);
+                yield return new CombatFlow_DefenderStumble();
                 yield return new CombatFlow_Notify(
-                    $"Devastating! {Defender.GetName()} receives {TotalIncomingDamage} wounds!");
-                if (Defender.Stats.Poise == 0)
-                {
-                    var oldPoise = Defender.Stats.Poise;
-                    Defender.Stats.Poise = Defender.HP;
-                    yield return new CombatFlow_Notify($"{Defender.GetName()} recovers poise. (POISE {oldPoise}->{Defender.HP})");
-                    yield return MaybeDie(this, ap);
-                }
+                    $"{Defender.GetName()} receives {TotalIncomingDamage} wounds, stumbling from the hit.");
             }
             else
             {
-                ap.Add<StatusWounds>(TotalIncomingDamage);
+                yield return new CombatFlow_DefenderApplyStatus(new TraitProne(Math.Max(2, TotalIncomingDamage - 7)));
                 yield return new CombatFlow_Notify(
-                    $"A critical hit! {Defender.GetName()} receives {TotalIncomingDamage} wounds!");
-                yield return MaybeDie(this, ap);
-            }
-        }
-        
-        if (attacker.GetLeftWeapon() is Weapon lh && TotalIncomingDamage > lh.Attack)
-        {
-            if (Rnd.Instance.D100 < 10 - lh.Quality)
-            {
-                lh.Attack--;
-                if (lh.Attack == 0)
-                {
-                    ShatteredLeftWeapon = true;
-                    yield return attacker.AsAttacker_ApplyLeftWeaponShattered(this);
-                    yield return new CombatFlow_ShatteredLeftWeapon();
-                }
-            }
-        }
-        
-        if (attacker.GetLeftWeapon() is Weapon rh && TotalIncomingDamage > rh.Attack)
-        {
-            if (Rnd.Instance.D100 < 10 - rh.Quality)
-            {
-                rh.Attack--;
-                if (rh.Attack == 0)
-                {
-                    ShatteredRightWeapon = true;
-                    yield return attacker.AsAttacker_ApplyRightWeaponShattered(this);
-                    yield return new CombatFlow_ShatteredRightWeapon();
-                }
-            }
-        } 
-    }
-    
-    
-    private IEnumerable MaybeDie(CombatFlow flow, ActionPoints ap)
-    {
-        flow.Defender.HP--;
-        yield return new CombatFlow_Notify($"{flow.Defender.GetName()} loses health (HP{flow.Defender.HP + 1}->{flow.Defender.HP})");
-        
-        if (flow.Defender.HP <= 0)
-        {
-            if (flow.Defender is Enemy enm)
-            {
-                yield return new CombatFlow_Notify($"{flow.Defender.GetName()} dies!");
-                enm.Die();
-                ap.Reduce(enm.Sin);
-            }
-            else if (flow.Defender is PartyMember _)
-            {
-                var rnd = Rnd.Instance.D6;
-                var hpGain = Rnd.Instance.D4;
-                flow.Defender.HP += hpGain;
-
-                switch (rnd)
-                {
-                    case <= 2:
-                        ap.Add<StatusDeath>(hpGain);
-                        yield return new CombatFlow_Notify($"{flow.Defender.GetName()} receives a deathly mark!");
-                        break;
-                    case <= 3:
-                        flow.Defender.AddTrait(new TraitCrippledLeftHand());
-                        yield return new CombatFlow_Notify($"The attack has crippled {flow.Defender.GetName()}'s left hand!");
-                        break;
-                    case <= 4:
-                        flow.Defender.AddTrait(new TraitCrippledRightHand());
-                        yield return new CombatFlow_Notify($"The attack has crippled {flow.Defender.GetName()}'s right hand!");
-                        break;
-                    default:
-                        flow.Defender.AddTrait(new TraitParalyzed());
-                        yield return new CombatFlow_Notify($"The attack has left {flow.Defender.GetName()} paralyzed!");
-                        break;
-                }
+                    $"{Defender.GetName()} falls down and is prone for the next few turns.");
             }
         }
     }

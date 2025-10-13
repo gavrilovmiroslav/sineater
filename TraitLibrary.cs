@@ -14,6 +14,7 @@ public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are 
 
         if ((int)left.Weight < 6 && (int)right.Weight < 6)
         {
+            flow.AttackerTraits.Add(this);
             flow.AttackDicePreRoll.Add(new Die(this));
             yield return new CombatFlow_Notify(Description);
         }
@@ -30,6 +31,7 @@ public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damag
         
         if ((int)left.Weight <= 6 && (int)right.Weight <= 6)
         {
+            flow.AttackerTraits.Add(this);
             if (flow.CurrentHitDieIndex == 0)
             {
                 flow.HitDieDamage += 1;
@@ -55,6 +57,7 @@ public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: If both weapon
 
         if (left.Weight == right.Weight)
         {
+            flow.AttackerTraits.Add(this);
             flow.AttackDicePreRoll.Add(new Die(this));
             yield return new CombatFlow_Notify(Description);
         }
@@ -67,6 +70,7 @@ public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deal
     {
         if (flow.TotalIncomingDamage == 0)
         {
+            flow.AttackerTraits.Add(this);
             flow.TotalIncomingDamage += 1;
             yield return new CombatFlow_Notify(Description);
         }
@@ -79,6 +83,7 @@ public class TraitPadded() : Trait("Padded", "Pd", "PADDED: Reducing incoming da
     {
         if (flow.TotalIncomingDamage > 0)
         {
+            flow.DefenderTraits.Add(this);
             flow.TotalIncomingDamage -= 1;
             yield return new CombatFlow_Notify(Description);
         }
@@ -89,19 +94,26 @@ public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for e
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        var ok = false;
         var left = flow.Attacker.GetLeftWeapon();
         if (left != null && (int)left.Weight > 6)
         {
+            ok = true;
             flow.AttackDicePreRoll.Add(new Die(left));
         }
         
         var right = flow.Attacker.GetRightWeapon();
         if (right != null && (int)right.Weight > 6)
         {
+            ok = true;
             flow.AttackDicePreRoll.Add(new Die(right));
         }
-        
-        yield return new CombatFlow_Notify(Description);
+
+        if (ok)
+        {
+            flow.AttackerTraits.Add(this);
+            yield return new CombatFlow_Notify(Description);
+        }
     }
 }
 
@@ -109,6 +121,7 @@ public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack d
 {
     public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     {
+        flow.AttackerTraits.Add(this);
         yield return new CombatFlow_Notify(Description);
         var min = 100;
         for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
@@ -159,6 +172,7 @@ public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", durati
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        flow.AttackerTraits.Add(this);
         yield return new CombatFlow_Notify(Description);
         flow.AttackDicePreRoll.Add(new Die { Source = this });
         yield break;
@@ -188,7 +202,7 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
     }
 }
 
-public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", duration, "CAPTURED: Cannot move, have no defenses, receives +1 damage per hit!")
+public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "PRONE: Cannot move, no defenses, receives +1 damage per hit!")
 {
     public override IEnumerable ApplyOnReceived(ICharacter character)
     {
@@ -206,17 +220,19 @@ public class TraitCaptured(int duration) : LimitedTrait("Captured", "Cp", durati
             e.IsDone = true;
         }
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.25f);
     }
 
     public override IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
     {
+        flow.DefenderTraits.Add(this);
         flow.DefenseDicePreRoll.Clear();
         yield break;
     }
 
     public override IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
     {
+        flow.DefenderTraits.Add(this);
         flow.HitDieDamage++;
         yield break;
     }
@@ -251,6 +267,7 @@ public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", durati
     {
         if (flow.TotalIncomingDamage == 0)
         {
+            flow.AttackerTraits.Add(this);
             flow.Attacker.GetAP().Add<StatusDeath>(2);
         }
 
@@ -263,6 +280,7 @@ public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", durati
         {
             if (att.Value == 6 || Rnd.Instance.D100 <= 5 * this.Duration)
             {
+                flow.AttackerTraits.Add(this);
                 flow.CurrentRoll.Value = 6;
                 for (int i = 0; i < 10; i++)
                 {
@@ -281,6 +299,7 @@ public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", durati
         {
             if (def != null)
             {
+                flow.AttackerTraits.Add(this);
                 def.Value = 0;
                 flow.Defender.Stats.Poise = Math.Max(1, flow.Defender.Stats.Poise - 1);
                 for (int i = 0; i < 10; i++)
@@ -301,9 +320,12 @@ public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL", "CRIPPLED 
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        yield return new CombatFlow_Notify(Description);
-        flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetLeftWeapon());
-        yield break;
+        if (flow.Attacker.GetLeftWeapon() != null)
+        {
+            flow.AttackerTraits.Add(this);
+            yield return new CombatFlow_Notify(Description);
+            flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetLeftWeapon());
+        }
     }
 }
 
@@ -311,9 +333,12 @@ public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLE
 {
     public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     {
-        yield return new CombatFlow_Notify(Description);
-        flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetRightWeapon());
-        yield break;
+        if (flow.Attacker.GetRightWeapon() != null)
+        {
+            flow.AttackerTraits.Add(this);
+            yield return new CombatFlow_Notify(Description);
+            flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetRightWeapon());
+        }
     }
 }
 

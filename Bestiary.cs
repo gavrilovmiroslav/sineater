@@ -6,13 +6,6 @@ namespace SINEATER;
 
 public static class Bestiary
 {
-    public static void Consume(IEnumerable e)
-    {
-        foreach (var item in e)
-        {
-        }
-    }
-    
     public static Enemy Bat()
     {
         var bat = new Enemy
@@ -75,13 +68,13 @@ public static class Bestiary
 
         gob.LeftWeapon = ItemLibrary.ThornWhip;
         if (Rnd.Instance.D6 <= 2)
-            Consume(gob.AddTrait(new TraitWise()));
+            Coroutine.Consume(gob.AddTrait(new TraitWise()));
 
         if (Rnd.Instance.D6 <= 2)
-            Consume(gob.AddTrait(new TraitSneaky()));
+            Coroutine.Consume(gob.AddTrait(new TraitSneaky()));
 
         if (Rnd.Instance.D6 <= 2)
-            Consume(gob.AddTrait(new TraitProficient()));
+            Coroutine.Consume(gob.AddTrait(new TraitProficient()));
 
         return gob;
     }
