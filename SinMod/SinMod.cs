@@ -1,13 +1,13 @@
-using FMOD;
-using FMOD.Studio;
-using FmodForFoxes;
-using FmodForFoxes.Studio;
+using FMODMG;
+using FMODMG.Studio;
+using FmodForFoxesMG;
+using FmodForFoxesMG.Studio;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using Bank = FmodForFoxes.Studio.Bank;
-using EventDescription = FmodForFoxes.Studio.EventDescription;
-using EventInstance = FmodForFoxes.Studio.EventInstance;
+using Bank = FmodForFoxesMG.Studio.Bank;
+using EventDescription = FmodForFoxesMG.Studio.EventDescription;
+using EventInstance = FmodForFoxesMG.Studio.EventInstance;
 
 namespace SINEATER.SinMod;
 
@@ -17,13 +17,13 @@ public static class System
     private static readonly Dictionary<string, GUID> _guids = [];
     private static readonly List<SinEventInstance> _events = [];
     
-    public static void Init(FMODExtension.Types.FMODGuidsCollection collection)
+    public static void Init(FmodForFoxesMG.Data.GuidsCollectionData collection)
     {
-        FmodManager.Init(new DesktopNativeFmodLibrary(), FmodInitMode.CoreAndStudio, "Content", enableLogging: true);
+        FmodForFoxesMG.FmodManager.Init(FmodForFoxesMG.FmodInitMode.CoreAndStudio, enableLogging: true);
 
         foreach (var (key, value) in collection.GUIDS)
         {
-            if (FMOD.Studio.Util.parseID($"{{{value.ToString()}}}", out var guid) == RESULT.OK)
+            if (Util.parseID($"{{{value.ToString()}}}", out var guid) == RESULT.OK)
             {
                 _guids.Add(key, guid);
             }
@@ -40,37 +40,38 @@ public static class System
         }
     }
     
-    public static Bank LoadBank(string path)
-    {
-        var buffer = FileLoader.LoadFileAsBuffer(path);
-        unsafe
-        {
-            FMOD.Studio.Bank bank;
-            RESULT num = StudioSystem.Native.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out bank);
-            if (num != RESULT.OK)
-            {
-                throw new Exception($"FMOD LoadBank fail: {num}");
-            }
-            else
-            {
-                return new Bank(bank);
-            }
-        }
-    }
+    //public static Bank LoadBank(string path)
+    //{
+    //    var buffer = FileLoader.LoadFileAsBuffer(path);
+    //    unsafe
+    //    {
+    //        FMOD.Studio.Bank bank;
+    //        RESULT num = StudioSystem.Native.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out bank);
+    //        if (num != RESULT.OK)
+    //        {
+    //            throw new Exception($"FMOD LoadBank fail: {num}");
+    //        }
+    //        else
+    //        {
+    //            return new Bank(bank);
+    //        }
+    //    }
+    //}
 
-    public static Bank LoadBank(FMODExtension.Types.FMODSoundBank fmodBank)
+    public static FmodForFoxesMG.Studio.Bank LoadBank(FmodForFoxesMG.Data.SoundBankData fmodBank)
     {
         var buffer = fmodBank.Data;
 
-        FMOD.Studio.Bank bank;
-        RESULT num = StudioSystem.Native.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out bank);
-        if (num != RESULT.OK)
+        FMODMG.Studio.Bank bank;
+        FMODMG.RESULT num = FmodForFoxesMG.Studio.StudioSystem.Native.loadBankMemory(
+            buffer, FMODMG.Studio.LOAD_BANK_FLAGS.NORMAL, out bank);
+        if (num != FMODMG.RESULT.OK)
         {
             throw new Exception($"FMOD LoadBank fail: {num}");
         }
         else
         {
-            return new Bank(bank);
+            return new FmodForFoxesMG.Studio.Bank(bank);
         }
     }
 
@@ -104,7 +105,7 @@ public static class System
 
     public static EventDescription GetEvent(GUID guid)
     {
-        FMOD.Studio.EventDescription _event;
+        FMODMG.Studio.EventDescription _event;
         RESULT eventById = StudioSystem.Native.getEventByID(guid, out _event);
         if (eventById != RESULT.OK)
         {

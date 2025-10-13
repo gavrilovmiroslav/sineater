@@ -37,6 +37,9 @@
       <ClCompile Include="Content\crt.fx" />
     </ItemGroup>
     <ItemGroup>
+      <Reference Include="FmodForFoxes_Monogame">
+        <HintPath>FmodForFoxes_Monogame.dll</HintPath>
+      </Reference>
       <Reference Include="FMOD_Extension">
         <HintPath>FMOD_Extension.dll</HintPath>
       </Reference>

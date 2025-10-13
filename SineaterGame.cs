@@ -149,10 +149,10 @@ public class SineaterGame : Game
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
 
-        var guids = Content.Load<FMODExtension.Types.FMODGuidsCollection>(@"audio/GUIDs");
+        var guids = Content.Load<FmodForFoxesMG.Data.GuidsCollectionData>(@"audio/GUIDs");
         SinMod.System.Init(guids);
 
-        var masterBank = Content.Load<FMODExtension.Types.FMODSoundBank>(@"audio/Desktop/Master");
+        var masterBank = Content.Load<FmodForFoxesMG.Data.SoundBankData>(@"audio/Desktop/Master");
         SinMod.System.LoadBank(masterBank);
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
         fmodInstanceMusic.Play();

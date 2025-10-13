@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FMOD.Studio;
+using FMODMG.Studio;
 using Microsoft.Xna.Framework;
-using EventInstance = FmodForFoxes.Studio.EventInstance;
+using EventInstance = FmodForFoxesMG.Studio.EventInstance;
 
 namespace SINEATER.SinMod;
 
