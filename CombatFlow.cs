@@ -8,7 +8,7 @@ public interface ICombatFlowStep {}
 
 public record struct CombatFlow_PresentAttacker(ICharacter Attacker) : ICombatFlowStep;
 public record struct CombatFlow_PresentDefender(ICharacter Defender) : ICombatFlowStep;
-public record struct CombatFlow_Notify(string Message) : ICombatFlowStep;
+public record struct CombatFlow_Notify(string Message, bool WaitKey = true) : ICombatFlowStep;
 public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlowStep;
 public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
 public record struct CombatFlow_PresentRollingDefenseDie(int Index) : ICombatFlowStep;
@@ -93,7 +93,6 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         
         yield return new CombatFlow_PresentAttacker(attacker);
         yield return new CombatFlow_PresentDefender(defender);
-        yield return new CombatFlow_Notify($"{attacker.GetName()} attacks {defender.GetName()}...");
 
         // 1
         
@@ -126,7 +125,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         
         // 3
 
-        yield return new CombatFlow_Notify($"{AttackDicePreRoll.Count} strikes, {DefenseDicePreRoll.Count} guards.");
+        yield return new CombatFlow_Notify($"{attacker.GetName()} ({AttackDicePreRoll.Count}) attacks {defender.GetName()} ({DefenseDicePreRoll.Count})...", false);
 
         int n = 0;
         foreach (var die in AttackDicePreRoll)
@@ -238,7 +237,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         
         TotalIncomingDamage = 0;
         yield return new CombatFlow_Notify(
-            $"The {defender.GetName()}'s POISE is {defender.Stats.Poise}, nothing under that does damage.");
+            $"The {defender.GetName()}'s POISE is {defender.Stats.Poise}, nothing under that does damage.", false);
         
         for (var index = 0; index < HitDice.Count; index++)
         {
@@ -302,14 +301,14 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
             {
                 ap.Add<StatusWounds>(TotalIncomingDamage);
                 Defender.Stats.Poise = Math.Max(0, Defender.Stats.Poise - 1);
-                yield return new CombatFlow_Notify($"{Defender.GetName()} stumbles (POISE {Defender.Stats.Poise + 1}->{Defender.Stats.Poise})!");
+                yield return new CombatFlow_Notify($"{Defender.GetName()} stumbles. (POISE {Defender.Stats.Poise + 1}->{Defender.Stats.Poise})");
                 yield return new CombatFlow_Notify(
                     $"Devastating! {Defender.GetName()} receives {TotalIncomingDamage} wounds!");
                 if (Defender.Stats.Poise == 0)
                 {
                     var oldPoise = Defender.Stats.Poise;
                     Defender.Stats.Poise = Defender.HP;
-                    yield return new CombatFlow_Notify($"{Defender.GetName()} recovers a bit to poise (POISE {oldPoise}->{Defender.HP}).");
+                    yield return new CombatFlow_Notify($"{Defender.GetName()} recovers poise. (POISE {oldPoise}->{Defender.HP})");
                     yield return MaybeDie(this, ap);
                 }
             }
@@ -355,7 +354,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     private IEnumerable MaybeDie(CombatFlow flow, ActionPoints ap)
     {
         flow.Defender.HP--;
-        yield return new CombatFlow_Notify($"{flow.Defender.GetName()} loses health ({flow.Defender.HP})!");
+        yield return new CombatFlow_Notify($"{flow.Defender.GetName()} loses health (HP{flow.Defender.HP + 1}->{flow.Defender.HP})");
         
         if (flow.Defender.HP <= 0)
         {

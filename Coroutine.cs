@@ -237,6 +237,32 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
     }
 }
 
+public class ShowPopupAndWaitForSeconds(float time, Vector2 start, Vector2 end, Action<SineaterGame, TextLayerBox> content) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
+        {
+            Top = Glyph.Bw(10, 27),
+            Bottom = Glyph.Bw(10, 29),
+            Left = Glyph.Bw(9, 28),
+            Right = Glyph.Bw(11, 28),
+        }, new Corners<Glyph>()
+        {
+            BottomLeft = Glyph.Bw(11, 30), 
+            BottomRight = Glyph.Bw(10, 30), 
+            TopLeft = Glyph.Bw(11, 31), 
+            TopRight = Glyph.Bw(10, 31),
+        });
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        yield return new WaitForSeconds(time);
+    }
+}
+
 public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Action<SineaterGame, TextLayerBox> content, bool flip = false) : IEnumerable
 {
     public IEnumerator GetEnumerator()

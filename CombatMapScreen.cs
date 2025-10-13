@@ -988,12 +988,24 @@ public class CombatMapScreen : IScreen
         if (step is CombatFlow_Notify notif)
         {
             Console.WriteLine(notif.Message);
-            yield return new ShowPopupAndWaitForKey(new Vector2(2, 8), new Vector2(18, 15), (_, bnd) =>
+            if (notif.WaitKey)
             {
-                bnd.Newline();
-                bnd.Add(notif.Message);
-                bnd.Newline();
-            });
+                yield return new ShowPopupAndWaitForKey(new Vector2(2, 8), new Vector2(18, 15), (_, bnd) =>
+                {
+                    bnd.Newline();
+                    bnd.Add(notif.Message);
+                    bnd.Newline();
+                });
+            }
+            else
+            {
+                yield return new ShowPopupAndWaitForSeconds(0.25f, new Vector2(2, 8), new Vector2(18, 15), (_, bnd) =>
+                {
+                    bnd.Newline();
+                    bnd.Add(notif.Message);
+                    bnd.Newline();
+                });
+            }
         }
         else if (step is CombatFlow_PresentAttacker att)
         {
@@ -1297,15 +1309,18 @@ public class CombatMapScreen : IScreen
 
                         if (IsCharacterAt(x + dx, y + dy) is { } c)
                         {
+                            // SWAP CHARACTERS
                             var cs = CombatStates[c];
                             cs.X = x;
                             cs.Y = y;
                             var pos = CombatStates[current];
                             pos.X += dx;
                             pos.Y += dy;
+                            UpdateFov(true);
                         }
                         else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
+                            // ATTACK ENEMY
                             CoroutineHandler.Run(Attack(current, e));
                             CombatStates[current].Move = 0;
                         } 
