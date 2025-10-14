@@ -10,6 +10,7 @@ namespace SINEATER;
 public class Enemy : Character
 {
     public string Name;
+    public ICharacter? LastHit = null;
     public (int, int) Icon;
     public (int, int) Portrait;
     public (int, int) DeadIcon;

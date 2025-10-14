@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SINEATER;
 
@@ -75,14 +76,14 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
 
     public HashSet<Trait> AttackerTraits = [];
     public HashSet<Trait> DefenderTraits = [];
-    
+
     public List<Die> AttackDicePreRoll = [];
     public List<Die> DefenseDicePreRoll = [];
     public RolledDie CurrentRoll;
     public List<RolledDie> AttackDiceRolled = [];
     public List<RolledDie> DefenseDiceRolled = [];
     public List<RolledDie?> HitDice = [];
-    
+
     public int TotalStrikeCount = 0;
     public int CurrentStrikeCount = 0;
     public AttackDefensePair CurrentPair;
@@ -93,7 +94,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
     public int TotalArmorDentage = 0;
     public bool ShatteredLeftWeapon = false;
     public bool ShatteredRightWeapon = false;
-    
+
     public IEnumerable Attack()
     {
         AttackDicePreRoll.Clear();
@@ -102,7 +103,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         AttackDiceRolled.Clear();
         DefenseDiceRolled.Clear();
         HitDice.Clear();
-    
+
         TotalStrikeCount = 0;
         CurrentStrikeCount = 0;
         CurrentHitDieIndex = 0;
@@ -112,14 +113,14 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         TotalArmorDentage = 0;
         ShatteredLeftWeapon = false;
         ShatteredRightWeapon = false;
-        
+
         // 0
-        
+
         yield return new CombatFlow_PresentAttacker(attacker);
         yield return new CombatFlow_PresentDefender(defender);
 
         // 1
-        
+
         foreach (var weapon in new[] { attacker.GetLeftWeapon(), attacker.GetRightWeapon() })
         {
             if (weapon != null)
@@ -145,10 +146,12 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
 
         yield return defender.AsDefender_ApplyDiceCountModifiers(this);
-        
+
         // 3
 
-        yield return new CombatFlow_Notify($"{attacker.GetName()} ({AttackDicePreRoll.Count}) attacks {defender.GetName()} ({DefenseDicePreRoll.Count})...", false);
+        yield return new CombatFlow_Notify(
+            $"{attacker.GetName()} ({AttackDicePreRoll.Count}) attacks {defender.GetName()} ({DefenseDicePreRoll.Count})...",
+            false);
 
         int n = 0;
         foreach (var die in AttackDicePreRoll)
@@ -163,7 +166,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
 
         yield return attacker.AsAttacker_ApplyCombatModifiers(this);
-        
+
         n = 0;
         foreach (var die in DefenseDicePreRoll)
         {
@@ -175,11 +178,11 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
             yield return new CombatFlow_PresentDefenseDie(n, CurrentRoll.Value);
             n++;
         }
-        
+
         yield return defender.AsDefender_ApplyCombatModifiers(this);
-        
+
         // 4
-        
+
         TotalStrikeCount = AttackDiceRolled.Count;
         CurrentStrikeCount = 0;
         var defenseDiceQueue = new Queue<RolledDie>(DefenseDiceRolled);
@@ -226,15 +229,15 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 HitDice.Add(new RolledDie(nextAttackDie.Die, hitDie));
                 yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, hitDie);
             }
-            
+
             CurrentStrikeCount += 1;
         }
-        
+
         if (ArmorDented)
         {
             yield return new CombatFlow_Notify(
                 $"The {defender.GetName()}'s armor got dented! Its guard will be reduced by {TotalArmorDentage}.");
-            
+
             if ((defender.GetArmor()?.Guard ?? 0) == 0)
             {
                 yield return new CombatFlow_Notify(
@@ -245,14 +248,14 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         }
 
         // 5
-        
+
         yield return attacker.AsAttacker_ApplyHitModifiers(this);
         yield return defender.AsDefender_ApplyHitModifiers(this);
-        
+
         TotalIncomingDamage = 0;
         yield return new CombatFlow_Notify(
             $"The {defender.GetName()}'s POISE is {defender.Stats.Poise}, nothing under that does damage.", false);
-        
+
         for (var index = 0; index < HitDice.Count; index++)
         {
             CurrentHitDieIndex = index;
@@ -278,7 +281,7 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
         yield return attacker.AsAttacker_ApplyTotalIncomingDamageModifiers(this);
         yield return defender.AsDefender_ApplyTotalIncomingDamageModifiers(this);
         yield return new CombatFlow_TotalIncomingDamage(TotalIncomingDamage);
-        
+
         if (TotalIncomingDamage > 0)
         {
             yield return new CombatFlow_Notify(
@@ -302,25 +305,19 @@ public class CombatFlow(ICharacter attacker, ICharacter defender)
                 yield return new CombatFlow_Notify(
                     $"{Defender.GetName()} accrues {TotalIncomingDamage} wounds.");
             }
-            else if (effect < 4)
+            else if (effect < 5)
             {
-                var ws = (int)Math.Ceiling(TotalIncomingDamage * 1.5f);
+                var ws = (int)Math.Ceiling(TotalIncomingDamage * 1.33f);
                 yield return new CombatFlow_DefenderApplyWounds(ws);
                 yield return new CombatFlow_Notify(
                     $"A solid blow! {Defender.GetName()} receives {ws} wounds.");
             }
-            else if (effect < 7)
+            else
             {
-                yield return new CombatFlow_DefenderApplyWounds(TotalIncomingDamage);
+                yield return new CombatFlow_DefenderApplyWounds((int)Math.Ceiling(TotalIncomingDamage * 1.5f));
                 yield return new CombatFlow_DefenderStumble();
                 yield return new CombatFlow_Notify(
                     $"{Defender.GetName()} receives {TotalIncomingDamage} wounds, stumbling from the hit.");
-            }
-            else
-            {
-                yield return new CombatFlow_DefenderApplyStatus(new TraitProne(Math.Max(2, TotalIncomingDamage - 7)));
-                yield return new CombatFlow_Notify(
-                    $"{Defender.GetName()} falls down and is prone for the next few turns.");
             }
         }
     }

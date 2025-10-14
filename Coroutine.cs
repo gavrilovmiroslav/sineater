@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -27,6 +28,12 @@ public class Coroutine
     public static void Consume(IEnumerable en)
     {
         foreach (var e in en) {}
+    }
+    
+    public static IEnumerable Iterate(IEnumerator iterator)
+    {
+        while (iterator.MoveNext())
+            yield return iterator.Current;
     }
 }
 

@@ -17,7 +17,7 @@ public static class Bestiary
             Sin = 1,
             HP = 1,
             Tint = Color.Red,
-            Stats = new Stats(10, 2, 1, 2),
+            Stats = new Stats(4, 2, 1, 2),
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
         
