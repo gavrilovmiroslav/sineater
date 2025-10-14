@@ -41,27 +41,35 @@ public class DeathsDoor(SineaterGame game, CombatMapScreen level) : IEnumerable
                         yield return new WaitForSeconds(0.01f);
                     }
 
-                    yield return new ShowPopupWindowAndWaitForKey((_, bnd) =>
-                    {
-                        bnd.Newline();
-                        bnd.Add($"The {e.GetName()} dies.");
-                        bnd.Newline();
-                        bnd.Newline();
-                        if (e.LastHit is PartyMember chr)
-                        {
-                            bnd.Add($"  {chr.GetRandomBark()}");
-                        }
-
-                        bnd.Newline();
-                        bnd.Newline();
-                    }, true);
                     if (e.LastHit is PartyMember chr)
+                    {
+                        yield return new ShowPopupWindowWithPortraitAndWaitForKey(e.LastHit.GetPortait(), (_, bnd) =>
+                        {
+                            bnd.Newline();
+                            bnd.Add($"{chr.GetName()} dispatches the {e.GetName()}.");
+                            bnd.Newline();
+                            bnd.Add($"  {chr.GetRandomBark()}");
+                            bnd.Newline();
+                        }, true);
+                    }
+                    else
+                    {
+                        yield return new ShowPopupWindowAndWaitForKey((_, bnd) =>
+                        {
+                            bnd.Newline();
+                            bnd.Add($"{e.GetName()} dies.");
+                            bnd.Newline();
+                            bnd.Newline();
+                        }, true);
+                    }
+
+                    if (e.LastHit is PartyMember c)
                     {
                         var transferable = e.Traits.Where(t => !(t is LimitedTrait)).ToList();
                         if (transferable.Count > 0)
                         {
                             var t = transferable[Rnd.Instance.Next(0, transferable.Count)];
-                            yield return new ShowPopupWindowAndWaitForKey(
+                            yield return new ShowPopupWindowWithPortraitAndWaitForKey(c.GetPortait(),
                                 (_, bnd) => { bnd.Add($"The {e.LastHit.GetName()} acquires {t.Name.ToUpper()}!"); },
                                 true);
                             yield return e.LastHit.AddTrait(t);
