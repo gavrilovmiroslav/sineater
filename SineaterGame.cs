@@ -90,7 +90,7 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("fingerprints");
 
-        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 1, new Vector2(75, 0));
+        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 1, new Vector2(75, -25));
         Layers.Add("porsmol", portraitSmolLayer);
         
         var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 2, new Vector2(76, 0));

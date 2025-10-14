@@ -51,7 +51,7 @@ public static class Bestiary
     {
         var gob = new Enemy
         {
-            Name = "Hobgoblin",
+            Name = "Hobgob",
             Icon = (6, 64),
             DeadIcon = (8, 65),
             Portrait = (1, 2),

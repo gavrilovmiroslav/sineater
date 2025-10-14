@@ -716,7 +716,71 @@ public class CombatMapScreen : IScreen
             //_game.Layers["ascii"].Set(2 * _fullWidth - 1, 6, $"{_confirmedCombatFlow.AttackDicePreRoll.Count} vs {_confirmedCombatFlow.DefenseDicePreRoll.Count}");   
         }
     }
+    private void DrawEnemyGui(ICharacter chr, int h = 12, int dp = 0) //7
+    {
+        var (ix, iy) = (0, 0);
+        if (chr is Enemy e)
+        {
+            (ix, iy) = e.Icon;
+        }
+        else if (chr is PartyMember p)
+        {
+            (ix, iy) = p.Job.GetImage();
+        }
+        var tint = chr.GetTint();
+        _game.Layers["ascii"].Set(2 * _fullWidth - 1, h, "NAME       WIL CLA POI VIG");
+        _game.Layers["mrmo"].Set(2 + _fullWidth - 3, h + 1,
+            new Glyph(ix, iy, Color.Black, tint));
+        _game.Layers["ascii"].Set(2 * _fullWidth + 2, h + 1, chr.GetName(),
+            Color.Lerp(Color.White, tint, 0.5f));
+        
+        _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, h + 1, chr.Stats.Will.ToString(),
+            Color.Lerp(Color.White, tint, 0.5f));
+        
+        _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, h + 1, chr.Stats.Clarity.ToString(),
+            Color.Lerp(Color.White, tint, 0.5f));
+        
+        _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, h + 1, chr.Stats.Poise.ToString(),
+            Color.Lerp(Color.White, tint, 0.5f));
+        
+        _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, h + 1, chr.Stats.Vigor.ToString(),
+            Color.Lerp(Color.White, tint, 0.5f));
 
+        var ph = (h + 1) / 2 + dp;
+        var (u, v) = chr.GetPortait(); 
+        _game.Layers["porsmol"].Set(10, ph, new Glyph(u, v, Color.Black, tint));
+
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
+        _game.Layers["ascii"].Set(2 * _fullWidth, h + 5, $"LEFT HAND:  --");
+        if (chr.GetLeftWeapon() is { } lw)
+        {
+            (u, v) = lw.Picture;
+            _game.Layers["ascii"].Set(2 * _fullWidth, h + 5, $"LEFT HAND:  {lw.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
+        
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
+        _game.Layers["ascii"].Set(2 * _fullWidth, h + 6, $"RIGHT HAND: --");
+        if (chr.GetRightWeapon() is { } rw)
+        {
+            (u, v) = rw.Picture;
+            _game.Layers["ascii"].Set(2 * _fullWidth, h + 6, $"RIGHT HAND: {rw.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
+        
+        (u, v) = ItemLibrary.EmptyUv;
+        _game.Layers["porsmol"].Set(13, ph, new Glyph(u, v, Color.Black, tint));
+        _game.Layers["ascii"].Set(2 * _fullWidth, h + 7, $"ARMOR:      --");
+        if (chr.GetArmor() is { } ar)
+        {
+            (u, v) = ar.Picture;
+            _game.Layers["ascii"].Set(2 * _fullWidth, h + 7, $"ARMOR:      {ar.GetName()}");
+        }
+        _game.Layers["porsmol"].Set(13, ph, new Glyph(u, v, Color.Black, tint));
+    }
+    
     private void DrawLoadout()
     {
         _game.Layers["ascii"].Set(2 * _fullWidth - 1, 0, "CHAR       SKILLS");
@@ -814,59 +878,6 @@ public class CombatMapScreen : IScreen
             }
             index++;
         }
-
-        if (_confirmedCombatFlow != null)
-        {
-            var enemy = _confirmedCombatFlow.Defender;
-            var (ix, iy) = (0, 0);
-            if (enemy is Enemy e)
-            {
-                (ix, iy) = e.Icon;
-            }
-
-            var tint = enemy.GetTint();
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 6,
-                new Glyph(ix, iy, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 6, enemy.GetName(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 6, enemy.GetLeftWeapon()?.Attack.ToString() ?? "-",
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            if (enemy.GetLeftWeapon() is Shield leftShield)
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 14, 6, leftShield.Defense.ToString() ?? "-",
-                    Color.Lerp(Color.White, tint, 0.5f));
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 6, "G", Color.Lerp(Color.White, tint, 0.5f));
-            }
-            else
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 6,
-                    enemy.GetLeftWeapon()?.Weight.Short() ?? "-",
-                    Color.Lerp(Color.White, tint, 0.5f));
-            }
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 6, enemy.GetRightWeapon()?.Attack.ToString() ?? "-",
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            if (enemy.GetRightWeapon() is Shield rightShield)
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, 6, rightShield.Defense.ToString() ?? "-",
-                    Color.Lerp(Color.White, tint, 0.5f));
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 6, "G", Color.Lerp(Color.White, tint, 0.5f));
-            }
-            else
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 18, 6,
-                    enemy.GetRightWeapon()?.Weight.Short() ?? "-",
-                    Color.Lerp(Color.White, tint, 0.5f));
-            }
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 20, 6, enemy.GetArmor()?.Guard.ToString() ?? "-",
-                Color.Lerp(Color.White, tint, 0.5f));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 21, 6, enemy.GetArmor()?.Weight.Short() ?? "-",
-                Color.Lerp(Color.White, tint, 0.5f));
-        }
     }
 
     private void DrawStats()
@@ -905,33 +916,6 @@ public class CombatMapScreen : IScreen
             }
             index++;
         }
-        
-        if (_confirmedCombatFlow != null)
-        {
-            var enemy = _confirmedCombatFlow.Defender;
-            var (ix, iy) = (0, 0);
-            if (enemy is Enemy e)
-            {
-                (ix, iy) = e.Icon;
-            }
-            var tint = enemy.GetTint();
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, 6,
-                new Glyph(ix, iy, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, 6, enemy.GetName(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, 6, enemy.Stats.Will.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, 6, enemy.Stats.Clarity.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, 6, enemy.Stats.Poise.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, 6, enemy.Stats.Vigor.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-        }
     }
     
     public void Draw(GameTime gameTime)
@@ -954,10 +938,27 @@ public class CombatMapScreen : IScreen
         _game.Layers["porsmol"].Clear();
         _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth + 40, 40), ' ');
         _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(2 + _fullWidth * 2 + 40, 40), ' ');
-        
+
+        var selected = SineaterGame.Instance.Party.Characters[SineaterGame.Instance.Party.Selected];
         DrawCombat();
-        DrawGui();
         
+        DrawEnemyGui(selected, 1, 1);
+        
+        if (!CoroutineHandler.IsActive())
+        {
+            if (_time < 400 || _time is > 800 and < 1200)
+            {
+                _game.Layers["mrmo"].Set(CombatStates[selected].X, CombatStates[selected].Y + 1, 
+                    new Glyph(12, 25, Color.Black, CombatStates[selected].Tint));
+            }
+        }
+        
+        if (_confirmedCombatFlow != null)
+        {
+            var chr = _confirmedCombatFlow.Defender;
+            DrawEnemyGui(chr, 11, 0);
+        }
+
         if (RangedActionConfig != null)
         {
             DrawTargetting();
@@ -1368,9 +1369,23 @@ public class CombatMapScreen : IScreen
         {
             var chr = _game.Party.Characters[PlayerSelectedIndex];
             var ability = chr.Ability;
-            if (ability != null && ability.CanBeUsed(chr) && chr.AP.Remaining > 0)
+            if (ability != null)
             {
-                CoroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
+                if (ability.CanBeUsed(chr, CombatStates[chr].X, CombatStates[chr].Y) && chr.AP.Remaining > 0)
+                {
+                    CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
+                    {
+                        layer.Add("The witch burns sin to open a domain!");
+                    }, true));
+                    CoroutineHandler.Run(ability.Use(this, chr, CombatStates[chr].X, CombatStates[chr].Y));
+                }
+                else
+                {
+                    CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
+                    {
+                        layer.Add("Not enough sin to open this domain...");
+                    }, true));
+                }
             }
         }
         
