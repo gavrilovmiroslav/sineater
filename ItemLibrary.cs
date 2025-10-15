@@ -8,6 +8,7 @@ public static class ItemLibrary
     public static readonly Weapon Dagger = new Weapon("Dagger", 2, EWeightClass.Light, 5, (2, 0));
     public static readonly Weapon Scepter = new Weapon("Scepter", 4, EWeightClass.Heavy, 3, (4, 0));
     public static readonly Weapon WizardStaff = new Weapon("Wizard Staff", 2, EWeightClass.Heavy, 1, (5, 0));
+    public static readonly Weapon Fang = new Weapon("Fang", 1, EWeightClass.Tiny, 1, (6, 0));
     public static readonly Weapon Misericorde = new Weapon("Misericorde", 4, EWeightClass.Light, 5, (3, 2));
     public static readonly Weapon SkolemStaff = new Weapon("Skolem Staff", 4, EWeightClass.Large, 3, (4, 2));
     public static readonly Weapon HeavyFlail = new Weapon("Heavy Flail", 3, EWeightClass.Heavy, 3, (5, 2));

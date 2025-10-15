@@ -90,10 +90,10 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("fingerprints");
 
-        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 1, new Vector2(75, -25));
+        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(75, -25));
         Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(6, 10), new Vector2(0, 0), 2, new Vector2(76, 0));
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0));
         Layers.Add("portrait", portraitLayer);
         
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3));
@@ -146,7 +146,7 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        ActionPoints = new ActionPoints(50, ibmLayer, new StatusStamina());
+        ActionPoints = new ActionPoints(40, ibmLayer, new StatusStamina());
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));

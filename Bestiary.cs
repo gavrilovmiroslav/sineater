@@ -20,8 +20,9 @@ public static class Bestiary
             Stats = new Stats(4, 2, 1, 2),
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
-        
-        bat.LeftWeapon = new Weapon("Fang", 2, EWeightClass.Tiny, 1, ItemLibrary.EmptyUv);
+
+        bat.LeftWeapon = ItemLibrary.Fang;
+        bat.RightWeapon = ItemLibrary.Fang;
         if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
         return bat;
     }

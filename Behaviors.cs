@@ -151,11 +151,11 @@ public class BehaviorBlind : Behavior
         
         if (level.IsCharacterAt(nextX, nextY) is { } chr)
         {
-            yield return level.Attack(new CombatFlow(self, chr));
+            yield return level.DoAttack(self, chr);
         }
         else if (level.IsEnemyAt(nextX, nextY) is { } enm)
         {
-            yield return level.Attack(new CombatFlow(self, enm));
+            yield return level.DoAttack(self, enm);
         }
         else if (level.Map?.IsWalkable(nextX, nextY) ?? false)
         {
@@ -193,7 +193,7 @@ public class BehaviorFlyAbout : Behavior
             var nextY = y + dy;
             if (level.IsCharacterAt(nextX, nextY) is { } chr)
             {
-                yield return level.Attack(new CombatFlow(self, chr));
+                yield return level.DoAttack(self, chr);
                 break;
             }
             else if (level.IsEnemyAt(nextX, nextY) is { } enm)
@@ -233,7 +233,7 @@ public class BehaviorAggro : Behavior
 
         if (path != null)
         {
-            int ap = self.Stats.Will;
+            var ap = self.Stats.Will;
             for (var i = 0; i < ap; i++)
             {
                 if (self.IsDone) yield break;
@@ -247,7 +247,7 @@ public class BehaviorAggro : Behavior
                 {
                     var (ex, ey) = self.Icon;
                     var (cx, cy) = chr.Job.GetImage();
-                    for (int f = 0; f < 10; f++)
+                    for (var f = 0; f < 10; f++)
                     {
                         SineaterGame.Instance.Layers["mrmo"].Set(self.X, self.Y + 2,
                             new Glyph(ex, ey, Color.Black, f % 2 == 0 ? Color.Red : self.Tint));
@@ -256,7 +256,7 @@ public class BehaviorAggro : Behavior
                         yield return new WaitForSeconds(0.01f);
                     }
                     level.DrawCombat();
-                    yield return level.Attack(new CombatFlow(self, chr));
+                    yield return level.DoAttack(self, chr);
                     ap = 0;
                 }
                 else
@@ -265,7 +265,6 @@ public class BehaviorAggro : Behavior
                     ap -= 1;
                 }
 
-                level.DrawGui();
                 level.DrawCombat();
                 yield return new WaitForSeconds(0.1f);
             }
