@@ -151,11 +151,11 @@ public class BehaviorBlind : Behavior
         
         if (level.IsCharacterAt(nextX, nextY) is { } chr)
         {
-            yield return level.DoAttack(self, chr);
+            //yield return level.DoAttack(self, chr);
         }
         else if (level.IsEnemyAt(nextX, nextY) is { } enm)
         {
-            yield return level.DoAttack(self, enm);
+            //yield return level.DoAttack(self, enm);
         }
         else if (level.Map?.IsWalkable(nextX, nextY) ?? false)
         {
@@ -193,7 +193,7 @@ public class BehaviorFlyAbout : Behavior
             var nextY = y + dy;
             if (level.IsCharacterAt(nextX, nextY) is { } chr)
             {
-                yield return level.DoAttack(self, chr);
+                //yield return level.DoAttack(self, chr);
                 break;
             }
             else if (level.IsEnemyAt(nextX, nextY) is { } enm)
@@ -256,7 +256,7 @@ public class BehaviorAggro : Behavior
                         yield return new WaitForSeconds(0.01f);
                     }
                     level.DrawCombat();
-                    yield return level.DoAttack(self, chr);
+                    //yield return level.DoAttack(self, chr);
                     ap = 0;
                 }
                 else

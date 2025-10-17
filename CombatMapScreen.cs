@@ -951,8 +951,8 @@ public class CombatMapScreen : IScreen
         
         if (_confirmedCombatFlow != null)
         {
-            var chr = _confirmedCombatFlow.Defender;
-            DrawCharacterCard(chr, 11, 0);
+            // var chr = _confirmedCombatFlow.Defender;
+            // DrawCharacterCard(chr, 11, 0);
         }
 
         if (RangedActionConfig != null)
@@ -1063,11 +1063,13 @@ public class CombatMapScreen : IScreen
         }
     }
 
-    private IEnumerable CombatAlgebra(CombatFlow flow, ICombatFlowStep step)
+    private IEnumerable CombatAlgebra(CombatFlow flow, IPresentation step)
     {
-        var dw = 1;
-        var dh = 0;
+        yield break;
         
+        /*var dw = 1;
+        var dh = 0;
+
         if (step is CombatFlow_Notify notif)
         {
             if (notif.WaitKey)
@@ -1093,9 +1095,9 @@ public class CombatMapScreen : IScreen
         {
             // _game.Layers["ascii"].SetRect(new Vector2(4 + 2 * _fullWidth, 21), new Vector2(4 + 2 * _fullWidth + 6, 25), ' ');
             // _game.Layers["ascii"].SetRect(new Vector2(4 + 2 * _fullWidth, 21), new Vector2(4 + 2 * _fullWidth + 6, 25), ' ');
-            // _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth + dw + 0 + 1, 21), 
+            // _game.Layers["mrmo"].SetRect(new Vector2(2 + _fullWidth + dw + 0 + 1, 21),
             //     new Vector2(2 + _fullWidth + dw + 10 + 1, 25), ' ');
-            
+
             var (ua, va) = att.Attacker.GetPortait();
             _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 21, "ATK");
             _game.Layers["ascii"].Set(4 + 2 * _fullWidth, 22, "DEF");
@@ -1125,7 +1127,7 @@ public class CombatMapScreen : IScreen
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth + dw + ra.Index + 1, 21 + dh,
                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-            
+
                 yield return new WaitForSeconds(0.01f);
             }
         }
@@ -1135,7 +1137,7 @@ public class CombatMapScreen : IScreen
             {
                 _game.Layers["mrmo"].Set(2 + _fullWidth + dw + rd.Index + 1, 22 + dh,
                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-            
+
                 yield return new WaitForSeconds(0.01f);
             }
         }
@@ -1220,7 +1222,7 @@ public class CombatMapScreen : IScreen
             {
                 e.LastHit = flow.Attacker;
             }
-        } 
+        }
         else if (step is CombatFlow_PresentArmorDestroyed pad)
         {
             flow.Defender.RemoveArmor();
@@ -1248,7 +1250,7 @@ public class CombatMapScreen : IScreen
         else if (step is CombatFlow_DefenderApplyStatus ass)
         {
             flow.Defender.AddTrait(ass.trait);
-        }
+        }*/
     }
 
     private IEnumerable PreviewAttack(CombatFlow flow, IEnumerable log)
@@ -1266,7 +1268,7 @@ public class CombatMapScreen : IScreen
                     }
                 }
             }
-            else if (part is ICombatFlowStep step) 
+            else if (part is IPresentation step) 
             {
                 // SKIP COMBAT ON PURPOSE!
             }
@@ -1285,7 +1287,7 @@ public class CombatMapScreen : IScreen
             {
                 yield return ResolveAttack(flow, enm);
             }
-            else if (part is ICombatFlowStep step) 
+            else if (part is IPresentation step) 
             {
                 yield return CombatAlgebra(flow, step);
             }
@@ -1296,19 +1298,21 @@ public class CombatMapScreen : IScreen
         }
     }
 
-    public IEnumerable DoAttack(ICharacter atk, ICharacter dfn)
+    public IEnumerable DoAttack(ICharacter atk, Weapon? weapon, (int, int) position, (int, int) direction)
     {
-        _confirmedCombatFlow = new CombatFlow(atk, dfn);
-        DrawCharacterCard(_confirmedCombatFlow.Defender, 11, 0);
+        _confirmedCombatFlow = new CombatFlow(this, atk, weapon, position, direction);
+        //DrawCharacterCard(_confirmedCombatFlow.Defender, 11, 0);
         return Attack(_confirmedCombatFlow);
     }
+    
     public IEnumerable Attack(CombatFlow flow)
     {
-        var attacker = flow.Attacker;
-        var defender = flow.Defender;
-        
-        var attackFlow = flow.Attack();
-        yield return ResolveAttack(flow, attackFlow);
+        yield break;
+        // var attacker = flow.Attacker;
+        // var defender = flow.Defender;
+        //
+        // var attackFlow = flow.Attack();
+        // yield return ResolveAttack(flow, attackFlow);
     }
 
     public Enemy? IsEnemyAt(int x, int y)
@@ -1432,17 +1436,7 @@ public class CombatMapScreen : IScreen
                         }
                         else if (IsEnemyAt(x + dx, y + dy) is { } e)
                         {
-                            if (_confirmedCombatFlow != null && _confirmedCombatFlow.Defender == e)
-                            {
-                                _confirmedCombatFlow = null;
-                                CoroutineHandler.Run(Attack(new CombatFlow(current, e)));
-                                CombatStates[current].Move = 0;
-                            }
-                            else
-                            {
-                                _confirmedCombatFlow = new CombatFlow(current, e);
-                                Coroutine.Consume(PreviewAttack(_confirmedCombatFlow, _confirmedCombatFlow.Attack()));
-                            }
+                            // do nothing
                         }
                         else if (Map?.IsWalkable(x + dx, y + dy) ?? false)
                         {

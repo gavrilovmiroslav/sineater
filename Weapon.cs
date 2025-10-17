@@ -46,20 +46,45 @@ public static class WeightClassExtensions
     }
 }
 
-public class Weapon(string name, int attack, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
+public interface ISkirmishStep;
+public record struct SkirmishStep_Appear((int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepFrontLeft(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepFrontRight(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackFront : ISkirmishStep;
+public record struct SkirmishStep_AttackHand : ISkirmishStep;
+public record struct SkirmishStep_AttackLeft : ISkirmishStep;
+public record struct SkirmishStep_AttackRight : ISkirmishStep;
+public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
+
+public class Weapon(string name, int attack, EWeightClass weight, int quality, 
+    (int, int) inventoryPicture, List<Trait>? traits = null, List<ISkirmishStep>? steps = null,
+    int scaleWil = 0, int scaleCla = 0, int scalePoi = 0, int scaleVig = 0, 
+    int critOn = 6, int openingsPerCrit = 1) : IEquippable, IItem
 {
-    public (int, int) Picture => (uv.Item1, 5 + uv.Item2);
+    public int ScaleWIL => scaleWil;
+    public int ScaleCLA => scaleCla;
+    public int ScalePOI => scalePoi;
+    public int ScaleVIG => scaleVig;
+    public int CritOn => critOn;
+    public int OpeningsPerCrit => openingsPerCrit;
+    
+    public (int, int) Picture => inventoryPicture;
     public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(14, 67);
-
-    public List<Trait> Traits { get; set; } = [];
+    
+    public List<ISkirmishStep> Steps { get; set; } = steps ?? [];
+    public List<Trait> Traits { get; set; } = traits ?? [];
     
     public bool CanBeUsed()
     {
         return false;
     }
 
-    public bool CanBeShattered()
+    public virtual bool CanBeShattered()
     {
         return false;
     }
@@ -145,7 +170,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality, (
         yield break;
     }
 
-    public IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
     {
         yield break;
     }
@@ -175,33 +200,33 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality, (
     }
 }
 
-public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor.")
+public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor."), ISkirmish_GuardUp, ISkirmish_ArmorBreak
 {
-    public Shield Owner { get; set; } = shield;
-    public override IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    public Shield Owner { get; private set; } = shield;
+    
+    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
     {
-        yield return new CombatFlow_Notify($"SHIELD: {Owner.Defense} defense dice are added because of the {Owner.GetName()}!");
-        for (var i = 0; i < Owner.Defense; i++)
-        {
-            flow.DefenseDicePreRoll.Add(new Die());    
-        }
-
-        yield break;
+        yield return new Present_Notify($"{Owner.GetName()} adds +{Owner.Defense} guard!");
+        flow.DefenderArmor += Owner.Defense;
     }
 
-    public override IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
+    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
     {
-        if (Rnd.Instance.D100 < 20)
+        yield return new Present_Notify($"{Owner.GetName()} cracks under the heavy attack.");
+        flow.ArmorBreak = false;
+        Owner.Defense--;
+        if (Owner.Defense < 0)
         {
-            flow.ArmorDented = false;
-            this.Owner.Defense--;
-            yield break;
+            Owner.Defense = 0;
         }
     }
+
+    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow) { yield break; }
+    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-public class Shield(string name, int defense, EWeightClass weight, int quality, (int, int) uv)
-    : Weapon(name, 0, weight, quality, uv)
+public class Shield(string name, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture)
+    : Weapon(name, 0, weight, quality, inventoryPicture)
 {
     public int Defense { get; set; } = defense;
     

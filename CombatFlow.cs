@@ -5,27 +5,34 @@ using System.Linq;
 
 namespace SINEATER;
 
-public interface ICombatFlowStep {}
+public interface IPresentation {}
 
-public record struct CombatFlow_PresentAttacker(ICharacter Attacker) : ICombatFlowStep;
-public record struct CombatFlow_PresentDefender(ICharacter Defender) : ICombatFlowStep;
-public record struct CombatFlow_Notify(string Message, bool WaitKey = true) : ICombatFlowStep;
-public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlowStep;
-public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
-public record struct CombatFlow_PresentRollingDefenseDie(int Index) : ICombatFlowStep;
-public record struct CombatFlow_PresentDefenseDie(int Index, int Value) : ICombatFlowStep;
-public record struct CombatFlow_DefenderArmorDented : ICombatFlowStep;
-public record struct CombatFlow_PresentStrike(int Index, RolledDie Attack, RolledDie? Defense) : ICombatFlowStep; 
-public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlowStep;
-public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
-public record struct CombatFlow_PresentDamageDie(int Index, int Value) : ICombatFlowStep;
-public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFlowStep;
-public record struct CombatFlow_PresentArmorDestroyed : ICombatFlowStep;
-public record struct CombatFlow_ShatteredLeftWeapon : ICombatFlowStep;
-public record struct CombatFlow_ShatteredRightWeapon : ICombatFlowStep;
-public record struct CombatFlow_DefenderApplyWounds(int Count) : ICombatFlowStep;
-public record struct CombatFlow_DefenderStumble : ICombatFlowStep;
-public record struct CombatFlow_DefenderApplyStatus(Trait trait) : ICombatFlowStep;
+public record struct Present_Notify(string Message, bool WaitKey = true) : IPresentation;
+public record struct Present_AttackRolled : IPresentation;
+public record struct Present_Crit(int index) : IPresentation;
+public record struct Present_GuardBreak(int index) : IPresentation;
+public record struct Present_ArmorDent(int index) : IPresentation;
+public record struct Present_ArmorBreak(int index) : IPresentation;
+public record struct Present_DealDamage(int index, int damage) : IPresentation;
+
+// public record struct CombatFlow_PresentAttacker(ICharacter Attacker) : ICombatFlowStep;
+// public record struct CombatFlow_PresentDefender(ICharacter Defender) : ICombatFlowStep;
+// public record struct CombatFlow_PresentRollingAttackDie(int Index) : ICombatFlowStep;
+// public record struct CombatFlow_PresentAttackDie(int Index, int Value) : ICombatFlowStep;
+// public record struct CombatFlow_PresentRollingDefenseDie(int Index) : ICombatFlowStep;
+// public record struct CombatFlow_PresentDefenseDie(int Index, int Value) : ICombatFlowStep;
+// public record struct CombatFlow_DefenderArmorDented : ICombatFlowStep;
+// public record struct CombatFlow_PresentStrike(int Index, RolledDie Attack, RolledDie? Defense) : ICombatFlowStep; 
+// public record struct CombatFlow_PresentHitDie(int Index, int Value) : ICombatFlowStep;
+// public record struct CombatFlow_PresentDamagingHitDie(int Index) : ICombatFlowStep;
+// public record struct CombatFlow_PresentDamageDie(int Index, int Value) : ICombatFlowStep;
+// public record struct CombatFlow_TotalIncomingDamage(int TotalDamage) : ICombatFlowStep;
+// public record struct CombatFlow_PresentArmorDestroyed : ICombatFlowStep;
+// public record struct CombatFlow_ShatteredLeftWeapon : ICombatFlowStep;
+// public record struct CombatFlow_ShatteredRightWeapon : ICombatFlowStep;
+// public record struct CombatFlow_DefenderApplyWounds(int Count) : ICombatFlowStep;
+// public record struct CombatFlow_DefenderStumble : ICombatFlowStep;
+// public record struct CombatFlow_DefenderApplyStatus(Trait trait) : ICombatFlowStep;
 
 public record struct Die(IAbilitySource Source)
 {
@@ -38,287 +45,359 @@ public class RolledDie(Die die, int value)
     public int Value { get; set; } = value;
 }
 
-public record struct AttackDefensePair(RolledDie Attack, RolledDie? Defense);
-
-public interface ICombatFlowParticipant
+public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapon, ICharacter? defender, (int, int) position)
 {
-    public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow);
-    
-    public IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow);
-    public IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow);
-    public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow);
-    
-    public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow);
-    
-    public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow);
-    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow);
-    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow);
-    
-    public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow);
-    
-    public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow);
-    public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow);
-    
-    public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow);
-    public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow);
-}
-
-public class CombatFlow(ICharacter attacker, ICharacter defender)
-{
+    public CombatFlow Parent => parent;
     public ICharacter Attacker => attacker;
-    public ICharacter Defender => defender;
-
-    public HashSet<Trait> AttackerTraits = [];
-    public HashSet<Trait> DefenderTraits = [];
-
-    public List<Die> AttackDicePreRoll = [];
-    public List<Die> DefenseDicePreRoll = [];
-    public RolledDie CurrentRoll;
+    public Weapon? Weapon => weapon;
+    public ICharacter? Defender { get; set; } = defender;
+    public (int, int) Position => position;
+    
+    public List<Die> AttackDice = [];
     public List<RolledDie> AttackDiceRolled = [];
-    public List<RolledDie> DefenseDiceRolled = [];
-    public List<RolledDie?> HitDice = [];
 
-    public int TotalStrikeCount = 0;
-    public int CurrentStrikeCount = 0;
-    public AttackDefensePair CurrentPair;
-    public int CurrentHitDieIndex = 0;
-    public int HitDieDamage = 0;
-    public int TotalIncomingDamage = 0;
+    public int Openings;
+    
+    public int DefenderArmor;
+    public int DefenderPoise;
+    public int TotalGuard;
+
+    public int CritOn;
+    public int OpeningsPerCrit;
+    
+    public int IndexCurrentDie;
+
+    public bool IsCurrentDieCrit;
+    public List<bool> Hits = [];
+    public List<bool> Crits = [];
+
+    public bool GuardBreak = false;
     public bool ArmorDented = false;
-    public int TotalArmorDentage = 0;
-    public bool ShatteredLeftWeapon = false;
-    public bool ShatteredRightWeapon = false;
-
+    public bool ArmorBreak = false;
+    
     public IEnumerable Attack()
     {
-        AttackDicePreRoll.Clear();
-        DefenseDicePreRoll.Clear();
-        CurrentRoll = null;
-        AttackDiceRolled.Clear();
-        DefenseDiceRolled.Clear();
-        HitDice.Clear();
-
-        TotalStrikeCount = 0;
-        CurrentStrikeCount = 0;
-        CurrentHitDieIndex = 0;
-        HitDieDamage = 0;
-        TotalIncomingDamage = 0;
-        ArmorDented = false;
-        TotalArmorDentage = 0;
-        ShatteredLeftWeapon = false;
-        ShatteredRightWeapon = false;
-
-        // 0
-
-        yield return new CombatFlow_PresentAttacker(attacker);
-        yield return new CombatFlow_PresentDefender(defender);
-
-        // 1
-
-        foreach (var weapon in new[] { attacker.GetLeftWeapon(), attacker.GetRightWeapon() })
+        if (Weapon != null)
         {
-            if (weapon != null)
+            for (var i = 0; i < Weapon.Attack; i++)
             {
-                for (int i = 0; i < weapon.Attack; i++)
-                {
-                    this.AttackDicePreRoll.Add(new Die(weapon));
-                }
+                AttackDice.Add(new Die(Weapon));
             }
         }
 
-        yield return attacker.AsAttacker_ApplyDiceCountModifiers(this);
-
-        // 2
-
-        var guard = 0;
-        if (defender.GetArmor() is { } armor)
+        yield return Attacker.AsAttacker_OnAttackDiceCount(this);
+        yield return Defender?.AsDefender_OnAttackDiceCount(this);
+        yield return new Present_Notify($"{this.Attacker} attacks with {AttackDice.Count}."); 
+        
+        for (var i = 0; i < AttackDice.Count; i++)
         {
-            for (var i = 0; i < armor.Guard; i++)
+            AttackDiceRolled.Add(new RolledDie(AttackDice[i], Rnd.Instance.D6));
+        }
+
+        yield return Defender?.AsDefender_OnAttackDiceRolled(this);
+        yield return Attacker.AsAttacker_OnAttackDiceRolled(this);
+        yield return new Present_AttackRolled();
+        
+        DefenderArmor = Defender?.GetArmor()?.Guard ?? 0;
+        DefenderPoise = Defender?.Stats.Poise ?? 0;
+        TotalGuard = DefenderArmor + DefenderPoise;
+
+        yield return Defender?.AsDefender_OnGuardUp(this);
+        yield return Attacker.AsAttacker_OnGuardUp(this);
+        
+        CritOn = Weapon?.CritOn ?? 6;
+        OpeningsPerCrit = Weapon?.OpeningsPerCrit ?? 0;
+        
+        yield return Attacker.AsAttacker_OnCritChanceEstablished(this);
+        yield return Defender?.AsDefender_OnCritChanceEstablished(this);
+        
+        yield return new Present_Notify($"{TotalGuard}+ hits, crits on {CritOn}+.");
+
+        Hits.Clear();
+        Crits.Clear();
+
+        for (var i = 0; i < AttackDiceRolled.Count; i++)
+        {
+            IndexCurrentDie = i;
+            var die = AttackDiceRolled[i];
+
+            Crits.Clear();
+            if (die.Value >= CritOn)
             {
-                this.DefenseDicePreRoll.Add(new Die(armor));
+                IsCurrentDieCrit = true;
+                yield return Defender?.AsDefender_OnCritHit(this);
+                yield return Attacker.AsAttacker_OnCritHit(this);
+                if (IsCurrentDieCrit)
+                {
+                    Crits.Add(IsCurrentDieCrit);
+                    Hits.Add(true);
+                    yield return new Present_Crit(i);
+                    Openings += OpeningsPerCrit;
+                    if (!GuardBreak)
+                    {
+                        TotalGuard -= Math.Min(die.Value - CritOn, 1);
+                        if (TotalGuard < 0)
+                        {
+                            TotalGuard = 0;
+                            GuardBreak = true;
+                            yield return new Present_GuardBreak(i);
+                            yield return Defender?.AsDefender_OnGuardBreak(this);
+                            yield return Attacker.AsAttacker_OnGuardBreak(this);
+                        }
+                    }
+                    else
+                    {
+                        if (!ArmorBreak)
+                        {
+                            DefenderArmor--;
+                            if (DefenderArmor == 0)
+                            {
+                                ArmorBreak = true;
+                                yield return Defender?.AsDefender_OnArmorBreak(this);
+                                yield return Attacker.AsAttacker_OnArmorBreak(this);
+                                if (ArmorBreak)
+                                {
+                                    yield return new Present_ArmorBreak(i);
+                                }
+                            }
+                            else
+                            {
+                                ArmorDented = true;
+                                yield return Defender?.AsDefender_OnArmorDented(this);
+                                yield return Attacker.AsAttacker_OnArmorDented(this);
+                                if (ArmorDented)
+                                {
+                                    yield return new Present_ArmorDent(i);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            yield return new Present_DealDamage(i, die.Value);
+                        }
+                    }
+                }
             }
-        }
-
-        yield return defender.AsDefender_ApplyDiceCountModifiers(this);
-
-        // 3
-
-        yield return new CombatFlow_Notify(
-            $"{attacker.GetName()} ({AttackDicePreRoll.Count}) attacks {defender.GetName()} ({DefenseDicePreRoll.Count})...",
-            false);
-
-        int n = 0;
-        foreach (var die in AttackDicePreRoll)
-        {
-            CurrentHitDieIndex = n;
-            yield return new CombatFlow_PresentRollingAttackDie(n);
-            CurrentRoll = die.Roll;
-            yield return attacker.AsAttacker_ModifyAttackRollDie(this);
-            AttackDiceRolled.Add(CurrentRoll);
-            yield return new CombatFlow_PresentAttackDie(n, CurrentRoll.Value);
-            n++;
-        }
-
-        yield return attacker.AsAttacker_ApplyCombatModifiers(this);
-
-        n = 0;
-        foreach (var die in DefenseDicePreRoll)
-        {
-            CurrentHitDieIndex = n;
-            yield return new CombatFlow_PresentRollingDefenseDie(n);
-            CurrentRoll = die.Roll;
-            yield return defender.AsDefender_ModifyDefenseRollDie(this);
-            DefenseDiceRolled.Add(CurrentRoll);
-            yield return new CombatFlow_PresentDefenseDie(n, CurrentRoll.Value);
-            n++;
-        }
-
-        yield return defender.AsDefender_ApplyCombatModifiers(this);
-
-        // 4
-
-        TotalStrikeCount = AttackDiceRolled.Count;
-        CurrentStrikeCount = 0;
-        var defenseDiceQueue = new Queue<RolledDie>(DefenseDiceRolled);
-        TotalArmorDentage = 0;
-        foreach (var nextAttackDie in AttackDiceRolled)
-        {
-            if (defenseDiceQueue.TryDequeue(out var nextDefenseDie))
+            else if (die.Value >= TotalGuard)
             {
-                CurrentPair = new AttackDefensePair(nextAttackDie, nextDefenseDie);
-
-                yield return new CombatFlow_PresentStrike(CurrentStrikeCount, CurrentPair.Attack, CurrentPair.Defense);
-                yield return defender.AsDefender_ApplyStrikeModifiers(this);
-                yield return attacker.AsAttacker_ApplyStrikeModifiers(this);
-
-                var atk = CurrentPair.Attack.Value;
-                var dfn = CurrentPair.Defense.Value;
-                if (atk < dfn)
-                {
-                    HitDice.Add(null);
-                    yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, 0);
-                    yield return defender.AsDefender_ApplyStrikeBlocked(this);
-                }
-                else if (atk == dfn)
-                {
-                    HitDice.Add(null);
-                    yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, -1);
-                    ArmorDented = true;
-                    TotalArmorDentage++;
-                    yield return new CombatFlow_DefenderArmorDented();
-                    yield return defender.AsDefender_ApplyArmorDented(this);
-                }
-                else if (atk > dfn)
-                {
-                    var hit = atk - dfn;
-                    HitDice.Add(new RolledDie(nextAttackDie.Die, hit));
-                    yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, hit);
-                }
+                Crits.Add(false);
+                Hits.Add(true);
+                yield return new Present_DealDamage(i, Math.Max(die.Value - TotalGuard, 1));
             }
             else
             {
-                CurrentPair = new AttackDefensePair(nextAttackDie, null);
-                yield return new CombatFlow_PresentStrike(CurrentStrikeCount, nextAttackDie, null);
-                var hitDie = nextAttackDie.Value;
-                HitDice.Add(new RolledDie(nextAttackDie.Die, hitDie));
-                yield return new CombatFlow_PresentHitDie(CurrentStrikeCount, hitDie);
-            }
-
-            CurrentStrikeCount += 1;
-        }
-
-        if (ArmorDented)
-        {
-            yield return new CombatFlow_Notify(
-                $"The {defender.GetName()}'s armor got dented! Its guard will be reduced by {TotalArmorDentage}.");
-
-            if ((defender.GetArmor()?.Guard ?? 0) == 0)
-            {
-                yield return new CombatFlow_Notify(
-                    $"The {defender.GetName()}'s armor got wrecked!");
-                yield return defender.AsDefender_ApplyArmorDestroyed(this);
-                yield return new CombatFlow_PresentArmorDestroyed();
+                Crits.Add(false);
+                Hits.Add(false);
             }
         }
 
-        // 5
-
-        yield return attacker.AsAttacker_ApplyHitModifiers(this);
-        yield return defender.AsDefender_ApplyHitModifiers(this);
-
-        TotalIncomingDamage = 0;
-        yield return new CombatFlow_Notify(
-            $"The {defender.GetName()}'s POISE is {defender.Stats.Poise}, nothing under that does damage.", false);
-
-        for (var index = 0; index < HitDice.Count; index++)
+        if (Openings > 0)
         {
-            CurrentHitDieIndex = index;
-            if (HitDice[index] != null && HitDice[index].Value >= defender.Stats.Poise)
+            Attacker.GetAP().Add<StatusLuck>(Openings);
+        }
+    }
+}
+
+public class CombatFlow
+{
+    public CombatFlow(CombatMapScreen level, ICharacter attacker, Weapon? weapon, (int, int) position, (int, int) direction)
+    {
+        Attacker = attacker;
+        Weapon = weapon;
+
+        Dictionary<(int, int), ICharacter> chars = [];
+
+        foreach (var p in SineaterGame.Instance.Party.Characters)
+        {
+            chars[(level.CombatStates[p].X, level.CombatStates[p].Y)] = p;
+        }
+
+        foreach (var e in level.Enemies)
+        {
+            if (!chars.ContainsKey((e.X, e.Y)))
             {
-                yield return new CombatFlow_PresentDamagingHitDie(index);
-                HitDieDamage = 1;
-                if (HitDice[index].Die.Source is Weapon wpn)
+                chars[(e.X, e.Y)] = e;
+            }
+        }
+        
+        var pos = position;
+        foreach (var step in weapon?.Steps ?? [])
+        {
+            if (step is SkirmishStep_Appear appear)
+            {
+                pos = appear.position;
+                Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+            }
+            else if (step is SkirmishStep_Forwards forwards)
+            {
+                for (var i = 0; i < forwards.n; i++)
                 {
-                    if ((int)wpn.Weight >= 5 && attacker.Stats.Vigor >= 5)
+                    var px = pos.Item1 + direction.Item1;
+                    var py = pos.Item2 + direction.Item2;
+                    if (!level.Map.IsWalkable(px, py))
                     {
-                        HitDieDamage += 1;
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_Backwards backwards)
+            {
+                for (int i = 0; i < backwards.n; i++)
+                {
+                    var px = pos.Item1 + direction.Item1;
+                    var py = pos.Item2 + direction.Item2;
+                    if (!level.Map.IsWalkable(px, py))
+                    {
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_SidestepLeft sidestepLeft)
+            {
+                for (int i = 0; i < sidestepLeft.n; i++)
+                {
+                    var px = pos.Item1 - direction.Item2;
+                    var py = pos.Item2 + direction.Item1;
+                    if (!level.Map.IsWalkable(px, py))
+                    {
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_SidestepRight sidestepRight)
+            {
+                for (int i = 0; i < sidestepRight.n; i++)
+                {
+                    var px = pos.Item1 + direction.Item2;
+                    var py = pos.Item2 + direction.Item1;
+                    if (!level.Map.IsWalkable(px, py))
+                    {
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_SidestepFrontLeft sidestepFrontLeft)
+            {
+                for (int i = 0; i < sidestepFrontLeft.n; i++)
+                {
+                    var px = pos.Item1 - direction.Item2 + direction.Item1;
+                    var py = pos.Item2 + direction.Item1 + direction.Item2;
+                    if (!level.Map.IsWalkable(px, py))
+                    {
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_SidestepFrontRight sidestepFrontRight)
+            {
+                for (int i = 0; i < sidestepFrontRight.n; i++)
+                {
+                    var px = pos.Item1 + direction.Item2 + direction.Item1;
+                    var py = pos.Item2 + direction.Item1 + direction.Item2;
+                    if (!level.Map.IsWalkable(px, py))
+                    {
+                        break;
+                    }
+
+                    pos = (px, py);
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                }
+            }
+            else if (step is SkirmishStep_AttackFront)
+            {
+                var px = pos.Item1 + direction.Item1;
+                var py = pos.Item2 + direction.Item2;
+                if (chars.ContainsKey((px, py)))
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                }
+            }
+            else if (step is SkirmishStep_AttackHand)
+            {
+                if (attacker.GetLeftWeapon() == weapon)
+                {
+                    var px = pos.Item1 - direction.Item2;
+                    var py = pos.Item2 + direction.Item1;
+                    if (chars.ContainsKey((px, py)))
+                    {
+                        Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                    }
+                }
+                else
+                {
+                    var px = pos.Item1 + direction.Item2;
+                    var py = pos.Item2 + direction.Item1;
+                    if (chars.ContainsKey((px, py)))
+                    {
+                        Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                    }
+                }
+            }
+            else if (step is SkirmishStep_AttackLeft)
+            {
+                var px = pos.Item1 - direction.Item2;
+                var py = pos.Item2 + direction.Item1;
+                if (chars.ContainsKey((px, py)))
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                }
+            }
+            else if (step is SkirmishStep_AttackRight)
+            {
+                var px = pos.Item1 + direction.Item2;
+                var py = pos.Item2 + direction.Item1;
+                if (chars.ContainsKey((px, py)))
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                }
+            }
+            else if (step is SkirmishStep_AttackRanged ranged)
+            {
+                bool canFly = true;
+                (int, int) end = pos;
+                foreach (var (x, y) in Bresenham.Line(pos.Item1, pos.Item2, 
+                             ranged.position.Item1,
+                             ranged.position.Item2))
+                {
+                    if (!level.Map.IsWalkable(x, y))
+                    {
+                        end = (x, y);
+                        break;
+                    }
+                    else
+                    {
+                        if (chars.ContainsKey((x, y)))
+                        {
+                            end = (x, y);
+                            break;
+                        }
                     }
                 }
 
-                yield return attacker.AsAttacker_DetermineHitDieDamage(this);
-                yield return defender.AsDefender_DetermineHitDieDamage(this);
-                yield return new CombatFlow_PresentDamageDie(index, HitDieDamage);
-                TotalIncomingDamage += HitDieDamage;
-            }
-        }
-
-        yield return attacker.AsAttacker_ApplyTotalIncomingDamageModifiers(this);
-        yield return defender.AsDefender_ApplyTotalIncomingDamageModifiers(this);
-        yield return new CombatFlow_TotalIncomingDamage(TotalIncomingDamage);
-
-        if (TotalIncomingDamage > 0)
-        {
-            yield return new CombatFlow_Notify(
-                $"{Attacker.GetName()} does {TotalIncomingDamage} damage to {Defender.GetName()}.");
-        }
-        else
-        {
-            yield return new CombatFlow_Notify(
-                $"{Attacker.GetName()} does no damage to {Defender.GetName()}.");
-        }
-
-        var ap = Defender.GetAP();
-        if (TotalIncomingDamage > 0)
-        {
-            var wnd = ap.Count<StatusWounds>();
-            var min = Math.Max(TotalIncomingDamage, wnd);
-            var effect = Rnd.Instance.Next(min, TotalIncomingDamage + wnd);
-            if (effect < 3)
-            {
-                yield return new CombatFlow_DefenderApplyWounds(TotalIncomingDamage);
-                yield return new CombatFlow_Notify(
-                    $"{Defender.GetName()} accrues {TotalIncomingDamage} wounds.");
-            }
-            else if (effect < 5)
-            {
-                var ws = (int)Math.Ceiling(TotalIncomingDamage * 1.33f);
-                yield return new CombatFlow_DefenderApplyWounds(ws);
-                yield return new CombatFlow_Notify(
-                    $"A solid blow! {Defender.GetName()} receives {ws} wounds.");
-            }
-            else
-            {
-                yield return new CombatFlow_DefenderApplyWounds((int)Math.Ceiling(TotalIncomingDamage * 1.5f));
-                yield return new CombatFlow_DefenderStumble();
-                yield return new CombatFlow_Notify(
-                    $"{Defender.GetName()} receives {TotalIncomingDamage} wounds, stumbling from the hit.");
+                if (end == ranged.position)
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[end], pos));
+                }
             }
         }
     }
+    
+    public ICharacter Attacker { get; set; }
+    public Weapon? Weapon { get; set; }
+    public List<SkirmishFlow> Skirmishes { get; set; } = [];
 }

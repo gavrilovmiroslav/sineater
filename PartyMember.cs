@@ -131,7 +131,17 @@ public class Stats
     }
 }
 
-public interface ICharacter : ICombatFlowParticipant
+public interface ICharacter 
+    : ISkirmish_AttackDiceCount
+        , ISkirmish_AttackDiceRolled
+        , ISkirmish_GuardUp
+        , ISkirmish_CritChanceEstablished
+        , ISkirmish_CritHit
+        , ISkirmish_GuardBreak
+        , ISkirmish_ArmorDented
+        , ISkirmish_ArmorBreak
+        , ISkirmish_DamageAnnounced
+        , ISkirmish_PoiseBroken
 {
     public Inventory Inventory { get; set; }
     public int X { get; set; }
@@ -295,121 +305,165 @@ public abstract class Character : ICharacter
     {
         this.EquipItem(null);
     }
-
-    public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
+    
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyDiceCountModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_AttackDiceCount))
+        {
+            yield return (trait as ISkirmish_AttackDiceCount).AsAttacker_OnAttackDiceCount(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_AttackDiceCount))
+        {
+            yield return (trait as ISkirmish_AttackDiceCount).AsDefender_OnAttackDiceCount(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow)
+    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ModifyAttackRollDie(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_AttackDiceRolled))
+        {
+            yield return (trait as ISkirmish_AttackDiceRolled).AsAttacker_OnAttackDiceRolled(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow)
+    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ModifyDefenseRollDie(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_AttackDiceRolled))
+        {
+            yield return (trait as ISkirmish_AttackDiceRolled).AsDefender_OnAttackDiceRolled(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
+    public IEnumerable AsAttacker_OnDamageAnnounced(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyCombatModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_DamageAnnounced))
+        {
+            yield return (trait as ISkirmish_DamageAnnounced).AsAttacker_OnDamageAnnounced(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
+    public IEnumerable AsDefender_OnDamageAnnounced(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyCombatModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_DamageAnnounced))
+        {
+            yield return (trait as ISkirmish_DamageAnnounced).AsDefender_OnDamageAnnounced(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
+    public IEnumerable AsAttacker_OnPoiseBroken(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyStrikeModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_PoiseBroken))
+        {
+            yield return (trait as ISkirmish_PoiseBroken).AsAttacker_OnPoiseBroken(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
+    public IEnumerable AsDefender_OnPoiseBroken(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyStrikeModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_PoiseBroken))
+        {
+            yield return (trait as ISkirmish_PoiseBroken).AsDefender_OnPoiseBroken(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
+    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyStrikeBlocked(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_GuardUp))
+        {
+            yield return (trait as ISkirmish_GuardUp).AsAttacker_OnGuardUp(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
+    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyArmorDented(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_GuardUp))
+        {
+            yield return (trait as ISkirmish_GuardUp).AsDefender_OnGuardUp(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow)
+    public IEnumerable AsAttacker_OnCritChanceEstablished(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyLeftWeaponShattered(flow);
-        this.EquipLeftWeapon(null);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_CritChanceEstablished))
+        {
+            yield return (trait as ISkirmish_CritChanceEstablished).AsAttacker_OnCritChanceEstablished(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
+    public IEnumerable AsDefender_OnCritChanceEstablished(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyRightWeaponShattered(flow);
-        this.EquipRightWeapon(null);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_CritChanceEstablished))
+        {
+            yield return (trait as ISkirmish_CritChanceEstablished).AsDefender_OnCritChanceEstablished(flow);
+        }
+    }
+    
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        foreach (var trait in Traits.Where(t => t is ISkirmish_CritHit))
+        {
+            yield return (trait as ISkirmish_CritHit).AsAttacker_OnCritHit(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyArmorDestroyed(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_CritHit))
+        {
+            yield return (trait as ISkirmish_CritHit).AsDefender_OnCritHit(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
+    public IEnumerable AsAttacker_OnGuardBreak(SkirmishFlow flow)
     {
-        foreach (var trait in Traits) 
-            yield return trait.AsAttacker_ApplyHitModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_GuardBreak))
+        {
+            yield return (trait as ISkirmish_GuardBreak).AsAttacker_OnGuardBreak(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow)
+    public IEnumerable AsDefender_OnGuardBreak(SkirmishFlow flow)
     {
-        foreach (var trait in Traits) 
-            yield return trait.AsDefender_ApplyHitModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_GuardBreak))
+        {
+            yield return (trait as ISkirmish_GuardBreak).AsDefender_OnGuardBreak(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
+    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_DetermineHitDieDamage(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_ArmorBreak))
+        {
+            yield return (trait as ISkirmish_ArmorBreak).AsAttacker_OnArmorBreak(flow);
+        }
     }
 
-    public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
+    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_DetermineHitDieDamage(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_ArmorBreak))
+        {
+            yield return (trait as ISkirmish_ArmorBreak).AsDefender_OnArmorBreak(flow);
+        }
     }
 
-    public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    public IEnumerable AsAttacker_OnArmorDented(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyTotalIncomingDamageModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_ArmorDented))
+        {
+            yield return (trait as ISkirmish_ArmorDented).AsAttacker_OnArmorDented(flow);
+        }
     }
 
-    public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
+    public IEnumerable AsDefender_OnArmorDented(SkirmishFlow flow)
     {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
+        foreach (var trait in Traits.Where(t => t is ISkirmish_ArmorDented))
+        {
+            yield return (trait as ISkirmish_ArmorDented).AsDefender_OnArmorDented(flow);
+        }
     }
 }
 
