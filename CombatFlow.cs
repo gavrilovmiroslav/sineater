@@ -209,7 +209,7 @@ public class CombatFlow
 
         foreach (var p in SineaterGame.Instance.Party.Characters)
         {
-            chars[(level.CombatStates[p].X, level.CombatStates[p].Y)] = p;
+            chars[(p.X, p.Y)] = p;
         }
 
         foreach (var e in level.Enemies)

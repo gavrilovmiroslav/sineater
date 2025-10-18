@@ -32,8 +32,6 @@ public class Enemy : Character
     {
         return Portrait;
     }
-
-    public bool IsDone { get; set; } = false;
     
     public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
     {

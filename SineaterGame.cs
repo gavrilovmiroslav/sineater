@@ -123,14 +123,11 @@ public class SineaterGame : Game
                      (1, 65), (2, 65), (3, 65), (4, 65), (6, 65),
                      (4, 66), 
                      (4, 67), (5, 67),
-                     
-                     (0, 69), (1, 69),
-                     (1, 70), (2, 70), (3, 70), (4, 70), (6, 70),
-                     (4, 71), 
-                     (4, 72), (5, 72)
                  })
         {
             mrmoLayer.SetFlip(u, v, SpriteEffects.FlipHorizontally);
+            mrmoLayer.SetFlip(u, v - 4, SpriteEffects.FlipHorizontally);
+            mrmoLayer.SetFlip(u, v + 5, SpriteEffects.FlipHorizontally);
         }
         
         Layers.Add("mrmo", mrmoLayer);

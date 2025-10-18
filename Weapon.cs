@@ -131,8 +131,7 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality,
         {
             foreach (var chr in SineaterGame.Instance.Party.Characters)
             {
-                var cs = level.CombatStates[chr];
-                if (cs.X == x && cs.Y == y)
+                if (chr.X == x && chr.Y == y)
                 {
                     chr.AP.Add<StatusWounds>(1);
                 }

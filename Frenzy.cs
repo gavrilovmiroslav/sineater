@@ -19,8 +19,8 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
 
         foreach (var ch in level.Party)
         {
-            var x = level.CombatStates[ch].X;
-            var y = level.CombatStates[ch].Y;
+            var x = ch.X;
+            var y = ch.Y;
             if (!fields.ContainsKey((x, y)))
                 fields.Add((x, y), ch);
         }
@@ -39,9 +39,8 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
 
                 if (chr is PartyMember c)
                 {
-                    var cs = level.CombatStates[c];
-                    x = cs.X;
-                    y = cs.Y;
+                    x = c.X;
+                    y = c.Y;
                 } 
                 else if (chr is Enemy e)
                 {

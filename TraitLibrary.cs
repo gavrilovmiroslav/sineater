@@ -213,7 +213,7 @@ public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "P
     {
         if (character is PartyMember c)
         {
-            level.CombatStates[c].Move = 0;
+            c.IsDone = true;
         }
         else if (character is Enemy e)
         {
@@ -349,7 +349,7 @@ public class TraitParalyzed() : Trait("Paralyzed", "Pa", "PARALYZED: Your body c
         yield return new Present_Notify(Description);
         if (character is PartyMember c)
         {
-            level.CombatStates[c].Move = 1;
+            c.IsDone = true;
         }
         else if (character is Enemy e)
         {

@@ -168,6 +168,8 @@ public interface ICharacter
 
 public abstract class Character : ICharacter
 {
+    public bool IsDone { get; set; } = false;
+
     public int Index;
     public Color Tint;
     public ActionPoints AP;

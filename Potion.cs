@@ -31,7 +31,7 @@ public class Potion(string name, (int, int) uv) : Item(name, uv)
         var fields = new Dictionary<(int, int), ICharacter>();
         foreach (var ch in level.Party)
         {
-            fields.Add((level.CombatStates[ch].X, level.CombatStates[ch].Y), ch);
+            fields.Add((ch.X, ch.Y), ch);
         }
 
         foreach (var e in level.Enemies)

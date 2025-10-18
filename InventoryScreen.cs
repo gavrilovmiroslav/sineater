@@ -316,16 +316,14 @@ public class InventoryScreen : IScreen
                     _game.ScreenStack.Pop();
                     var cmb = _game.ScreenStack.Peek() as CombatMapScreen;
                     var owner = _game.Party.Characters[cmb.PlayerSelectedIndex];
-                    if (cmb.CombatStates[owner].Move > 0)
+                    
+                    cmb.RangedActionConfig = new RangedTargetting
                     {
-                        cmb.RangedActionConfig = new RangedTargetting
-                        {
-                            Source = inventory.Items[_selected],
-                            Owner = owner,
-                            X = cmb.CombatStates[owner].X,
-                            Y = cmb.CombatStates[owner].Y
-                        };
-                    }
+                        Source = inventory.Items[_selected],
+                        Owner = owner,
+                        X = owner.X,
+                        Y = owner.Y
+                    };
                 }
                 else if (_showOutfitting)
                 {
@@ -368,8 +366,8 @@ public class InventoryScreen : IScreen
                         {
                             Source = item,
                             Owner = owner,
-                            X = cmb.CombatStates[owner].X,
-                            Y = cmb.CombatStates[owner].Y
+                            X = owner.X,
+                            Y = owner.Y
                         };
                     }
                 }

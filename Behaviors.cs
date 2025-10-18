@@ -219,9 +219,9 @@ public class BehaviorAggro : Behavior
     public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
     {
         var gm = new GoalMap<Cell>(level.Map, false);
-        foreach (var (ch, cs) in level.CombatStates)
+        foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
-            gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
+            gm.AddGoal(ch.X, ch.Y, ch.Stats.Vigor);
         }
         
         gm.ClearObstacles();
@@ -297,8 +297,7 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
         }
         foreach (var e in SineaterGame.Instance.Party.Characters)
         {
-            var cs = level.CombatStates[e];
-            gm.AddObstacle(cs.X, cs.Y);
+            gm.AddObstacle(e.X, e.Y);
         }
 
         Path? path = null;

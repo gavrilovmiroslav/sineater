@@ -319,9 +319,8 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        if (character is PartyMember c)
-            level.CombatStates[c].Move++;
-
+        character.GetAP().Reduce(1);
+        
         if (!_steps.ContainsKey((oldX, oldY)))
         {
             if (!(oldY == y + 1 && oldX == x))
@@ -443,7 +442,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
         var xys = circle.Select(c => (c.X, c.Y)).ToHashSet();
         foreach (var chr in SineaterGame.Instance.Party.Characters)
         {
-            var (cx, cy) = (level.CombatStates[chr].X, level.CombatStates[chr].Y);
+            var (cx, cy) = (chr.X, chr.Y);
             if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
             {
                 var (u, v) = chr.Job.GetImage();
@@ -834,7 +833,6 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             yield return SkullTotem(this, level, character, x, y);
             if (character is PartyMember c)
             {
-                level.CombatStates[c].Move = 0;
                 yield return c.AddTrait(new TraitProne(3));
                 _moves[character] = 0;
             }
@@ -952,8 +950,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
         Dictionary<(int, int), ICharacter> chars = [];
         foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
-            var cs = level.CombatStates[ch];
-            chars[(cs.X, cs.Y)] = ch; 
+            chars[(ch.X, ch.Y)] = ch; 
         }
         
         foreach (var ch in level.Enemies)
