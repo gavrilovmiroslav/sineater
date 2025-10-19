@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace SINEATER;
@@ -77,6 +78,11 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
     
     public IEnumerable Attack()
     {
+        if (Defender == null)
+        {
+            yield break;
+        }
+        
         if (Weapon != null)
         {
             for (var i = 0; i < Weapon.Attack; i++)
@@ -84,11 +90,9 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
                 AttackDice.Add(new Die(Weapon));
             }
         }
-
+        
         yield return Attacker.AsAttacker_OnAttackDiceCount(this);
         yield return Defender?.AsDefender_OnAttackDiceCount(this);
-        yield return new Present_Notify($"{this.Attacker} attacks with {AttackDice.Count}."); 
-        
         for (var i = 0; i < AttackDice.Count; i++)
         {
             AttackDiceRolled.Add(new RolledDie(AttackDice[i], Rnd.Instance.D6));
@@ -106,12 +110,13 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
         yield return Attacker.AsAttacker_OnGuardUp(this);
         
         CritOn = Weapon?.CritOn ?? 6;
+        if (CritOn < TotalGuard) CritOn = TotalGuard;
         OpeningsPerCrit = Weapon?.OpeningsPerCrit ?? 0;
         
         yield return Attacker.AsAttacker_OnCritChanceEstablished(this);
         yield return Defender?.AsDefender_OnCritChanceEstablished(this);
-        
-        yield return new Present_Notify($"{TotalGuard}+ hits, crits on {CritOn}+.");
+
+        yield return new Present_Notify($"{this.Attacker} attacks with {AttackDice.Count}. Rolling {TotalGuard}+ hits, crits on {CritOn}+."); 
 
         Hits.Clear();
         Crits.Clear();
@@ -121,7 +126,6 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
             IndexCurrentDie = i;
             var die = AttackDiceRolled[i];
 
-            Crits.Clear();
             if (die.Value >= CritOn)
             {
                 IsCurrentDieCrit = true;
@@ -130,81 +134,96 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
                 if (IsCurrentDieCrit)
                 {
                     Crits.Add(IsCurrentDieCrit);
-                    Hits.Add(true);
                     yield return new Present_Crit(i);
                     Openings += OpeningsPerCrit;
-                    if (!GuardBreak)
+
+                    if (!ArmorBreak)
                     {
-                        TotalGuard -= Math.Min(die.Value - CritOn, 1);
-                        if (TotalGuard < 0)
+                        DefenderArmor--;
+                        if (DefenderArmor == 0)
                         {
-                            TotalGuard = 0;
-                            GuardBreak = true;
-                            yield return new Present_GuardBreak(i);
-                            yield return Defender?.AsDefender_OnGuardBreak(this);
-                            yield return Attacker.AsAttacker_OnGuardBreak(this);
-                        }
-                    }
-                    else
-                    {
-                        if (!ArmorBreak)
-                        {
-                            DefenderArmor--;
-                            if (DefenderArmor == 0)
+                            ArmorBreak = true;
+                            yield return Defender?.AsDefender_OnArmorBreak(this);
+                            yield return Attacker.AsAttacker_OnArmorBreak(this);
+                            if (ArmorBreak)
                             {
-                                ArmorBreak = true;
-                                yield return Defender?.AsDefender_OnArmorBreak(this);
-                                yield return Attacker.AsAttacker_OnArmorBreak(this);
-                                if (ArmorBreak)
-                                {
-                                    yield return new Present_ArmorBreak(i);
-                                }
-                            }
-                            else
-                            {
-                                ArmorDented = true;
-                                yield return Defender?.AsDefender_OnArmorDented(this);
-                                yield return Attacker.AsAttacker_OnArmorDented(this);
-                                if (ArmorDented)
-                                {
-                                    yield return new Present_ArmorDent(i);
-                                }
+                                yield return new Present_ArmorBreak(i);
                             }
                         }
                         else
                         {
-                            yield return new Present_DealDamage(i, die.Value);
+                            ArmorDented = true;
+                            yield return Defender?.AsDefender_OnArmorDented(this);
+                            yield return Attacker.AsAttacker_OnArmorDented(this);
+                            if (ArmorDented)
+                            {
+                                yield return new Present_ArmorDent(i);
+                            }
                         }
+                    }
+                    else
+                    {
+                        yield return new Present_DealDamage(i, die.Value);
                     }
                 }
             }
             else if (die.Value >= TotalGuard)
             {
-                Crits.Add(false);
                 Hits.Add(true);
-                yield return new Present_DealDamage(i, Math.Max(die.Value - TotalGuard, 1));
-            }
-            else
-            {
-                Crits.Add(false);
-                Hits.Add(false);
+                yield return new Present_DealDamage(i, Math.Min(Math.Max(die.Value - TotalGuard, 1), 6));
             }
         }
+    }
 
-        if (Openings > 0)
+    public IEnumerable GainExp()
+    {
+        if (Weapon != null)
         {
-            Attacker.GetAP().Add<StatusLuck>(Openings);
+            var hs = Hits.Count;
+            var cs = Crits.Count;
+            var h = Math.Ceiling(hs + 3 * cs - (this.AttackDice.Count - (hs + cs)) / 4.0f);
+            var s = 1.0;
+            s += ((int)Weapon.ClaScaling / 10.0f) * Attacker.Stats.Clarity;
+            s += ((int)Weapon.WilScaling / 10.0f) * Attacker.Stats.Will;
+            s += ((int)Weapon.PoiScaling / 10.0f) * Attacker.Stats.Poise;
+            s += ((int)Weapon.VigScaling / 10.0f) * Attacker.Stats.Vigor;
+            s = Math.Floor(s);
+            var exp = (int)(h + s);
+            Console.WriteLine($"+{exp} ({Weapon.ExperienceNow + exp}/{Weapon.ExperienceNeeded})");
+            Weapon.ExperienceNow += exp;
+            
+            if (Weapon.ExperienceNow >= Weapon.ExperienceNeeded)
+            {
+                var message = $"{Weapon.GetName()} leveled up ({Weapon.Level} -> {Weapon.Level + 1})!";
+                yield return new ShowPopupWindowWithPortraitAndWaitForKey(Attacker.GetPortait(),
+                    (_, bnd) => { bnd.Add(message); },
+                    true);
+                Weapon.Level++;
+                Weapon.ExperienceNow = 0;
+            }
         }
     }
 }
 
 public class CombatFlow
 {
+    private CombatMapScreen _level;
+    
     public CombatFlow(CombatMapScreen level, ICharacter attacker, Weapon? weapon, (int, int) position, (int, int) direction)
     {
+        _level = level;
         Attacker = attacker;
         Weapon = weapon;
+        Position = position;
+        Direction = direction;
 
+        Update();
+    }
+
+    void Update()
+    {
+        Skirmishes.Clear();
+        
         Dictionary<(int, int), ICharacter> chars = [];
 
         foreach (var p in SineaterGame.Instance.Party.Characters)
@@ -212,7 +231,7 @@ public class CombatFlow
             chars[(p.X, p.Y)] = p;
         }
 
-        foreach (var e in level.Enemies)
+        foreach (var e in _level.Enemies)
         {
             if (!chars.ContainsKey((e.X, e.Y)))
             {
@@ -220,151 +239,181 @@ public class CombatFlow
             }
         }
         
-        var pos = position;
-        foreach (var step in weapon?.Steps ?? [])
+        var pos = Position;
+        foreach (var step in Weapon?.Steps ?? [])
         {
             if (step is SkirmishStep_Appear appear)
             {
                 pos = appear.position;
-                Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
             }
             else if (step is SkirmishStep_Forwards forwards)
             {
                 for (var i = 0; i < forwards.n; i++)
                 {
-                    var px = pos.Item1 + direction.Item1;
-                    var py = pos.Item2 + direction.Item2;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 + Direction.Item1;
+                    var py = pos.Item2 + Direction.Item2;
+                    if (px < 0 || py < 0 || px >= _level.Map.Width || py >= _level.Map.Height)
+                    {
+                        break;
+                    }
+                    
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
             else if (step is SkirmishStep_Backwards backwards)
             {
                 for (int i = 0; i < backwards.n; i++)
                 {
-                    var px = pos.Item1 + direction.Item1;
-                    var py = pos.Item2 + direction.Item2;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 - Direction.Item1;
+                    var py = pos.Item2 - Direction.Item2;
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
             else if (step is SkirmishStep_SidestepLeft sidestepLeft)
             {
                 for (int i = 0; i < sidestepLeft.n; i++)
                 {
-                    var px = pos.Item1 - direction.Item2;
-                    var py = pos.Item2 + direction.Item1;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 - Direction.Item2;
+                    var py = pos.Item2 + Direction.Item1;
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
             else if (step is SkirmishStep_SidestepRight sidestepRight)
             {
                 for (int i = 0; i < sidestepRight.n; i++)
                 {
-                    var px = pos.Item1 + direction.Item2;
-                    var py = pos.Item2 + direction.Item1;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 + Direction.Item2;
+                    var py = pos.Item2 + Direction.Item1;
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
             else if (step is SkirmishStep_SidestepFrontLeft sidestepFrontLeft)
             {
                 for (int i = 0; i < sidestepFrontLeft.n; i++)
                 {
-                    var px = pos.Item1 - direction.Item2 + direction.Item1;
-                    var py = pos.Item2 + direction.Item1 + direction.Item2;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 - Direction.Item2 + Direction.Item1;
+                    var py = pos.Item2 + Direction.Item1 + Direction.Item2;
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
             else if (step is SkirmishStep_SidestepFrontRight sidestepFrontRight)
             {
                 for (int i = 0; i < sidestepFrontRight.n; i++)
                 {
-                    var px = pos.Item1 + direction.Item2 + direction.Item1;
-                    var py = pos.Item2 + direction.Item1 + direction.Item2;
-                    if (!level.Map.IsWalkable(px, py))
+                    var px = pos.Item1 + Direction.Item2 + Direction.Item1;
+                    var py = pos.Item2 + Direction.Item1 + Direction.Item2;
+                    if (!_level.Map.IsWalkable(px, py))
                     {
                         break;
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, pos));
                 }
             }
-            else if (step is SkirmishStep_AttackFront)
+            else if (step is SkirmishStep_AttackFront front)
             {
-                var px = pos.Item1 + direction.Item1;
-                var py = pos.Item2 + direction.Item2;
+                var px = pos.Item1 + Direction.Item1 * front.n;
+                var py = pos.Item2 + Direction.Item2 * front.n;
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[(px, py)], pos));
                 }
+                else if (_level.Map?.IsWalkable(px, py) ?? false)
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(px, py), pos));
+                }
+                else break;
             }
             else if (step is SkirmishStep_AttackHand)
             {
-                if (attacker.GetLeftWeapon() == weapon)
+                if (Attacker.GetLeftWeapon() == Weapon)
                 {
-                    var px = pos.Item1 - direction.Item2;
-                    var py = pos.Item2 + direction.Item1;
+                    var px = pos.Item1 - Direction.Item2;
+                    var py = pos.Item2 + Direction.Item1;
                     if (chars.ContainsKey((px, py)))
                     {
-                        Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                        Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[(px, py)], pos));
                     }
+                    else if (_level.Map?.IsWalkable(px, py) ?? false)
+                    {
+                        Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(px, py), pos));
+                    }
+                    else break;
                 }
                 else
                 {
-                    var px = pos.Item1 + direction.Item2;
-                    var py = pos.Item2 + direction.Item1;
+                    var px = pos.Item1 + Direction.Item2;
+                    var py = pos.Item2 + Direction.Item1;
                     if (chars.ContainsKey((px, py)))
                     {
-                        Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                        Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[(px, py)], pos));
                     }
+                    else if (_level.Map?.IsWalkable(px, py) ?? false)
+                    {
+                        Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(px, py), pos));
+                    }
+                    else break;
                 }
             }
             else if (step is SkirmishStep_AttackLeft)
             {
-                var px = pos.Item1 - direction.Item2;
-                var py = pos.Item2 + direction.Item1;
+                var px = pos.Item1 - Direction.Item2;
+                var py = pos.Item2 + Direction.Item1;
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[(px, py)], pos));
                 }
+                else if (_level.Map?.IsWalkable(px, py) ?? false)
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(px, py), pos));
+                }
+                else break;
             }
             else if (step is SkirmishStep_AttackRight)
             {
-                var px = pos.Item1 + direction.Item2;
-                var py = pos.Item2 + direction.Item1;
+                var px = pos.Item1 + Direction.Item2;
+                var py = pos.Item2 + Direction.Item1;
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[(px, py)], pos));
                 }
+                else if (_level.Map?.IsWalkable(px, py) ?? false)
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(px, py), pos));
+                }
+                else break;
             }
             else if (step is SkirmishStep_AttackRanged ranged)
             {
@@ -374,7 +423,7 @@ public class CombatFlow
                              ranged.position.Item1,
                              ranged.position.Item2))
                 {
-                    if (!level.Map.IsWalkable(x, y))
+                    if (!_level.Map.IsWalkable(x, y))
                     {
                         end = (x, y);
                         break;
@@ -391,8 +440,13 @@ public class CombatFlow
 
                 if (end == ranged.position)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, attacker, weapon, chars[end], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, chars[end], pos));
                 }
+                else if (_level.Map.IsWalkable(end.Item1, end.Item2))
+                {
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(end.Item1, end.Item2), pos));
+                }
+                else break;
             }
         }
     }
@@ -400,4 +454,35 @@ public class CombatFlow
     public ICharacter Attacker { get; set; }
     public Weapon? Weapon { get; set; }
     public List<SkirmishFlow> Skirmishes { get; set; } = [];
+    public (int, int) Position { get; set; }
+    
+    private (int, int) _direction;
+    public (int, int) Direction
+    {
+        get => _direction;
+        
+        set
+        {
+            _direction = value;
+            Update();
+        }
+    }
+
+    public int Score()
+    {
+        int score = 0;
+        foreach (var sk in Skirmishes)
+        {
+            if (sk.Defender is Enemy { } e)
+            {
+                score += 5;
+            }
+            else if (sk.Defender is { } o)
+            {
+                score += 3;
+            }
+        }
+        
+        return score;
+    }
 }

@@ -166,8 +166,185 @@ public interface ICharacter
     void RemoveArmor();
 }
 
+public class Dummy : ICharacter
+{
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnCritChanceEstablished(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritChanceEstablished(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnGuardBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnGuardBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnArmorDented(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnArmorDented(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnDamageAnnounced(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnDamageAnnounced(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnPoiseBroken(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnPoiseBroken(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public Inventory Inventory { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int HP { get; set; }
+    public bool Render { get; set; }
+    public Stats Stats { get; set; }
+    public Color GetTint()
+    {
+        return Color.White;
+    }
+
+    public ActionPoints GetAP()
+    {
+        return null;
+    }
+
+    public void EquipLeftWeapon(Weapon? weapon)
+    {
+    }
+
+    public Weapon? GetLeftWeapon()
+    {
+        return null;
+    }
+
+    public void EquipRightWeapon(Weapon? weapon)
+    {
+    }
+
+    public Weapon? GetRightWeapon()
+    {
+        return null;
+    }
+
+    public Armor? GetArmor()
+    {
+        return null;
+    }
+
+    public List<Trait> GetTraits()
+    {
+        return [];
+    }
+
+    public IEnumerable AddTrait(Trait trait)
+    {
+        yield break;
+    }
+
+    public bool IsStunned()
+    {
+        return false;
+    }
+
+    public string GetName()
+    {
+        return "";
+    }
+
+    public (int, int) GetPortait()
+    {
+        return (0, 0);
+    }
+
+    public void Die()
+    {
+    }
+
+    public void RemoveArmor()
+    {
+    }
+}
+
 public abstract class Character : ICharacter
 {
+    public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
+    
     public bool IsDone { get; set; } = false;
 
     public int Index;

@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Versioning;
 
 namespace SINEATER;
 
@@ -54,21 +52,40 @@ public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
 public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
 public record struct SkirmishStep_SidestepFrontLeft(int n) : ISkirmishStep;
 public record struct SkirmishStep_SidestepFrontRight(int n) : ISkirmishStep;
-public record struct SkirmishStep_AttackFront : ISkirmishStep;
+public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
 public record struct SkirmishStep_AttackHand : ISkirmishStep;
 public record struct SkirmishStep_AttackLeft : ISkirmishStep;
 public record struct SkirmishStep_AttackRight : ISkirmishStep;
 public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
 
+public enum EScalingFactor
+{
+    F = 0,
+    D = 1,
+    C = 2,
+    B = 3,
+    A = 5,
+    S = 10,
+}
+
 public class Weapon(string name, int attack, EWeightClass weight, int quality, 
     (int, int) inventoryPicture, List<Trait>? traits = null, List<ISkirmishStep>? steps = null,
-    int scaleWil = 0, int scaleCla = 0, int scalePoi = 0, int scaleVig = 0, 
+    EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
+    EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
+    float scalingBase = 14.0f, float scalingCurve = 1.5f,
     int critOn = 6, int openingsPerCrit = 1) : IEquippable, IItem
 {
-    public int ScaleWIL => scaleWil;
-    public int ScaleCLA => scaleCla;
-    public int ScalePOI => scalePoi;
-    public int ScaleVIG => scaleVig;
+    public float ScalingCurve => scalingCurve;
+    public float ScalingBase => scalingBase;
+    public int Level { get; set; } = 1;
+    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(scalingBase * Level, scalingCurve));
+    public int ExperienceNow { get; set; } = 0;
+    
+    public EScalingFactor WilScaling => wilScaling;
+    public EScalingFactor ClaScaling => claScaling;
+    public EScalingFactor PoiScaling => poiScaling;
+    public EScalingFactor VigScaling => vigScaling;
+    
     public int CritOn => critOn;
     public int OpeningsPerCrit => openingsPerCrit;
     

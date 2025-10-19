@@ -110,7 +110,7 @@ public class Item(string name, (int, int) uv) : IItem
 {
     public string Name => name;
 
-    public virtual (int, int) Picture => (uv.Item1, uv.Item2 + 5);
+    public virtual (int, int) Picture => (uv.Item1, uv.Item2);
     
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
 
