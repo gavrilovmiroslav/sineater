@@ -50,9 +50,8 @@ public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
 public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
 public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
 public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
-public record struct SkirmishStep_SidestepFrontLeft(int n) : ISkirmishStep;
-public record struct SkirmishStep_SidestepFrontRight(int n) : ISkirmishStep;
 public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
 public record struct SkirmishStep_AttackHand : ISkirmishStep;
 public record struct SkirmishStep_AttackLeft : ISkirmishStep;
 public record struct SkirmishStep_AttackRight : ISkirmishStep;
@@ -78,7 +77,9 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality,
     public float ScalingCurve => scalingCurve;
     public float ScalingBase => scalingBase;
     public int Level { get; set; } = 1;
-    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(scalingBase * Level, scalingCurve));
+    //            base   level scaling   quality^2            level
+    // =Floor((Pow($B$24 * A3, $B$25 - $B$26 * $B$26 * 0.01 / A3)))
+    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(scalingBase * Level, scalingCurve - Quality * Quality * 0.01f / Level));
     public int ExperienceNow { get; set; } = 0;
     
     public EScalingFactor WilScaling => wilScaling;
@@ -241,8 +242,14 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, 
     public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-public class Shield(string name, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture)
-    : Weapon(name, 0, weight, quality, inventoryPicture)
+public class Shield(string name, int attack, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
+    List<Trait>? traits = null, List<ISkirmishStep>? steps = null,
+    EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
+    EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
+    float scalingBase = 14.0f, float scalingCurve = 1.5f,
+    int critOn = 6, int openingsPerCrit = 1)
+    : Weapon(name, attack, weight, quality, inventoryPicture, traits, steps, 
+        wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve, critOn, openingsPerCrit)
 {
     public int Defense { get; set; } = defense;
     

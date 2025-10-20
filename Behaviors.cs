@@ -149,11 +149,11 @@ public class BehaviorBlind : Behavior
         var nextX = x + dx;
         var nextY = y + dy;
         
-        if (level.IsCharacterAt(nextX, nextY) is { } chr)
+        if (Positions.IsCharacterAt(nextX, nextY) is { } chr)
         {
             //yield return level.DoAttack(self, chr);
         }
-        else if (level.IsEnemyAt(nextX, nextY) is { } enm)
+        else if (Positions.IsEnemyAt(nextX, nextY) is { } enm)
         {
             //yield return level.DoAttack(self, enm);
         }
@@ -191,12 +191,12 @@ public class BehaviorFlyAbout : Behavior
             var dy = dx == 0 ? Rnd.Instance.Next(-1, 2) : 0;
             var nextX = x + dx;
             var nextY = y + dy;
-            if (level.IsCharacterAt(nextX, nextY) is { } chr)
+            if (Positions.IsCharacterAt(nextX, nextY) is { } chr)
             {
                 //yield return level.DoAttack(self, chr);
                 break;
             }
-            else if (level.IsEnemyAt(nextX, nextY) is { } enm)
+            else if (Positions.IsEnemyAt(nextX, nextY) is { } enm)
             {
                 continue;
             }
@@ -243,7 +243,7 @@ public class BehaviorAggro : Behavior
 
                 var ox = self.X;
                 var oy = self.Y;
-                if (level.IsCharacterAt(next.X, next.Y) is {} chr)
+                if (Positions.IsCharacterAt(next.X, next.Y) is {} chr)
                 {
                     var (ex, ey) = self.Icon;
                     var (cx, cy) = chr.Job.GetImage();

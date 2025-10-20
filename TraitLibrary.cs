@@ -4,21 +4,84 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
-public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are light-weight, +1 attack die.")
+public class TraitKnockback() : Trait("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back."), ISkirmish_CritHit
 {
-    // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
-    // {
-    //     var left = flow.Attacker.GetLeftWeapon();
-    //     var right = flow.Attacker.GetRightWeapon();
-    //     if (left == null || right == null) yield break;
-    //
-    //     if ((int)left.Weight < 6 && (int)right.Weight < 6)
-    //     {
-    //         flow.AttackerTraits.Add(this);
-    //         flow.AttackDicePreRoll.Add(new Die(this));
-    //         yield return new CombatFlow_Notify(Description);
-    //     }
-    // }
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        CombatMapScreen.Level?.DrawCombat();
+        if (flow.Defender != null)
+        {
+            var a = flow.Attacker;
+            var d = flow.Defender;
+            var dp = (d.X, d.Y);
+            var dir = (d.X - a.X, d.Y - a.Y);
+            var np = Directions.GoForwards(dp, dir);
+            if (Positions.Swap(dp, np))
+            {
+                var mp = Directions.GoForwards(np, dir);
+                Positions.Swap(np, mp);
+            }
+        }
+
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow) { yield break; }
+}
+
+public class TraitForceful() : Trait("Forceful", "Fr", "FORCEFUL: +1 attack die every skirmish in combat.")
+    , ISkirmish_CombatLifetime
+    , ISkirmish_AttackDiceCount
+{
+    private int _bonus = 0;
+
+    public IEnumerable OnCombatStarts(CombatFlow flow)
+    {
+        _bonus = 0;
+        yield break;
+    }
+    
+    public IEnumerable OnSkirmishEnds(SkirmishFlow flow)
+    {
+        _bonus++;
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        for (var i = 0; i < _bonus; i++)
+        {
+            flow.AttackDice.Add(new Die(this));
+        }
+
+        yield break;
+    }
+
+    public IEnumerable OnSkirmishStarts(SkirmishFlow flow) { yield break; }
+    public IEnumerable OnCombatEnds(CombatFlow flow) { yield break; }
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
+}
+
+public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are light-weight, +1 attack die per weapon.")
+    , ISkirmish_AttackDiceCount
+{
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        if (flow.Attacker.GetLeftWeapon() is { Weight: > EWeightClass.Light })
+            yield break;
+        
+        if (flow.Attacker.GetRightWeapon() is { Weight: > EWeightClass.Light })
+            yield break;
+
+        var dice = 0;
+        if (flow.Attacker.GetLeftWeapon() is not null) dice++;
+        if (flow.Attacker.GetRightWeapon() is not null) dice++;
+        for (var i = 0; i < dice; i++)
+            flow.AttackDice.Add(new Die(this));
+        yield return new Present_Notify(Description);
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
 }
 
 public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damage on first hit!")
@@ -247,7 +310,7 @@ public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration, "B
     private int _oldClarity = 0;
     public override IEnumerable ApplyOnReceived(ICharacter character)
     {
-        yield return new Present_Notify($"{character}'s CLARITY becomes 0 for {Duration} turns!");
+        yield return new Present_Notify($"{character}'s CLARITY becomes 0 for {Duration} turns!", true);
         _oldClarity = character.Stats.Clarity;
         character.Stats.Clarity = 0;
         yield break;

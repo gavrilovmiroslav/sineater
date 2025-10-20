@@ -59,6 +59,8 @@ public struct RangedTargetting
 
 public class CombatMapScreen : IScreen
 {
+    public static CombatMapScreen? Level = null;
+    
     internal static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
     private readonly int _fullWidth = 24, _fullHeight = 22;
@@ -111,6 +113,7 @@ public class CombatMapScreen : IScreen
 
     public CombatMapScreen(SineaterGame game, CombatConfig? config = null, int width = -1, int height = -1, string title = "???")
     {
+        Level = this;
         _config = config;
         _width = width;
         _height = height;
@@ -1339,34 +1342,29 @@ public class CombatMapScreen : IScreen
     
     public IEnumerable Attack(CombatFlow flow)
     {
+        if (flow.Weapon != null)
+        {
+            Console.WriteLine(
+                $"{flow.Weapon} (level {flow.Weapon.Level}, needed {flow.Weapon.ExperienceNeeded}); base: {flow.Weapon.ScalingBase}, scale: {flow.Weapon.ScalingCurve}, quality: {flow.Weapon.Quality}");
+        }
+
+        yield return flow.Attacker.GetTraits().OnCombatStarts(flow);
+        yield return flow.Weapon?.Traits.OnCombatStarts(flow);
+        
         foreach (var skirmish in flow.Skirmishes)
         {
+            yield return flow.Attacker.GetTraits().OnSkirmishStarts(skirmish);
+            yield return flow.Weapon?.Traits.OnSkirmishStarts(skirmish);
+
             var (ox, oy) = (flow.Attacker.X, flow.Attacker.Y);
             var (x, y) = skirmish.Position;
-            if (IsCharacterAt(x, y) is { } c)
-            {
-                flow.Attacker.X = x;
-                flow.Attacker.Y = y;
-                c.X = ox;
-                c.Y = oy;
-            }
-            else if (IsEnemyAt(x, y) is { } e)
-            {
-                flow.Attacker.X = x;
-                flow.Attacker.Y = y;
-                e.X = ox;
-                e.Y = oy;
-                flow.Attacker.GetAP().Spend(1);
-            }
-            else
-            {
-                flow.Attacker.X = x;
-                flow.Attacker.Y = y;
-            }
+            Positions.Swap((x, y), (ox, oy));
             UpdateFov(true);
             DrawCombat();
             if (skirmish.Defender != null && skirmish.Defender is not Dummy)
             {
+                yield return skirmish.Defender.GetTraits().OnSkirmishStarts(skirmish);
+
                 yield return ResolveAttack(skirmish, skirmish.Attack());
                 if (skirmish.Defender is Enemy { IsDead: true } e)
                 {
@@ -1431,30 +1429,18 @@ public class CombatMapScreen : IScreen
             {
                 yield return new WaitForSeconds(0.5f);
             }
+
+            yield return skirmish.Defender?.GetTraits().OnSkirmishEnds(skirmish);
+            yield return flow.Attacker.GetTraits().OnSkirmishEnds(skirmish);
+            yield return flow.Weapon?.Traits.OnSkirmishEnds(skirmish);
         }
+        
+        yield return flow.Attacker.GetTraits().OnCombatEnds(flow);
+        yield return flow.Weapon?.Traits.OnCombatEnds(flow);
+
         _confirmedCombatFlow = null;
     }
-
-    public Enemy? IsEnemyAt(int x, int y)
-    {
-        foreach (var enemy in _enemies)
-        {
-            if (enemy.X == x && enemy.Y == y) return enemy;
-        }
-
-        return null;
-    }
-
-    public PartyMember? IsCharacterAt(int x, int y)
-    {
-        foreach (var chr in _game.Party.Characters)
-        {
-            if (chr.X == x && chr.Y == y) return chr;
-        }
-
-        return null;
-    }
-
+    
     private IEnumerable Coroutine_EndTurn()
     {
         yield return new WaitForSeconds(0.5f);
@@ -1569,7 +1555,7 @@ public class CombatMapScreen : IScreen
                         {
                             _confirmedCombatFlow.Direction = (dx, dy);
                         }
-                        else if (IsCharacterAt(x + dx, y + dy) is { } c)
+                        else if (Positions.IsCharacterAt(x + dx, y + dy) is { } c)
                         {
                             _confirmedCombatFlow = null;
                             // SWAP CHARACTERS
@@ -1578,7 +1564,7 @@ public class CombatMapScreen : IScreen
                             current.X += dx;
                             current.Y += dy;
                         }
-                        else if (IsEnemyAt(x + dx, y + dy) is { } e)
+                        else if (Positions.IsEnemyAt(x + dx, y + dy) is { } e)
                         {
                             // do nothing
                         }
