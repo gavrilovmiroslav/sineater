@@ -1,9 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using Microsoft.Xna.Framework;
-using RogueSharp;
 
 namespace SINEATER;
 
@@ -32,8 +28,6 @@ public class Enemy : Character
     {
         return Portrait;
     }
-
-    public bool IsDone { get; set; } = false;
     
     public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
     {

@@ -131,7 +131,7 @@ public class Stats
     }
 }
 
-public interface ICharacter : ICombatFlowParticipant
+public interface ICharacter
 {
     public Inventory Inventory { get; set; }
     public int X { get; set; }
@@ -156,8 +156,187 @@ public interface ICharacter : ICombatFlowParticipant
     void RemoveArmor();
 }
 
+public class Dummy : ICharacter
+{
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnCritChanceEstablished(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritChanceEstablished(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnGuardBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnGuardBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnArmorDented(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnArmorDented(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnDamageAnnounced(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnDamageAnnounced(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsAttacker_OnPoiseBroken(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnPoiseBroken(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public Inventory Inventory { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int HP { get; set; }
+    public bool Render { get; set; }
+    public Stats Stats { get; set; }
+    public Color GetTint()
+    {
+        return Color.White;
+    }
+
+    public ActionPoints GetAP()
+    {
+        return null;
+    }
+
+    public void EquipLeftWeapon(Weapon? weapon)
+    {
+    }
+
+    public Weapon? GetLeftWeapon()
+    {
+        return null;
+    }
+
+    public void EquipRightWeapon(Weapon? weapon)
+    {
+    }
+
+    public Weapon? GetRightWeapon()
+    {
+        return null;
+    }
+
+    public Armor? GetArmor()
+    {
+        return null;
+    }
+
+    public List<Trait> GetTraits()
+    {
+        return [];
+    }
+
+    public IEnumerable AddTrait(Trait trait)
+    {
+        yield break;
+    }
+
+    public bool IsStunned()
+    {
+        return false;
+    }
+
+    public string GetName()
+    {
+        return "";
+    }
+
+    public (int, int) GetPortait()
+    {
+        return (0, 0);
+    }
+
+    public void Die()
+    {
+    }
+
+    public void RemoveArmor()
+    {
+    }
+}
+
 public abstract class Character : ICharacter
 {
+    public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
+    
+    public bool IsDone { get; set; } = false;
+
     public int Index;
     public Color Tint;
     public ActionPoints AP;
@@ -294,122 +473,6 @@ public abstract class Character : ICharacter
     public void RemoveItem()
     {
         this.EquipItem(null);
-    }
-
-    public IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyDiceCountModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyDiceCountModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyDiceCountModifiers(flow);
-    }
-
-    public IEnumerable AsAttacker_ModifyAttackRollDie(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ModifyAttackRollDie(flow);
-    }
-
-    public IEnumerable AsDefender_ModifyDefenseRollDie(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ModifyDefenseRollDie(flow);
-    }
-
-    public IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyCombatModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyCombatModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyCombatModifiers(flow);
-    }
-
-    public IEnumerable AsAttacker_ApplyStrikeModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyStrikeModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyStrikeModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyStrikeModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyStrikeBlocked(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyStrikeBlocked(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyArmorDented(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyArmorDented(flow);
-    }
-
-    public IEnumerable AsAttacker_ApplyLeftWeaponShattered(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyLeftWeaponShattered(flow);
-        this.EquipLeftWeapon(null);
-    }
-
-    public IEnumerable AsAttacker_ApplyRightWeaponShattered(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyRightWeaponShattered(flow);
-        this.EquipRightWeapon(null);
-    }
-
-    public IEnumerable AsDefender_ApplyArmorDestroyed(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyArmorDestroyed(flow);
-    }
-
-    public IEnumerable AsAttacker_ApplyHitModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits) 
-            yield return trait.AsAttacker_ApplyHitModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyHitModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits) 
-            yield return trait.AsDefender_ApplyHitModifiers(flow);
-    }
-
-    public IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_DetermineHitDieDamage(flow);
-    }
-
-    public IEnumerable AsDefender_DetermineHitDieDamage(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_DetermineHitDieDamage(flow);
-    }
-
-    public IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsAttacker_ApplyTotalIncomingDamageModifiers(flow);
-    }
-
-    public IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
-    {
-        foreach (var trait in Traits)
-            yield return trait.AsDefender_ApplyTotalIncomingDamageModifiers(flow);
     }
 }
 

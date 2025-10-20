@@ -149,13 +149,13 @@ public class BehaviorBlind : Behavior
         var nextX = x + dx;
         var nextY = y + dy;
         
-        if (level.IsCharacterAt(nextX, nextY) is { } chr)
+        if (Positions.IsCharacterAt(nextX, nextY) is { } chr)
         {
-            yield return level.DoAttack(self, chr);
+            //yield return level.DoAttack(self, chr);
         }
-        else if (level.IsEnemyAt(nextX, nextY) is { } enm)
+        else if (Positions.IsEnemyAt(nextX, nextY) is { } enm)
         {
-            yield return level.DoAttack(self, enm);
+            //yield return level.DoAttack(self, enm);
         }
         else if (level.Map?.IsWalkable(nextX, nextY) ?? false)
         {
@@ -191,12 +191,12 @@ public class BehaviorFlyAbout : Behavior
             var dy = dx == 0 ? Rnd.Instance.Next(-1, 2) : 0;
             var nextX = x + dx;
             var nextY = y + dy;
-            if (level.IsCharacterAt(nextX, nextY) is { } chr)
+            if (Positions.IsCharacterAt(nextX, nextY) is { } chr)
             {
-                yield return level.DoAttack(self, chr);
+                //yield return level.DoAttack(self, chr);
                 break;
             }
-            else if (level.IsEnemyAt(nextX, nextY) is { } enm)
+            else if (Positions.IsEnemyAt(nextX, nextY) is { } enm)
             {
                 continue;
             }
@@ -219,9 +219,9 @@ public class BehaviorAggro : Behavior
     public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
     {
         var gm = new GoalMap<Cell>(level.Map, false);
-        foreach (var (ch, cs) in level.CombatStates)
+        foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
-            gm.AddGoal(cs.X, cs.Y, ch.Stats.Vigor);
+            gm.AddGoal(ch.X, ch.Y, ch.Stats.Vigor);
         }
         
         gm.ClearObstacles();
@@ -243,7 +243,7 @@ public class BehaviorAggro : Behavior
 
                 var ox = self.X;
                 var oy = self.Y;
-                if (level.IsCharacterAt(next.X, next.Y) is {} chr)
+                if (Positions.IsCharacterAt(next.X, next.Y) is {} chr)
                 {
                     var (ex, ey) = self.Icon;
                     var (cx, cy) = chr.Job.GetImage();
@@ -256,7 +256,7 @@ public class BehaviorAggro : Behavior
                         yield return new WaitForSeconds(0.01f);
                     }
                     level.DrawCombat();
-                    yield return level.DoAttack(self, chr);
+                    //yield return level.DoAttack(self, chr);
                     ap = 0;
                 }
                 else
@@ -297,8 +297,7 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
         }
         foreach (var e in SineaterGame.Instance.Party.Characters)
         {
-            var cs = level.CombatStates[e];
-            gm.AddObstacle(cs.X, cs.Y);
+            gm.AddObstacle(e.X, e.Y);
         }
 
         Path? path = null;

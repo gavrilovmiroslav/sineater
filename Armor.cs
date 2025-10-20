@@ -4,7 +4,7 @@ namespace SINEATER;
 
 public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
-    public (int, int) Picture => (uv.Item1, 5 + uv.Item2); 
+    public (int, int) Picture => (uv.Item1, uv.Item2); 
     public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(8, 68);
     

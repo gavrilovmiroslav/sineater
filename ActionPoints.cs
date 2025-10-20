@@ -18,6 +18,7 @@ public enum Status
     Sin,
     Death,
     Frozen,
+    Luck,
 }
 
 public interface IBarPiece
@@ -276,6 +277,24 @@ public class StatusStamina : BarPiece
     public override Status ToStatus()
     {
         return Status.Stamina;
+    }
+}
+
+public class StatusLuck : BarPiece
+{
+    public override void Draw(int xMin, int xMax, int y)
+    {
+        var (ux, uy) = Bars.Offset(xMin, xMax);
+        for (int i = xMin; i <= xMax; i++)
+        {
+            ActionPoints.Layer.Set(i, y, new Glyph(18, 5, Color.Black, Color.White));
+        }
+        ActionPoints.Layer.Set(xMin + ux, y + uy, new Glyph(3, 0, Color.Black, Color.Red));
+    }
+    
+    public override Status ToStatus()
+    {
+        return Status.Luck;
     }
 }
 

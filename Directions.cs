@@ -1,0 +1,38 @@
+namespace SINEATER;
+
+public static class Directions
+{
+    public static (int, int) GoForwards((int, int) position, (int, int) direction, int n = 1)
+    {
+        return (position.Item1 + direction.Item1 * n, position.Item2 + direction.Item2 * n);
+    }
+    
+    public static (int, int) GoBackwards((int, int) position, (int, int) direction, int n = 1)
+    {
+        return (position.Item1 - direction.Item1 * n, position.Item2 - direction.Item2 * n);
+    }
+    
+    public static (int, int) GoLeft((int, int) position, (int, int) direction)
+    {
+        switch (direction)
+        {
+            case (0, 1): return GoForwards(position, (1, 0));
+            case (0, -1): return GoForwards(position, (-1, 0));
+            case (1, 0): return GoForwards(position, (0, -1));
+            case (-1, 0): return GoForwards(position, (0, 1));
+            default: return position;
+        }
+    }
+    
+    public static (int, int) GoRight((int, int) position, (int, int) direction)
+    {
+        switch (direction)
+        {
+            case (0, 1): return GoForwards(position, (-1, 0));
+            case (0, -1): return GoForwards(position, (1, 0));
+            case (1, 0): return GoForwards(position, (0, 1));
+            case (-1, 0): return GoForwards(position, (0, -1));
+            default: return position;
+        }
+    }
+}
