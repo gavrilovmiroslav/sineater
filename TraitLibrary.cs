@@ -1,9 +1,9 @@
-using System;
 using System.Collections;
-using Microsoft.Xna.Framework;
+using System.Runtime.Serialization;
 
 namespace SINEATER;
 
+[DataContract]
 public class TraitKnockback() : Trait("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back."), ISkirmish_CritHit
 {
     public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
@@ -28,7 +28,7 @@ public class TraitKnockback() : Trait("Knockback", "Kn", "KNOCKBACK: Critical hi
 
     public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow) { yield break; }
 }
-
+[DataContract]
 public class TraitForceful() : Trait("Forceful", "Fr", "FORCEFUL: +1 attack die every skirmish in combat.")
     , ISkirmish_CombatLifetime
     , ISkirmish_AttackDiceCount
@@ -61,7 +61,7 @@ public class TraitForceful() : Trait("Forceful", "Fr", "FORCEFUL: +1 attack die 
     public IEnumerable OnCombatEnds(CombatFlow flow) { yield break; }
     public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
 }
-
+[DataContract]
 public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are light-weight, +1 attack die per weapon.")
     , ISkirmish_AttackDiceCount
 {
@@ -83,7 +83,7 @@ public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are 
 
     public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
 }
-
+[DataContract]
 public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damage on first hit!")
 {
     // public override IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
@@ -109,7 +109,7 @@ public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damag
     //     }
     // }
 }
-
+[DataContract]
 public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: If both weapons are the same weight, +1 attack die.")
 {
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -126,7 +126,7 @@ public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: If both weapon
     //     }
     // }
 }
-
+[DataContract]
 public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deals 1 damage.")
 {
     // public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
@@ -139,7 +139,7 @@ public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deal
     //     }
     // }
 }
-
+[DataContract]
 public class TraitPadded() : Trait("Padded", "Pd", "PADDED: Reducing incoming damage by 1.")
 {
     // public override IEnumerable AsDefender_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
@@ -152,7 +152,7 @@ public class TraitPadded() : Trait("Padded", "Pd", "PADDED: Reducing incoming da
     //     }
     // }
 }
-
+[DataContract]
 public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for each heavy weapon.")
 {
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -179,7 +179,7 @@ public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for e
     //     }
     // }
 }
-
+[DataContract]
 public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack dice.")
 {
     // public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
@@ -230,7 +230,7 @@ public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack d
     //     }
     // }
 }
-
+[DataContract]
 public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", duration, "FRENZIED: +1 attack die while insane!")
 {
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -241,7 +241,7 @@ public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", durati
     //     yield break;
     // }
 }
-
+[DataContract]
 public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", duration, "EAGLE-EYED: +3 CLARITY for a short duration.")
 {
     public TraitEagleEyed() : this(5)
@@ -264,7 +264,7 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
         yield break;
     }
 }
-
+[DataContract]
 public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "PRONE: Cannot move, no defenses, receives +1 damage per hit!")
 {
     public override IEnumerable ApplyOnReceived(ICharacter character)
@@ -300,7 +300,7 @@ public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "P
     //     yield break;
     // }
 }
-
+[DataContract]
 public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration, "BLIND: Character's CLARITY becomes 0 for a number of turns.")
 {
     public TraitBlind() : this(5)
@@ -323,7 +323,7 @@ public class TraitBlind(int duration) : LimitedTrait("Blind", "Bl", duration, "B
         yield break;
     }
 }
-
+[DataContract]
 public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", duration, "CRITICAL: Gives a chance to raise an attack roll to 6, or else...")
 {
     // public override IEnumerable AsAttacker_ApplyTotalIncomingDamageModifiers(CombatFlow flow)
@@ -378,7 +378,7 @@ public class TraitCritical(int duration) : LimitedTrait("Critical", "Cr", durati
     //     }
     // }
 }
-
+[DataContract]
 public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL", "CRIPPLED (LEFT): Your left-hand weapon can no longer roll attacks.")
 {
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -391,7 +391,7 @@ public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL", "CRIPPLED 
     //     }
     // }
 }
-
+[DataContract]
 public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLED (RIGHT): Your left-hand weapon can no longer roll attacks.")
 {
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
@@ -404,7 +404,7 @@ public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLE
     //     }
     // }
 }
-
+[DataContract]
 public class TraitParalyzed() : Trait("Paralyzed", "Pa", "PARALYZED: Your body can hardly move an inch...")
 {
     public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)

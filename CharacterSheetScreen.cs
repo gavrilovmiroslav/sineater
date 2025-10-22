@@ -91,7 +91,7 @@ public class CharacterSheetScreen : IScreen
         if (chr.Armor is { } arm)
         {
             (u, v) = arm.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: {arm.GetName()}");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: {arm.Name}");
         }
         _game.Layers["porsmol"].Set(2, 4, new Glyph(u, v, Color.Black, chr.Tint));
 
@@ -100,7 +100,7 @@ public class CharacterSheetScreen : IScreen
         if (chr.Item is { } item)
         {
             (u, v) = item.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.GetName()}");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.Name}");
         }
         _game.Layers["porsmol"].Set(3, 4, new Glyph(u, v, Color.Black, chr.Tint));
 

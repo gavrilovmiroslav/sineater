@@ -1,11 +1,19 @@
 using System.Collections;
+using System.Runtime.Serialization;
 
 namespace SINEATER;
 
+[DataContract]
 public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
-    public (int, int) Picture => (uv.Item1, uv.Item2); 
+    [DataMember]
     public string Name { get; set; } = name;
+    [DataMember]
+    public EWeightClass Weight { get; set; } = weight;
+    [DataMember]
+    public int Quality { get; set; } = quality;
+    [DataMember]
+    public (int, int) Picture { get; set; } =  (uv.Item1, uv.Item2); 
     public Glyph Glyph => Glyph.Bw(8, 68);
     
     public bool CanBeUsed()
@@ -75,9 +83,6 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     }
 
     public int Guard{ get; set; } = guard;
-    public EWeightClass Weight{ get; set; } = weight;
-    public int Quality{ get; set; } = quality;
-
     public override string ToString()
     {
         return $"{Name} ({Guard}{Weight.Short()})";
@@ -87,14 +92,13 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     {
         return $"{Name} (Guard: {Guard}, Weight: {Weight.ToString()})";
     }
+    public Glyph GetIcon()
+    {
+        return Glyph;
+    }
 
     public string GetName()
     {
         return Name;
-    }
-
-    public Glyph GetIcon()
-    {
-        return Glyph;
     }
 }

@@ -786,7 +786,7 @@ public class CombatMapScreen : IScreen
             if (chr.GetArmor() is { } ar)
             {
                 (u, v) = ar.Picture;
-                _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 5, $"{ar.GetName()} ({ar.Guard})");
+                _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 5, $"{ar.Name} ({ar.Guard})");
             }
             _game.Layers["porsmol"].Set(13, ph, new Glyph(u, v, Color.Black, tint));
         }
