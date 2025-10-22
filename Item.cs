@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+using System.Runtime.Serialization;
 
 namespace SINEATER;
 
@@ -105,12 +105,13 @@ public class Pile : IAbilitySource, IItem
         return Glyph.Bw(1, 1);
     }
 }
-
+[DataContract]
 public class Item(string name, (int, int) uv) : IItem
 {
-    public string Name => name;
-
-    public virtual (int, int) Picture => (uv.Item1, uv.Item2);
+    [DataMember]
+    public string Name { get; set; } = name;
+    [DataMember]
+    public virtual (int, int) Picture { get; set; } = (uv.Item1, uv.Item2);
     
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
 

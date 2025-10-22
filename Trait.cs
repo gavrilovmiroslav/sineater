@@ -1,15 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+using System.Runtime.Serialization;
 
 namespace SINEATER;
 
-public class Trait(string name, string shortName, string description) : IAbilitySource
+public interface ITrait { }
+[DataContract]
+public class Trait(string name, string shortName, string description) : IAbilitySource, ITrait
 {
-    public string Description => description;
-    public string Name => name;
-    public virtual string ShortName => shortName;
+    [DataMember]
+    public string Name { get; set; } = name;
+    [DataMember]
+    public virtual string ShortName { get; set; } = shortName;
+    [DataMember]
+    public string Description { get; set; } = description;
     
     public static List<Type> All = [
         typeof(TraitBalanced),
@@ -51,14 +56,15 @@ public class Trait(string name, string shortName, string description) : IAbility
         return Glyph.Bw(0, 0);
     }
 }
-
+[DataContract]
 public class ItemTrait(string name, string shortName, IItem item, string description) : Trait(name, shortName, description)
 {
     
 }
-
+[DataContract]
 public class LimitedTrait(string name, string shortName, int duration, string description) : Trait(name, shortName, description)
 {
+    [DataMember]
     public int Duration = duration;
 
     public virtual IEnumerable ApplyOnExpires(ICharacter character)

@@ -1,14 +1,12 @@
-﻿using FmodForFoxes;
-using FmodForFoxes.Studio;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using SINEATER.Serialization;
 
 namespace SINEATER;
 
@@ -69,6 +67,8 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
+        //ItemLibrary.LoadItems(Content);
+
         SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;

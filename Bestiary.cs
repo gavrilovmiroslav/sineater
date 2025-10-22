@@ -6,6 +6,7 @@ namespace SINEATER;
 
 public static class Bestiary
 {
+
     public static Enemy Bat()
     {
         var bat = new Enemy

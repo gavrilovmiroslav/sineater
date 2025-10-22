@@ -1,0 +1,492 @@
+{
+    "Armors": [
+        {
+            "Name": "Cloak",
+            "Picture": {
+                "Item1": 1,
+                "Item2": 9
+            },
+            "Quality": 1,
+            "Weight": 4
+        },
+        {
+            "Name": "Chainmail",
+            "Picture": {
+                "Item1": 0,
+                "Item2": 6
+            },
+            "Quality": 1,
+            "Weight": 6
+        },
+        {
+            "Name": "Tunic",
+            "Picture": {
+                "Item1": 1,
+                "Item2": 6
+            },
+            "Quality": 5,
+            "Weight": 6
+        },
+        {
+            "Name": "Plate Armor",
+            "Picture": {
+                "Item1": 4,
+                "Item2": 6
+            },
+            "Quality": 5,
+            "Weight": 8
+        },
+        {
+            "Name": "Leather Armor",
+            "Picture": {
+                "Item1": 2,
+                "Item2": 6
+            },
+            "Quality": 4,
+            "Weight": 6
+        },
+        {
+            "Name": "Breast Plate",
+            "Picture": {
+                "Item1": 3,
+                "Item2": 6
+            },
+            "Quality": 3,
+            "Weight": 6
+        },
+        {
+            "Name": "Robe",
+            "Picture": {
+                "Item1": 5,
+                "Item2": 6
+            },
+            "Quality": 4,
+            "Weight": 4
+        }
+    ],
+    "Items": [
+        {
+            "Name": "Sword of Old",
+            "Picture": {
+                "Item1": 3,
+                "Item2": 5
+            }
+        },
+        {
+            "Name": "Family Ring",
+            "Picture": {
+                "Item1": 4,
+                "Item2": 9
+            }
+        },
+        {
+            "Name": "Ancient Scroll",
+            "Picture": {
+                "Item1": 2,
+                "Item2": 7
+            }
+        }
+    ],
+    "Shields": [
+        {
+            "Attack": 1,
+            "ClaScaling": 0,
+            "CritOn": 4,
+            "Name": "Round Shield",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 5,
+                "Item2": 8
+            },
+            "PoiScaling": 3,
+            "Quality": 4,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [
+                {
+                    "__type": "TraitKnockback:#SINEATER",
+                    "Description": "KNOCKBACK: Critical hits push the target back.",
+                    "Name": "Knockback",
+                    "ShortName": "Kn"
+                }
+            ],
+            "VigScaling": 0,
+            "Weight": 6,
+            "WilScaling": 0,
+            "Defense": 2
+        }
+    ],
+    "Weapons": [
+        {
+            "Attack": 3,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Gladius",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 0,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 3,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 6,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 4,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Mace",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 1,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 3,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 8,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 2,
+            "ClaScaling": 0,
+            "CritOn": 4,
+            "Name": "Dagger",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 2,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 5,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [
+                {
+                    "__type": "TraitSneaky:#SINEATER",
+                    "Description": "SNEAKY: If both weapons are light-weight, +1 attack die per weapon.",
+                    "Name": "Sneaky",
+                    "ShortName": "Sn"
+                }
+            ],
+            "VigScaling": 1,
+            "Weight": 4,
+            "WilScaling": 2
+        },
+        {
+            "Attack": 4,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Scepter",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 3,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 3,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 8,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 2,
+            "ClaScaling": 5,
+            "CritOn": 6,
+            "Name": "Wizard Staff",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 5,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 1,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 8,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 1,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Fang",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 6,
+                "Item2": 5
+            },
+            "PoiScaling": 0,
+            "Quality": 1,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 2,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 4,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Misericorde",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 3,
+                "Item2": 7
+            },
+            "PoiScaling": 0,
+            "Quality": 5,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                },
+                {
+                    "__type": "SkirmishStep_Backwards:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 4,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 2,
+            "ClaScaling": 1,
+            "CritOn": 6,
+            "Name": "Skolem Staff",
+            "OpeningsPerCrit": 3,
+            "Picture": {
+                "Item1": 4,
+                "Item2": 7
+            },
+            "PoiScaling": 5,
+            "Quality": 3,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackLeft:#SINEATER"
+                },
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                },
+                {
+                    "__type": "SkirmishStep_AttackRight:#SINEATER"
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 2,
+            "Weight": 10,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 3,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Heavy Flail",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 5,
+                "Item2": 7
+            },
+            "PoiScaling": 0,
+            "Quality": 3,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 8,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 4,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Claymore",
+            "OpeningsPerCrit": 2,
+            "Picture": {
+                "Item1": 1,
+                "Item2": 8
+            },
+            "PoiScaling": 5,
+            "Quality": 4,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_Forwards:#SINEATER",
+                    "n": 2
+                },
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 5,
+            "Weight": 10,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 3,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Cutlass",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 2,
+                "Item2": 8
+            },
+            "PoiScaling": 0,
+            "Quality": 1,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 6,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 1,
+            "ClaScaling": 10,
+            "CritOn": 6,
+            "Name": "Scroll Tome",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 2,
+                "Item2": 9
+            },
+            "PoiScaling": 3,
+            "Quality": 7,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                }
+            ],
+            "Traits": [],
+            "VigScaling": 0,
+            "Weight": 8,
+            "WilScaling": 0
+        },
+        {
+            "Attack": 1,
+            "ClaScaling": 0,
+            "CritOn": 6,
+            "Name": "Thorn Whip",
+            "OpeningsPerCrit": 1,
+            "Picture": {
+                "Item1": 4,
+                "Item2": 8
+            },
+            "PoiScaling": 2,
+            "Quality": 5,
+            "ScalingBase": 14,
+            "ScalingCurve": 1.5,
+            "Steps": [
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 1
+                },
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 2
+                },
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 3
+                },
+                {
+                    "__type": "SkirmishStep_AttackFront:#SINEATER",
+                    "n": 4
+                }
+            ],
+            "Traits": [
+                {
+                    "__type": "TraitForceful:#SINEATER",
+                    "Description": "FORCEFUL: +1 attack die every skirmish in combat.",
+                    "Name": "Forceful",
+                    "ShortName": "Fr"
+                }
+            ],
+            "VigScaling": 1,
+            "Weight": 8,
+            "WilScaling": 0
+        }
+    ]
+}

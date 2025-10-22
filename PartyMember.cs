@@ -578,7 +578,7 @@ public record struct Party
             }
         }
     }
-
+        
     public int WorldSight {
         get
         {

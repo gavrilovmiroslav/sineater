@@ -37,6 +37,9 @@
       <ClCompile Include="Content\crt.fx" />
     </ItemGroup>
     <ItemGroup>
+      <Reference Include="MonoJ">
+        <HintPath>..\..\SinEditor\MonoJ\bin\Debug\net8.0\MonoJ.dll</HintPath>
+      </Reference>
       <Reference Include="wvcs">
         <HintPath>..\..\wv\wvcs\bin\Debug\net8.0\wvcs.dll</HintPath>
       </Reference>
