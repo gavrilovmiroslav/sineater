@@ -77,11 +77,11 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
         {
             AttackDiceRolled.Add(new RolledDie(AttackDice[i], Rnd.Instance.D6));
         }
-
+        
+        yield return new Present_AttackRolled();
         yield return Defender?.GetTraits().AsDefender_OnAttackDiceRolled(this);
         yield return Attacker.GetTraits().AsAttacker_OnAttackDiceRolled(this);
         yield return Weapon.Traits.AsAttacker_OnAttackDiceRolled(this);
-        yield return new Present_AttackRolled();
         
         DefenderArmor = Defender?.GetArmor()?.Guard ?? 0;
         DefenderPoise = Defender?.Stats.Poise ?? 0;
@@ -99,7 +99,7 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
         yield return Weapon.Traits.AsAttacker_OnCritChanceEstablished(this);
         yield return Defender?.GetTraits().AsDefender_OnCritChanceEstablished(this);
 
-        yield return new Present_Notify($"{this.Attacker} attacks with {AttackDice.Count}. Rolling {TotalGuard}+ hits, crits on {CritOn}+."); 
+        yield return new Present_Notify($"Hit: {TotalGuard}+, Crit: {CritOn}+"); 
 
         Hits.Clear();
         Crits.Clear();
@@ -401,6 +401,13 @@ public class CombatFlow
                     Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, Character.Dummy(end.Item1, end.Item2), pos));
                 }
                 else break;
+            }
+            else if (step is SkirmishStep_AddTrait tr)
+            {
+                if (chars.ContainsKey(pos))
+                {
+                    chars[pos].AddTrait(tr.trait);
+                }
             }
         }
     }

@@ -1,7 +1,18 @@
+using System.Collections.Generic;
+
 namespace SINEATER;
 
 public static class Directions
 {
+    public static Dictionary<(int, int), (int, int)> Images { get; } = new()
+    {
+        { ( 1,  0), (10, 58) },
+        { (-1,  0), ( 9, 58) },
+        { ( 0,  1), ( 8, 58) },
+        { ( 0, -1), ( 7, 58) },
+        { ( 0,  0), ( 9, 59) },
+    };
+
     public static (int, int) GoForwards((int, int) position, (int, int) direction, int n = 1)
     {
         return (position.Item1 + direction.Item1 * n, position.Item2 + direction.Item2 * n);
