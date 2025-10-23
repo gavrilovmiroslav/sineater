@@ -56,6 +56,7 @@ public record struct SkirmishStep_AttackHand : ISkirmishStep;
 public record struct SkirmishStep_AttackLeft : ISkirmishStep;
 public record struct SkirmishStep_AttackRight : ISkirmishStep;
 public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_AddTrait(Trait trait) : ISkirmishStep;
 
 public enum EScalingFactor
 {

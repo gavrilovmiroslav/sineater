@@ -1,5 +1,6 @@
-using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace SINEATER;
@@ -78,53 +79,100 @@ public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are 
         if (flow.Attacker.GetRightWeapon() is not null) dice++;
         for (var i = 0; i < dice; i++)
             flow.AttackDice.Add(new Die(this));
-        yield return new Present_Notify(Description);
+        yield return YellName();
     }
 
     public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
 }
 
-public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: +1 damage on first hit!")
+public class TraitProficient() : Trait("Proficient", "Pr", "PROFICIENT: All 1s are 2 instead."), ISkirmish_AttackDiceRolled
 {
-    // public override IEnumerable AsAttacker_DetermineHitDieDamage(CombatFlow flow)
-    // {
-    //     var left = flow.Attacker.GetLeftWeapon();
-    //     var right = flow.Attacker.GetRightWeapon();
-    //     if (left == null || right == null) yield break;
-    //     
-    //     if ((int)left.Weight <= 6 && (int)right.Weight <= 6)
-    //     {
-    //         flow.AttackerTraits.Add(this);
-    //         if (flow.CurrentHitDieIndex == 0)
-    //         {
-    //             flow.HitDieDamage += 1;
-    //             for (int i = 0; i <= 10; i++)
-    //             {
-    //                 SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + flow.CurrentHitDieIndex + 1, 12,
-    //                     new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Lerp(Color.Blue, Color.CornflowerBlue, (float)i / 10.0f)));
-    //                 yield return new WaitForSeconds(0.01f);
-    //             }
-    //             yield return new CombatFlow_Notify(this.Description);
-    //         }
-    //     }
-    // }
+    private static IEnumerable IfRollOneRiseToTwo(SkirmishFlow flow)
+    {
+        var colors = new Color[flow.AttackDiceRolled.Count];
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
+        {
+            colors[i] = SineaterGame.Instance.Layers["mrmo"].GetFg(3 + i, 0);
+        }
+
+        var active = flow.AttackDiceRolled.Any(d => d.Value == 1);
+        if (active)
+        {
+            yield return new Present_Notify("Proficient: All 1s becomes 2s.");
+        }
+        
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
+        {
+            if (flow.AttackDiceRolled[i].Value == 1)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    SineaterGame.Instance.Layers["mrmo"].Set(3 + i, 0,
+                        new Glyph(0, 68, Color.Black, Color.Lerp(colors[i], Color.Purple, j / 5.0f)));
+                    yield return new WaitForSeconds(0.01f);
+                }
+
+                SineaterGame.Instance.Layers["mrmo"].Set(3 + i, 0,
+                    new Glyph(1, 68, Color.Black, Color.Purple));
+                yield return new WaitForSeconds(0.1f);
+
+                flow.AttackDiceRolled[i].Value = 2;
+            }
+        }
+    }
+
+    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield return IfRollOneRiseToTwo(flow);
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        yield return IfRollOneRiseToTwo(flow);
+    }
 }
 
-public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: If both weapons are the same weight, +1 attack die.")
+public class TraitBalanced() : Trait("Balanced", "Ba", "BALANCED: Increase attack on repeated rolls by 1."), ISkirmish_AttackDiceRolled
 {
-    // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
-    // {
-    //     var left = flow.Attacker.GetLeftWeapon();
-    //     var right = flow.Attacker.GetRightWeapon();
-    //     if (left == null || right == null) yield break;
-    //
-    //     if (left.Weight == right.Weight)
-    //     {
-    //         flow.AttackerTraits.Add(this);
-    //         flow.AttackDicePreRoll.Add(new Die(this));
-    //         yield return new CombatFlow_Notify(Description);
-    //     }
-    // }
+    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
+    {
+        HashSet<int> values = [];
+        var colors = new Color[flow.AttackDiceRolled.Count];
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
+        {
+            colors[i] = SineaterGame.Instance.Layers["mrmo"].GetFg(3 + i, 0);
+        }
+        
+        for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
+        {
+            var r = flow.AttackDiceRolled[i];
+            if (r.Value < 6 && values.Contains(r.Value))
+            {
+                yield return YellName();
+                for (int j = 0; j < 5; j++)
+                {
+                    SineaterGame.Instance.Layers["mrmo"].Set(3 + i, 0,
+                        new Glyph(r.Value - 1, 68, Color.Black, Color.Lerp(colors[i], Color.LightPink, j / 5.0f)));
+                    yield return new WaitForSeconds(0.01f);
+                }
+
+                r.Value++;
+                yield return new WaitForSeconds(0.01f);
+
+                SineaterGame.Instance.Layers["mrmo"].Set(3 + i, 0,
+                    new Glyph(r.Value - 1, 68, Color.Black, Color.LightPink));
+                yield return new WaitForSeconds(0.25f);
+            }
+            else
+            {
+                values.Add(r.Value);
+            }
+        }
+
+        
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow) { yield break; }
 }
 
 public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deals 1 damage.")
@@ -135,7 +183,7 @@ public class TraitSkilled() : Trait("Skilled", "Sk", "SKILLED: Skilled shot deal
     //     {
     //         flow.AttackerTraits.Add(this);
     //         flow.TotalIncomingDamage += 1;
-    //         yield return new CombatFlow_Notify(Description);
+    //         yield return YellName();
     //     }
     // }
 }
@@ -148,7 +196,7 @@ public class TraitPadded() : Trait("Padded", "Pd", "PADDED: Reducing incoming da
     //     {
     //         flow.DefenderTraits.Add(this);
     //         flow.TotalIncomingDamage -= 1;
-    //         yield return new CombatFlow_Notify(Description);
+    //         yield return YellName();
     //     }
     // }
 }
@@ -175,7 +223,7 @@ public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for e
     //     if (ok)
     //     {
     //         flow.AttackerTraits.Add(this);
-    //         yield return new CombatFlow_Notify(Description);
+    //         yield return YellName();
     //     }
     // }
 }
@@ -185,7 +233,7 @@ public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack d
     // public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
     // {
     //     flow.AttackerTraits.Add(this);
-    //     yield return new CombatFlow_Notify(Description);
+    //     yield return YellName();
     //     var min = 100;
     //     for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
     //     {
@@ -236,7 +284,7 @@ public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", durati
     // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
     // {
     //     flow.AttackerTraits.Add(this);
-    //     yield return new CombatFlow_Notify(Description);
+    //     yield return YellName();
     //     flow.AttackDicePreRoll.Add(new Die { Source = this });
     //     yield break;
     // }
@@ -386,7 +434,7 @@ public class TraitCrippledLeftHand() : Trait("Crippled (Left)", "xL", "CRIPPLED 
     //     if (flow.Attacker.GetLeftWeapon() != null)
     //     {
     //         flow.AttackerTraits.Add(this);
-    //         yield return new CombatFlow_Notify(Description);
+    //         yield return YellName();
     //         flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetLeftWeapon());
     //     }
     // }
@@ -399,7 +447,7 @@ public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLE
     //     if (flow.Attacker.GetRightWeapon() != null)
     //     {
     //         flow.AttackerTraits.Add(this);
-    //         yield return new CombatFlow_Notify(Description);
+    //         yield return YellName();
     //         flow.AttackDicePreRoll.RemoveAll(d => d.Source == flow.Attacker.GetRightWeapon());
     //     }
     // }
@@ -409,7 +457,7 @@ public class TraitParalyzed() : Trait("Paralyzed", "Pa", "PARALYZED: Your body c
 {
     public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
     {
-        yield return new Present_Notify(Description);
+        yield return YellName();
         if (character is PartyMember c)
         {
             c.IsDone = true;

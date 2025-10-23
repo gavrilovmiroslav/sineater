@@ -132,6 +132,13 @@ public class SineaterGame : Game
         
         Layers.Add("mrmo", mrmoLayer);
 
+        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, Vector2.Zero);
+        ibmMiniLayer.SetOffset(1, 0);
+        ibmMiniLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
+        ibmMiniLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
+        ibmMiniLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
+        Layers.Add("mini", ibmMiniLayer);
+        
         var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, Vector2.Zero);
         ibmLayer.SetOffset(1, 0);
         ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
@@ -216,7 +223,7 @@ public class SineaterGame : Game
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "porsmol" })
+        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "porsmol", "mini" })
         {
             Layers[layer].Draw(_spriteBatch);
         }

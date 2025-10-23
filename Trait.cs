@@ -21,6 +21,11 @@ public class Trait(string name, string shortName, string description) : IAbility
         typeof(TraitWise),
     ];
 
+    public IEnumerable YellName()
+    {
+        yield return new Present_Notify($"{Name}!");
+    }
+
     public virtual IEnumerable ApplyOnReceived(ICharacter character)
     {
         yield break;
