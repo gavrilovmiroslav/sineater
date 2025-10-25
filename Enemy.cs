@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
 public class Enemy : Character
 {
+    public int Wait = 3;
     public string Name;
     public ICharacter? LastHit = null;
     public (int, int) Icon;
@@ -14,6 +16,19 @@ public class Enemy : Character
     public bool IsDead = false;
     public List<IBehavior> Behaviors = [];
 
+    public override Color GetTint()
+    {
+        return Wait switch
+        {
+            1 => Color.Red,
+            2 => Color.Orange,
+            3 => Color.Yellow,
+            4 => Color.Green,
+            5 => Color.Blue,
+            _ => Tint
+        };
+    }
+    
     public override void Die()
     {
         IsDead = true;

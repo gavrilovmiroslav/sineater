@@ -368,8 +368,8 @@ public abstract class Character : ICharacter
             yield return trait.ApplyOnReceived(this);
         }
     }
-
-        public Color GetTint()
+    
+    public virtual Color GetTint()
     {
         return Tint;
     }

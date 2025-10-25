@@ -128,6 +128,7 @@ public class CombatMapScreen : IScreen
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
         Initialize(game);
         Regenerate(_width == -1 || _height == -1);
+        UpdateAttackSelections();
     }
 
     public void Initialize(SineaterGame game)
@@ -677,7 +678,7 @@ public class CombatMapScreen : IScreen
             if (!enemy.Render) continue;
             if (!IsInActivePartyFOV.Contains((enemy.X, enemy.Y))) continue;
             var (ix, iy) = enemy.Icon;
-            var c = enemy.Tint;
+            var c = enemy.GetTint();
             if (!IsInActivePartyMemberFOV.Contains((enemy.X, enemy.Y))) c = c.Darken(0.75f);
             if (enemy.Traits.Count > 0) c = Color.Lerp(c, Color.Gold, 0.6f);
             _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, c));
@@ -1043,8 +1044,8 @@ public class CombatMapScreen : IScreen
         
         if (step is Present_Notify notif)
         {
-            SineaterGame.Instance.Layers["ascii"].SetRect(new Vector2(14, 0), new Vector2(55, 1), ' ');
-            SineaterGame.Instance.Layers["ascii"].Set(15, 0, notif.Message);
+            SineaterGame.Instance.Layers["ascii"].SetRect(new Vector2(20, 0), new Vector2(55, 1), ' ');
+            SineaterGame.Instance.Layers["ascii"].Set(21, 0, notif.Message);
         }
         else if (step is Present_AttackRolled atk)
         {
@@ -1053,7 +1054,7 @@ public class CombatMapScreen : IScreen
             yield return new WaitForSeconds(0.1f);
 
             _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(45, 2), ' ');
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 6; i++)
             {
                 for (int d = 0; d < flow.AttackDiceRolled.Count; d++)
                 {
@@ -1246,7 +1247,7 @@ public class CombatMapScreen : IScreen
             }
             else
             {
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.1f);
             }
 
             yield return skirmish.Defender?.GetTraits().OnSkirmishEnds(skirmish);
