@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Serialization;
+using System.IO;
 
 namespace SINEATER;
 
@@ -67,7 +68,9 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
-        //ItemLibrary.LoadItems(Content);
+        DataSerializer.Serialize<Shield>(ItemLibrary.RoundShield);
+
+        var x = DataSerializer.Load<Shield>(File.ReadAllText("result.json"));
 
         SinMod.System.Init("audio/GUIDs.txt");
 

@@ -96,10 +96,16 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     [DataMember]
     public EScalingFactor VigScaling { get; set; } = vigScaling;
     [DataMember]
-    public float ScalingBase { get; set; } = scalingBase;
+    public float ScalingBase { get => scalingBase; set => scalingBase = value; }
     [DataMember]
-    public float ScalingCurve { get; set; } = scalingCurve;
-#endregion // Serialization
+    public float ScalingCurve { get => scalingCurve; set => scalingCurve = value; }
+    [OnDeserialized]
+    public void OnDeserialized(StreamingContext context)
+    {
+        Level = 1;
+    }
+
+    #endregion // Serialization
 
     public int Level { get; set; } = 1;
 
@@ -109,7 +115,7 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     public int ExperienceNow { get; set; } = 0;
     
     public Glyph Glyph => Glyph.Bw(14, 67);
-    
+
     public bool CanBeUsed()
     {
         return false;

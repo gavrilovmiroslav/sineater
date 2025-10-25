@@ -1,3 +1,4 @@
+using SINEATER.Serialization;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -108,11 +109,18 @@ public class Pile : IAbilitySource, IItem
 [DataContract]
 public class Item(string name, (int, int) uv) : IItem
 {
+#region Serialization
     [DataMember]
     public string Name { get; set; } = name;
     [DataMember]
     public virtual (int, int) Picture { get; set; } = (uv.Item1, uv.Item2);
-    
+
+    //// ISerializableObject
+    //public override void OnCreate()
+    //{
+    //}
+    #endregion // Serialization
+
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
 
     public virtual bool CanBeUsed()

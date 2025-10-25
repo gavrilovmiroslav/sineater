@@ -39,7 +39,7 @@ namespace SINEATER.Serialization
             .GetAssemblies()
             .SelectMany(t => t.GetTypes())
             .Where(p => (typeof(ISkirmishStep).IsAssignableFrom(p) && p != typeof(ISkirmishStep))
-                || (typeof(ITrait).IsAssignableFrom(p) && p != typeof(ITrait)))
+                || (typeof(Trait).IsAssignableFrom(p) && p != typeof(Trait)))
             .ToList();
     }
 }

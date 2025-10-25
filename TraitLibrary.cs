@@ -1,14 +1,21 @@
+using Microsoft.Xna.Framework;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SINEATER;
 
 [DataContract]
-public class TraitKnockback() : Trait("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back."), ISkirmish_CritHit
+public class TraitKnockback : Trait, ISkirmish_CritHit
 {
+    [JsonConstructor]
+    public TraitKnockback() : base("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back.")
+    {
+        int x = 0;
+    }
+
     public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
     {
         CombatMapScreen.Level?.DrawCombat();

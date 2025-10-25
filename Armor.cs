@@ -1,3 +1,4 @@
+using SINEATER.Serialization;
 using System.Collections;
 using System.Runtime.Serialization;
 
@@ -6,6 +7,7 @@ namespace SINEATER;
 [DataContract]
 public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
+#region Serialization
     [DataMember]
     public string Name { get; set; } = name;
     [DataMember]
@@ -13,9 +15,12 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     [DataMember]
     public int Quality { get; set; } = quality;
     [DataMember]
-    public (int, int) Picture { get; set; } =  (uv.Item1, uv.Item2); 
+    public (int, int) Picture { get; set; } =  (uv.Item1, uv.Item2);
+    [DataMember]
+    public int Guard { get; set; } = guard;
+    #endregion // Serialization
     public Glyph Glyph => Glyph.Bw(8, 68);
-    
+
     public bool CanBeUsed()
     {
         return false;
@@ -81,8 +86,6 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     {
         yield break;
     }
-
-    public int Guard{ get; set; } = guard;
     public override string ToString()
     {
         return $"{Name} ({Guard}{Weight.Short()})";

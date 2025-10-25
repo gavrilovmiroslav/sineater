@@ -5,15 +5,11 @@ using System.Runtime.Serialization;
 
 namespace SINEATER;
 
-public interface ITrait { }
 [DataContract]
-public class Trait(string name, string shortName, string description) : IAbilitySource, ITrait
+public class Trait(string name, string shortName, string description) : IAbilitySource
 {
-    [DataMember]
     public string Name { get; set; } = name;
-    [DataMember]
     public virtual string ShortName { get; set; } = shortName;
-    [DataMember]
     public string Description { get; set; } = description;
     
     public static List<Type> All = [
