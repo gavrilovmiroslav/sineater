@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using SINEATER.steam;
 using SINEATER.Serialization;
 using System.IO;
 
@@ -15,7 +16,9 @@ public class SineaterGame : Game
 {
     public static SineaterGame Instance;
     public static int DeltaTime;
-    
+
+    private SteamManager _steamManager;
+
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -55,6 +58,8 @@ public class SineaterGame : Game
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
 
+        _steamManager = new SteamManager();
+
         var time = DateTime.Now;
         _currentHour = time.Hour;
         var currentMillis = time.Millisecond + time.Second * 1000 + time.Minute * 1000 * 60; 
@@ -64,6 +69,13 @@ public class SineaterGame : Game
         _dHour += (float)time.Second * 1000.0f;
 
         Barks.Load(Content);
+    }
+
+    protected override void Initialize()
+    {
+        _steamManager.Initialize();
+
+        base.Initialize();
     }
 
     protected override void LoadContent()
@@ -167,7 +179,9 @@ public class SineaterGame : Game
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
-        
+
+        _steamManager.Update();
+
         if (_currentMinutes > HourLengthMillis)
         {
             _currentHour = (_currentHour + 1) % 24;
