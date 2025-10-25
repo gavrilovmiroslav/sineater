@@ -214,10 +214,21 @@ public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> con
 {
     public IEnumerator GetEnumerator()
     {
-        yield return new ShowPopupAndWaitForKey(new Vector2(5, 8), new Vector2(28, 16), content);
+        yield return new ShowPopupAndWaitForKey(new Vector2(2, 2), new Vector2(20, 8), content);
         var game = SineaterGame.Instance;
-        game.Layers["mrmo"].SetRect(new Vector2(5, 8), new Vector2(28, 16), ' ');
-        game.Layers["ascii"].SetRect(new Vector2(5, 8), new Vector2(28 * 2, 16), ' ');
+        game.Layers["mrmo"].SetRect(new Vector2(2, 2), new Vector2(20, 8), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(2, 2), new Vector2(20 * 2, 8), ' ');
+    }
+}
+
+public class ShowPopupWindowAndWaitForSeconds(float seconds, Action<SineaterGame, TextLayerBox> content, bool clear = false) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForSeconds(seconds, new Vector2(2, 2), new Vector2(20, 8), content);
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(new Vector2(2, 2), new Vector2(20, 8), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(2, 2), new Vector2(20 * 2, 8), ' ');
     }
 }
 
@@ -280,8 +291,8 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
     public IEnumerator GetEnumerator()
     {
         var (u, v) = portrait;
-        var start = new Vector2(5, 5);
-        var end = new Vector2(23 + 5, 16);
+        var start = new Vector2(2, 2);
+        var end = new Vector2(20, 14);
             
         var game = SineaterGame.Instance;
         game.Layers["mrmo"].SetRect(start, end, ' ');

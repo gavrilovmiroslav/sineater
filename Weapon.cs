@@ -46,17 +46,18 @@ public static class WeightClassExtensions
 }
 
 public interface ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Appear([property:DataMember](int, int) position) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Forwards([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Backwards([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_SidestepLeft([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_SidestepRight([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackFront([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackBack([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackHand : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackLeft : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackRight : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackRanged([property: DataMember] (int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_Appear((int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackHand : ISkirmishStep;
+public record struct SkirmishStep_AttackLeft : ISkirmishStep;
+public record struct SkirmishStep_AttackRight : ISkirmishStep;
+public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_AddTrait(Trait trait) : ISkirmishStep;
 
 public enum EScalingFactor
 {
@@ -68,13 +69,11 @@ public enum EScalingFactor
     S = 10,
 }
 
-[DataContract]
-public class Weapon(string name, int attack, EWeightClass weight, int quality, 
-    (int, int) inventoryPicture, List<Trait>? traits = null, List<ISkirmishStep>? steps = null,
+public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight, 
+    int quality, (int, int) inventoryPicture,
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
-    float scalingBase = 14.0f, float scalingCurve = 1.5f,
-    int critOn = 6, int openingsPerCrit = 1) : IEquippable, IItem
+    float scalingBase = 14.0f, float scalingCurve = 1.5f) : IEquippable, IItem
 {
 #region Serialization
     [DataMember]
@@ -110,10 +109,19 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality,
 #endregion // Serialization
 
     public int Level { get; set; } = 1;
+
     //            base   level scaling   quality^2            level
     // =Floor((Pow($B$24 * A3, $B$25 - $B$26 * $B$26 * 0.01 / A3)))
     public int ExperienceNeeded => (int)Math.Floor(Math.Pow(scalingBase * Level, scalingCurve - Quality * Quality * 0.01f / Level));
     public int ExperienceNow { get; set; } = 0;
+    
+    public EScalingFactor WilScaling => wilScaling;
+    public EScalingFactor ClaScaling => claScaling;
+    public EScalingFactor PoiScaling => poiScaling;
+    public EScalingFactor VigScaling => vigScaling;
+    
+    public (int, int) Picture => inventoryPicture;
+    public string Name { get; set; } = name;
     public Glyph Glyph => Glyph.Bw(14, 67);
     
     public bool CanBeUsed()
@@ -210,15 +218,18 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality,
     {
         yield break;
     }
+    
+    public EWeightClass Weight{ get; set; } = weight;
+    public int Quality{ get; set; } = quality;
 
     public override string ToString()
     {
-        return $"{Name} ({Attack}{Weight.Short()})";
+        return $"{Name}";
     }
     
     public virtual string ToLongString()
     {
-        return $"{Name} (Attack: {Attack}, Weight: {Weight.ToString()})";
+        return $"{Name} (Quality: {Quality}, Weight: {Weight.ToString()})";
     }
 
     public string GetName()
@@ -226,11 +237,25 @@ public class Weapon(string name, int attack, EWeightClass weight, int quality,
         return Name;
     }
 
+    public List<WeaponAttack> GetAvailableAttacks()
+    {
+        return attacks;
+    }
+    
     public virtual Glyph GetIcon()
     {
         return Glyph;
     }
 }
+
+public record struct WeaponAttack(
+    string Name,
+    int Attack,
+    int CritOn = 6,
+    int OpeningsPerCrit = 1,
+    List<Trait>? Traits = null,
+    List<ISkirmishStep>? Steps = null,
+    int minLevel = 1);
 
 public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor."), ISkirmish_GuardUp, ISkirmish_ArmorBreak
 {
@@ -257,15 +282,11 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, 
     public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-[DataContract]
-public class Shield(string name, int attack, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture,
-    List<Trait>? traits = null, List<ISkirmishStep>? steps = null,
+public class Shield(string name, List<WeaponAttack> attacks, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
-    float scalingBase = 14.0f, float scalingCurve = 1.5f,
-    int critOn = 6, int openingsPerCrit = 1)
-    : Weapon(name, attack, weight, quality, inventoryPicture, traits, steps,
-        wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve, critOn, openingsPerCrit)
+    float scalingBase = 14.0f, float scalingCurve = 1.5f)
+    : Weapon(name, attacks, weight, quality, inventoryPicture, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
 {
     [DataMember]
     public int Defense { get; set; } = defense;

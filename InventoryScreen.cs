@@ -499,11 +499,11 @@ public class InventoryScreen : IScreen
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.LeftWeapon is Shield lshield)
                 { 
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lshield.Name} (Guard: {lshield.Defense}, Weight: {lshield.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lshield.Name}");
                 }
                 else if (character.LeftWeapon is { } lh)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lh.Name} (Attack: {lh.Attack}, Weight: {lh.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   LH {lh.Name}");
                 }
                 else
                 {
@@ -514,11 +514,11 @@ public class InventoryScreen : IScreen
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.RightWeapon is Shield rshield)
                 { 
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rshield.Name} (Guard: {rshield.Defense}, Weight: {rshield.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rshield.Name}");
                 }
                 else if (character.RightWeapon is { } rh)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rh.Name} (Attack: {rh.Attack}, Weight: {rh.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   RH {rh.Name}");
                 }
                 else
                 {
@@ -529,7 +529,7 @@ public class InventoryScreen : IScreen
                 _game.Layers["mrmo"].Set((int)start.X + 3, (int)start.Y + 3 + i, new Glyph(u, v, Color.Black, character.Tint));
                 if (character.Armor is { } armor)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   DF {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.   DF {armor.Name}");
                 }
                 else
                 {
@@ -610,15 +610,15 @@ public class InventoryScreen : IScreen
                 var item = inventory.Items[i];
                 if (item is Shield shield)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {shield.Name} (Guard: {shield.Defense}, Weight: {shield.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {shield.Name}");
                 }
                 else if (item is Weapon weapon)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {weapon.Name} (Attack: {weapon.Attack}, Weight: {weapon.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {weapon.Name}");
                 }
                 else if (item is Armor armor)
                 {
-                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {armor.Name} (Guard: {armor.Guard}, Weight: {armor.Weight.ToString()})");
+                    _game.Layers["ascii"].Set((int)start.X * 2 + 5, (int)start.Y + 3 + i, $"{Nums[i]}.     {armor.Name}");
                 }
                 else if (item is Item other)
                 {

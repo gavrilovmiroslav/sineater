@@ -343,38 +343,6 @@ public class ExplorationMapScreen : IScreen
         }
     }
     
-    private void DrawStats()
-    {
-        var w = 10;
-        var h = 19;
-        _game.Layers["ascii"].Set(w - 1, h + 0, "CHAR  NAME   WIL CLA POI VIG  SEE MOV LH RH DF SKLS", Color.CadetBlue);
-        
-        var index = 0;
-        foreach (var character in _game.Party.Characters)
-        {
-            var c = character.Tint;
-            var (ix, iy) = character.Job.GetImage();
-            _game.Layers["mrmo"].Set(2 + w / 2 - 3, h + 1 + index, new Glyph(ix, iy, Color.Black, c));
-            _game.Layers["ascii"].Set(w + 2, h + 1 + index, $"{index + 1}. {character.Job}", c);
-            _game.Layers["ascii"].Set(w + 5 + 8, h + 1 + index, character.Stats.Will.ToString(), c);
-            _game.Layers["ascii"].Set(w + 5 + 12, h + 1 + index, character.Stats.Clarity.ToString(), c);
-            _game.Layers["ascii"].Set(w + 5 + 16, h + 1 + index, character.Stats.Poise.ToString(), c);
-            _game.Layers["ascii"].Set(w + 5 + 20, h + 1 + index, character.Stats.Vigor.ToString(), c);
-            
-            _game.Layers["ascii"].Set(w + 6 + 7 + 17, h + 1 + index, character.Stats.Clarity.ToString(), c);
-            _game.Layers["ascii"].Set(w + 6 + 11 + 17, h + 1 + index, (character.Stats.Will + character.Stats.Mod(EStat.Clarity)).ToString(), c);
-            _game.Layers["ascii"].Set(w + 5 + 14 + 18, h + 1 + index, character.LeftWeapon?.Attack.ToString() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 14 + 19, h + 1 + index, character.LeftWeapon?.Weight.Short() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 17 + 18, h + 1 + index, character.RightWeapon?.Attack.ToString() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 17 + 19, h + 1 + index, character.RightWeapon?.Weight.Short() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 20 + 18, h + 1 + index, character.Armor?.Guard.ToString() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 20 + 19, h + 1 + index, character.Armor?.Weight.Short() ?? "-", c);
-            _game.Layers["ascii"].Set(w + 5 + 20 + 22, h + 1 + index, character.GetTraits().Count.ToString(), c);
-            
-            index++;
-        }
-    }
-    
     public void Draw(GameTime gameTime)
     {
         if (_coroutineHandler.IsActive()) return;
@@ -449,10 +417,7 @@ public class ExplorationMapScreen : IScreen
 
         if (_debug) DrawDebugMap();
         
-        if (_stats)
-            DrawStats();
-        else
-            DrawParty();
+        DrawParty();
     }
 
     public void DrawDebugMap()
