@@ -7,3 +7,4 @@ riderModule.iml
 .idea/
 .vscode/
 .config/
+*steam_appid.txt
