@@ -1,13 +1,25 @@
+using Newtonsoft.Json;
 using System.Collections;
 
 namespace SINEATER;
 
+[JsonObject(MemberSerialization.OptIn)]
 public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
-    public (int, int) Picture => (uv.Item1, uv.Item2); 
+#region Serialization
+    [JsonProperty]
     public string Name { get; set; } = name;
+    [JsonProperty]
+    public EWeightClass Weight { get; set; } = weight;
+    [JsonProperty]
+    public int Quality { get; set; } = quality;
+    [JsonProperty]
+    public (int, int) Picture { get; set; } =  (uv.Item1, uv.Item2);
+    [JsonProperty]
+    public int Guard { get; set; } = guard;
+#endregion // Serialization
     public Glyph Glyph => Glyph.Bw(8, 68);
-    
+
     public bool CanBeUsed()
     {
         return false;
@@ -73,11 +85,6 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     {
         yield break;
     }
-
-    public int Guard{ get; set; } = guard;
-    public EWeightClass Weight{ get; set; } = weight;
-    public int Quality{ get; set; } = quality;
-
     public override string ToString()
     {
         return $"{Name} ({Guard}{Weight.Short()})";
@@ -87,14 +94,13 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     {
         return $"{Name} (Guard: {Guard}, Weight: {Weight.ToString()})";
     }
+    public Glyph GetIcon()
+    {
+        return Glyph;
+    }
 
     public string GetName()
     {
         return Name;
-    }
-
-    public Glyph GetIcon()
-    {
-        return Glyph;
     }
 }

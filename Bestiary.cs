@@ -6,6 +6,7 @@ namespace SINEATER;
 
 public static class Bestiary
 {
+
     public static Enemy Bat()
     {
         var bat = new Enemy
@@ -21,8 +22,8 @@ public static class Bestiary
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
 
-        bat.LeftWeapon = ItemLibrary.Fang;
-        bat.RightWeapon = ItemLibrary.Fang;
+        bat.LeftWeapon = ItemLibrary.GetWeapon("Fang");
+        bat.RightWeapon = ItemLibrary.GetWeapon("Fang");
         if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
         return bat;
     }
@@ -38,13 +39,13 @@ public static class Bestiary
             Sin = Rnd.Instance.D4,
             HP = 3,
             Tint = Color.LightGreen,
-            Armor = ItemLibrary.Robe,
+            Armor = ItemLibrary.GetArmor("Robe"),
             Stats = new Stats(2, 2, 2, Rnd.Instance.Next(3, 4)),
             Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout() ],
         };
         if (Rnd.Instance.D4 > gob.Sin)
-            gob.LeftWeapon = ItemLibrary.Dagger;
-        gob.RightWeapon = ItemLibrary.Dagger;
+            gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
+        gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
         return gob;
     }
     
@@ -59,7 +60,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 3,
             Tint = Color.Red,
-            Armor = ItemLibrary.Robe,
+            Armor = ItemLibrary.GetArmor("Robe"),
             Stats = new Stats(6, 3, 3, 4),
             Behaviors = [ 
                 new BehaviorAggro(),  
@@ -67,7 +68,7 @@ public static class Bestiary
             ],
         };
 
-        gob.LeftWeapon = ItemLibrary.ThornWhip;
+        gob.LeftWeapon = ItemLibrary.GetWeapon("Thorn Whip");
         if (Rnd.Instance.D6 <= 2)
             Coroutine.Consume(gob.AddTrait(new TraitWise()));
 
