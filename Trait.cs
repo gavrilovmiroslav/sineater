@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,6 +6,7 @@ using System.Runtime.Serialization;
 
 namespace SINEATER;
 
+[JsonObject(MemberSerialization.OptIn)]
 public class Trait(string name, string shortName, string description) : IAbilitySource
 {
     public string Name { get; set; } = name;

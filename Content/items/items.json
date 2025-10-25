@@ -13,10 +13,7 @@
           "OpeningsPerCrit": 2,
           "Traits": [
             {
-              "$type": "SINEATER.TraitSneaky, SINEATER",
-              "Name": "Sneaky",
-              "ShortName": "Sn",
-              "Description": "SNEAKY: If both weapons are light-weight, +1 attack die per weapon."
+              "$type": "SINEATER.TraitSneaky, SINEATER"
             }
           ],
           "Steps": [
@@ -54,10 +51,7 @@
           "OpeningsPerCrit": 1,
           "Traits": [
             {
-              "$type": "SINEATER.TraitProficient, SINEATER",
-              "Name": "Proficient",
-              "ShortName": "Pr",
-              "Description": "PROFICIENT: All 1s are 2 instead."
+              "$type": "SINEATER.TraitProficient, SINEATER"
             }
           ],
           "Steps": [
@@ -187,10 +181,7 @@
           "OpeningsPerCrit": 3,
           "Traits": [
             {
-              "$type": "SINEATER.TraitBalanced, SINEATER",
-              "Name": "Balanced",
-              "ShortName": "Ba",
-              "Description": "BALANCED: Increase attack on repeated rolls by 1."
+              "$type": "SINEATER.TraitBalanced, SINEATER"
             }
           ],
           "Steps": [
@@ -306,10 +297,7 @@
           "OpeningsPerCrit": 1,
           "Traits": [
             {
-              "$type": "SINEATER.TraitForceful, SINEATER",
-              "Name": "Forceful",
-              "ShortName": "Fr",
-              "Description": "FORCEFUL: +1 attack die every skirmish in combat."
+              "$type": "SINEATER.TraitForceful, SINEATER"
             }
           ],
           "Steps": [
@@ -466,7 +454,6 @@
   "Shields": [
     {
       "$type": "SINEATER.Shield, SINEATER",
-      "Defense": 2,
       "Name": "Round Shield",
       "Attacks": [
         {
@@ -477,10 +464,7 @@
           "OpeningsPerCrit": 2,
           "Traits": [
             {
-              "$type": "SINEATER.TraitKnockback, SINEATER",
-              "Name": "Knockback",
-              "ShortName": "Kn",
-              "Description": "KNOCKBACK: Critical hits push the target back."
+              "$type": "SINEATER.TraitKnockback, SINEATER"
             }
           ],
           "Steps": [
