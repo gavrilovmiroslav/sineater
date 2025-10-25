@@ -732,62 +732,67 @@ public class CombatMapScreen : IScreen
         var tint = chr.GetTint();
         if (chr is PartyMember)
         {
-            if (header)
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth - 1, h, "NAME       WIL CLA POI VIG");
-            }
-            else
-            {
-                h--;
-            }
-
             _game.Layers["mrmo"].Set(2 + _fullWidth - 3, h + 1,
                 new Glyph(ix, iy, Color.Black, tint));
             _game.Layers["ascii"].Set(2 * _fullWidth + 2, h + 1, chr.GetName(),
                 Color.Lerp(Color.White, tint, 0.5f));
 
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, h + 1, chr.Stats.Will.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 11, h + 1, chr.Stats.Clarity.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 15, h + 1, chr.Stats.Poise.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 19, h + 1, chr.Stats.Vigor.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
             var ph = (h + 1) / 2 + dp;
             var (u, v) = chr.GetPortait(); 
             _game.Layers["porsmol"].Set(10, ph, new Glyph(u, v, Color.Black, tint));
 
             (u, v) = ItemLibrary.EmptyUv;
+            var dh = 0;
+            var opt = 0;
             _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7, $"[1]: --");
             _game.Layers["mini"].Set(2 * _fullWidth + _offset - 20, h + 10, $"  ");
+            _game.Layers["mini"].Set(2 * _fullWidth + 69, h + 11, $"                                                 ");
             if (chr.GetLeftWeapon() is { } lw)
             {
                 (u, v) = lw.Picture;
-                var att = lw.Attack;
-                if (lw is Shield rws) att = rws.Defense;
-                _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7, $"[1]: {lw.GetName()} ({att}D6)");
-                _game.Layers["mini"].Set(2 * _fullWidth + _offset - 20, h + 10, $"{att}");
+                _game.Layers["ascii"].Set(2 * _fullWidth + 1, h + 7 + dh, $"[ LH ] {lw.GetName()}", tint);
+                foreach (var att in lw.GetAvailableAttacks())
+                {
+                    dh++;
+                    opt++;
+                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Name}");
+                    if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
+                        _confirmedCombatFlow.WeaponAttack == att)
+                    {
+                        _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
+                    }
+                }
+                var exp = $"{(lw.ExperienceNow * 100 / lw.ExperienceNeeded)}%";
+                _game.Layers["mini"].Set(2 * _fullWidth + 70, h + 11, $"L{lw.Level}");
+                _game.Layers["mini"].Set(2 * _fullWidth + 77 - exp.Length, h + 11, exp);
+                dh++;
+                dh++;
             }
             _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
-        
+
             (u, v) = ItemLibrary.EmptyUv;
             _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 8, $"[2]: --");
-            _game.Layers["mini"].Set(2 * _fullWidth + _offset - 10, h + 10, $"  ");
+            _game.Layers["mini"].Set(2 * _fullWidth + _offset - 10, h + 7 + dh, $"  ");
             if (chr.GetRightWeapon() is { } rw)
             {
                 (u, v) = rw.Picture;
-                var att = rw.Attack;
-                if (rw is Shield rws) att = rws.Defense;
-                _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 8, $"[2]: {rw.GetName()} ({att}D6)");
-                _game.Layers["mini"].Set(2 * _fullWidth + _offset - 10, h + 10, $"{att}");
+                _game.Layers["ascii"].Set(2 * _fullWidth + 1, h + 7 + dh, $"[ RH ] {rw.GetName()}", tint);
+                foreach (var att in rw.GetAvailableAttacks())
+                {
+                    dh++;
+                    opt++;
+                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Name}");
+                    if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
+                        _confirmedCombatFlow.WeaponAttack == att)
+                    {
+                        _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
+                    }
+                }
+                var exp = $"{(rw.ExperienceNow * 100 / rw.ExperienceNeeded)}%";
+                _game.Layers["mini"].Set(2 * _fullWidth + 80, h + 11, $"L{rw.Level}");
+                _game.Layers["mini"].Set(2 * _fullWidth + 87 - exp.Length, h + 11, exp);
             }
+
             _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
         
             (u, v) = ItemLibrary.EmptyUv;
@@ -856,10 +861,10 @@ public class CombatMapScreen : IScreen
         }
         
         DrawCharacterCard(selected, 1, 1);
-        var h = 11;
+        var h = 22;
         foreach (var e in _enemiesSortedByDistance)
         {
-            if (h == 11)
+            if (h == 16)
             {
                 DrawCharacterCard(e, h, 1, true);
                 h += 2;
@@ -1045,7 +1050,6 @@ public class CombatMapScreen : IScreen
         {
             SineaterGame.Instance.Layers["ascii"].Set(1, 0, "ATK");
             SineaterGame.Instance.Layers["ascii"].Set(1, 1, "DMG");
-            DrawCharacterCard(flow.Defender, 11, 0);
             yield return new WaitForSeconds(0.1f);
 
             _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(45, 2), ' ');
@@ -1076,7 +1080,7 @@ public class CombatMapScreen : IScreen
         {
             _game.Layers["mrmo"].Set(3 + crit.index, 1,
                 new Glyph(8, 68, Color.Black, Color.Gold));
-            flow.Attacker.GetAP().Free(flow.Weapon.OpeningsPerCrit);
+            flow.Attacker.GetAP().Free(flow.WeaponAttack?.OpeningsPerCrit ?? 1);
             yield return new WaitForSeconds(0.2f);
         }
         else if (step is Present_ArmorDent dent)
@@ -1183,12 +1187,12 @@ public class CombatMapScreen : IScreen
         }
 
         yield return flow.Attacker.GetTraits().OnCombatStarts(flow);
-        yield return flow.Weapon?.Traits.OnCombatStarts(flow);
+        yield return flow.WeaponAttack?.Traits?.OnCombatStarts(flow);
         
         foreach (var skirmish in flow.Skirmishes)
         {
             yield return flow.Attacker.GetTraits().OnSkirmishStarts(skirmish);
-            yield return flow.Weapon?.Traits.OnSkirmishStarts(skirmish);
+            yield return flow.WeaponAttack?.Traits?.OnSkirmishStarts(skirmish);
 
             var (ox, oy) = (flow.Attacker.X, flow.Attacker.Y);
             var (x, y) = skirmish.Position;
@@ -1247,11 +1251,11 @@ public class CombatMapScreen : IScreen
 
             yield return skirmish.Defender?.GetTraits().OnSkirmishEnds(skirmish);
             yield return flow.Attacker.GetTraits().OnSkirmishEnds(skirmish);
-            yield return flow.Weapon?.Traits.OnSkirmishEnds(skirmish);
+            yield return flow.WeaponAttack?.Traits?.OnSkirmishEnds(skirmish);
         }
         
         yield return flow.Attacker.GetTraits().OnCombatEnds(flow);
-        yield return flow.Weapon?.Traits.OnCombatEnds(flow);
+        yield return flow.WeaponAttack?.Traits?.OnCombatEnds(flow);
 
         _confirmedCombatFlow = null;
     }
@@ -1264,6 +1268,34 @@ public class CombatMapScreen : IScreen
 
     private ICharacter _currentEnemy = null;
     private CombatFlow? _confirmedCombatFlow = null;
+
+    private Dictionary<int, (Weapon, WeaponAttack)> _attackOptions = [];
+    
+    private void UpdateAttackSelections()
+    {
+        _attackOptions.Clear();
+        
+        var chr = _party[PlayerSelectedIndex];
+        var opt = 0;
+        
+        if (chr.GetLeftWeapon() is { } lw)
+        {
+            foreach (var att in lw.GetAvailableAttacks())
+            {
+                opt++;
+                _attackOptions[opt] = (lw, att);
+            }
+        }
+
+        if (chr.GetRightWeapon() is { } rw)
+        {
+            foreach (var att in rw.GetAvailableAttacks())
+            {
+                opt++;
+                _attackOptions[opt] = (rw, att);
+            }
+        }
+    }
     
     private void CheckPlayerInputs()
     {
@@ -1275,6 +1307,7 @@ public class CombatMapScreen : IScreen
                 var p = PlayerSelectedIndex;
                 PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
                 _game.Party.Selected = PlayerSelectedIndex;
+                UpdateAttackSelections();
                 UpdateFov(true);
             }
             else
@@ -1326,25 +1359,54 @@ public class CombatMapScreen : IScreen
         {
             _confirmedCombatFlow = null;
         }
-        else if (_confirmedCombatFlow == null && current.GetLeftWeapon() != null && KB.HasBeenPressed(Keys.D1))
+        
+        if (_confirmedCombatFlow == null)
         {
-            var scored = Directions
-                .Select(d => new CombatFlow(this, current, current.GetLeftWeapon(), (current.X, current.Y), d))
-                .Select(cf => (cf, cf.Score()))
-                .ToList();
-            foreach (var s in scored) Console.WriteLine(s);
-            scored.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-            _confirmedCombatFlow = scored[0].cf;
-        }
-        else if (_confirmedCombatFlow == null && current.GetRightWeapon() != null && KB.HasBeenPressed(Keys.D2))
-        {
-            var scored = Directions
-                .Select(d => new CombatFlow(this, current, current.GetRightWeapon(), (current.X, current.Y), d))
-                .Select(cf => (cf, cf.Score()))
-                .ToList();
-            foreach (var s in scored) Console.WriteLine(s);
-            scored.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-            _confirmedCombatFlow = scored[0].cf;
+            var choice = -1;
+            if (KB.HasBeenPressed(Keys.D1))
+            {
+                choice = 1;
+            }
+            else if (KB.HasBeenPressed(Keys.D2))
+            {
+                choice = 2;
+            }
+            else if (KB.HasBeenPressed(Keys.D3))
+            {
+                choice = 3;
+            }
+            else if (KB.HasBeenPressed(Keys.D4))
+            {
+                choice = 4;
+            }
+            else if (KB.HasBeenPressed(Keys.D5))
+            {
+                choice = 5;
+            }
+            else if (KB.HasBeenPressed(Keys.D6))
+            {
+                choice = 6;
+            }
+            else if (KB.HasBeenPressed(Keys.D7))
+            {
+                choice = 7;
+            }
+            else if (KB.HasBeenPressed(Keys.D8))
+            {
+                choice = 8;
+            }
+
+            if (choice != -1 && _attackOptions.ContainsKey(choice))
+            {
+                var (wpn, atk) = _attackOptions[choice];
+                var scored = Directions
+                    .Select(d => new CombatFlow(this, current, wpn, atk, (current.X, current.Y), d))
+                    .Select(cf => (cf, cf.Score()))
+                    .ToList();
+                foreach (var s in scored) Console.WriteLine(s);
+                scored.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+                _confirmedCombatFlow = scored[0].cf;
+            }
         }
         
         // MOVE
