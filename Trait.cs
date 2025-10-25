@@ -1,15 +1,17 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+using System.Runtime.Serialization;
 
 namespace SINEATER;
 
+[JsonObject(MemberSerialization.OptIn)]
 public class Trait(string name, string shortName, string description) : IAbilitySource
 {
-    public string Description => description;
-    public string Name => name;
-    public virtual string ShortName => shortName;
+    public string Name { get; set; } = name;
+    public virtual string ShortName { get; set; } = shortName;
+    public string Description { get; set; } = description;
     
     public static List<Type> All = [
         typeof(TraitBalanced),
@@ -51,12 +53,10 @@ public class Trait(string name, string shortName, string description) : IAbility
         return Glyph.Bw(0, 0);
     }
 }
-
 public class ItemTrait(string name, string shortName, IItem item, string description) : Trait(name, shortName, description)
 {
     
 }
-
 public class LimitedTrait(string name, string shortName, int duration, string description) : Trait(name, shortName, description)
 {
     public int Duration = duration;

@@ -10,6 +10,7 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:..\MonoJ.dll
 
 #---------------------------------- Content ---------------------------------#
 
@@ -342,6 +343,11 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:fingerprints.png
+
+#begin items/items.json
+/importer:JSONImporter
+/processor:JSONProcessor
+/build:items/items.json
 
 #begin MRMOTEXT.png
 /importer:TextureImporter
