@@ -1,8 +1,8 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace SINEATER;
 
@@ -46,18 +46,18 @@ public static class WeightClassExtensions
 }
 
 public interface ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Appear([property:DataMember](int, int) position) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Forwards([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_Backwards([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_SidestepLeft([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_SidestepRight([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackFront([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackBack([property: DataMember] int n) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackHand : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackLeft : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackRight : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AttackRanged([property: DataMember] (int, int) position) : ISkirmishStep;
-[DataContract] public record struct SkirmishStep_AddTrait([property: DataMember] Trait trait) : ISkirmishStep;
+ public record struct SkirmishStep_Appear((int, int) position) : ISkirmishStep;
+ public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
+ public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
+ public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
+ public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
+ public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
+ public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
+ public record struct SkirmishStep_AttackHand : ISkirmishStep;
+ public record struct SkirmishStep_AttackLeft : ISkirmishStep;
+ public record struct SkirmishStep_AttackRight : ISkirmishStep;
+ public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
+ public record struct SkirmishStep_AddTrait(Trait trait) : ISkirmishStep;
 
 public enum EScalingFactor
 {
@@ -69,7 +69,7 @@ public enum EScalingFactor
     S = 10,
 }
 
-[DataContract]
+[JsonObject(MemberSerialization.OptIn)]
 public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight,
     int quality, (int, int) inventoryPicture,
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
@@ -77,34 +77,28 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     float scalingBase = 14.0f, float scalingCurve = 1.5f) : IEquippable, IItem
 {
     #region Serialization
-    [DataMember]
+    [JsonProperty]
     public string Name { get; set; } = name;
-    [DataMember]
+    [JsonProperty]
     public List<WeaponAttack> Attacks { get => attacks; set => attacks = value; }
-    [DataMember]
+    [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
-    [DataMember]
+    [JsonProperty]
     public int Quality { get; set; } = quality;
-    [DataMember]
+    [JsonProperty]
     public (int, int) Picture { get; set; } = inventoryPicture;
-    [DataMember]
+    [JsonProperty]
     public EScalingFactor WilScaling { get; set; } = wilScaling;
-    [DataMember]
+    [JsonProperty]
     public EScalingFactor ClaScaling { get; set; } = claScaling;
-    [DataMember]
+    [JsonProperty]
     public EScalingFactor PoiScaling { get; set; } = poiScaling;
-    [DataMember]
+    [JsonProperty]
     public EScalingFactor VigScaling { get; set; } = vigScaling;
-    [DataMember]
+    [JsonProperty]
     public float ScalingBase { get => scalingBase; set => scalingBase = value; }
-    [DataMember]
+    [JsonProperty]
     public float ScalingCurve { get => scalingCurve; set => scalingCurve = value; }
-    [OnDeserialized]
-    public void OnDeserialized(StreamingContext context)
-    {
-        Level = 1;
-    }
-
     #endregion // Serialization
 
     public int Level { get; set; } = 1;
@@ -236,18 +230,17 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
         return Glyph;
     }
 }
-[DataContract]
+
 public record struct WeaponAttack(
-    [property :DataMember] string Name,
-    [property: DataMember] int Attack,
-    [property: DataMember] int CritOn = 6,
-    [property: DataMember] int OpeningsPerCrit = 1,
-    [property: DataMember] List<Trait>? Traits = null,
-    [property: DataMember] List<ISkirmishStep>? Steps = null,
-    [property: DataMember] int MinLelel = 1
+     string Name,
+     int Attack,
+     int CritOn = 6,
+     int OpeningsPerCrit = 1,
+     List<Trait>? Traits = null,
+     List<ISkirmishStep>? Steps = null,
+     int MinLelel = 1
     );
 
-[DataContract]
 public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor."), ISkirmish_GuardUp, ISkirmish_ArmorBreak
 {
     public Shield Owner { get; private set; } = shield;
@@ -273,14 +266,12 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, 
     public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-[DataContract]
 public class Shield(string name, List<WeaponAttack> attacks, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
     float scalingBase = 14.0f, float scalingCurve = 1.5f)
     : Weapon(name, attacks, weight, quality, inventoryPicture, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
 {
-    [DataMember]
     public int Defense { get; set; } = defense;
 
     public override string ToString()

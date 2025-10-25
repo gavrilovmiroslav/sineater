@@ -1,24 +1,23 @@
-using SINEATER.Serialization;
+using Newtonsoft.Json;
 using System.Collections;
-using System.Runtime.Serialization;
 
 namespace SINEATER;
 
-[DataContract]
+[JsonObject(MemberSerialization.OptIn)]
 public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
 {
 #region Serialization
-    [DataMember]
+    [JsonProperty]
     public string Name { get; set; } = name;
-    [DataMember]
+    [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
-    [DataMember]
+    [JsonProperty]
     public int Quality { get; set; } = quality;
-    [DataMember]
+    [JsonProperty]
     public (int, int) Picture { get; set; } =  (uv.Item1, uv.Item2);
-    [DataMember]
+    [JsonProperty]
     public int Guard { get; set; } = guard;
-    #endregion // Serialization
+#endregion // Serialization
     public Glyph Glyph => Glyph.Bw(8, 68);
 
     public bool CanBeUsed()

@@ -531,45 +531,45 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.WizardStaff);
-                    Characters[i].EquipArmor(ItemLibrary.Chainmail);
-                    Characters[i].EquipItem(ItemLibrary.AncientScroll);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Wizard Staff"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Chainmail"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Ancient Scroll"));
                     Characters[i].Stats.Vigor -= 2;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].EquipRightWeapon(ItemLibrary.Dagger);
-                    Characters[i].EquipArmor(ItemLibrary.Tunic);
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Dagger"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Tunic"));
                     Characters[i].Stats.Clarity++;
                     Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.RoundShield);
-                    Characters[i].EquipRightWeapon(ItemLibrary.Claymore);
-                    Characters[i].EquipArmor(ItemLibrary.PlateArmor);
-                    Characters[i].EquipItem(ItemLibrary.FamilyRing);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetShield("Round Shield"));
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Plate Armor"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Family Ring"));
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].EquipRightWeapon(ItemLibrary.SkolemStaff);
-                    Characters[i].EquipArmor(ItemLibrary.LeatherArmor);
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolem Staff"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Leather Armor"));
                     Characters[i].Traits.Add(new TraitHeavy());
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.Misericorde);
-                    Characters[i].EquipRightWeapon(ItemLibrary.ScrollTome);
-                    Characters[i].EquipArmor(ItemLibrary.BreastPlate);
+                    Characters[i].EquipItem(ItemLibrary.GetWeapon("Misericorde"));
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Scroll Tome"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Breast Plate"));
                     Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.ThornWhip);
-                    Characters[i].EquipArmor(ItemLibrary.Robe);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Robe"));
                     Characters[i].Stats.Vigor++;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.Dagger);
-                    Characters[i].EquipArmor(ItemLibrary.Cloak);
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
+                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Cloak"));
                     Characters[i].EquipItem(new PotionGhylagsTear());
-                    Characters[i].EquipItem(ItemLibrary.BrokenSword);
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Sword of Old"));
                     Characters[i].Stats.Vigor -= 1;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;

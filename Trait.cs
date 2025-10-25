@@ -5,7 +5,6 @@ using System.Runtime.Serialization;
 
 namespace SINEATER;
 
-[DataContract]
 public class Trait(string name, string shortName, string description) : IAbilitySource
 {
     public string Name { get; set; } = name;
@@ -52,15 +51,12 @@ public class Trait(string name, string shortName, string description) : IAbility
         return Glyph.Bw(0, 0);
     }
 }
-[DataContract]
 public class ItemTrait(string name, string shortName, IItem item, string description) : Trait(name, shortName, description)
 {
     
 }
-[DataContract]
 public class LimitedTrait(string name, string shortName, int duration, string description) : Trait(name, shortName, description)
 {
-    [DataMember]
     public int Duration = duration;
 
     public virtual IEnumerable ApplyOnExpires(ICharacter character)
