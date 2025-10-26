@@ -43,24 +43,25 @@ public static class ECharacterClassExtensions
         }
     }
     
-    public static (int, int) GetImage(this ECharacterClass job)
+    public static (int, int) GetImage(this ECharacterClass job, bool selected = false)
     {
+        var dy = selected ? -4 : 0;
         switch (job)
         {
             case ECharacterClass.Wizard:
-                return (0, 64);
+                return (0, 64 + dy);
             case ECharacterClass.Witch:
-                return (4, 67);
+                return (4, 67 + dy);
             case ECharacterClass.Knight:
-                return (4, 65);
+                return (4, 65 + dy);
             case ECharacterClass.Monk:
-                return (1, 64);
+                return (1, 64 + dy);
             case ECharacterClass.Sage:
-                return (2, 65);
+                return (2, 65 + dy);
             case ECharacterClass.Priest:
-                return (6, 65);
+                return (6, 65 + dy);
             case ECharacterClass.Thief:
-                return (3, 65);
+                return (3, 65 + dy);
             default:
                 throw new ArgumentOutOfRangeException(nameof(job), job, null);
         }
@@ -368,8 +369,8 @@ public abstract class Character : ICharacter
             yield return trait.ApplyOnReceived(this);
         }
     }
-
-        public Color GetTint()
+    
+    public virtual Color GetTint()
     {
         return Tint;
     }
