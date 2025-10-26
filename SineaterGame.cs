@@ -272,7 +272,12 @@ public class SineaterGame : Game
         _spriteBatch.End();
         base.Draw(gameTime);
     }
-    
+
+    protected override void OnExiting(object sender, ExitingEventArgs args)
+    {
+        _steamManager.ShutDown();
+        base.OnExiting(sender, args);
+    }
     private void SetupCrt(int w, int h)
     {
         _crt.Parameters["hardScan"]?.SetValue(-5.0f);
