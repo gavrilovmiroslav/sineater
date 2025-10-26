@@ -272,6 +272,7 @@ public class Shield(string name, List<WeaponAttack> attacks, int defense, EWeigh
     float scalingBase = 14.0f, float scalingCurve = 1.5f)
     : Weapon(name, attacks, weight, quality, inventoryPicture, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
 {
+    [JsonProperty]
     public int Defense { get; set; } = defense;
 
     public override string ToString()
