@@ -16,16 +16,21 @@ public class Enemy : Character
     public bool IsDead = false;
     public List<IBehavior> Behaviors = [];
 
+    public (int, int) GetIcon(bool selected = false)
+    {
+        var (x, y) = Icon;
+        return (x, y + (selected ? -4 : 0));
+    }
+    
     public override Color GetTint()
     {
         return Wait switch
         {
-            1 => Color.Red,
-            2 => Color.Orange,
-            3 => Color.Yellow,
-            4 => Color.Green,
-            5 => Color.Blue,
-            _ => Tint
+            0 => Color.Red,
+            1 => Color.Orange,
+            2 => Color.Yellow,
+            3 => Color.Green,
+            _ => Color.LightGreen,
         };
     }
     
