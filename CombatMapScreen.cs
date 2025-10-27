@@ -785,9 +785,9 @@ public class CombatMapScreen : IScreen
                 {
                     dh++;
                     opt++;
-                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Name}");
+                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Thing.Name}");
                     if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
-                        _confirmedCombatFlow.WeaponAttack == att)
+                        _confirmedCombatFlow.WeaponAttack == att.Thing)
                     {
                         _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
                     }
@@ -811,9 +811,9 @@ public class CombatMapScreen : IScreen
                 {
                     dh++;
                     opt++;
-                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Name}");
+                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Thing.Name}");
                     if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
-                        _confirmedCombatFlow.WeaponAttack == att)
+                        _confirmedCombatFlow.WeaponAttack == att.Thing)
                     {
                         _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
                     }
@@ -1314,7 +1314,7 @@ public class CombatMapScreen : IScreen
             foreach (var att in lw.GetAvailableAttacks())
             {
                 opt++;
-                _attackOptions[opt] = (lw, att);
+                _attackOptions[opt] = (lw, att.Thing);
             }
         }
 
@@ -1323,7 +1323,7 @@ public class CombatMapScreen : IScreen
             foreach (var att in rw.GetAvailableAttacks())
             {
                 opt++;
-                _attackOptions[opt] = (rw, att);
+                _attackOptions[opt] = (rw, att.Thing);
             }
         }
     }

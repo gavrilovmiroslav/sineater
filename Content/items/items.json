@@ -22,7 +22,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 4,
@@ -80,7 +80,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 8,
@@ -114,7 +114,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 2,
@@ -152,7 +152,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 4,
@@ -196,7 +196,7 @@
               "$type": "SINEATER.SkirmishStep_AttackRight, SINEATER"
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 10,
@@ -234,7 +234,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 8,
@@ -268,7 +268,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 8,
@@ -318,7 +318,7 @@
               "n": 4
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 8,
@@ -473,7 +473,7 @@
               "n": 1
             }
           ],
-          "MinLelel": 1
+          "MinLevel": 1
         }
       ],
       "Weight": 6,

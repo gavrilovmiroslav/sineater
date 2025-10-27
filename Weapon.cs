@@ -69,9 +69,12 @@ public enum EScalingFactor
     S = 10,
 }
 
+public record struct Unlockable<T>(T Thing, int MinLevel);
+
 [JsonObject(MemberSerialization.OptIn)]
-public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight,
+public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeightClass weight,
     int quality, (int, int) inventoryPicture,
+    List<Unlockable<Trait>>? traits = null,
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
     float scalingBase = 14.0f, float scalingCurve = 1.5f) : IEquippable, IItem
@@ -80,7 +83,9 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     [JsonProperty]
     public string Name { get; set; } = name;
     [JsonProperty]
-    public List<WeaponAttack> Attacks { get => attacks; set => attacks = value; }
+    public List<Unlockable<WeaponAttack>> Attacks { get => attacks; set => attacks = value; }
+    [JsonProperty]
+    public List<Unlockable<Trait>> Traits { get => traits; set => traits = value; }
     [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
     [JsonProperty]
@@ -220,7 +225,7 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
         return Name;
     }
 
-    public List<WeaponAttack> GetAvailableAttacks()
+    public List<Unlockable<WeaponAttack>> GetAvailableAttacks()
     {
         return attacks;
     }
@@ -237,9 +242,8 @@ public record struct WeaponAttack(
      int CritOn = 6,
      int OpeningsPerCrit = 1,
      List<Trait>? Traits = null,
-     List<ISkirmishStep>? Steps = null,
-     int MinLelel = 1
-    );
+     List<ISkirmishStep>? Steps = null
+);
 
 public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor."), ISkirmish_GuardUp, ISkirmish_ArmorBreak
 {
@@ -266,12 +270,13 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, 
     public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-public class Shield(string name, List<WeaponAttack> attacks, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
+public class Shield(string name, List<Unlockable<WeaponAttack>> attacks, List<Unlockable<Trait>> traits, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
     float scalingBase = 14.0f, float scalingCurve = 1.5f)
-    : Weapon(name, attacks, weight, quality, inventoryPicture, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
+    : Weapon(name, attacks, weight, quality, inventoryPicture, traits, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
 {
+    [JsonProperty]
     public int Defense { get; set; } = defense;
 
     public override string ToString()

@@ -68,6 +68,12 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
+        //var l = new Library();
+        //l.Init();
+        //var d = DataSerializer.Load<Library>(File.ReadAllText("result.json"));
+        //DataSerializer.Serialize(l);
+        //return;
+        
         ItemLibrary.LoadItems(Content);
 
         SinMod.System.Init("audio/GUIDs.txt");
