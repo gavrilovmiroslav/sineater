@@ -3,6 +3,7 @@ using SINEATER.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -60,10 +61,11 @@ public static class ItemLibrary
             return await response.Content.ReadAsStringAsync();
         }
 
+        var se = String.Concat(string.Join("\n", TitleContainer.OpenStream("Content/sheets.nosj.txt").ReadLines(Encoding.Default)).Reverse());
         var service = new SheetsService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = GoogleCredential
-                .FromStream(TitleContainer.OpenStream("Content/hellth-415523-d1e97f600491.json"))
+                .FromJson(se)
                 .CreateScoped(SheetsService.Scope.Spreadsheets)
         });
         
