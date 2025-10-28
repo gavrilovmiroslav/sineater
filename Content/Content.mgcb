@@ -344,10 +344,14 @@
 /processorParam:TextureFormat=Color
 /build:fingerprints.png
 
+#begin hellth-415523-d1e97f600491.json
+/copy:hellth-415523-d1e97f600491.json
+
+#begin hellth-script.json
+/copy:hellth-script.json
+
 #begin items/items.json
-/importer:JSONImporter
-/processor:JSONProcessor
-/build:items/items.json
+/copy:items/items.json
 
 #begin MRMOTEXT.png
 /importer:TextureImporter

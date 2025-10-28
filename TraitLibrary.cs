@@ -229,66 +229,94 @@ public class TraitHeavy() : Trait("Heavy", "Hv", "HEAVY: Add +1 attack die for e
     //     }
     // }
 }
+
+public class TraitOpportunistic() : Trait("Opportunistic", "Op", "OPPORTUNISTIC: On a crit, +1 stamina regen."), ISkirmish_CritHit
+{
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        flow.Attacker.GetAP()?.Reduce(1);
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+}
+
+public class TraitPersevere() : Trait("Persevere", "Ps", "PERSEVERE: Deal 1 damage back whenever hit by crit."), ISkirmish_CritHit
+{
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        if (flow.Attacker is Enemy e)
+        {
+            e.HP--;
+            if (e.HP <= 0) e.Die();
+        }
+        else if (flow.Attacker is PartyMember pm)
+        {
+            pm.GetAP().Add<StatusWounds>(1);
+        }
+        
+        yield break;
+    }
+}
+
+public class TraitVampiric() : Trait("Vampriic", "Vm", "VAMPIRIC: Regain health on crit."), ISkirmish_CritHit
+{
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        if (flow.Attacker is Enemy e)
+        {
+            e.HP++;
+        }
+        else if (flow.Attacker is PartyMember pm)
+        {
+            pm.GetAP().Reduce<StatusWounds>(1);
+        }
+        
+        yield break;
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+}
+
 public class TraitWise() : Trait("Wise", "Ws", "WISE: Reroll the lowest attack dice.")
 {
-    // public override IEnumerable AsAttacker_ApplyCombatModifiers(CombatFlow flow)
-    // {
-    //     flow.AttackerTraits.Add(this);
-    //     yield return YellName();
-    //     var min = 100;
-    //     for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
-    //     {
-    //         if (flow.AttackDiceRolled[i].Value < min) min = flow.AttackDiceRolled[i].Value;
-    //     }
-    //     // find minimal attack die value
-    //     
-    //     for (var i = 0; i < flow.AttackDiceRolled.Count; i++)
-    //     {
-    //         if (flow.AttackDiceRolled[i].Value == min)
-    //         {
-    //             // reroll minimal values
-    //             for (int j = 0; j < 10; j++)
-    //             {
-    //                 if (j % 2 == 0)
-    //                 {
-    //                     SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
-    //                         new Glyph(flow.HitDieDamage - 1, 68, Color.Black, Color.Gray));
-    //                 }
-    //                 else
-    //                 {
-    //                     SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
-    //                         new Glyph(0, 0, Color.Black, Color.Black));
-    //                 }
-    //
-    //                 yield return new WaitForSeconds(0.01f);
-    //             }
-    //
-    //             for (int j = 0; j <= 10; j++)
-    //             {
-    //                 SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
-    //                     new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Gray));
-    //                 yield return new WaitForSeconds(0.01f);
-    //             }
-    //             var a = flow.AttackDiceRolled[i];
-    //             a.Value = Math.Min(6, a.Value + 1);
-    //             flow.AttackDiceRolled[i] = a;
-    //             SineaterGame.Instance.Layers["mrmo"].Set(2 + 25 + i + 1, 9,
-    //                 new Glyph(a.Value - 1, 68, Color.Black, Color.Green));
-    //             yield return new WaitForSeconds(0.1f);
-    //         }
-    //     }
-    // }
+
 }
-public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", duration, "FRENZIED: +1 attack die while insane!")
+
+public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", duration, "FRENZIED: +1 attack die while insane!"), ISkirmish_AttackDiceCount
 {
-    // public override IEnumerable AsAttacker_ApplyDiceCountModifiers(CombatFlow flow)
-    // {
-    //     flow.AttackerTraits.Add(this);
-    //     yield return YellName();
-    //     flow.AttackDicePreRoll.Add(new Die { Source = this });
-    //     yield break;
-    // }
+    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        flow.AttackDice.Add(new Die(this));
+        var d6 = Rnd.Instance.D6;
+        if (d6 <= 3)
+        {
+            flow.Attacker.AddTrait(new TraitFrenzied(d6));
+            if (flow.Attacker.GetAP() is { } ap)
+            {
+                ap.Add<StatusInsanity>(d6);
+            }
+        }
+        yield return YellName();
+    }
+
+    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow)
+    {
+        yield break;
+    }
 }
+
 public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", duration, "EAGLE-EYED: +3 CLARITY for a short duration.")
 {
     public TraitEagleEyed() : this(5)
@@ -311,6 +339,50 @@ public class TraitEagleEyed(int duration) : LimitedTrait("Eagle Eyed", "Ey", dur
         yield break;
     }
 }
+
+public class TraitBleed() : Trait("Bleed", "Bl", "BLEED: On a crit, inflict BLEEDING"), ISkirmish_CritHit
+{
+    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    {
+        flow.Defender?.AddTrait(new TraitBleeding(Rnd.Instance.D4));
+        yield return YellName();
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
+    {
+        yield break;
+    }
+}
+
+public class TraitBleeding(int duration) : LimitedTrait("Bleeding", "xB", duration, "BLEEDING: On a 3+, gain 1 wound.")
+{
+    public TraitBleeding() : this(5)
+    {
+    }
+
+    public override IEnumerable ApplyOnEndTurn(ICharacter character)
+    {
+        if (Rnd.Instance.D6 > 2)
+        {
+            if (character is Enemy e)
+            {
+                e.HP--;
+                if (e.HP <= 0)
+                {
+                    e.Die();
+                }
+            }
+            else if (character is PartyMember pm)
+            {
+                pm.GetAP().Add<StatusWounds>(1);
+            }
+        }
+
+        yield break;
+    }
+}
+
 public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "PRONE: Cannot move, no defenses, receives +1 damage per hit!")
 {
     public override IEnumerable ApplyOnReceived(ICharacter character)

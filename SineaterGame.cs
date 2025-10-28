@@ -4,10 +4,20 @@ using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
+using MonoJ;
+using Newtonsoft.Json.Linq;
 using SINEATER.Serialization;
-using System.IO;
 
 namespace SINEATER;
 
@@ -65,17 +75,9 @@ public class SineaterGame : Game
 
         Barks.Load(Content);
     }
-
+    
     protected override void LoadContent()
     {
-        //var l = new Library();
-        //l.Init();
-        //var d = DataSerializer.Load<Library>(File.ReadAllText("result.json"));
-        //DataSerializer.Serialize(l);
-        //return;
-        
-        ItemLibrary.LoadItems(Content);
-
         SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;
@@ -85,7 +87,9 @@ public class SineaterGame : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderTargetGame = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         _renderTargetMonitor = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
-    
+        
+        ItemLibrary.LoadItems(Content);
+        
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
@@ -179,6 +183,16 @@ public class SineaterGame : Game
             _currentHour = (_currentHour + 1) % 24;
             _nextHour = (_nextHour + 1) % 24;
             _currentMinutes = 0;
+        }
+
+        if (KB.HasBeenPressed(Keys.F5))
+        {
+            ItemLibrary.LoadItems(Content);
+        }
+
+        if (KB.HasBeenPressed(Keys.F6))
+        {
+            Console.WriteLine(Party.Characters[0].GetLeftWeapon()?.Attacks[0].Thing.Attack ?? 0);
         }
         
         if (KB.HasBeenPressed(Keys.F10))

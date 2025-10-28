@@ -1,11 +1,30 @@
+using System;
 using Newtonsoft.Json;
 using System.Collections;
 
 namespace SINEATER;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : IEquippable, IItem
+public class Armor(string name, int guard, EWeightClass weight, int quality, (int, int) uv) : ICloneable, IEquippable, IItem
 {
+    public void Copy(Armor original)
+    {
+        this.Name = original.Name;
+        this.Picture = original.Picture;
+        this.Quality = original.Quality;
+        this.Weight = original.Weight;
+        this.Guard = original.Guard;
+    }
+    
+    ~Armor()
+    {
+        if (ItemLibrary.InstancedArmors.ContainsKey(name))
+        {
+            ItemLibrary.InstancedArmors.Remove(name, this);
+        }
+    }
+
+
 #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
@@ -88,6 +107,11 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
     public override string ToString()
     {
         return $"{Name} ({Guard}{Weight.Short()})";
+    }
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
     }
 
     public string ToLongString()

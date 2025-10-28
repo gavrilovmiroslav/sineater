@@ -1,3 +1,4 @@
+using System;
 using Newtonsoft.Json;
 using SINEATER.Serialization;
 using System.Collections;
@@ -109,8 +110,22 @@ public class Pile : IAbilitySource, IItem
 }
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Item(string name, (int, int) uv) : IItem
+public class Item(string name, (int, int) uv) : ICloneable, IItem
 {
+    public void Copy(Item original)
+    {
+        this.Name = original.Name;
+        this.Picture = original.Picture;
+    }
+    
+    ~Item()
+    {
+        if (ItemLibrary.InstancedItems.ContainsKey(name))
+        {
+            ItemLibrary.InstancedItems.Remove(name, this);
+        }
+    }
+
 #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
@@ -191,6 +206,11 @@ public class Item(string name, (int, int) uv) : IItem
     public virtual Glyph GetIcon()
     {
         return Glyph;
+    }
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
     }
 }
 

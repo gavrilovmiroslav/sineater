@@ -46,18 +46,17 @@ public static class WeightClassExtensions
 }
 
 public interface ISkirmishStep;
- public record struct SkirmishStep_Appear((int, int) position) : ISkirmishStep;
- public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
- public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
- public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
- public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackHand : ISkirmishStep;
- public record struct SkirmishStep_AttackLeft : ISkirmishStep;
- public record struct SkirmishStep_AttackRight : ISkirmishStep;
- public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
- public record struct SkirmishStep_AddTrait(Trait trait) : ISkirmishStep;
+public record struct SkirmishStep_StepForwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_StepBackwards(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
+public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
+public record struct SkirmishStep_AttackHand : ISkirmishStep;
+public record struct SkirmishStep_AttackLeft : ISkirmishStep;
+public record struct SkirmishStep_AttackRight : ISkirmishStep;
+public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
+public record struct SkirmishStep_AddTrait(Trait trait, int n = 0) : ISkirmishStep;
 
 public enum EScalingFactor
 {
@@ -71,19 +70,43 @@ public enum EScalingFactor
 
 public record struct Unlockable<T>(T Thing, int MinLevel);
 
+public interface IWeaponUpgrade;
+
+public record struct WeaponUpgrade_None : IWeaponUpgrade;
+public record struct WeaponUpgrade_ScaleBaseChanged(float n) : IWeaponUpgrade;
+public record struct WeaponUpgrade_ScaleFactorChanged(float n) : IWeaponUpgrade;
+public record struct WeaponUpgrade_WeightChanged(EWeightClass weight) : IWeaponUpgrade;
+public record struct WeaponUpgrade_AttackUnlocked(string name) : IWeaponUpgrade;
+public record struct WeaponUpgrade_TraitUnlocked(string name) : IWeaponUpgrade;
+public record struct WeaponUpgrade_ScaleChanged(EStat stat) : IWeaponUpgrade;
+public record struct WeaponUpgrade_OpeningsChanged(int n) : IWeaponUpgrade;
+public record struct WeaponUpgrade_CritOnChanged(int n) : IWeaponUpgrade;
+public record struct WeaponUpgrade_QualityChanged(int n) : IWeaponUpgrade;
+
 [JsonObject(MemberSerialization.OptIn)]
 public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeightClass weight,
     int quality, (int, int) inventoryPicture,
-    List<Unlockable<Trait>>? traits = null,
+    List<Unlockable<Trait>> traits = null,
+    List<IWeaponUpgrade> upgrades = null,
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
-    float scalingBase = 14.0f, float scalingCurve = 1.5f) : IEquippable, IItem
+    float scalingBase = 14.0f, float scalingCurve = 1.5f) : ICloneable, IEquippable, IItem
 {
+    ~Weapon()
+    {
+        if (ItemLibrary.InstancedWeapons.ContainsKey(name))
+        {
+            ItemLibrary.InstancedWeapons.Remove(name, this);
+        }
+    }
+    
     #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
     [JsonProperty]
     public List<Unlockable<WeaponAttack>> Attacks { get => attacks; set => attacks = value; }
+    [JsonProperty]
+    public List<IWeaponUpgrade> Upgrades { get => upgrades; set => upgrades = value; }
     [JsonProperty]
     public List<Unlockable<Trait>> Traits { get => traits; set => traits = value; }
     [JsonProperty]
@@ -214,7 +237,12 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
     {
         return $"{Name}";
     }
-    
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
+    }
+
     public virtual string ToLongString()
     {
         return $"{Name} (Quality: {Quality}, Weight: {Weight.ToString()})";
@@ -233,6 +261,26 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
     public virtual Glyph GetIcon()
     {
         return Glyph;
+    }
+
+    public void Copy(Weapon original)
+    {
+        this.WilScaling = original.WilScaling;
+        this.ClaScaling = original.ClaScaling;
+        this.PoiScaling = original.PoiScaling;
+        this.VigScaling = original.VigScaling;
+
+        this.ExperienceNow = original.ExperienceNow;
+        this.Name = original.Name;
+        this.Picture = original.Picture;
+        this.Quality = original.Quality;
+        this.Traits = original.Traits;
+        this.Upgrades = original.Upgrades;
+        this.Weight = original.Weight;
+        this.ScalingBase = original.ScalingBase;
+        this.ScalingCurve = original.ScalingCurve;
+        
+        this.Attacks = original.Attacks;
     }
 }
 
@@ -270,14 +318,28 @@ public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, 
     public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
 }
 
-public class Shield(string name, List<Unlockable<WeaponAttack>> attacks, List<Unlockable<Trait>> traits, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
+public class Shield(string name, List<Unlockable<WeaponAttack>> attacks, List<Unlockable<Trait>> traits, List<IWeaponUpgrade> upgrades, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
     EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
     float scalingBase = 14.0f, float scalingCurve = 1.5f)
-    : Weapon(name, attacks, weight, quality, inventoryPicture, traits, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
+    : Weapon(name, attacks, weight, quality, inventoryPicture, traits, upgrades, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
 {
+    ~Shield()
+    {
+        if (ItemLibrary.InstancedShields.ContainsKey(name))
+        {
+            ItemLibrary.InstancedShields.Remove(name, this);
+        }
+    }
+    
     [JsonProperty]
     public int Defense { get; set; } = defense;
+
+    public void Copy(Shield original)
+    {
+        base.Copy(original);
+        this.Defense = original.Defense;
+    }
 
     public override string ToString()
     {

@@ -225,12 +225,7 @@ public class CombatFlow
         var pos = Position;
         foreach (var step in WeaponAttack?.Steps ?? [])
         {
-            if (step is SkirmishStep_Appear appear)
-            {
-                pos = appear.position;
-                Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
-            }
-            else if (step is SkirmishStep_Forwards forwards)
+            if (step is SkirmishStep_StepForwards forwards)
             {
                 for (var i = 0; i < forwards.n; i++)
                 {
@@ -249,7 +244,7 @@ public class CombatFlow
                     Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
                 }
             }
-            else if (step is SkirmishStep_Backwards backwards)
+            else if (step is SkirmishStep_StepBackwards backwards)
             {
                 for (int i = 0; i < backwards.n; i++)
                 {

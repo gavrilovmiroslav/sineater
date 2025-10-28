@@ -70,10 +70,10 @@ public static class ECharacterClassExtensions
 
 public enum EStat
 {
-    Will,
-    Clarity,
-    Poise,
-    Vigor
+    Will = 1,
+    Clarity = 2,
+    Poise = 3,
+    Vigor = 4
 }
 
 public class Stats
@@ -531,51 +531,51 @@ public record struct Party
             };
             switch (Characters[i].Job)
             {
-                case ECharacterClass.Wizard:
+                default:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Wizard Staff"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Chainmail"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Ancient Scroll"));
+                    // Characters[i].EquipArmor(ItemLibrary.GetArmor("Chainmail"));
+                    // Characters[i].EquipItem(ItemLibrary.GetItem("Ancient Scroll"));
                     Characters[i].Stats.Vigor -= 2;
                     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
                     break;
-                case ECharacterClass.Witch:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Dagger"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Tunic"));
-                    Characters[i].Stats.Clarity++;
-                    Characters[i].Ability = new DomainExpansion();
-                    break;
-                case ECharacterClass.Knight:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetShield("Round Shield"));
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Plate Armor"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Family Ring"));
-                    break;
-                case ECharacterClass.Monk:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolem Staff"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Leather Armor"));
-                    Characters[i].Traits.Add(new TraitHeavy());
-                    break;
-                case ECharacterClass.Sage:
-                    Characters[i].EquipItem(ItemLibrary.GetWeapon("Misericorde"));
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Scroll Tome"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Breast Plate"));
-                    Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
-                    break;
-                case ECharacterClass.Priest:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Robe"));
-                    Characters[i].Stats.Vigor++;
-                    break;
-                case ECharacterClass.Thief:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Cloak"));
-                    Characters[i].EquipItem(new PotionGhylagsTear());
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Sword of Old"));
-                    Characters[i].Stats.Vigor -= 1;
-                    if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                // case ECharacterClass.Witch:
+                //     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Dagger"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Tunic"));
+                //     Characters[i].Stats.Clarity++;
+                //     Characters[i].Ability = new DomainExpansion();
+                //     break;
+                // case ECharacterClass.Knight:
+                //     Characters[i].EquipLeftWeapon(ItemLibrary.GetShield("Round Shield"));
+                //     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Plate Armor"));
+                //     Characters[i].EquipItem(ItemLibrary.GetItem("Family Ring"));
+                //     break;
+                // case ECharacterClass.Monk:
+                //     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolem Staff"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Leather Armor"));
+                //     Characters[i].Traits.Add(new TraitHeavy());
+                //     break;
+                // case ECharacterClass.Sage:
+                //     Characters[i].EquipItem(ItemLibrary.GetWeapon("Misericorde"));
+                //     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Scroll Tome"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Breast Plate"));
+                //     Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
+                //     break;
+                // case ECharacterClass.Priest:
+                //     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Robe"));
+                //     Characters[i].Stats.Vigor++;
+                //     break;
+                // case ECharacterClass.Thief:
+                //     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
+                //     Characters[i].EquipArmor(ItemLibrary.GetArmor("Cloak"));
+                //     Characters[i].EquipItem(new PotionGhylagsTear());
+                //     Characters[i].EquipItem(ItemLibrary.GetItem("Sword of Old"));
+                //     Characters[i].Stats.Vigor -= 1;
+                //     if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
+                //     break;
+                // default:
+                //     throw new ArgumentOutOfRangeException();
             }
         }
     }
