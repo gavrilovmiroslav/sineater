@@ -24,7 +24,12 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
         }
     }
 
-
+    public static Armor Dummy(string name)
+    {
+        Console.WriteLine($"DUMMY REQUIRED FOR ARMOR {name}");
+        return new Armor($"{name} (DUMMY)", 0, EWeightClass.Tiny, 0, (0, 0));
+    }
+    
 #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;

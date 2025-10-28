@@ -118,6 +118,12 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
         this.Picture = original.Picture;
     }
     
+    public static Item Dummy(string name)
+    {
+        Console.WriteLine($"DUMMY REQUIRED FOR ITEM {name}");
+        return new Item($"{name} (DUMMY)", (0, 0));
+    }
+    
     ~Item()
     {
         if (ItemLibrary.InstancedItems.ContainsKey(name))

@@ -282,6 +282,12 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
         
         this.Attacks = original.Attacks;
     }
+
+    public static Weapon Dummy(string name)
+    {
+        Console.WriteLine($"DUMMY REQUIRED FOR WEAPON {name}");
+        return new Weapon($"{name} (DUMMY)", [], EWeightClass.Tiny, 0, (0, 0), [], []);
+    }
 }
 
 public record struct WeaponAttack(
@@ -369,5 +375,11 @@ public class Shield(string name, List<Unlockable<WeaponAttack>> attacks, List<Un
         }
 
         yield break;
+    }
+    
+    public new static Shield Dummy(string name)
+    {
+        Console.WriteLine($"DUMMY REQUIRED FOR SHIELD {name}");
+        return new Shield($"{name} (DUMMY)", [], [], [], 0, EWeightClass.Tiny, 0, (0, 0));
     }
 }

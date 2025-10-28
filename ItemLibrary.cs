@@ -32,36 +32,24 @@ public class Library
 public static class ItemLibrary
 {
     public static readonly (int, int) EmptyUv = (0, 9);
-    public static Library Library { get; set; } = new();
-    public static MultiDictionary<string, Weapon> InstancedWeapons = new(false);
-    public static MultiDictionary<string, Armor> InstancedArmors = new(false);
-    public static MultiDictionary<string, Shield> InstancedShields = new(false);
-    public static MultiDictionary<string, Item> InstancedItems = new(false);
+    private static Library Library { get; set; } = new();
+    public static readonly MultiDictionary<string, Weapon> InstancedWeapons = new(false);
+    public static readonly MultiDictionary<string, Armor> InstancedArmors = new(false);
+    public static readonly MultiDictionary<string, Shield> InstancedShields = new(false);
+    public static readonly MultiDictionary<string, Item> InstancedItems = new(false);
 
     private static string GetLocalItems()
     {
         return string.Join("\n", TitleContainer.OpenStream("Content/items/items.json").ReadLines(Encoding.Default));
     }
 
-    internal const string APPS_ID = "1kzTUrcQpxx3vMJMXeVwM_ElqcgJGzOqexxmldqwrszk";
-    internal const string APPS_SCRIPT =
+    private const string APPS_ID = "1kzTUrcQpxx3vMJMXeVwM_ElqcgJGzOqexxmldqwrszk";
+    private const string APPS_SCRIPT =
         "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhC0M9wjoH2fpeSBw5-IWnMl8iP6Ph155WKLio9f8u6P3Ma9g1K_TuHto4N9CGHLD8-FjO_3DoQ20xpgaigVAtwfePtBxismGK2S6XRwr-em3MnzvgeGj1fNfS3PWACrSlfL1mFJ_mvd2WY0HdIXrFoVzDPYIka1rnrINvpDfn1erU4k8WfkuHhovWEfMp-00-i7Cy9oqiKSWKt_rJi2GIwQncYl_qNjesLjDepCsFQmFKopnV23v0L_iTnHsayZU9lWeHeCpGVC2o7TjkoksJ557Z1EnSiSXM5NEXV&lib=M1tQVk_yTk_xVNLpFcyFKEoxl_Pbn3PYE";
 
     public static void LoadItems(ContentManager content)
     {
-        async Task<string> Get(string uri)
-        {
-            HttpClientHandler handler = new HttpClientHandler 
-            { 
-                AutomaticDecompression = DecompressionMethods.All 
-            };
-        
-            var client = new HttpClient(handler);
-            using HttpResponseMessage response = await client.GetAsync(uri);
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        var se = String.Concat(string.Join("\n", TitleContainer.OpenStream("Content/sheets.nosj.txt").ReadLines(Encoding.Default)).Reverse());
+        var se = string.Concat(string.Join("\n", TitleContainer.OpenStream("Content/sheets.nosj.txt").ReadLines(Encoding.Default)).Reverse());
         var service = new SheetsService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = GoogleCredential
@@ -141,6 +129,20 @@ public static class ItemLibrary
                 instance?.Copy(original);
             }
         }
+
+        return;
+
+        async Task<string> Get(string uri)
+        {
+            var handler = new HttpClientHandler 
+            { 
+                AutomaticDecompression = DecompressionMethods.All 
+            };
+        
+            var client = new HttpClient(handler);
+            using var response = await client.GetAsync(uri);
+            return await response.Content.ReadAsStringAsync();
+        }
     }
 
     public static Weapon? GetWeapon(string name)
@@ -151,7 +153,10 @@ public static class ItemLibrary
             InstancedWeapons.Add(result.GetName(), item);
             return item;
         }
-        throw new ItemNotFoundException(name);
+
+        var dummy = Weapon.Dummy(name);
+        InstancedWeapons.Add(name, dummy);
+        return dummy;
     }
 
     public static Armor? GetArmor(string name)
@@ -162,7 +167,10 @@ public static class ItemLibrary
             InstancedArmors.Add(result.GetName(), item);
             return item;
         }
-        throw new ItemNotFoundException(name);
+
+        var dummy = Armor.Dummy(name);
+        InstancedArmors.Add(name, dummy);
+        return dummy;
     }
 
     public static Shield? GetShield(string name)
@@ -173,7 +181,10 @@ public static class ItemLibrary
             InstancedShields.Add(result.GetName(), item);
             return item;
         }
-        throw new ItemNotFoundException(name);
+        
+        var dummy = Shield.Dummy(name);
+        InstancedShields.Add(name, dummy);
+        return dummy;
     }
 
     public static Item? GetItem(string name)
@@ -184,6 +195,9 @@ public static class ItemLibrary
             InstancedItems.Add(result.GetName(), item);
             return item;
         }
-        throw new ItemNotFoundException(name);
+
+        var dummy = Item.Dummy(name);
+        InstancedItems.Add(name, dummy);
+        return dummy;
     }
 }
