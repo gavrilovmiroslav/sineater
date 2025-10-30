@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,35 +8,49 @@ using System.Text.Json.Serialization;
 
 namespace SINEATER;
 
-public class TraitKnockback : Trait, ISkirmish_CritHit
+public class TraitKnockback : Trait, ISkirmish_DamageAnnounced
 {
+    private int _strength;
     [JsonConstructor]
-    public TraitKnockback() : base("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back.")
+    public TraitKnockback(int n) : base("Knockback", "Kn", "KNOCKBACK: Critical hits push the target back.")
     {
-        int x = 0;
+        _strength = n;
     }
 
-    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
+    public IEnumerable AsAttacker_OnDamageAnnounced(SkirmishFlow flow)
     {
-        CombatMapScreen.Level?.DrawCombat();
-        if (flow.Defender != null)
+        if (flow.AnnouncedDamage >= _strength)
         {
-            var a = flow.Attacker;
-            var d = flow.Defender;
-            var dp = (d.X, d.Y);
-            var dir = (d.X - a.X, d.Y - a.Y);
-            var np = Directions.GoForwards(dp, dir);
-            if (Positions.Swap(dp, np))
+            CombatMapScreen.Level?.DrawCombat();
+            if (flow.Defender != null)
             {
-                var mp = Directions.GoForwards(np, dir);
-                Positions.Swap(np, mp);
+                var a = flow.Attacker;
+                var d = flow.Defender;
+                var dp = (d.X, d.Y);
+                var dir = (Math.Sign(d.X - a.X), Math.Sign(d.Y - a.Y));
+                var np = Directions.GoForwards(dp, dir);
+                for (var i = 0; i < _strength; i++)
+                {
+                    if (Positions.Swap(dp, np))
+                    {
+                        dp = np;
+                        np = Directions.GoForwards(np, dir);
+                        CombatMapScreen.Level?.DrawCombat();
+                        yield return new WaitForSeconds(0.01f);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
         }
-
-        yield break;
     }
 
-    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow) { yield break; }
+    public IEnumerable AsDefender_OnDamageAnnounced(SkirmishFlow flow)
+    {
+        yield break;
+    }
 }
 public class TraitForceful() : Trait("Forceful", "Fr", "FORCEFUL: +1 attack die every skirmish in combat.")
     , ISkirmish_CombatLifetime
@@ -69,6 +84,7 @@ public class TraitForceful() : Trait("Forceful", "Fr", "FORCEFUL: +1 attack die 
     public IEnumerable OnCombatEnds(CombatFlow flow) { yield break; }
     public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow) { yield break; }
 }
+
 public class TraitSneaky() : Trait("Sneaky", "Sn", "SNEAKY: If both weapons are light-weight, +1 attack die per weapon.")
     , ISkirmish_AttackDiceCount
 {

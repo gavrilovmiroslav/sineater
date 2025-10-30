@@ -51,6 +51,7 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
     public bool GuardBreak = false;
     public bool ArmorDented = false;
     public bool ArmorBreak = false;
+    public int AnnouncedDamage = 0;
     
     public IEnumerable Attack()
     {
@@ -101,6 +102,7 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
         Hits.Clear();
         Crits.Clear();
 
+        var dmg = 0;
         for (var i = 0; i < AttackDiceRolled.Count; i++)
         {
             var die = AttackDiceRolled[i];
@@ -145,15 +147,26 @@ public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapo
                     }
                     else
                     {
+                        dmg += die.Value;
                         yield return new Present_DealDamage(i, die.Value);
                     }
                 }
             }
             else if (die.Value >= TotalGuard)
             {
+                var damage = Math.Min(Math.Max(die.Value - TotalGuard, 1), 6);
                 Hits.Add(true);
-                yield return new Present_DealDamage(i, Math.Min(Math.Max(die.Value - TotalGuard, 1), 6));
+                dmg += damage;
+                yield return new Present_DealDamage(i, damage);
             }
+        }
+
+        if (dmg > 0)
+        {
+            AnnouncedDamage = dmg;
+            yield return Attacker.GetTraits().AsAttacker_OnDamageAnnounced(this);
+            yield return WeaponAttack?.Traits?.AsAttacker_OnDamageAnnounced(this);
+            yield return Defender?.GetTraits().AsAttacker_OnDamageAnnounced(this);
         }
     }
 

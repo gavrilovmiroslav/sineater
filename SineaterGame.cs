@@ -268,8 +268,6 @@ public class SineaterGame : Game
         _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.45f));
         _spriteBatch.End();
         
-        this.Window.Title = $"SINEATER | {_dHour}";
-        
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
         // var cos = MathF.Cos(((float)_currentHour / 12) * 3.14f) * 0.5f + 0.5f;
         // _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
