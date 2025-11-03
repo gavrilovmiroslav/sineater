@@ -309,7 +309,7 @@ public class AP
         {
             if (FindLeftMost<S>(out var position))
             {
-                _pieces[i] = new StatusVoid()
+                _pieces[position] = new StatusVoid()
                 {
                     ActionPoints = this,
                 };
@@ -331,7 +331,7 @@ public class AP
     public void Draw(int x, int y)
     {
         var layer = _layer;
-        for (var i = x - 1; i <= x + Total; i++)
+        for (var i = x - 1; i < x + Total; i++)
         {
             layer.Unset(i, y - 1);
             layer.Unset(i, y);
@@ -340,9 +340,10 @@ public class AP
         }
     
         layer.Set(x - 1, y, Glyph.Bw(3, 6));
-        for (var i = 0; i <= Total; i++)
+        for (var i = 0; i < Total; i++)
             layer.Set(x + i, y, Glyph.Bw(4, 6));
-
+        layer.Set(x + Total, y, Glyph.Bw(20, 5));
+        
         for (int i = 0; i < Total; i++)
         {
             var current = _pieces[i];
@@ -354,13 +355,17 @@ public class AP
                     if (j == Total - 1) break;
                     j++;
                 }
+
+                current.Draw(x + i, x + j, y);
+                i = j;
+                i--;
+            }
+            else
+            {
+                current.Draw(x + i, x + i, y);
             }
 
-            current.Draw(x + i, x + j, y);
-            i = j;
         }
-        
-        layer.Set(x + Total, y, Glyph.Bw(20, 5));
     }
 
     public void Update(GameTime gameTime)
