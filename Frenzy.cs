@@ -118,7 +118,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                             if (fields.ContainsKey((cell.X, cell.Y)))
                             {
                                 fields[(cell.X, cell.Y)].GetAP().Reduce<StatusInsanity>(1);
-                                fields[(cell.X, cell.Y)].GetAP().Add<StatusWounds>(1);
+                                fields[(cell.X, cell.Y)].GetAP().AddN<StatusWounds>(1);
                             }
                             anyPathTaken = true;
 

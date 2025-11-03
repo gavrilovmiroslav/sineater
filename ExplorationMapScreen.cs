@@ -157,7 +157,7 @@ public class ExplorationMapScreen : IScreen
                         {
                             if (Rnd.Instance.D100 < 25)
                             {
-                                _game.ActionPoints.Add<StatusTired>(1);
+                                _game.ActionPoints.AddN<StatusFatigue>(1);
                             }
                         } else if (l is LocationNPC npc)
                         {
@@ -168,7 +168,7 @@ public class ExplorationMapScreen : IScreen
                     {
                         if (Rnd.Instance.D100 < 15)
                         {
-                            _game.ActionPoints.Add<StatusTired>(1);
+                            _game.ActionPoints.AddN<StatusFatigue>(1);
                         }
                     }
                 }
@@ -192,7 +192,7 @@ public class ExplorationMapScreen : IScreen
             {
                 p = _promised[(x, y)];
             }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
             yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
         }
         else if (l is LocationTemple temple)
@@ -209,7 +209,7 @@ public class ExplorationMapScreen : IScreen
             {
                 p = _promised[(x, y)];
             }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
             yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
         }
         else if (l is LocationTomb tomb)
@@ -226,7 +226,7 @@ public class ExplorationMapScreen : IScreen
             {
                 p = _promised[(x, y)];
             }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
+            _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
             yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
         }
         else if (l is LocationTreasure treasure)

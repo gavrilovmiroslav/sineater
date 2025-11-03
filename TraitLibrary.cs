@@ -276,7 +276,7 @@ public class TraitPersevere() : Trait("Persevere", "Ps", "PERSEVERE: Deal 1 dama
         }
         else if (flow.Attacker is PartyMember pm)
         {
-            pm.GetAP().Add<StatusWounds>(1);
+            pm.GetAP().AddN<StatusWounds>(1);
         }
         
         yield break;
@@ -321,7 +321,7 @@ public class TraitFrenzied(int duration) : LimitedTrait("Frenzied", "Fr", durati
             flow.Attacker.AddTrait(new TraitFrenzied(d6));
             if (flow.Attacker.GetAP() is { } ap)
             {
-                ap.Add<StatusInsanity>(d6);
+                ap.AddN<StatusInsanity>(d6);
             }
         }
         yield return YellName();
@@ -391,7 +391,7 @@ public class TraitBleeding(int duration) : LimitedTrait("Bleeding", "xB", durati
             }
             else if (character is PartyMember pm)
             {
-                pm.GetAP().Add<StatusWounds>(1);
+                pm.GetAP().AddN<StatusWounds>(1);
             }
         }
 

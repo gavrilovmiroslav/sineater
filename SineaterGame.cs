@@ -49,7 +49,7 @@ public class SineaterGame : Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public ActionPoints ActionPoints;
+    public AP ActionPoints;
     public World World;
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
@@ -161,7 +161,7 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        ActionPoints = new ActionPoints(40, ibmLayer, new StatusStamina());
+        ActionPoints = new AP(40, ibmLayer);
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));

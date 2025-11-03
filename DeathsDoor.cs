@@ -24,7 +24,7 @@ public class DeathsDoor(SineaterGame game, CombatMapScreen level) : IEnumerable
                 if (r > e.HP)
                 {
                     e.AP.Reduce<StatusWounds>(r);
-                    level.Party[0].AP.Add<StatusSin>(e.Sin);
+                    level.Party[0].AP.AddN<StatusSin>(e.Sin);
                     e.Die();
 
                     level.DrawCombat();
@@ -95,7 +95,7 @@ public class DeathsDoor(SineaterGame game, CombatMapScreen level) : IEnumerable
         if (d > 5)
         {
             level.Party[0].AP.Reduce<StatusWounds>(d);
-            level.Party[0].AP.Add<StatusDeath>(1);
+            level.Party[0].AP.AddN<StatusDeath>(1);
         }
     }
 }

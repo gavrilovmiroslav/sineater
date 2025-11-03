@@ -92,7 +92,7 @@ public class CombatMapScreen : IScreen
     public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
     internal CoroutineHandler CoroutineHandler = new();
-    private ActionPoints _enemyActionPoints;
+    private AP _enemyActionPoints;
     public RangedTargetting? RangedActionConfig = null;
 
     public Domains Domains;
@@ -213,7 +213,7 @@ public class CombatMapScreen : IScreen
         {
             hp += enemy.Sin;
         }
-        _enemyActionPoints = new ActionPoints(hp, _game.Layers["ascii"], new StatusStamina());
+        _enemyActionPoints = new AP(hp, _game.Layers["ascii"]);
         foreach (var enemy in _enemies)
         {
             enemy.AP = _enemyActionPoints;
@@ -508,12 +508,12 @@ public class CombatMapScreen : IScreen
             {
                 enemy.Wait--;
                 SineaterGame.Instance.Layers["mrmo"].Set(enemy.X, enemy.Y + 2, $"{enemy.Wait}", Color.White);
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(0.02f);
             }
             else
             {
                 yield return EnemyMove(enemy);
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(0.02f);
             }
         }
     }
@@ -562,7 +562,7 @@ public class CombatMapScreen : IScreen
                     PlayerSelectedIndex = 0;
                     foreach (var chr in _game.Party.Characters)
                     {
-                        _game.ActionPoints.Free(chr.Stats.Will);
+                        _game.ActionPoints.Gain(chr.Stats.Will);
                         
                         for (int i = chr.Traits.Count - 1; i >= 0; i--)
                             CoroutineHandler.Run(chr.Traits[i].ApplyOnStartTurn(this, chr));
@@ -718,7 +718,7 @@ public class CombatMapScreen : IScreen
             if (!chr.Render) continue;
             var (ix, iy) = chr.Job.GetImage();
             _game.Layers["mrmo"].Set(chr.X + _offsetX, chr.Y + _offsetY, new Glyph(ix, iy, Color.Black, 
-                _game.ActionPoints.Remaining > 0 ? chr.Tint : Color.DarkGray));
+                _game.ActionPoints.Count<StatusStamina>() > 0 ? chr.Tint : Color.DarkGray));
             index++;
         }
     }
@@ -745,7 +745,6 @@ public class CombatMapScreen : IScreen
     {
         if (KB.HasBeenPressed(Keys.V)) _offset--;
         if (KB.HasBeenPressed(Keys.B)) _offset++;
-        Console.WriteLine(_offset);
         
         if (chr == null) return;
         if (chr is Dummy) return;
@@ -1110,7 +1109,7 @@ public class CombatMapScreen : IScreen
         {
             _game.Layers["mrmo"].Set(3 + crit.index, 1,
                 new Glyph(8, 68, Color.Black, Color.Gold));
-            flow.Attacker.GetAP().Free(flow.WeaponAttack?.OpeningsPerCrit ?? 1);
+            flow.Attacker.GetAP().Gain(flow.WeaponAttack?.OpeningsPerCrit ?? 1);
             yield return new WaitForSeconds(0.2f);
         }
         else if (step is Present_ArmorDent dent)
@@ -1149,7 +1148,7 @@ public class CombatMapScreen : IScreen
                 new Glyph(dmg.damage - 1, 68, Color.Black, Color.Red));
             if (flow.Defender is PartyMember p)
             {
-                p.GetAP().Add<StatusWounds>(dmg.damage);
+                p.GetAP().AddN<StatusWounds>(dmg.damage);
             }
             else if (flow.Defender is Enemy e)
             {
@@ -1239,7 +1238,7 @@ public class CombatMapScreen : IScreen
                 SineaterGame.Instance.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(22, 2), ' ');
                 if (skirmish.Defender is Enemy { IsDead: true } e)
                 {
-                    Party[0].AP.Add<StatusSin>(5 - e.Wait);
+                    Party[0].AP.AddN<StatusSin>(5 - e.Wait);
                     e.Die();
 
                     SineaterGame.Instance.Layers["porsmol"].Clear();
@@ -1338,8 +1337,10 @@ public class CombatMapScreen : IScreen
                 var p = PlayerSelectedIndex;
                 PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
                 _game.Party.Selected = PlayerSelectedIndex;
-                UpdateAttackSelections();
                 UpdateFov(true);
+                UpdateAttackSelections();
+                
+                CoroutineHandler.Run(EnemyWaitMoves());
             }
             else
             {
@@ -1352,7 +1353,7 @@ public class CombatMapScreen : IScreen
             var ability = current.Ability;
             if (ability != null)
             {
-                if (ability.CanBeUsed(current, current.X, current.Y) && current.AP.Remaining > 0)
+                if (ability.CanBeUsed(current, current.X, current.Y) && current.AP.Count<StatusStamina>() > 0)
                 {
                     CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
                     {
@@ -1443,7 +1444,7 @@ public class CombatMapScreen : IScreen
         // MOVE
         if (PlayerSelectedIndex > -1)
         {
-            if (_game.ActionPoints.Remaining > 0)
+            if (_game.ActionPoints.Count<StatusStamina>() > 0)
             {
                 var up = KB.HasBeenPressed(Keys.Up);
                 var down = KB.HasBeenPressed(Keys.Down);
@@ -1508,9 +1509,6 @@ public class CombatMapScreen : IScreen
                                     shouldCost = false;
                                 }
                             }
-                            
-                            if (shouldCost)
-                                CoroutineHandler.Run(EnemyWaitMoves());
                         }
                         UpdateFov(true);
                     }

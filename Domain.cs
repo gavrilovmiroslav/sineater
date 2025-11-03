@@ -195,7 +195,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         }
         else
         {
-            character.GetAP().Add<StatusInsanity>(1);
+            character.GetAP().AddN<StatusInsanity>(1);
             for (var i = 0; i < 10; i++)
             {
                 SineaterGame.Instance.Layers["mrmo"]
@@ -660,7 +660,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             }
             else
             {
-                ap.Add<StatusFire>(1);
+                ap.AddN<StatusFire>(1);
             }
         }
         else
@@ -671,7 +671,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             }
             else
             {
-                character.GetAP().Add<StatusFrozen>(1);
+                character.GetAP().AddN<StatusFrozen>(1);
             }
         }
 

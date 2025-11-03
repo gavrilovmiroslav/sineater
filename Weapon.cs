@@ -192,7 +192,7 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
             {
                 if (chr.X == x && chr.Y == y)
                 {
-                    chr.AP.Add<StatusWounds>(1);
+                    chr.AP.AddN<StatusWounds>(1);
                 }
             }
 
@@ -200,7 +200,7 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
             {
                 if (enm.X == x && enm.Y == y)
                 {
-                    enm.AP.Add<StatusWounds>(1);
+                    enm.AP.AddN<StatusWounds>(1);
                 }
             }
         }

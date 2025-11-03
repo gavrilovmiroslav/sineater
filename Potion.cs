@@ -83,7 +83,7 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary", (0, 2))
             else
             {
                 SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, "x", Color.DarkRed);
-                ap.Add<StatusInsanity>(1);
+                ap.AddN<StatusInsanity>(1);
             }
         }
 
@@ -106,7 +106,7 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary", (0, 2))
         {
             for (int i = 0; i < penalty; i++)
             {
-                ap.Add<StatusInsanity>(i);
+                ap.AddN<StatusInsanity>(i);
                 yield return new WaitForSeconds(0.02f);
             }
         }

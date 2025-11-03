@@ -141,7 +141,7 @@ public interface ICharacter
     public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Color GetTint();
-    public ActionPoints GetAP();
+    public AP GetAP();
     public void EquipLeftWeapon(Weapon? weapon);
     public Weapon? GetLeftWeapon();
     public void EquipRightWeapon(Weapon? weapon);
@@ -270,7 +270,7 @@ public class Dummy : ICharacter
         return Color.White;
     }
 
-    public ActionPoints GetAP()
+    public AP GetAP()
     {
         return null;
     }
@@ -340,7 +340,7 @@ public abstract class Character : ICharacter
 
     public int Index;
     public Color Tint;
-    public ActionPoints AP;
+    public AP AP;
     public ECharacterClass Job;
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
@@ -382,7 +382,7 @@ public abstract class Character : ICharacter
     
     public Stats Stats { get; set; } = new();
 
-    public ActionPoints GetAP()
+    public AP GetAP()
     {
         return AP;
     }
@@ -507,7 +507,7 @@ public record struct Party
     private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Coral];
     public PartyMember[] Characters = new PartyMember[4];
 
-    public Party(ActionPoints AP)
+    public Party(AP AP)
     {
         var jobs = new[]
         {

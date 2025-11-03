@@ -256,7 +256,7 @@ public class BehaviorAggro : Behavior
                         yield return new WaitForSeconds(0.01f);
                     }
                     level.DrawCombat();
-                    //yield return level.DoAttack(self, chr);
+                    chr.GetAP().AddN<StatusWounds>(Rnd.Instance.D4);
                     ap = 0;
                 }
                 else
