@@ -11,7 +11,7 @@ public interface IBehavior
 {
     public int Move(Enemy self);
     public bool ShouldFizzleOut();
-    public IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y);
+    public IEnumerable Do(Enemy self, IScreen level, int x, int y);
 }
 
 public class Behavior : IBehavior
@@ -26,7 +26,7 @@ public class Behavior : IBehavior
         return false;
     }
 
-    public virtual IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public virtual IEnumerable Do(Enemy self, IScreen level, int x, int y)
     {
         yield break;
     }
@@ -46,7 +46,7 @@ public class BehaviorIfWounded(int woundsMin, IBehavior next, IBehavior other) :
         }
     }
 
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen level, int x, int y)
     {
         if (self.AP.Count<StatusWounds>() >= woundsMin)
         {
@@ -73,7 +73,7 @@ public class BehaviorIfNotWounded(int woundsMax, IBehavior next, IBehavior other
         }
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen level, int x, int y)
     {
         if (self.AP.Count<StatusWounds>() < woundsMax)
         {
@@ -100,7 +100,7 @@ public class BehaviorIfNotInsane(int insanityMax, IBehavior next, IBehavior othe
         }
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen level, int x, int y)
     {
         if (self.AP.Count<StatusInsanity>() < insanityMax)
         {
@@ -127,7 +127,7 @@ public class BehaviorIfInsane(int insanityMin, IBehavior next, IBehavior other) 
         }
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen level, int x, int y)
     {
         if (self.AP.Count<StatusInsanity>() >= insanityMin)
         {
@@ -142,8 +142,9 @@ public class BehaviorIfInsane(int insanityMin, IBehavior next, IBehavior other) 
 
 public class BehaviorBlind : Behavior
 {
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var dx = Rnd.Instance.Next(-1, 2);
         var dy = dx == 0 ? Rnd.Instance.Next(-1, 2) : 0;
         var nextX = x + dx;
@@ -160,10 +161,7 @@ public class BehaviorBlind : Behavior
         else if (level.Map?.IsWalkable(nextX, nextY) ?? false)
         {
             yield return self.MoveTo(level, nextX, nextY, x, y);
-            if (level.IsInActivePartyMemberFOV?.Contains((nextX, nextY)) ?? false)
-            {
-                yield return new WaitForSeconds(0.01f);
-            }
+            yield return new WaitForSeconds(0.01f);
         }
     }
 
@@ -180,8 +178,9 @@ public class BehaviorFlyAbout : Behavior
         return self.Stats.Will;
     }
 
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var ap = self.Stats.Will;
         for (var i = 0; i < ap; i++)
         {
@@ -216,8 +215,9 @@ public class BehaviorAggro : Behavior
         return self.Stats.Will;
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var gm = new GoalMap<Cell>(level.Map, false);
         foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
@@ -283,8 +283,9 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
         return self.Stats.Will;
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var gm = new GoalMap<Cell>(level.Map, false);
         gm.AddGoal(gx, gy, 100);
         var ox = self.X;
@@ -323,10 +324,7 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
                 if (level.Map?.IsWalkable(next.X, next.Y) ?? false)
                 {
                     yield return self.MoveTo(level, next.X, next.Y, ox, oy);
-                    if (level.IsInActivePartyMemberFOV?.Contains((next.X, next.Y)) ?? false)
-                    {
-                        yield return new WaitForSeconds(0.05f);
-                    }
+                    yield return new WaitForSeconds(0.05f);
                 }
             }
         }
@@ -340,8 +338,9 @@ public class BehaviorYearnForLight : Behavior
         return true;
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
         List<(int, int)> stars = [];
         if (level.Domains.Tiles.ContainsKey((x, y)))
@@ -391,8 +390,9 @@ public class BehaviorThrowHealing : Behavior
         return self.Stats.Will;
     }
     
-    public override IEnumerable Do(Enemy self, CombatMapScreen level, int x, int y)
+    public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var ex = 0;
         var ey = 0;
         foreach (var e in level.Enemies)

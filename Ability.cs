@@ -11,7 +11,7 @@ public class Ability
         return false;
     }
 
-    public virtual IEnumerable Use(CombatMapScreen level, ICharacter character, int x, int y)
+    public virtual IEnumerable Use(IScreen level, ICharacter character, int x, int y)
     {
         yield break;
     }
@@ -43,29 +43,30 @@ public class DomainExpansion : Ability
         }
     }
 
-    public override IEnumerable Use(CombatMapScreen level, ICharacter character, int x, int y)
+    public override IEnumerable Use(IScreen level, ICharacter character, int x, int y)
     {
         var kind = character.GetAP().GetAt(x * 2 + 1).Kind;
+        var domains = (level as CombatMapScreen).Domains;
         switch (kind)
         {
             case EStatus.Stamina:
                 character.GetAP().Reduce<StatusSin>(1);
-                yield return level.Domains.Add(new DomainOfAction(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
+                yield return domains.Add(new DomainOfAction(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
                 break;
             case EStatus.Void:
                 character.GetAP().Reduce<StatusSin>(3);
-                yield return level.Domains.Add(new DomainOfDarkness(character, x, y, 2 + character.Stats.Clarity));
+                yield return domains.Add(new DomainOfDarkness(character, x, y, 2 + character.Stats.Clarity));
                 break;
             case EStatus.Wound:
-                yield return level.Domains.Add(new DomainOfHealing(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
+                yield return domains.Add(new DomainOfHealing(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
                 break;
             case EStatus.Fire:
                 character.GetAP().Reduce<StatusSin>(5);
-                yield return level.Domains.Add(new DomainOfFire(character, x, y, 4));
+                yield return domains.Add(new DomainOfFire(character, x, y, 4));
                 break;
             case EStatus.Fatigue:
                 character.GetAP().Reduce<StatusSin>(2);
-                yield return level.Domains.Add(new DomainOfFatigue(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
+                yield return domains.Add(new DomainOfFatigue(character, x, y, Math.Clamp(1 + character.Stats.Mod(EStat.Clarity), 3, 6)));
                 break;
             case EStatus.Insanity:
                 break;
@@ -76,7 +77,7 @@ public class DomainExpansion : Ability
             case EStatus.Death:
                 break;
             case EStatus.Frozen:
-                yield return level.Domains.Add(new DomainOfControl(character, x, y, 2));
+                yield return domains.Add(new DomainOfControl(character, x, y, 2));
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

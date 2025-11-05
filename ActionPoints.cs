@@ -383,7 +383,7 @@ public class AP
 
     public void DrawCursor(int i, int y)
     {
-        Layer.Set(i, y - 1, "v");
+        Layer.Set(i, y - 1, new Glyph(13, 5, Color.Black, Color.White));
     }
     
     public (int, int) Points => (Count<StatusStamina>(), Total);

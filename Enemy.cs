@@ -6,6 +6,7 @@ namespace SINEATER;
 
 public class Enemy : Character
 {
+    public bool NoMove = false;
     public int Wait = 3;
     public string Name;
     public ICharacter? LastHit = null;
@@ -21,7 +22,12 @@ public class Enemy : Character
         var (x, y) = Icon;
         return (x, y + (selected ? -4 : 0));
     }
-    
+
+    public override void Done()
+    {
+        NoMove = true;
+    }
+
     public override Color GetTint()
     {
         return Wait switch
@@ -49,17 +55,20 @@ public class Enemy : Character
         return Portrait;
     }
     
-    public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
+    public IEnumerable MoveTo(IScreen level, int x, int y, int? oldX = null, int? oldY = null)
     {
         var ox = X;
         var oy = Y;
         X = x;
         Y = y;
-        if (level.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
+        if (level is CombatMapScreen lvl)
         {
-            level.DrawCombat();
-            yield return level.Domains.Tiles[((int)X, (int)Y)]
-                .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
+            if (lvl.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
+            {
+                lvl.DrawCombat();
+                yield return lvl.Domains.Tiles[((int)X, (int)Y)]
+                    .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
+            }
         }
     }
 }

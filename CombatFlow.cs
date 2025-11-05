@@ -25,9 +25,10 @@ public class RolledDie(Die die, int value)
     public int Value { get; set; } = value;
 }
 
-public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapon, WeaponAttack? attack, ICharacter? defender, (int, int) position)
+public struct SkirmishFlow(CombatFlow parent, ICharacter attacker, Weapon? weapon, WeaponAttack? attack, ICharacter? defender, (int, int) position, ISkirmishStep step)
 {
     public CombatFlow Parent => parent;
+    public ISkirmishStep Step => step;
     public ICharacter Attacker => attacker;
     public Weapon? Weapon => weapon;
     public WeaponAttack? WeaponAttack => attack;
@@ -204,9 +205,9 @@ public class CombatFlow
 {
     private CombatMapScreen _level;
     
-    public CombatFlow(CombatMapScreen level, ICharacter attacker, Weapon? weapon, WeaponAttack attack, (int, int) position, (int, int) direction)
+    public CombatFlow(IScreen level, ICharacter attacker, Weapon? weapon, WeaponAttack attack, (int, int) position, (int, int) direction)
     {
-        _level = level;
+        _level = (CombatMapScreen)level;
         Attacker = attacker;
         Weapon = weapon;
         WeaponAttack = attack;
@@ -254,7 +255,7 @@ public class CombatFlow
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos, forwards));
                 }
             }
             else if (step is SkirmishStep_StepBackwards backwards)
@@ -268,7 +269,7 @@ public class CombatFlow
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos, backwards));
                 }
             }
             else if (step is SkirmishStep_SidestepLeft sidestepLeft)
@@ -282,7 +283,7 @@ public class CombatFlow
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos, sidestepLeft));
                 }
             }
             else if (step is SkirmishStep_SidestepRight sidestepRight)
@@ -296,7 +297,7 @@ public class CombatFlow
                     }
 
                     pos = (px, py);
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, null, null, null, pos, sidestepRight));
                 }
             }
             else if (step is SkirmishStep_AttackFront front)
@@ -304,11 +305,11 @@ public class CombatFlow
                 var (px, py) = Directions.GoForwards(pos, Direction, front.n);
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, front));
                 }
                 else if (_level.Map?.IsWalkable(px, py) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos, front));
                 }
                 else break;
             }
@@ -317,15 +318,15 @@ public class CombatFlow
                 var (px, py) = Directions.GoBackwards(pos, Direction, back.n);
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, back));
                 }
                 else if (_level.Map?.IsWalkable(px, py) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos, back));
                 }
                 else break;
             }
-            else if (step is SkirmishStep_AttackHand)
+            else if (step is SkirmishStep_AttackHand hand)
             {
                 var (px, py) = (0, 0);
                 if (Attacker.GetLeftWeapon() == Weapon)
@@ -339,37 +340,37 @@ public class CombatFlow
                 
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, hand));
                 }
                 else if (_level.Map?.IsWalkable(px, py) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos, hand));
                 }
                 else break;
             }
-            else if (step is SkirmishStep_AttackLeft)
+            else if (step is SkirmishStep_AttackLeft al)
             {
                 var (px, py) = Directions.GoLeft(pos, Direction);
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, al));
                 }
                 else if (_level.Map?.IsWalkable(px, py) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos, al));
                 }
                 else break;
             }
-            else if (step is SkirmishStep_AttackRight)
+            else if (step is SkirmishStep_AttackRight ar)
             {
                 var (px, py) = Directions.GoRight(pos, Direction);
                 if (chars.ContainsKey((px, py)))
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, ar));
                 }
                 else if (_level.Map?.IsWalkable(px, py) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(px, py), pos, ar));
                 }
                 else break;
             }
@@ -398,11 +399,11 @@ public class CombatFlow
 
                 if (end == ranged.position)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[end], pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[end], pos, ranged));
                 }
-                else if (_level.Map.IsWalkable(end.Item1, end.Item2))
+                else if (_level.Map?.IsWalkable(end.Item1, end.Item2) ?? false)
                 {
-                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(end.Item1, end.Item2), pos));
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(end.Item1, end.Item2), pos, ranged));
                 }
                 else break;
             }
@@ -410,7 +411,33 @@ public class CombatFlow
             {
                 if (chars.ContainsKey(pos))
                 {
-                    chars[pos].AddTrait(tr.trait);
+                    Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, Character.Dummy(pos.Item1, pos.Item2), pos, tr));
+                }
+            }
+            else if (step is SkirmishStep_RecoverFront rf)
+            {
+                var (px, py) = Directions.GoForwards(pos, Direction, rf.n);
+                if (chars.ContainsKey((px, py)))
+                {
+                    if (chars[(px, py)] is PartyMember pm)
+                    {
+                        Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(px, py)], pos, rf));
+                    }
+                }
+            }
+            else if (step is SkirmishStep_RecoverAround ra)
+            {
+                var (x, y) = pos;
+                (int, int)[] around = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)];
+                foreach (var (a, b) in around)
+                {
+                    if (chars.ContainsKey((a, b)))
+                    {
+                        if (chars[(a, b)] is PartyMember)
+                        {
+                            Skirmishes.Add(new SkirmishFlow(this, Attacker, Weapon, WeaponAttack, chars[(a, b)], pos, ra));
+                        }
+                    }
                 }
             }
         }

@@ -59,7 +59,7 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
         yield break;
     }
 
-    public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    public IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character)
     {
         if (character is PartyMember chr)
         {
@@ -80,32 +80,35 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
         yield break;
     }
 
-    public IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
-        if (level.Floor.ContainsKey((x, y)))
+        if (ilevel is CombatMapScreen level)
         {
-            var onFloor = level.Floor[(x, y)];
-            if (onFloor is Pile pile)
+            if (level.Floor.ContainsKey((x, y)))
             {
-                pile.Things.Add(this);
+                var onFloor = level.Floor[(x, y)];
+                if (onFloor is Pile pile)
+                {
+                    pile.Things.Add(this);
+                }
+                else
+                {
+                    var heap = new Pile();
+                    heap.Things.Add(onFloor);
+                    heap.Things.Add(this);
+                    level.Floor[(x, y)] = heap;
+                }
             }
             else
             {
-                var heap = new Pile();
-                heap.Things.Add(onFloor);
-                heap.Things.Add(this);
-                level.Floor[(x, y)] = heap;
+                level.Floor[(x, y)] = this;
             }
-        }
-        else
-        {
-            level.Floor[(x, y)] = this;
         }
 
         yield break;
     }
 
-    public IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public IEnumerable ApplyItemShattered(IScreen level, int x, int y)
     {
         yield break;
     }

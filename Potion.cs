@@ -21,13 +21,14 @@ public class Potion(string name, (int, int) uv) : Item(name, uv)
         return new Glyph(11, 68, Color.Black, Color.White);
     }
 
-    public virtual IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
+    public virtual IEnumerable ApplyOnSplat(IScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {
         yield break;
     }
     
-    public override IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public override IEnumerable ApplyItemShattered(IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         var fields = new Dictionary<(int, int), ICharacter>();
         foreach (var ch in level.Party)
         {
@@ -64,12 +65,10 @@ public class Potion(string name, (int, int) uv) : Item(name, uv)
 
 public class PotionBloodReliquary() : Potion("Blood Reliquary", (0, 2))
 {
-    public override IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
+    public override IEnumerable ApplyOnSplat(IScreen ilevel, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {
-        if (level.IsInActivePartyMemberFOV.Contains((x, y)))
-        {
-            SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.Red));
-        }
+        var level = ilevel as CombatMapScreen;
+        SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.Red));
 
         if (fields.ContainsKey((x, y)))
         {
@@ -120,14 +119,12 @@ public class PotionBloodReliquary() : Potion("Blood Reliquary", (0, 2))
 
 public class PotionGhylagsTear() : Potion("Ghylag's Tear", (1, 2))
 {
-    public override IEnumerable ApplyOnSplat(CombatMapScreen level, Dictionary<(int, int), ICharacter> fields, int x, int y)
+    public override IEnumerable ApplyOnSplat(IScreen ilevel, Dictionary<(int, int), ICharacter> fields, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         if (level.Map.IsTransparent(x, y))
         {
-            if (level.IsInActivePartyMemberFOV.Contains((x, y)))
-            {
-                SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.White));
-            }
+            SineaterGame.Instance.Layers["mrmo"].Set(x, y + 2, new Glyph(13, 68, Color.Black, Color.White));
 
             if (fields.ContainsKey((x, y)))
             {

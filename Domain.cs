@@ -117,7 +117,7 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         yield break;
     }
     
-    public virtual IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+    public virtual IEnumerable ApplyOnDomainStepped(IScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
         yield break;
     }
@@ -135,7 +135,6 @@ public class Domain(ICharacter caster, int x, int y, int radius)
                 }
             }
             yield return new WaitForSeconds(0.01f * (6 - k));
-            level.UpdateFov();
             level.DrawCombat();
             yield return new WaitForSeconds(0.001f);
         }
@@ -143,7 +142,7 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         yield return new WaitForSeconds(0.15f);
     }
 
-    public virtual IEnumerable ApplyOnDeath(CombatMapScreen combatMapScreen, int eX, int eY)
+    public virtual IEnumerable ApplyOnDeath(IScreen combatMapScreen, int eX, int eY)
     {
         yield break;
     }
@@ -181,7 +180,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         }
     }
 
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+    public override IEnumerable ApplyOnDomainStepped(IScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
         if (character.GetAP().Count<StatusWounds>() > 0)
         {
@@ -262,7 +261,6 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
         foreach (var cell in circle)
         {
-            if (!level.IsInActivePartyMemberFOV.Contains((cell.X, cell.Y))) continue;
             var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y));
             var dx = 0;
             var fg = Color.DarkRed;
@@ -309,7 +307,6 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             {
                 level.Map?.SetCellProperties(cell.X, cell.Y, true, true);
             }
-            level.UpdateFov();
         }
         else
         {
@@ -317,7 +314,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
         }
     }
 
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+    public override IEnumerable ApplyOnDomainStepped(IScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
         character.GetAP().Reduce(1);
         
@@ -384,8 +381,6 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
         }
 
         yield return Blink(level);
-        
-        level.UpdateFov();
     }
 
     public override void Draw(CombatMapScreen level)
@@ -625,31 +620,29 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             var xnoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Cos(MathF.PI + _t));
             var ynoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Sin(MathF.PI / 2 + _t));
             var dist = Vector2.Distance(new Vector2(cx, cy), new Vector2(x, y)) / Radius;
-            if (level.IsInActivePartyMemberFOV?.Contains((cx, cy)) ?? false)
+            
+            var fg = Color.White;
+            var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
+                (int)(35 * dist - xnoise * 10 - ynoise * 10));
+            if (level.Map?.IsWalkable(cx, cy) ?? false)
             {
-                var fg = Color.White;
-                var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
-                    (int)(35 * dist - xnoise * 10 - ynoise * 10));
-                if (level.Map?.IsWalkable(cx, cy) ?? false)
+                if (g.V != 0)
                 {
-                    if (g.V != 0)
-                    {
-                        fg = Color.Lerp(Color.White, Color.Red, MathF.Abs(MathF.Sin(_t * 10)));
-                        color = Color.Lerp(color, Color.DarkRed, MathF.Abs(MathF.Cos(_t * 10)));
-                    }
-                    mrmo.Set(cx, cy + 2, g);
-                    mrmo.Set(cx, cy + 2, fg, color);
+                    fg = Color.Lerp(Color.White, Color.Red, MathF.Abs(MathF.Sin(_t * 10)));
+                    color = Color.Lerp(color, Color.DarkRed, MathF.Abs(MathF.Cos(_t * 10)));
                 }
-                else
-                {
-                    mrmo.Set(cx, cy + 2, color.Lighten(0.1f), color);
-                }
+                mrmo.Set(cx, cy + 2, g);
+                mrmo.Set(cx, cy + 2, fg, color);
+            }
+            else
+            {
+                mrmo.Set(cx, cy + 2, color.Lighten(0.1f), color);
             }
         }
     }
 
     
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+    public override IEnumerable ApplyOnDomainStepped(IScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
         var ap = character.GetAP();
         if (_glyphs[(x, y)].V != 0)
@@ -689,7 +682,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
     Dictionary<ICharacter, int> _moves = [];
     private int _turns = 3;
 
-    public override IEnumerable ApplyOnDeath(CombatMapScreen level, int eX, int eY)
+    public override IEnumerable ApplyOnDeath(IScreen level, int eX, int eY)
     {
         List<(int, int, ICharacter)> toRemove = [];
         foreach (var (tx, ty, t) in _totems)
@@ -705,7 +698,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             _totems.Remove(rem);
         }
 
-        level.DrawCombat();
+        (level as CombatMapScreen)?.DrawCombat();
         yield break;
     }
 
@@ -750,7 +743,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         yield return Blink(level);
     }
 
-    public IEnumerable SkullTotem(DomainOfFatigue domain, CombatMapScreen level, ICharacter c, int x, int y)
+    public IEnumerable SkullTotem(DomainOfFatigue domain, IScreen level, ICharacter c, int x, int y)
     {
         c.Render = false;
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
@@ -808,7 +801,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         Close();
     }
     
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+    public override IEnumerable ApplyOnDomainStepped(IScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
         if (!_moves.ContainsKey(character))
         {
@@ -881,9 +874,9 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
 
 public class DomainOfFire(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
 {
-    IEnumerable ClearScreen(CombatMapScreen level, IMap map, TextLayer mrmo, int r)
+    IEnumerable ClearScreen(IScreen level, IMap map, TextLayer mrmo, int r)
     {
-        level.DrawCombat();
+        (level as CombatMapScreen)?.DrawCombat();
         for (int i = 0; i < 24; i++)
         {
             for (int j = 0; j < 22; j++)
@@ -981,12 +974,9 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             {
                 mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
 
-                if (level.IsInActivePartyMemberFOV?.Contains((rx, ry)) ?? false)
+                if (chars.ContainsKey((rx, ry)))
                 {
-                    if (chars.ContainsKey((rx, ry)))
-                    {
-                        yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
-                    }
+                    yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
                 }
                 
                 level.Visited[rx, ry] = true;

@@ -48,8 +48,6 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                     y = e.Y;
                 }
 
-                if (!level.IsInActivePartyMemberFOV.Contains((x, y))) continue;
-                
                 var letters = "!@#$%^&*+!";
                 for (int i = 0; i < 10; i++)
                 {
@@ -107,13 +105,10 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                         if (cell != null)
                         {
                             var dist = Vector2.Distance(new Vector2(x, y), new Vector2(cell.X, cell.Y)) / dst;
-                            if (level.IsInActivePartyMemberFOV.Contains((x, y)))
-                            {
-                                game.Layers["mrmo"].Set(cell.X, cell.Y + 2, "z",
-                                    Color.Lerp(Color.Yellow, Color.Red, dist));
-                                var adjacent = level.Map.GetAdjacentCells(cell.X, cell.Y, true);
-                                if (adjacent != null) foreach (var a in adjacent) light.Add(a);
-                            }
+                            game.Layers["mrmo"].Set(cell.X, cell.Y + 2, "z",
+                                Color.Lerp(Color.Yellow, Color.Red, dist));
+                            var adjacent = level.Map.GetAdjacentCells(cell.X, cell.Y, true);
+                            if (adjacent != null) foreach (var a in adjacent) light.Add(a);
 
                             if (fields.ContainsKey((cell.X, cell.Y)))
                             {

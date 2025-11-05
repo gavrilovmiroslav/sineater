@@ -33,7 +33,7 @@ public class Trait(string name, string shortName, string description) : IAbility
         yield break;
     }
 
-    public virtual IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    public virtual IEnumerable ApplyOnStartTurn(IScreen level, ICharacter character)
     {
         yield break;
     }

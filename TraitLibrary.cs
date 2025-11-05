@@ -406,7 +406,7 @@ public class TraitProne(int duration) : LimitedTrait("Prone", "Pn", duration, "P
         yield return new Present_Notify(Description);
     }
 
-    public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    public override IEnumerable ApplyOnStartTurn(IScreen level, ICharacter character)
     {
         if (character is PartyMember c)
         {
@@ -536,7 +536,7 @@ public class TraitCrippledRightHand() : Trait("Crippled (Right)", "xR", "CRIPPLE
 }
 public class TraitParalyzed() : Trait("Paralyzed", "Pa", "PARALYZED: Your body can hardly move an inch...")
 {
-    public override IEnumerable ApplyOnStartTurn(CombatMapScreen level, ICharacter character)
+    public override IEnumerable ApplyOnStartTurn(IScreen level, ICharacter character)
     {
         yield return YellName();
         if (character is PartyMember c)

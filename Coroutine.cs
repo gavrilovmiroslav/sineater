@@ -187,6 +187,7 @@ public class FadeOutAndLoadScreen(float seconds, IScreen screen) : IEnumerable
     
     public IEnumerator GetEnumerator()
     {
+        screen.Initialize(SineaterGame.Instance);
         while (true)
         {
             var dt = SineaterGame.DeltaTime;

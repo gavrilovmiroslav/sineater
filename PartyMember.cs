@@ -84,7 +84,9 @@ public class Stats
     public int Vigor;
     
     public int Score => Will + Clarity + Poise + Vigor;
-
+    public int Initiative => Will + Vigor;
+    public int Fortitude => Clarity + Poise;
+    
     public Stats()
     {
         var bag = Rnd.Instance.Bag((i => i > 1), 6, 6, 6, 6);
@@ -155,6 +157,7 @@ public interface ICharacter
     (int, int) GetPortait();
     void Die();
     void RemoveArmor();
+    public bool IsDone { get; set; }
 }
 
 public class Dummy : ICharacter
@@ -330,6 +333,8 @@ public class Dummy : ICharacter
     public void RemoveArmor()
     {
     }
+
+    public bool IsDone { get; set; } = false;
 }
 
 public abstract class Character : ICharacter
@@ -337,7 +342,7 @@ public abstract class Character : ICharacter
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     
     public bool IsDone { get; set; } = false;
-
+    
     public int Index;
     public Color Tint;
     public AP AP;
@@ -470,7 +475,12 @@ public abstract class Character : ICharacter
     {
         this.EquipArmor(null);
     }
-    
+
+    public virtual void Done()
+    {
+        IsDone = true;
+    }
+
     public void RemoveItem()
     {
         this.EquipItem(null);
@@ -479,6 +489,8 @@ public abstract class Character : ICharacter
 
 public class PartyMember : Character
 {
+    public int Steps = 0;
+    public bool NoMove = false;
     public PartyMember(ECharacterClass? job = null)
     {
         if (job == null)
@@ -499,6 +511,11 @@ public class PartyMember : Character
     {
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
+    }
+
+    public override void Done()
+    {
+        NoMove = true;
     }
 }
 

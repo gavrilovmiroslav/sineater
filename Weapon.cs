@@ -57,6 +57,8 @@ public record struct SkirmishStep_AttackLeft : ISkirmishStep;
 public record struct SkirmishStep_AttackRight : ISkirmishStep;
 public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
 public record struct SkirmishStep_AddTrait(Trait trait, int n = 0) : ISkirmishStep;
+public record struct SkirmishStep_RecoverFront(int n) : ISkirmishStep;
+public record struct SkirmishStep_RecoverAround : ISkirmishStep;
 
 public enum EScalingFactor
 {
@@ -163,7 +165,7 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
         yield break;
     }
 
-    public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    public IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character)
     {
         if (character is PartyMember chr)
         {
@@ -184,8 +186,9 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
         yield break;
     }
 
-    public IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         if (Rnd.Instance.D10 < this.Quality)
         {
             foreach (var chr in SineaterGame.Instance.Party.Characters)
@@ -228,7 +231,7 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemShattered(IScreen level, int x, int y)
     {
         yield break;
     }

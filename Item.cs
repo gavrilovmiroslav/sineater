@@ -15,9 +15,9 @@ public interface IItem : IAbilitySource
     public bool CanBeUsed();
     public bool CanBeShattered();
     public IEnumerable ApplyItemUsed(ICharacter character);
-    public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character);
-    public IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y);
-    public IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y);
+    public IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character);
+    public IEnumerable ApplyItemLanded(IScreen level, int x, int y);
+    public IEnumerable ApplyItemShattered(IScreen level, int x, int y);
 }
 
 public class Pile : IAbilitySource, IItem
@@ -42,8 +42,9 @@ public class Pile : IAbilitySource, IItem
         yield break;
     }
 
-    public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    public IEnumerable ApplyItemPickedUp(IScreen ilevel, int x, int y, ICharacter character)
     {
+        var level = ilevel as CombatMapScreen;
         for (var i = Things.Count - 1; i >= 0; i--)
         {
             var thing = Things[i];
@@ -63,8 +64,9 @@ public class Pile : IAbilitySource, IItem
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         if (level.Floor.ContainsKey((x, y)))
         {
             var onFloor = level.Floor[(x, y)];
@@ -88,7 +90,7 @@ public class Pile : IAbilitySource, IItem
         yield break;
     }
 
-    public IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public IEnumerable ApplyItemShattered(IScreen level, int x, int y)
     {
         yield break;
     }
@@ -156,8 +158,9 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    public virtual IEnumerable ApplyItemPickedUp(IScreen ilevel, int x, int y, ICharacter character)
     {
+        var level = ilevel as CombatMapScreen;
         var (isSuccess, _) = character.Inventory.Put(this);
         if (isSuccess)
         {
@@ -174,8 +177,9 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
+        var level = ilevel as CombatMapScreen;
         if (level.Floor.ContainsKey((x, y)))
         {
             var onFloor = level.Floor[(x, y)];
@@ -199,7 +203,7 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemShattered(IScreen level, int x, int y)
     {
         yield break;
     }
@@ -246,7 +250,7 @@ public class ItemStack(Item item, int count) : Item(item.Name, item.Picture)
         }
     }
 
-    public override IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
+    public override IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character)
     {
         if (count == 0) yield break;
         foreach (var i in item.ApplyItemPickedUp(level, x, y, character))
@@ -255,7 +259,7 @@ public class ItemStack(Item item, int count) : Item(item.Name, item.Picture)
         }
     }
 
-    public override IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
+    public override IEnumerable ApplyItemLanded(IScreen level, int x, int y)
     {
         if (count == 0) yield break;
         foreach (var i in item.ApplyItemLanded(level, x, y))
@@ -264,7 +268,7 @@ public class ItemStack(Item item, int count) : Item(item.Name, item.Picture)
         }
     }
 
-    public override IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
+    public override IEnumerable ApplyItemShattered(IScreen level, int x, int y)
     {
         if (count == 0) yield break;
         foreach (var i in item.ApplyItemShattered(level, x, y))
