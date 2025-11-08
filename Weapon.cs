@@ -199,34 +199,34 @@ public class Weapon(string name, List<Unlockable<WeaponAttack>> attacks, EWeight
                 }
             }
 
-            foreach (var enm in level.Enemies)
-            {
-                if (enm.X == x && enm.Y == y)
-                {
-                    enm.AP.AddN<StatusWounds>(1);
-                }
-            }
+            // foreach (var enm in level.Enemies)
+            // {
+            //     if (enm.X == x && enm.Y == y)
+            //     {
+            //         enm.AP.AddN<StatusWounds>(1);
+            //     }
+            // }
         }
         
-        if (level.Floor.ContainsKey((x, y)))
-        {
-            var onFloor = level.Floor[(x, y)];
-            if (onFloor is Pile pile)
-            {
-                pile.Things.Add(this);
-            }
-            else
-            {
-                var heap = new Pile();
-                heap.Things.Add(onFloor);
-                heap.Things.Add(this);
-                level.Floor[(x, y)] = heap;
-            }
-        }
-        else
-        {
-            level.Floor[(x, y)] = this;
-        }
+        // if (level.Floor.ContainsKey((x, y)))
+        // {
+        //     var onFloor = level.Floor[(x, y)];
+        //     if (onFloor is Pile pile)
+        //     {
+        //         pile.Things.Add(this);
+        //     }
+        //     else
+        //     {
+        //         var heap = new Pile();
+        //         heap.Things.Add(onFloor);
+        //         heap.Things.Add(this);
+        //         level.Floor[(x, y)] = heap;
+        //     }
+        // }
+        // else
+        // {
+        //     level.Floor[(x, y)] = this;
+        // }
 
         yield break;
     }

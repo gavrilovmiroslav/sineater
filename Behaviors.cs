@@ -225,10 +225,10 @@ public class BehaviorAggro : Behavior
         }
         
         gm.ClearObstacles();
-        foreach (var e in level.Enemies.Where(e => e != self))
-        {
-            gm.AddObstacle(e.X, e.Y);
-        }
+        // foreach (var e in level.Enemies.Where(e => e != self))
+        // {
+        //     gm.AddObstacle(e.X, e.Y);
+        // }
         var path = gm.TryFindPath(self.X, self.Y);
 
         if (path != null)
@@ -292,10 +292,10 @@ public class BehaviorGoTo(int gx, int gy) : Behavior
         var oy = self.Y;
         
         gm.ClearObstacles();
-        foreach (var e in level.Enemies.Where(e => e != self))
-        {
-            gm.AddObstacle(e.X, e.Y);
-        }
+        // foreach (var e in level.Enemies.Where(e => e != self))
+        // {
+        //     gm.AddObstacle(e.X, e.Y);
+        // }
         foreach (var e in SineaterGame.Instance.Party.Characters)
         {
             gm.AddObstacle(e.X, e.Y);
@@ -392,44 +392,45 @@ public class BehaviorThrowHealing : Behavior
     
     public override IEnumerable Do(Enemy self, IScreen ilevel, int x, int y)
     {
-        var level = ilevel as CombatMapScreen;
-        var ex = 0;
-        var ey = 0;
-        foreach (var e in level.Enemies)
-        {
-            ex += e.X;
-            ey += e.Y;
-        }
-        ex /= level.Enemies.Count;
-        ey /= level.Enemies.Count;
-        
-        if (Vector2.Distance(new Vector2(ex, ey), new Vector2(x, y)) <= self.Stats.Vigor)
-        {
-            if (Rnd.Instance.D100 < 80)
-            {
-                var enm = level.Enemies[Rnd.Instance.Next(0, level.Enemies.Count)];
-                yield return new FlyingObject(x, y, new()
-                {
-                    Source = new PotionBloodReliquary(),
-                    Owner = self,
-                    X = enm.X + Rnd.Instance.Next(-1, 2),
-                    Y = enm.Y + Rnd.Instance.Next(-1, 2)
-                });
-            }
-            else
-            {
-                yield return new FlyingObject(x, y, new()
-                    {
-                        Source = new PotionBloodReliquary(),
-                        Owner = self,
-                        X = ex + Rnd.Instance.Next(-1, 2),
-                        Y = ey + Rnd.Instance.Next(-1, 2)
-                    });
-            }
-        }
-        else
-        {
-            yield return new BehaviorGoTo(ex, ey).Do(self, level, x, y);
-        }
+        // var level = ilevel as CombatMapScreen;
+        // var ex = 0;
+        // var ey = 0;
+        // foreach (var e in level.Enemies)
+        // {
+        //     ex += e.X;
+        //     ey += e.Y;
+        // }
+        // ex /= level.Enemies.Count;
+        // ey /= level.Enemies.Count;
+        //
+        // if (Vector2.Distance(new Vector2(ex, ey), new Vector2(x, y)) <= self.Stats.Vigor)
+        // {
+        //     if (Rnd.Instance.D100 < 80)
+        //     {
+        //         var enm = level.Enemies[Rnd.Instance.Next(0, level.Enemies.Count)];
+        //         yield return new FlyingObject(x, y, new()
+        //         {
+        //             Source = new PotionBloodReliquary(),
+        //             Owner = self,
+        //             X = enm.X + Rnd.Instance.Next(-1, 2),
+        //             Y = enm.Y + Rnd.Instance.Next(-1, 2)
+        //         });
+        //     }
+        //     else
+        //     {
+        //         yield return new FlyingObject(x, y, new()
+        //             {
+        //                 Source = new PotionBloodReliquary(),
+        //                 Owner = self,
+        //                 X = ex + Rnd.Instance.Next(-1, 2),
+        //                 Y = ey + Rnd.Instance.Next(-1, 2)
+        //             });
+        //     }
+        // }
+        // else
+        // {
+        //     yield return new BehaviorGoTo(ex, ey).Do(self, level, x, y);
+        // }
+        yield break;
     }
 }

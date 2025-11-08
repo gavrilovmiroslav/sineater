@@ -82,28 +82,28 @@ public class Armor(string name, int guard, EWeightClass weight, int quality, (in
 
     public IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
-        if (ilevel is CombatMapScreen level)
-        {
-            if (level.Floor.ContainsKey((x, y)))
-            {
-                var onFloor = level.Floor[(x, y)];
-                if (onFloor is Pile pile)
-                {
-                    pile.Things.Add(this);
-                }
-                else
-                {
-                    var heap = new Pile();
-                    heap.Things.Add(onFloor);
-                    heap.Things.Add(this);
-                    level.Floor[(x, y)] = heap;
-                }
-            }
-            else
-            {
-                level.Floor[(x, y)] = this;
-            }
-        }
+        // if (ilevel is CombatMapScreen level)
+        // {
+        //     if (level.Floor.ContainsKey((x, y)))
+        //     {
+        //         var onFloor = level.Floor[(x, y)];
+        //         if (onFloor is Pile pile)
+        //         {
+        //             pile.Things.Add(this);
+        //         }
+        //         else
+        //         {
+        //             var heap = new Pile();
+        //             heap.Things.Add(onFloor);
+        //             heap.Things.Add(this);
+        //             level.Floor[(x, y)] = heap;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         level.Floor[(x, y)] = this;
+        //     }
+        // }
 
         yield break;
     }

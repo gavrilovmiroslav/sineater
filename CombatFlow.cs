@@ -228,13 +228,13 @@ public class CombatFlow
             chars[(p.X, p.Y)] = p;
         }
 
-        foreach (var e in _level.Enemies)
-        {
-            if (!chars.ContainsKey((e.X, e.Y)))
-            {
-                chars[(e.X, e.Y)] = e;
-            }
-        }
+        // foreach (var e in _level.Enemies)
+        // {
+        //     if (!chars.ContainsKey((e.X, e.Y)))
+        //     {
+        //         chars[(e.X, e.Y)] = e;
+        //     }
+        // }
         
         var pos = Position;
         foreach (var step in WeaponAttack?.Steps ?? [])

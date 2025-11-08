@@ -30,16 +30,16 @@ public class Potion(string name, (int, int) uv) : Item(name, uv)
     {
         var level = ilevel as CombatMapScreen;
         var fields = new Dictionary<(int, int), ICharacter>();
-        foreach (var ch in level.Party)
-        {
-            fields.Add((ch.X, ch.Y), ch);
-        }
-
-        foreach (var e in level.Enemies)
-        {
-            if (!fields.ContainsKey((e.X, e.Y)))
-                fields.Add((e.X, e.Y), e);
-        }
+        // foreach (var ch in level.Party)
+        // {
+        //     fields.Add((ch.X, ch.Y), ch);
+        // }
+        //
+        // foreach (var e in level.Enemies)
+        // {
+        //     if (!fields.ContainsKey((e.X, e.Y)))
+        //         fields.Add((e.X, e.Y), e);
+        // }
         
         var game = SineaterGame.Instance;
         game.Layers["mrmo"].Set(x, y + 2, "!", Color.White);

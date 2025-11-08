@@ -12,22 +12,22 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
     public IEnumerator GetEnumerator()
     {
         var fields = new Dictionary<(int, int), ICharacter>();
-        foreach (var e in level.Enemies)
-        {
-            fields.Add((e.X, e.Y), e);
-        }
-
-        foreach (var ch in level.Party)
-        {
-            var x = ch.X;
-            var y = ch.Y;
-            if (!fields.ContainsKey((x, y)))
-                fields.Add((x, y), ch);
-        }
+        // foreach (var e in level.Enemies)
+        // {
+        //     fields.Add((e.X, e.Y), e);
+        // }
+        //
+        // foreach (var ch in level.Party)
+        // {
+        //     var x = ch.X;
+        //     var y = ch.Y;
+        //     if (!fields.ContainsKey((x, y)))
+        //         fields.Add((x, y), ch);
+        // }
 
         List<ICharacter> chars = [];
         chars.AddRange(game.Party.Characters);
-        chars.AddRange(level.Enemies);
+        //chars.AddRange(level.Enemies);
         foreach (var chr in chars)
         {
             var insanity = chr.GetAP().Count<StatusInsanity>();

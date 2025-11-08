@@ -56,36 +56,36 @@ public class Pile : IAbilitySource, IItem
             }
         }
 
-        if (Things.Count == 0)
-        {
-            level.Floor.Remove((x, y));
-        }
+        // if (Things.Count == 0)
+        // {
+        //     level.Floor.Remove((x, y));
+        // }
 
         yield break;
     }
 
     public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
-        var level = ilevel as CombatMapScreen;
-        if (level.Floor.ContainsKey((x, y)))
-        {
-            var onFloor = level.Floor[(x, y)];
-            if (onFloor is Pile pile)
-            {
-                pile.Things.Add(this);
-            }
-            else
-            {
-                var heap = new Pile();
-                heap.Things.Add(onFloor);
-                heap.Things.Add(this);
-                level.Floor[(x, y)] = heap;
-            }
-        }
-        else
-        {
-            level.Floor[(x, y)] = this;
-        }
+        // var level = ilevel as CombatMapScreen;
+        // if (level.Floor.ContainsKey((x, y)))
+        // {
+        //     var onFloor = level.Floor[(x, y)];
+        //     if (onFloor is Pile pile)
+        //     {
+        //         pile.Things.Add(this);
+        //     }
+        //     else
+        //     {
+        //         var heap = new Pile();
+        //         heap.Things.Add(onFloor);
+        //         heap.Things.Add(this);
+        //         level.Floor[(x, y)] = heap;
+        //     }
+        // }
+        // else
+        // {
+        //     level.Floor[(x, y)] = this;
+        // }
 
         yield break;
     }
@@ -160,45 +160,45 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
 
     public virtual IEnumerable ApplyItemPickedUp(IScreen ilevel, int x, int y, ICharacter character)
     {
-        var level = ilevel as CombatMapScreen;
-        var (isSuccess, _) = character.Inventory.Put(this);
-        if (isSuccess)
-        {
-            if (level.Floor.ContainsKey((x, y)))
-            {
-                var onFloor = level.Floor[(x, y)];
-                if (onFloor == this)
-                {
-                    level.Floor.Remove((x, y));
-                }
-            }
-        }
+        // var level = ilevel as CombatMapScreen;
+        // var (isSuccess, _) = character.Inventory.Put(this);
+        // if (isSuccess)
+        // {
+        //     if (level.Floor.ContainsKey((x, y)))
+        //     {
+        //         var onFloor = level.Floor[(x, y)];
+        //         if (onFloor == this)
+        //         {
+        //             level.Floor.Remove((x, y));
+        //         }
+        //     }
+        // }
 
         yield break;
     }
 
     public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
     {
-        var level = ilevel as CombatMapScreen;
-        if (level.Floor.ContainsKey((x, y)))
-        {
-            var onFloor = level.Floor[(x, y)];
-            if (onFloor is Pile pile)
-            {
-                pile.Things.Add(this);
-            }
-            else
-            {
-                var heap = new Pile();
-                heap.Things.Add(onFloor);
-                heap.Things.Add(this);
-                level.Floor[(x, y)] = heap;
-            }
-        }
-        else
-        {
-            level.Floor[(x, y)] = this;
-        }
+        // var level = ilevel as CombatMapScreen;
+        // if (level.Floor.ContainsKey((x, y)))
+        // {
+        //     var onFloor = level.Floor[(x, y)];
+        //     if (onFloor is Pile pile)
+        //     {
+        //         pile.Things.Add(this);
+        //     }
+        //     else
+        //     {
+        //         var heap = new Pile();
+        //         heap.Things.Add(onFloor);
+        //         heap.Things.Add(this);
+        //         level.Floor[(x, y)] = heap;
+        //     }
+        // }
+        // else
+        // {
+        //     level.Floor[(x, y)] = this;
+        // }
 
         yield break;
     }

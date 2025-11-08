@@ -8,10 +8,10 @@ public static class Positions
     {
         if (CombatMapScreen.Level == null) return null;
         
-        foreach (var enemy in CombatMapScreen.Level.Enemies)
-        {
-            if (enemy.X == x && enemy.Y == y) return enemy;
-        }
+        // foreach (var enemy in CombatMapScreen.Level.Enemies)
+        // {
+        //     if (enemy.X == x && enemy.Y == y) return enemy;
+        // }
 
         return null;
     }

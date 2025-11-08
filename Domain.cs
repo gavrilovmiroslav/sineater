@@ -212,7 +212,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
         circle.Shuffle();
 
-        var ew = level.Enemies[0].GetAP().Count<StatusWounds>();
+        var ew = 0; //level.Enemies[0].GetAP().Count<StatusWounds>();
         var pw = Caster.GetAP().Count<StatusWounds>();
         var wounds = pw + ew / 2;
 
@@ -445,16 +445,16 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
                 SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
             }
         }
-        foreach (var chr in level.Enemies)
-        {
-            var (cx, cy) = (chr.X, chr.Y);
-            if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
-            {
-                var (u, v) = chr.Icon;
-                var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
-                SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
-            }
-        }
+        // foreach (var chr in level.Enemies)
+        // {
+        //     var (cx, cy) = (chr.X, chr.Y);
+        //     if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
+        //     {
+        //         var (u, v) = chr.Icon;
+        //         var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
+        //         SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
+        //     }
+        // }
         
         _waveRadius += 0.1f;
     }
@@ -546,13 +546,13 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             level.Domains.Tiles[(cell.X, cell.Y)] = this;
         }
 
-        foreach (var enemy in level.Enemies)
-        {
-            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
-            {
-                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
-            }
-        }
+        // foreach (var enemy in level.Enemies)
+        // {
+        //     if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+        //     {
+        //         enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
+        //     }
+        // }
         
         yield return new WaitForSeconds(1f);
         yield return Blink(level);
@@ -599,13 +599,13 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             }
         }
         
-        foreach (var enemy in level.Enemies)
-        {
-            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
-            {
-                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
-            }
-        }
+        // foreach (var enemy in level.Enemies)
+        // {
+        //     if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+        //     {
+        //         enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
+        //     }
+        // }
     }
 
     public override void Draw(CombatMapScreen level)
@@ -779,14 +779,14 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         _shadows.Clear();
         _shadowColors.Clear();
         
-        foreach (var e in level.Enemies)
-        {
-            if (e.Traits.Any(t => t is TraitProne))
-            {
-                e.Traits.RemoveAll(t => t is TraitProne);
-            }
-            e.Render = true;
-        }
+        // foreach (var e in level.Enemies)
+        // {
+        //     if (e.Traits.Any(t => t is TraitProne))
+        //     {
+        //         e.Traits.RemoveAll(t => t is TraitProne);
+        //     }
+        //     e.Render = true;
+        // }
 
         foreach (var c in SineaterGame.Instance.Party.Characters)
         {
@@ -946,12 +946,12 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             chars[(ch.X, ch.Y)] = ch; 
         }
         
-        foreach (var ch in level.Enemies)
-        {
-            chars[(ch.X, ch.Y)] = ch; 
-        }
+        // foreach (var ch in level.Enemies)
+        // {
+        //     chars[(ch.X, ch.Y)] = ch; 
+        // }
         
-        var distances = new DistanceMap(map, false, x, y);
+        var distances = new DistanceMap(map, false, x, y, (m, mx, my) => m.IsWalkable(mx, my));
         for (var i = 1; i < distances.MaxDistance(); i++)
         {
             level.DrawCombat();
@@ -978,8 +978,6 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
                 {
                     yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
                 }
-                
-                level.Visited[rx, ry] = true;
             }
             
             foreach (var (rx, ry) in distances.GetAllAt(i + 1))
