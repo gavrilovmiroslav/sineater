@@ -100,16 +100,16 @@ public class CombatMapScreen : IScreen
                 (a, b, c) = (36, 2, 2); //36
                 break;
             case ETerrainKind.Temple:
-                (a, b, c) = (40, 1, 1); //45
+                (a, b, c) = (16, 6, 2); //45
                 break;
             case ETerrainKind.Cave:
-                (a, b, c) = (52, 4, 7); //47
+                (a, b, c) = (47, 4, 4); //47
                 break;
             case ETerrainKind.Clearing:
                 (a, b, c) = (54, 3, 1); //49
                 break;
             case ETerrainKind.Ruin:
-                (a, b, c) = (92, 2, 2); //89
+                (a, b, c) = (20, 4, 2); //89
                 break;
             default:
                 (a, b, c) = (Rnd.Instance.Next(1, 99), Rnd.Instance.D6, Rnd.Instance.D6);
@@ -125,7 +125,7 @@ public class CombatMapScreen : IScreen
             throw new Exception($"MAP CAN'T BE LARGER THAN {_fullWidth - 1}x{_fullHeight - 1} (is {_width}x{_height})");
         }
 
-        if (_kind == ETerrainKind.Ruin)
+        if (_kind is ETerrainKind.Ruin or ETerrainKind.Temple or ETerrainKind.Tomb)
         {
             mapCreationStrategy = new RandomRoomsMapCreationStrategy<Map>(_width, _height, a, b, c, Rnd.Instance);
         }
@@ -307,17 +307,6 @@ public class CombatMapScreen : IScreen
 
             index++;
         }
-
-        // var distances = "0123456789abcdefghijklmno0123456789abcdefghijklmno".ToCharArray();
-        // foreach (var d in Structure.Map.GetAllCells().Where(c => c.IsWalkable) ?? [])
-        // {
-        //     var dt = Structure.Walkables.GetDistance(d.X, d.Y);
-        //     if (dt != -1)
-        //     {
-        //         _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
-        //             Color.Lerp(Color.Red, Color.Green, (float)dt / (float)30.0f));
-        //     }
-        // }
         
         // foreach (var d in Structure.Map.GetAllCells().Where(c => !c.IsWalkable) ?? [])
         // {
@@ -338,9 +327,20 @@ public class CombatMapScreen : IScreen
         {
             _game.Layers["mrmo"].Set(hx, hy, $".", Structure.Heat.Get(hx, hy));
         }
+        
+        var distances = "0123456789abcdefghijklmno0123456789abcdefghijklmno".ToCharArray();
+        foreach (var d in Structure.Map.GetAllCells().Where(c => c.IsWalkable) ?? [])
+        {
+            var dt = Structure.Walkables.GetDistance(d.X, d.Y);
+            if (dt != -1)
+            {
+                _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
+                    Color.Lerp(Color.Green, Color.Red, (float)dt / (float)15.0f));
+            }
+        }
 
         var (ex, ey) = Structure.Entry;
-        _game.Layers["mrmo"].Set(ex, ey, $"E", Color.White);
+        _game.Layers["mrmo"].Set(ex, ey, $"E", Color.Yellow);
         
         var (gx, gy) = Structure.Goals[0];
         _game.Layers["mrmo"].Set(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
@@ -349,6 +349,11 @@ public class CombatMapScreen : IScreen
         {
             var (cu, cv) = chr.Icon;
             _game.Layers["mrmo"].Set(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Tint));
+        }
+        
+        foreach (var chr in Structure.Treasure)
+        {
+            _game.Layers["mrmo"].Set(chr.Item1, chr.Item2, "?", Color.White);
         }
     }
 

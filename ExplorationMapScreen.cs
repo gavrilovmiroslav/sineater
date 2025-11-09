@@ -210,7 +210,7 @@ public class ExplorationMapScreen : IScreen
                 p = _promised[(x, y)];
             }
             _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
-            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Temple, Phase = _phase, Reward = p }));
         }
         else if (l is LocationTomb tomb)
         {
@@ -227,7 +227,7 @@ public class ExplorationMapScreen : IScreen
                 p = _promised[(x, y)];
             }
             _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
-            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Tomb, Phase = _phase, Reward = p }));
         }
         else if (l is LocationTreasure treasure)
         {
