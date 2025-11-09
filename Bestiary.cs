@@ -1,17 +1,27 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Wintellect.PowerCollections;
 
 namespace SINEATER;
 
 public static class Bestiary
 {
+    public static MultiDictionary<int, Func<Enemy>> Levels = new(false)
+    {
+        { 1, new Func<Enemy>(Bat) },
+        { 2, new Func<Enemy>(Goblin) },
+        { 3, new Func<Enemy>(Hobgoblin) }
+    };
 
     public static Enemy Bat()
     {
         var bat = new Enemy
         {
             Name = "Bat",
+            Crew = 0,
+            CrewChoice = ECrewChoice.None,
             Icon = (7, 65),
             DeadIcon = (8, 65),
             Portrait = (5, 1),
@@ -33,6 +43,8 @@ public static class Bestiary
         var gob = new Enemy
         {
             Name = "Goblin",
+            Crew = 2 + Rnd.Instance.D4,
+            CrewChoice = ECrewChoice.Companion,
             Icon = (5, 64),
             DeadIcon = (8, 65),
             Portrait = (0, 2),
@@ -54,6 +66,8 @@ public static class Bestiary
         var gob = new Enemy
         {
             Name = "Hobgob",
+            Crew = 3 + Rnd.Instance.D4,
+            CrewChoice = ECrewChoice.Minions,
             Icon = (6, 64),
             DeadIcon = (8, 65),
             Portrait = (1, 2),

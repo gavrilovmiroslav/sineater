@@ -4,9 +4,18 @@ using Microsoft.Xna.Framework;
 
 namespace SINEATER;
 
+public enum ECrewChoice
+{
+    None,
+    Minions,
+    Companion,
+}
+
 public class Enemy : Character
 {
     public bool NoMove = false;
+    public int Crew = 1;
+    public ECrewChoice CrewChoice = ECrewChoice.None;
     public int Wait = 3;
     public string Name;
     public ICharacter? LastHit = null;

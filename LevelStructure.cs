@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 using RogueSharp;
 using Wintellect.PowerCollections;
 
@@ -86,10 +87,12 @@ public record struct LevelStructure
     public readonly List<TiledStructure> Rooms = [];
     public (int, int) Entry;
     public readonly List<(int, int)> Goals = [];
+    public readonly List<Enemy> Enemies = [];
     public readonly HeatMap Heat;
     
     public LevelStructure(IMap map)
     {
+        Enemies.Clear();
         Map = map;
                 
         var walkable = new Queue<(int, int)>();
@@ -136,16 +139,151 @@ public record struct LevelStructure
             OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count)
             .First();
 
+        Goals.Clear();
         Goals.Add(start);
         Walkables.Initialize(map, walkablePred, [start]);
+
+        Heat = new HeatMap(Map);
+        Heat.PaintPaths(Entry, Goals[0], Color.Gold);
         
         max = Walkables.MaxDistance();
         var far = Walkables.Distances[0].GetAllAt(max - (Rnd.Instance.D4 - 1)).ToList();
         Entry = far[Rnd.Instance.Next(0, far.Count)];
         Walkables.Initialize(map, walkablePred, [Entry]);
+        Heat.PaintPaths(Entry, Goals[0], Color.Goldenrod);
+        Walkables.Initialize(map, walkablePred, [Entry, ..Goals, ..Heat.GetAll()]);
+
+        var n = 0;
         
-        Heat = new HeatMap(Map);
-        Heat.PaintPaths(Entry, Goals[0], 1);
-        Walkables.Initialize(map, walkablePred, [Entry, Goals[0], ..Heat.GetAll()]);
+        do
+        {
+            far = Walkables.Distances[0].GetAllAt(Walkables.Distances[0].MaxDistance()).ToList();
+            var (x, y) = far[Rnd.Instance.Next(0, far.Count)];
+            if (Heat.Get(x, y) != Color.Black) break;
+            Goals.Add((x, y));
+            Heat.PaintPaths(Entry, (x, y), new Color(0.2f, 0.0f, 0.0f));
+
+            Walkables.Initialize(map, walkablePred, [Entry, ..Goals]);
+            n++;
+            if (n > 5) break;
+        } while (true);
+        
+        Walkables.Initialize(map, walkablePred, [Entry, ..Goals]);
+        var entrySight = fov.ComputeFov(Entry.Item1, Entry.Item2, 20, false).Select(c => (c.X, c.Y)).ToList();
+
+        var watch = new Stopwatch();
+        watch.Start();
+        
+        var res = Goals.Count * 200;
+        Stack<(int, int, ECrewChoice)> crew = [];
+        for (var i = 0; i < Goals.Count; i++)
+        {
+            watch.Lap($"goal {i}");
+            var (gx, gy) = Goals[i];
+
+            var places = Heat.GetAll()
+                .Where(e => !entrySight.Contains(e))
+                .Where(e => !(e.Item1 == gx && e.Item2 == gy))
+                .OrderBy(xy =>
+                Vector2.Distance(new Vector2(xy.Item1, xy.Item2), new Vector2(gx, gy))).GetEnumerator();
+            
+            while (res > 0)
+            {
+                Console.WriteLine(res);
+                Enemy enm;
+                if (crew.Count == 0)
+                {
+                    for (var l = 5; l > 0; l--)
+                    {
+                        if (!Bestiary.Levels.ContainsKey(l)) continue;
+                        enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
+                        var cost = (1 + enm.Crew) * l * 10;
+                        if (res < cost) continue;
+
+                        res -= cost;
+                        Console.WriteLine($"{enm.Name} (-{cost})");
+                        var (x, y) = places.Current;
+                        places.MoveNext();
+                        enm.X = x;
+                        enm.Y = y;
+                        Enemies.Add(enm);
+                        if (enm.CrewChoice != ECrewChoice.None)
+                        {
+                            crew.Push((enm.Crew, l, enm.CrewChoice));
+                            //watch.Lap($"done with {enm.Name}");
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    var cost = 0;
+                    var (c, l, ch) = crew.Pop();
+                    var substack = new Queue<(int, int, ECrewChoice)>();
+                    for (int m = 0; m < c; m++)
+                    {
+                        switch (ch)
+                        {
+                            case ECrewChoice.None:
+                                break;
+                            
+                            case ECrewChoice.Minions:
+                                l = l - 1;
+
+                                if (Bestiary.Levels.ContainsKey(l))
+                                {
+                                    enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
+                                
+                                    cost = (1 + enm.Crew) * l * 10;
+                                    
+                                    if (res > cost)
+                                    {
+                                        res -= cost;
+                                        Console.WriteLine($"{enm.Name} (-{cost})");
+                                        var (x, y) = places.Current;
+                                        places.MoveNext();
+                                        enm.X = x;
+                                        enm.Y = y;
+                                        Enemies.Add(enm);
+                                        if (enm.CrewChoice != ECrewChoice.None)
+                                        {
+                                            substack.Enqueue((enm.Crew, l, enm.CrewChoice));
+                                        }
+                                    }
+                                }
+
+                                break;
+                            case ECrewChoice.Companion:
+                                enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
+                                cost = (1 + enm.Crew) * 10;
+                                if (res > cost)
+                                {
+                                    res -= cost;
+                                    Console.WriteLine($"{enm.Name} (-{cost})");
+                                    var (x, y) = places.Current;
+                                    places.MoveNext();
+                                    enm.X = x;
+                                    enm.Y = y;
+                                    Enemies.Add(enm);
+                                    if (enm.CrewChoice != ECrewChoice.None)
+                                    {
+                                        substack.Enqueue((enm.Crew, l, enm.CrewChoice));
+                                    }
+                                }
+
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                    }
+
+                    while (substack.Count > 0)
+                    {
+                        crew.Push(substack.Dequeue());
+                    }
+                }
+            }
+        }
+        watch.End();
     }
 }

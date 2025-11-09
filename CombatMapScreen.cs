@@ -36,7 +36,7 @@ public class CombatMapScreen : IScreen
 
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
-    private readonly int _fullWidth = 24, _fullHeight = 22;
+    private readonly int _fullWidth = 20, _fullHeight = 20;
     private int _width, _height;
     private SineaterGame _game;
     private ETerrainKind _kind;
@@ -308,26 +308,26 @@ public class CombatMapScreen : IScreen
             index++;
         }
 
-        var distances = "0123456789abcdefghijklmno0123456789abcdefghijklmno".ToCharArray();
-        foreach (var d in Structure.Map.GetAllCells().Where(c => c.IsWalkable) ?? [])
-        {
-            var dt = Structure.Walkables.GetDistance(d.X, d.Y);
-            if (dt != -1)
-            {
-                _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
-                    Color.Lerp(Color.Red, Color.Green, (float)dt / (float)30.0f));
-            }
-        }
+        // var distances = "0123456789abcdefghijklmno0123456789abcdefghijklmno".ToCharArray();
+        // foreach (var d in Structure.Map.GetAllCells().Where(c => c.IsWalkable) ?? [])
+        // {
+        //     var dt = Structure.Walkables.GetDistance(d.X, d.Y);
+        //     if (dt != -1)
+        //     {
+        //         _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
+        //             Color.Lerp(Color.Red, Color.Green, (float)dt / (float)30.0f));
+        //     }
+        // }
         
-        foreach (var d in Structure.Map.GetAllCells().Where(c => !c.IsWalkable) ?? [])
-        {
-            var dt = Structure.Obstacles.GetDistance(d.X, d.Y);
-            if (dt != -1)
-            {
-                _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
-                    Color.Lerp(Color.Purple, Color.Blue, (float)dt / (float)30.0f));
-            }
-        }
+        // foreach (var d in Structure.Map.GetAllCells().Where(c => !c.IsWalkable) ?? [])
+        // {
+        //     var dt = Structure.Obstacles.GetDistance(d.X, d.Y);
+        //     if (dt != -1)
+        //     {
+        //         _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
+        //             Color.Lerp(Color.Purple, Color.Blue, (float)dt / (float)30.0f));
+        //     }
+        // }
 
         var max = Structure.Walkables.MaxDistance();
         var dm = Structure.Walkables.Distances[0];
@@ -336,14 +336,20 @@ public class CombatMapScreen : IScreen
 
         foreach (var (hx, hy) in Structure.Heat.GetAll())
         {
-            _game.Layers["mrmo"].Set(hx, hy, $"{Structure.Heat.Get(hx, hy)}", Color.Orange);
+            _game.Layers["mrmo"].Set(hx, hy, $".", Structure.Heat.Get(hx, hy));
         }
-        
-        var (dx, dy) = Structure.Goals[0];
-        _game.Layers["mrmo"].Set(dx, dy, $"X", Color.Yellow);
 
         var (ex, ey) = Structure.Entry;
-        _game.Layers["mrmo"].Set(ex, ey, $"E", Color.Blue);
+        _game.Layers["mrmo"].Set(ex, ey, $"E", Color.White);
+        
+        var (gx, gy) = Structure.Goals[0];
+        _game.Layers["mrmo"].Set(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
+        
+        foreach (var chr in Structure.Enemies)
+        {
+            var (cu, cv) = chr.Icon;
+            _game.Layers["mrmo"].Set(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Tint));
+        }
     }
 
     public bool SkipGUI { get; set; } = false;

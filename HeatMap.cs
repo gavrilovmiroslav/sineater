@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System.Numerics;
+using Microsoft.Xna.Framework;
 using RogueSharp;
+using Point = RogueSharp.Point;
+using Vector2 = System.Numerics.Vector2;
 
 namespace SINEATER;
 
 public class HeatMap
 {
-    private readonly Dictionary<(int, int), int> _heat = [];
+    private readonly Dictionary<(int, int), Color> _heat = [];
     private readonly IMap<Cell> _map;
     
     public HeatMap(IMap<Cell> map)
@@ -45,9 +48,9 @@ public class HeatMap
         return result;
     }
     
-    public int Get(int x, int y)
+    public Color Get(int x, int y)
     {
-        return _heat.GetValueOrDefault((x, y), -1);
+        return _heat.GetValueOrDefault((x, y), Color.Black);
     }
 
     public IEnumerable<(int, int)>? FindPath((int, int) entry, (int, int) goal, IEnumerable<(int, int)>? except = null)
@@ -97,12 +100,12 @@ public class HeatMap
         return [..obv, ..nonobv];
     }
 
-    public bool PaintPath((int, int) entry, (int, int) goal, int width = 1)
+    public bool PaintPath((int, int) entry, (int, int) goal, Color color, int width = 1)
     {
-        return PaintPath(entry, goal, [], width);
+        return PaintPath(entry, goal, [], color, width);
     }
     
-    public bool PaintPath((int, int) entry, (int, int) goal, IEnumerable<(int, int)>? except, int width = 1)
+    public bool PaintPath((int, int) entry, (int, int) goal, IEnumerable<(int, int)>? except, Color color, int width = 1)
     {
         var path = FindPath(entry, goal, except);
         if (path == null) return false;
@@ -113,11 +116,11 @@ public class HeatMap
             {
                 if (_heat.ContainsKey((c.X, c.Y)))
                 {
-                    _heat[(c.X, c.Y)]++;
+                    _heat[(c.X, c.Y)] = Color.Lerp(_heat[(c.X, c.Y)], color, 0.5f);
                 }
                 else
                 {
-                    _heat.Add((c.X, c.Y), 1);
+                    _heat.Add((c.X, c.Y), color);
                 }
             }
         }
@@ -125,7 +128,7 @@ public class HeatMap
         return true;
     }
     
-    public bool PaintPaths((int, int) entry, (int, int) goal, int width = 1)
+    public bool PaintPaths((int, int) entry, (int, int) goal, Color color, int width = 1)
     {
         var paths = FindPaths(entry, goal);
         if (paths.Count == 0) return false;
@@ -138,11 +141,11 @@ public class HeatMap
                 {
                     if (_heat.ContainsKey((c.X, c.Y)))
                     {
-                        _heat[(c.X, c.Y)]++;
+                        _heat[(c.X, c.Y)] = Color.Lerp(_heat[(c.X, c.Y)], color, 0.2f);
                     }
                     else
                     {
-                        _heat.Add((c.X, c.Y), 1);
+                        _heat.Add((c.X, c.Y), color);
                     }
                 }
             }
@@ -155,9 +158,30 @@ public class HeatMap
     {
         foreach (var (k, v) in this._heat)
         {
-            if (v != 0)
+            if (v != Color.Black)
             {
                 yield return k;
+            }
+        }
+    }
+
+    public void Clear()
+    {
+        this._heat.Clear();
+    }
+
+    public void Paint(IEnumerable<(int, int)> cells, Color color)
+    {
+        foreach (var c in cells)
+        {
+            var (cx, cy) = c;
+            if (_heat.ContainsKey((cx, cy)))
+            {
+                _heat[(cx, cy)] = Color.Lerp(_heat[(cx, cy)], color, 0.2f);
+            }
+            else
+            {
+                _heat.Add((cx, cy), color);
             }
         }
     }
