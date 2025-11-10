@@ -358,7 +358,6 @@ public class AP
 
                 current.Draw(x + i, x + j, y);
                 i = j;
-                i--;
             }
             else
             {

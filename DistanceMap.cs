@@ -94,6 +94,7 @@ public class DistanceMap
 
     public int MaxDistance()
     {
+        if (_distances.Values.Count == 0) return 0;
         return _distances.Values.Max();
     }
     
@@ -110,5 +111,16 @@ public class DistanceMap
         }
 
         return [];
+    }
+
+    public IEnumerable<(int, int)> GetAll()
+    {
+        foreach (var (k, v) in _buckets)
+        {
+            foreach (var e in v)
+            {
+                yield return e;
+            }
+        }
     }
 }

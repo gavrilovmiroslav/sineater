@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using CommunityToolkit.HighPerformance.Helpers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
@@ -115,9 +116,7 @@ public class CombatMapScreen : IScreen
                 (a, b, c) = (Rnd.Instance.Next(1, 99), Rnd.Instance.D6, Rnd.Instance.D6);
                 break;
         }
-
-        Console.WriteLine($"Fill probability: {a}, iterations: {b}, cutoff: {c}, size: {_width} x {_height}");
-
+        
         IMapCreationStrategy<Map>? mapCreationStrategy = null;
 
         if (_width > _fullWidth - 1 || _height > _fullHeight - 1)
@@ -161,15 +160,11 @@ public class CombatMapScreen : IScreen
 
         _rendered = false;
 
-        var vas = Structure.Map.GetAllCells().Where(t => t.IsWalkable).ToArray();
-        if (vas.Length <= 50)
+        for (var ci = 0; ci < 4; ci++)
         {
-            _extraFill++;
-            Regenerate();
-            return;
+            _game.Party.Characters[ci].X = Structure.Starts[ci].Item1;
+            _game.Party.Characters[ci].Y = Structure.Starts[ci].Item2;
         }
-
-        vas.Shuffle();
     }
     
     public IEnumerable EnemyMove(Enemy enemy)
@@ -261,7 +256,7 @@ public class CombatMapScreen : IScreen
                 {
                     if (onlyNow) continue;
                     var g = _groundGlyphs[i, j];
-                    if (g == null) continue;
+                    
                     _game.Layers["mrmo"].Set(i, j, new Glyph(g.U, g.V, Color.Black, Color.Lerp(Color.Black, Color.Gray, 1)));
 
                     if (1 >= 1.0f)
@@ -276,19 +271,6 @@ public class CombatMapScreen : IScreen
         {
             domain.Draw(this);
         }
-        
-        // foreach (var ((x, y), item) in Floor)
-        // {
-        //     _game.Layers["mrmo"].Set(x + _offsetX, y + _offsetY, item.GetIcon());
-        // }
-        //
-        // foreach (var enemy in _enemies)
-        // {
-        //     var (ix, iy) = enemy.Icon;
-        //     var c = enemy.GetTint();
-        //     if (enemy.Traits.Count > 0) c = Color.Lerp(c, Color.Gold, 0.6f);
-        //     _game.Layers["mrmo"].Set(enemy.X + _offsetX, enemy.Y + _offsetY, new Glyph(ix, iy, Color.Black, c));
-        // }
         
         foreach (var chr in _game.Party.Characters)
         {
@@ -307,48 +289,21 @@ public class CombatMapScreen : IScreen
 
             index++;
         }
-        
-        // foreach (var d in Structure.Map.GetAllCells().Where(c => !c.IsWalkable) ?? [])
-        // {
-        //     var dt = Structure.Obstacles.GetDistance(d.X, d.Y);
-        //     if (dt != -1)
-        //     {
-        //         _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
-        //             Color.Lerp(Color.Purple, Color.Blue, (float)dt / (float)30.0f));
-        //     }
-        // }
 
         var max = Structure.Walkables.MaxDistance();
         var dm = Structure.Walkables.Distances[0];
         var fov = new FieldOfView<Cell>(Map);
         var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
-
-        foreach (var (hx, hy) in Structure.Heat.GetAll())
-        {
-            _game.Layers["mrmo"].Set(hx, hy, $".", Structure.Heat.Get(hx, hy));
-        }
-        
-        var distances = "0123456789abcdefghijklmno0123456789abcdefghijklmno".ToCharArray();
-        foreach (var d in Structure.Map.GetAllCells().Where(c => c.IsWalkable) ?? [])
-        {
-            var dt = Structure.Walkables.GetDistance(d.X, d.Y);
-            if (dt != -1)
-            {
-                _game.Layers["mrmo"].Set(d.X, d.Y, $"{distances[dt]}",
-                    Color.Lerp(Color.Green, Color.Red, (float)dt / (float)15.0f));
-            }
-        }
-
-        var (ex, ey) = Structure.Entry;
-        _game.Layers["mrmo"].Set(ex, ey, $"E", Color.Yellow);
         
         var (gx, gy) = Structure.Goals[0];
         _game.Layers["mrmo"].Set(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
+
+        var colors = new List<Color>() { Color.Yellow, Color.OrangeRed, Color.Red, Color.Purple };
         
         foreach (var chr in Structure.Enemies)
         {
             var (cu, cv) = chr.Icon;
-            _game.Layers["mrmo"].Set(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Tint));
+            _game.Layers["mrmo"].Set(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, colors[chr.Level - 1]));
         }
         
         foreach (var chr in Structure.Treasure)

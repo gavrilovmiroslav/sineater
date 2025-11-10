@@ -73,7 +73,6 @@ public class TiledStructure
         var xys = sources.ToList();
         for (int i = 0; i < Count; i++)
         {
-            var tiles = GetRoom(i) ?? [];
             Distances[i] = new(map, false, xys, pred);
         }
     }
@@ -86,6 +85,7 @@ public record struct LevelStructure
     public readonly TiledStructure Obstacles;
     public readonly List<TiledStructure> Rooms = [];
     public (int, int) Entry;
+    public readonly List<(int, int)> Starts = [];
     public readonly List<(int, int)> Goals = [];
     public readonly List<Enemy> Enemies = [];
     public readonly List<(int, int)> Treasure = [];
@@ -125,139 +125,179 @@ public record struct LevelStructure
         Obstacles.Initialize(map, obstaclePred, Walkables.TilesInRooms.Keys);
         
         Walkables.Initialize(map, walkablePred, Obstacles.TilesInRooms.Keys);
+        var largest = 0;
         if (Walkables.Count > 1)
         {
-            Console.WriteLine("MORE THAN ONE ROOM! BE AFRAID");
+            var count = 0;
+            for (int i = 0; i < Walkables.Count; i++)
+            {
+                if (Walkables.RoomsByTiles[i].Count > count)
+                {
+                    largest = i;
+                    count = Walkables.RoomsByTiles[i].Count;
+                }
+            }
         }
+        Console.WriteLine($"Largest room = {largest}");
         
-        var watch = new Stopwatch();
+        Goals.Clear();
         
-        var max = Walkables.MaxDistance();
         for (int w = 0; w < Walkables.Distances.Count; w++)
         {
-            var dm = Walkables.Distances[w];
-            var fov = new FieldOfView<Cell>(Map);
-            var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
-
-            var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count);
-            if (!heap.Any()) continue;
-            var start = heap.First();
-
-            Goals.Clear();
-            Goals.Add(start);
-            Walkables.Initialize(map, walkablePred, [start]);
-
-            Heat = new HeatMap(Map);
-            Heat.PaintPaths(Entry, Goals[0], Color.Green);
-
-            max = Walkables.MaxDistance();
-            var far = Walkables.Distances[w].GetAllAt(max - (Rnd.Instance.D4 - 1)).ToList();
-            if (far.Count == 0) continue;
-            
-            Entry = far[Rnd.Instance.Next(0, far.Count)];
-            Walkables.Initialize(map, walkablePred, [Entry]);
-            Heat.PaintPaths(Entry, Goals[0], Color.Blue);
-            Walkables.Initialize(map, walkablePred, [Entry, ..Goals, ..Heat.GetAll()]);
-
-            var n = 0;
-
-            do
+            if (w == largest) 
             {
-                far = Walkables.Distances[w].GetAllAt(Walkables.Distances[w].MaxDistance()).ToList();
-                var (x, y) = far[Rnd.Instance.Next(0, far.Count)];
-                if (Heat.Get(x, y) != Color.Black) break;
-                Goals.Add((x, y));
-                Heat.PaintPaths(Entry, (x, y), new Color(0.2f, 0.2f, 0.0f));
+                var dm = Walkables.Distances[w];
+                var max = dm.MaxDistance();
+                var fov = new FieldOfView<Cell>(Map);
 
-                Walkables.Initialize(map, walkablePred, [Entry, ..Goals]);
-                n++;
-                if (n > 5) break;
-            } while (true);
+                var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
+                var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count);
+                if (!heap.Any()) continue;
+                var start = heap.First();
 
-            Walkables.Initialize(map, walkablePred, [Entry]);
-            var entrySight = fov.ComputeFov(Entry.Item1, Entry.Item2, 6, false);
-            foreach (var (dx, dy) in Walkables.Distances[w].GetAllAt(2))
-            {
-                entrySight = fov.AppendFov(dx, dy, 6, false);
-            }
+                Goals.Add(start);
+                Walkables.Initialize(map, walkablePred, [start]);
 
-            var sight = entrySight.Select(c => (c.X, c.Y)).ToList();
-            watch.Start();
+                Heat = new HeatMap(Map);
 
-            var goalSet = new HashSet<(int, int)>();
-            foreach (var g in Goals)
-            {
-                goalSet.Add(g);
-            }
-            
-            Stack<(int, int, ECrewChoice)> crew = [];
-            for (var i = 0; i < Goals.Count; i++)
-            {
-                var res = 300;
-                watch.Lap($"goal {i}");
-                var (gx, gy) = Goals[i];
+                max = Walkables.MaxDistance();
+                var far = Walkables.Distances[w].GetAllAt(max - (Rnd.Instance.D4 - 1)).ToList();
+                if (far.Count == 0) continue;
 
-                var places = Heat.GetAll()
-                    .Where(e => !sight.Contains(e))
-                    .Where(e => !goalSet.Contains(e))
-                    .OrderBy(xy =>
-                        Vector2.Distance(new Vector2(xy.Item1, xy.Item2), new Vector2(gx, gy))).GetEnumerator();
+                Entry = far[Rnd.Instance.Next(0, far.Count)];
+                Heat.PaintPaths(Entry, Goals[0], Color.Green);
 
-                int spawned = 0;
-                while (res > 0)
+                Walkables.Initialize(map, walkablePred, [Entry]);
+                Heat.PaintPaths(Entry, Goals[0], Color.Blue);
+                Walkables.Initialize(map, walkablePred, [Entry, ..Goals, ..Heat.GetAll()]);
+
+                var n = 0;
+
+                do
                 {
-                    Console.WriteLine(res);
-                    Enemy enm;
-                    if (crew.Count == 0)
-                    {
-                        for (var l = 5; l > 0; l--)
-                        {
-                            if (!Bestiary.Levels.ContainsKey(l)) continue;
-                            enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
-                            var cost = (1 + enm.Crew) * l * 10;
-                            if (res < cost) continue;
+                    far = Walkables.Distances[w].GetAllAt(Walkables.Distances[w].MaxDistance()).ToList();
+                    var (x, y) = far[Rnd.Instance.Next(0, far.Count)];
+                    if (Heat.Get(x, y) != Color.Black) break;
+                    Goals.Add((x, y));
+                    Heat.PaintPaths(Entry, (x, y), new Color(0.2f, 0.2f, 0.0f));
 
-                            res -= cost;
-                            places.MoveNext();
-                            var (x, y) = places.Current;
-                            enm.X = x;
-                            enm.Y = y;
-                            if (Rnd.Instance.D100 > 30)
+                    Walkables.Initialize(map, walkablePred, [Entry, ..Goals]);
+                    n++;
+                    if (n > 5) break;
+                } while (true);
+
+                Walkables.Initialize(map, walkablePred, [Entry]);
+                var entrySight = fov.ComputeFov(Entry.Item1, Entry.Item2, 6, false);
+                foreach (var (dx, dy) in Walkables.Distances[w].GetAllAt(2))
+                {
+                    entrySight = fov.AppendFov(dx, dy, 6, false);
+                }
+
+                var sight = entrySight.Select(c => (c.X, c.Y)).ToList();
+
+                var goalSet = new HashSet<(int, int)>();
+                foreach (var g in Goals)
+                {
+                    goalSet.Add(g);
+                }
+
+                Stack<(int, int, ECrewChoice)> crew = [];
+                for (var i = 0; i < Goals.Count; i++)
+                {
+                    var res = 300;
+                    var (gx, gy) = Goals[i];
+
+                    var places = Heat.GetAll()
+                        .Where(e => !sight.Contains(e))
+                        .Where(e => !goalSet.Contains(e))
+                        .OrderBy(xy =>
+                            Vector2.Distance(new Vector2(xy.Item1, xy.Item2), new Vector2(gx, gy))).GetEnumerator();
+
+                    int spawned = 0;
+                    while (res > 0)
+                    {
+                        Enemy enm;
+                        if (crew.Count == 0)
+                        {
+                            for (var l = 5; l > 0; l--)
                             {
-                                Enemies.Add(enm);
-                                spawned++;
-                                Console.WriteLine($"{enm.Name} (-{cost}) at {x}, {y}");
-                                if (enm.CrewChoice != ECrewChoice.None)
+                                if (!Bestiary.Levels.ContainsKey(l)) continue;
+                                enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
+                                var cost = (enm.Stats.Score + enm.HP) * enm.Sin;
+                                if (res < cost)
                                 {
-                                    crew.Push((enm.Crew, l, enm.CrewChoice));
-                                    //watch.Lap($"done with {enm.Name}");
-                                    break;
+                                    res -= 10;
+                                    continue;
+                                }
+
+                                res -= cost;
+                                places.MoveNext();
+                                var (x, y) = places.Current;
+                                enm.X = x;
+                                enm.Y = y;
+                                if (Rnd.Instance.D100 > 30)
+                                {
+                                    Enemies.Add(enm);
+                                    spawned++;
+                                    if (enm.CrewChoice != ECrewChoice.None)
+                                    {
+                                        crew.Push((enm.Crew, l, enm.CrewChoice));
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                    else
-                    {
-                        var cost = 0;
-                        var (c, l, ch) = crew.Pop();
-                        var substack = new Queue<(int, int, ECrewChoice)>();
-                        for (int m = 0; m < c; m++)
+                        else
                         {
-                            switch (ch)
+                            var cost = 0;
+                            var (c, l, ch) = crew.Pop();
+                            var substack = new Queue<(int, int, ECrewChoice)>();
+                            for (int m = 0; m < c; m++)
                             {
-                                case ECrewChoice.None:
-                                    break;
+                                switch (ch)
+                                {
+                                    case ECrewChoice.None:
+                                        break;
 
-                                case ECrewChoice.Minions:
-                                    l = l - 1;
+                                    case ECrewChoice.Minions:
+                                        l = l - 1;
 
-                                    if (Bestiary.Levels.ContainsKey(l))
-                                    {
+                                        if (Bestiary.Levels.ContainsKey(l))
+                                        {
+                                            enm = Bestiary.Levels[l].ToList()[
+                                                Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
+
+                                            //cost = (1 + enm.Crew) * l * 10;
+                                            cost = (enm.Stats.Score + enm.HP) * enm.Sin;
+                                            if (res > cost)
+                                            {
+                                                res -= cost;
+                                                places.MoveNext();
+                                                var (x, y) = places.Current;
+                                                enm.X = x;
+                                                enm.Y = y;
+                                                if (Rnd.Instance.D100 > 30)
+                                                {
+                                                    Enemies.Add(enm);
+                                                    spawned++;
+                                                    if (enm.CrewChoice != ECrewChoice.None)
+                                                    {
+                                                        substack.Enqueue((enm.Crew, l, enm.CrewChoice));
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                res -= 10;
+                                            }
+                                        }
+
+                                        break;
+                                    case ECrewChoice.Companion:
                                         enm = Bestiary.Levels[l].ToList()[
                                             Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
-
-                                        cost = (1 + enm.Crew) * l * 10;
-
+                                        //cost = (1 + enm.Crew) * 10;
+                                        cost = (enm.Stats.Score + enm.HP) * enm.Sin;
                                         if (res > cost)
                                         {
                                             res -= cost;
@@ -269,67 +309,60 @@ public record struct LevelStructure
                                             {
                                                 Enemies.Add(enm);
                                                 spawned++;
-                                                Console.WriteLine($"{enm.Name} (-{cost}) at {x}, {y}");
                                                 if (enm.CrewChoice != ECrewChoice.None)
                                                 {
                                                     substack.Enqueue((enm.Crew, l, enm.CrewChoice));
                                                 }
                                             }
                                         }
-                                    }
-
-                                    break;
-                                case ECrewChoice.Companion:
-                                    enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
-                                    cost = (1 + enm.Crew) * 10;
-                                    if (res > cost)
-                                    {
-                                        res -= cost;
-                                        places.MoveNext();
-                                        var (x, y) = places.Current;
-                                        enm.X = x;
-                                        enm.Y = y;
-                                        if (Rnd.Instance.D100 > 30)
+                                        else
                                         {
-                                            Enemies.Add(enm);
-                                            Console.WriteLine($"{enm.Name} (-{cost}) at {x}, {y}");
-                                            spawned++;
-                                            if (enm.CrewChoice != ECrewChoice.None)
-                                            {
-                                                substack.Enqueue((enm.Crew, l, enm.CrewChoice));
-                                            }
+                                            res -= 10;
                                         }
-                                    }
 
-                                    break;
-                                default:
-                                    throw new ArgumentOutOfRangeException();
+                                        break;
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
+                            }
+
+                            while (substack.Count > 0)
+                            {
+                                crew.Push(substack.Dequeue());
                             }
                         }
+                    }
 
-                        while (substack.Count > 0)
+                    Console.WriteLine($"Spawned {spawned} enemies!");
+                }
+
+                for (var i = 0; i < 5; i++)
+                {
+                    Walkables.Initialize(map, walkablePred, [..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
+                    var en = new Vector2(Entry.Item1, Entry.Item2);
+                    var t = Walkables.Distances[w].GetAllAt(1)
+                        .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
+                    if (t.Count > 0)
+                    {
+                        Treasure.Add(t[Rnd.Instance.Next(0, t.Count)]);
+                    }
+                    else
+                    {
+                        t = Walkables.Distances[w].GetAllAt(3)
+                            .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
+                        if (t.Count > 0)
                         {
-                            crew.Push(substack.Dequeue());
+                            Treasure.Add(t[Rnd.Instance.Next(0, t.Count)]);
                         }
                     }
                 }
 
-                Console.WriteLine($"Spawned {spawned} enemies!");
-            }
-
-            for (var i = 0; i < 5; i++)
-            {
-                Walkables.Initialize(map, walkablePred, [..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
-                var en = new Vector2(Entry.Item1, Entry.Item2);
-                var t = Walkables.Distances[w].GetAllAt(1)
-                    .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
-                if (t.Count > 0)
+                for (var i = 0; i < 3; i++)
                 {
-                    Treasure.Add(t[Rnd.Instance.Next(0, t.Count)]);
-                }
-                else
-                {
-                    t = Walkables.Distances[w].GetAllAt(3)
+                    Walkables.Initialize(map, walkablePred,
+                        [Entry, ..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
+                    var en = new Vector2(Entry.Item1, Entry.Item2);
+                    var t = Walkables.Distances[w].GetAllAt(Walkables.Distances[w].MaxDistance())
                         .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
                     if (t.Count > 0)
                     {
@@ -337,20 +370,42 @@ public record struct LevelStructure
                     }
                 }
             }
-            
-            for (var i = 0; i < 3; i++)
+            else
             {
-                Walkables.Initialize(map, walkablePred, [Entry, ..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
-                var en = new Vector2(Entry.Item1, Entry.Item2);
-                var t = Walkables.Distances[w].GetAllAt(Walkables.Distances[w].MaxDistance())
-                    .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
-                if (t.Count > 0)
+                var dm = Walkables.RoomsByTiles[w].ToList() ?? [];
+                dm.Shuffle();
+                for (var i = 0; i < Math.Min(dm.Count - 1, 1 + Rnd.Instance.D6); i++)
                 {
-                    Treasure.Add(t[Rnd.Instance.Next(0, t.Count)]);
+                    Console.WriteLine($"ADDED SECONDARY TREASURE TO {dm[i]}");
+                    Treasure.Add(dm[i]);
                 }
             }
         }
+        
+        Walkables.Initialize(map, walkablePred, [Entry]);
+        var wd = Walkables.Distances[largest];
+        Starts.Add(Entry);
 
-        watch.End();
+        for (var i = 2; i <= 5; i++)
+        {
+            if (Starts.Count < 4)
+            {
+                foreach (var xy in wd.GetAllAt(i))
+                {
+                    Starts.Add(xy);
+                    if (Starts.Count == 4) break;
+                }
+            }
+            if (Starts.Count == 4) break;
+        }
+
+        if (Starts.Count < 4)
+        {
+            foreach (var xy in wd.GetAllAt(1))
+            {
+                Starts.Add(xy);
+                if (Starts.Count == 4) break;
+            }
+        }
     }
 }

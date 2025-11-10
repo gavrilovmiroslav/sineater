@@ -14,6 +14,7 @@ public enum ECrewChoice
 public class Enemy : Character
 {
     public bool NoMove = false;
+    public int Level = 0;
     public int Crew = 1;
     public ECrewChoice CrewChoice = ECrewChoice.None;
     public int Wait = 3;
