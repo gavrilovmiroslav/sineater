@@ -25,8 +25,7 @@ public class Enemy : Character
     public (int, int) DeadIcon;
     public int Sin;
     public bool IsDead = false;
-    public List<IBehavior> Behaviors = [];
-
+    
     public (int, int) GetIcon(bool selected = false)
     {
         var (x, y) = Icon;
@@ -65,20 +64,18 @@ public class Enemy : Character
         return Portrait;
     }
     
-    public IEnumerable MoveTo(IScreen level, int x, int y, int? oldX = null, int? oldY = null)
+    public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
     {
         var ox = X;
         var oy = Y;
         X = x;
         Y = y;
-        if (level is CombatMapScreen lvl)
+        
+        if (level.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
         {
-            if (lvl.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
-            {
-                lvl.DrawCombat();
-                yield return lvl.Domains.Tiles[((int)X, (int)Y)]
-                    .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
-            }
+            level.DrawCombat();
+            yield return level.Domains.Tiles[((int)X, (int)Y)]
+                .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
         }
     }
 }

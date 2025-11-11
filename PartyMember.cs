@@ -86,6 +86,22 @@ public class Stats
     public int Score => Will + Clarity + Poise + Vigor;
     public int Initiative => Will + Vigor;
     public int Fortitude => Clarity + Poise;
+
+    public Stats(ICharacter chr)
+    {
+        Will = chr.Stats.Will;
+        Clarity = chr.Stats.Clarity;
+        Poise = chr.Stats.Poise;
+        Vigor = chr.Stats.Vigor;
+    }
+
+    public Stats(Stats other)
+    {
+        Will = other.Will;
+        Clarity = other.Clarity;
+        Poise = other.Poise;
+        Vigor = other.Vigor;
+    }
     
     public Stats()
     {
@@ -136,146 +152,41 @@ public class Stats
 
 public interface ICharacter
 {
-    public Inventory Inventory { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int HP { get; set; }
     public bool Render { get; set; }
     public Stats Stats { get; set; }
+    public Stats Bonus { get; set; }
+    public List<string> Tags { get; set; }
     public Color GetTint();
-    public AP GetAP();
     public void EquipLeftWeapon(Weapon? weapon);
     public Weapon? GetLeftWeapon();
     public void EquipRightWeapon(Weapon? weapon);
     public Weapon? GetRightWeapon();
-    public Armor? GetArmor();
-    public List<Trait> GetTraits();
-    public IEnumerable AddTrait(Trait trait);
-    public bool IsStunned();
+    public void EquipItem(Item? item);
+    public IItem? GetItem();
+    public AP GetAP();
     
     public string GetName();
     (int, int) GetPortait();
     void Die();
-    void RemoveArmor();
     public bool IsDone { get; set; }
 }
 
 public class Dummy : ICharacter
 {
-    public IEnumerable AsAttacker_OnAttackDiceCount(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnAttackDiceCount(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnAttackDiceRolled(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnAttackDiceRolled(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnCritChanceEstablished(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnCritChanceEstablished(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnCritHit(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnCritHit(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnGuardBreak(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnGuardBreak(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnArmorDented(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnArmorDented(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnDamageAnnounced(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnDamageAnnounced(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsAttacker_OnPoiseBroken(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public IEnumerable AsDefender_OnPoiseBroken(SkirmishFlow flow)
-    {
-        yield break;
-    }
-
-    public Inventory Inventory { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int HP { get; set; }
     public bool Render { get; set; }
     public Stats Stats { get; set; }
+    public Stats Bonus { get; set; } = new(0, 0, 0, 0);
+    public List<string> Tags { get; set; } = [];
+
     public Color GetTint()
     {
         return Color.White;
-    }
-
-    public AP GetAP()
-    {
-        return null;
     }
 
     public void EquipLeftWeapon(Weapon? weapon)
@@ -296,21 +207,15 @@ public class Dummy : ICharacter
         return null;
     }
 
-    public Armor? GetArmor()
+    public void EquipItem(Item? item)
+    {
+    }
+
+    public IItem? GetItem()
     {
         return null;
     }
-
-    public List<Trait> GetTraits()
-    {
-        return [];
-    }
-
-    public IEnumerable AddTrait(Trait trait)
-    {
-        yield break;
-    }
-
+    
     public bool IsStunned()
     {
         return false;
@@ -335,45 +240,42 @@ public class Dummy : ICharacter
     }
 
     public bool IsDone { get; set; } = false;
+    public AP GetAP()
+    {
+        return null;
+    }
 }
 
 public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
-    
+    public List<string> Tags { get; set; } = [];
     public bool IsDone { get; set; } = false;
+    public IItem? GetItem()
+    {
+        return Item;
+    }
+
+    public AP GetAP()
+    {
+        return AP;
+    }
+
+    public Stats Bonus { get; set; } = new(0, 0, 0, 0);
+
+    public int Wil => Stats.Will + Bonus.Will;
+    public int Cla => Stats.Clarity + Bonus.Clarity;
+    public int Poi => Stats.Poise + Bonus.Poise;
+    public int Vig => Stats.Vigor + Bonus.Vigor;
     
     public int Index;
     public Color Tint;
-    public AP AP;
     public ECharacterClass Job;
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
-    public Armor? Armor = null;
     public IItem? Item = null;
     public Ability? Ability = null;
-    public readonly List<Trait> Traits = [];
-    public Inventory Inventory { get; set; } = new();
-
-    public IEnumerable AddTrait(Trait trait)
-    {
-        var alreadyHasIt = Traits.Any(t => t.GetName() == trait.GetName());
-        if (trait is LimitedTrait lt && alreadyHasIt)
-        {
-            foreach (var lim in Traits.Where(t => t.GetName() == trait.GetName()))
-            {
-                if (lim is LimitedTrait limt)
-                {
-                    limt.Duration += lt.Duration;
-                }
-            }
-        }
-        else if (!alreadyHasIt)
-        {
-            Traits.Add(trait);
-            yield return trait.ApplyOnReceived(this);
-        }
-    }
+    public AP AP;
     
     public virtual Color GetTint()
     {
@@ -386,12 +288,7 @@ public abstract class Character : ICharacter
     public bool Render { get; set; } = true;
     
     public Stats Stats { get; set; } = new();
-
-    public AP GetAP()
-    {
-        return AP;
-    }
-
+    
     public Weapon? GetLeftWeapon()
     {
         return LeftWeapon;
@@ -402,21 +299,16 @@ public abstract class Character : ICharacter
         return RightWeapon;
     }
 
-    public Armor? GetArmor()
+    public void EquipItem(Item? item)
     {
-        return Armor;
-    }
-
-    public List<Trait> GetTraits()
-    {
-        return Traits;
+        Item = item;
     }
     
     public bool IsStunned()
     {
-        return AP.Contains<StatusDeath>();
+        return false;
     }
-    
+
     public virtual string GetName()
     {
         return Job.ToString();
@@ -461,19 +353,20 @@ public abstract class Character : ICharacter
         }
     }
     
-    public void EquipArmor(Armor? armor)
-    {
-        Armor = armor;
-    }
-    
     public void EquipItem(IItem? item)
     {
-        Item = item;
-    }
+        if (Item != null)
+        {
+            foreach (var e in Item.ApplyItemUnequipped(this))
+            { }
+        }
 
-    public void RemoveArmor()
-    {
-        this.EquipArmor(null);
+        Item = item;
+        if (item != null)
+        {
+            foreach (var e in item.ApplyItemEquipped(this))
+            { }
+        }
     }
 
     public virtual void Done()
@@ -512,7 +405,7 @@ public class PartyMember : Character
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
     }
-
+    
     public override void Done()
     {
         NoMove = true;
@@ -521,10 +414,10 @@ public class PartyMember : Character
 
 public record struct Party
 {
-    private static readonly Color[] Colors = [Color.Yellow, Color.GreenYellow, Color.CornflowerBlue, Color.Coral];
-    public PartyMember[] Characters = new PartyMember[4];
-
-    public Party(AP AP)
+    private static readonly Color[] Colors = [Color.ForestGreen, Color.GreenYellow, Color.CornflowerBlue, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
+    public readonly PartyMember[] Characters = new PartyMember[4];
+    
+    public Party(AP actionPoints)
     {
         var jobs = new[]
         {
@@ -544,57 +437,75 @@ public record struct Party
             {
                 Index = i,
                 Tint = Colors[i],
-                AP = AP
+                AP = actionPoints,
             };
+            
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Wizard Staff"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Chainmail"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Ancient Scroll"));
-                    Characters[i].Stats.Vigor -= 2;
-                    if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Ash Branch"));
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Fire Scroll"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Flame Band"));
+                    Characters[i].Stats.Will = 5;
+                    Characters[i].Stats.Clarity = 2;
+                    Characters[i].Stats.Poise = 2;
+                    Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Dagger"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Tunic"));
-                    Characters[i].Stats.Clarity++;
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Kris"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Old Bell"));
+                    Characters[i].Stats.Will = 4;
+                    Characters[i].Stats.Clarity = 5;
+                    Characters[i].Stats.Poise = 1;
+                    Characters[i].Stats.Vigor = 2;
                     Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetShield("Round Shield"));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Red Sign"));
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Plate Armor"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Family Ring"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Ruby Plate"));
+                    Characters[i].Stats.Will = 5;
+                    Characters[i].Stats.Clarity = 1;
+                    Characters[i].Stats.Poise = 5;
+                    Characters[i].Stats.Vigor = 1;
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolem Staff"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Leather Armor"));
-                    Characters[i].Traits.Add(new TraitHeavy());
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolm Staff"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Tunic"));
+                    Characters[i].Stats.Will = 2;
+                    Characters[i].Stats.Clarity = 2;
+                    Characters[i].Stats.Poise = 2;
+                    Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].EquipItem(ItemLibrary.GetWeapon("Misericorde"));
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Scroll Tome"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Breast Plate"));
-                    Characters[i].EquipItem(new ItemStack(new PotionBloodReliquary(), 3));
+                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Misericorde"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Sash"));
+                    Characters[i].Stats.Will = 2;
+                    Characters[i].Stats.Clarity = 5;
+                    Characters[i].Stats.Poise = 3;
+                    Characters[i].Stats.Vigor = 2;
                     break;
                 case ECharacterClass.Priest:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Robe"));
-                    Characters[i].Stats.Vigor++;
+                    Characters[i].Stats.Will = 5;
+                    Characters[i].Stats.Clarity = 4;
+                    Characters[i].Stats.Poise = 2;
+                    Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Thief:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
-                    Characters[i].EquipArmor(ItemLibrary.GetArmor("Cloak"));
-                    Characters[i].EquipItem(new PotionGhylagsTear());
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Sword of Old"));
-                    Characters[i].Stats.Vigor -= 1;
-                    if (Characters[i].Stats.Vigor <= 0) Characters[i].Stats.Vigor = 1;
+                    Characters[i].Stats.Will = 2;
+                    Characters[i].Stats.Clarity = 6;
+                    Characters[i].Stats.Poise = 2;
+                    Characters[i].Stats.Vigor = 1;
                     break;
-                // default:
-                //     throw new ArgumentOutOfRangeException();
             }
         }
+        
+        Characters[0].Bonus.Will += 2;
+        Characters[1].Bonus.Clarity += 2;
+        Characters[2].Bonus.Poise += 2;
+        Characters[3].Bonus.Vigor += 2;
     }
         
     public int WorldSight {

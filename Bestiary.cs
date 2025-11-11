@@ -33,12 +33,10 @@ public static class Bestiary
             HP = 1,
             Tint = Color.Red,
             Stats = new Stats(4, 2, 1, 2),
-            Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout(), new BehaviorFlyAbout() ],
         };
 
         bat.LeftWeapon = ItemLibrary.GetWeapon("Fang");
         bat.RightWeapon = ItemLibrary.GetWeapon("Fang");
-        if (Rnd.Instance.D6 <= 2) bat.Traits.Add(new TraitFrenzied(20));
         return bat;
     }
 
@@ -56,9 +54,7 @@ public static class Bestiary
             Sin = Rnd.Instance.D4,
             HP = 3,
             Tint = Color.LightGreen,
-            Armor = ItemLibrary.GetArmor("Robe"),
             Stats = new Stats(2, 2, 2, Rnd.Instance.Next(3, 4)),
-            Behaviors = [ new BehaviorAggro(), new BehaviorFlyAbout() ],
         };
         if (Rnd.Instance.D4 > gob.Sin)
             gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
@@ -80,24 +76,10 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 3,
             Tint = Color.Red,
-            Armor = ItemLibrary.GetArmor("Robe"),
             Stats = new Stats(6, 3, 3, 4),
-            Behaviors = [ 
-                new BehaviorAggro(),  
-                new BehaviorIfWounded(4, new BehaviorThrowHealing(), new BehaviorAggro())
-            ],
         };
 
         gob.LeftWeapon = ItemLibrary.GetWeapon("Thorn Whip");
-        if (Rnd.Instance.D6 <= 2)
-            Coroutine.Consume(gob.AddTrait(new TraitWise()));
-
-        if (Rnd.Instance.D6 <= 2)
-            Coroutine.Consume(gob.AddTrait(new TraitSneaky()));
-
-        if (Rnd.Instance.D6 <= 2)
-            Coroutine.Consume(gob.AddTrait(new TraitProficient()));
-
         return gob;
     }
     
@@ -115,15 +97,11 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 5,
             Tint = Color.Red,
-            Armor = null,
             Stats = new Stats(5, 4, 4, 4),
-            Behaviors = [ 
-                new BehaviorAggro(),
-            ],
         };
 
         skel.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
-        skel.RightWeapon = ItemLibrary.GetShield("Round Shield");
+        skel.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
         return skel;
     }
     
@@ -141,15 +119,11 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 7,
             Tint = Color.Red,
-            Armor = null,
             Stats = new Stats(6, 5, 5, 5),
-            Behaviors = [ 
-                new BehaviorAggro(),
-            ],
         };
 
         skul.LeftWeapon = ItemLibrary.GetWeapon("Claymore");
-        skul.RightWeapon = ItemLibrary.GetShield("Round Shield");
+        skul.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
         return skul;
     }
     
@@ -167,15 +141,11 @@ public static class Bestiary
             Sin = 5 + Rnd.Instance.D2,
             HP = 10,
             Tint = Color.Green,
-            Armor = null,
             Stats = new Stats(6, 3, 3, 6),
-            Behaviors = [ 
-                new BehaviorAggro(),
-            ],
         };
 
         snek.LeftWeapon = ItemLibrary.GetWeapon("Fang");
-        snek.RightWeapon = ItemLibrary.GetShield("Fang");
+        snek.RightWeapon = ItemLibrary.GetWeapon("Fang");
         return snek;
     }
 }

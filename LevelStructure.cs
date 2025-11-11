@@ -151,8 +151,8 @@ public record struct LevelStructure
                 var fov = new FieldOfView<Cell>(Map);
 
                 var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
-                var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count);
-                if (!heap.Any()) continue;
+                var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count).ToList();
+                if (heap.Count == 0) continue;
                 var start = heap.First();
 
                 Goals.Add(start);
@@ -213,7 +213,7 @@ public record struct LevelStructure
                         .OrderBy(xy =>
                             Vector2.Distance(new Vector2(xy.Item1, xy.Item2), new Vector2(gx, gy))).GetEnumerator();
 
-                    int spawned = 0;
+                    var spawned = 0;
                     while (res > 0)
                     {
                         Enemy enm;
@@ -390,7 +390,8 @@ public record struct LevelStructure
         {
             if (Starts.Count < 4)
             {
-                foreach (var xy in wd.GetAllAt(i))
+                var treasure = Treasure;
+                foreach (var xy in wd.GetAllAt(i).Where(t => !treasure.Contains(t)))
                 {
                     Starts.Add(xy);
                     if (Starts.Count == 4) break;

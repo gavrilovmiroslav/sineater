@@ -1,8 +1,5 @@
 using System;
-using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using SINEATER.Content;
 
 namespace SINEATER;
 
@@ -28,65 +25,6 @@ public class InventoryScreen : IScreen
     public void Initialize(SineaterGame game)
     {}
 
-    public void ChooseToEquipPrevious()
-    {
-        var inventory = _game.Party.Characters[_game.Party.Selected].Inventory;
-        if (inventory.Items.Length == 0) return;
-        
-        _chooseToEquipIndex--;
-        if (_chooseToEquipIndex < 0)
-        {
-            _chooseToEquipIndex = inventory.Items.Length - 1;
-            ChooseToEquipPrevious();
-        }
-        else
-        {
-            if (inventory.Items[_chooseToEquipIndex] != null)
-            {
-                var item = inventory.Items[_chooseToEquipIndex];
-                if (!(item.GetType() == _chooseToEquipType || item.GetType().IsSubclassOf(_chooseToEquipType)))
-                {
-                    ChooseToEquipPrevious();
-                }
-            }
-            else
-            {
-                ChooseToEquipPrevious();
-            }
-        }
-    }
-
-    public void ChooseToEquipNext()
-    {
-        var inventory = _game.Party.Characters[_game.Party.Selected].Inventory;
-        if (inventory.Items.Length == 0) return;
-        
-        _chooseToEquipIndex++;
-        if (_chooseToEquipIndex < 0)
-        {
-            ChooseToEquipNext();
-        }
-        else if (_chooseToEquipIndex >= inventory.Items.Length)
-        {
-            _chooseToEquipIndex = -1;
-            ChooseToEquipNext();
-        }
-        else
-        {
-            if (inventory.Items[_chooseToEquipIndex] != null)
-            {
-                var item = inventory.Items[_chooseToEquipIndex];
-                if (!(item.GetType() == _chooseToEquipType || item.GetType().IsSubclassOf(_chooseToEquipType)))
-                {
-                    ChooseToEquipNext();
-                }
-            }
-            else
-            {
-                ChooseToEquipNext();
-            }
-        }
-    }
     
     public void Update(GameTime gameTime)
     {

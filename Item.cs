@@ -12,103 +12,9 @@ public interface IItem : IAbilitySource
     public (int, int) Picture { get; }
     public string Name { get; }
     public Glyph Glyph { get; }
-    public bool CanBeUsed();
-    public bool CanBeShattered();
-    public IEnumerable ApplyItemUsed(ICharacter character);
-    public IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character);
-    public IEnumerable ApplyItemLanded(IScreen level, int x, int y);
-    public IEnumerable ApplyItemShattered(IScreen level, int x, int y);
-}
 
-public class Pile : IAbilitySource, IItem
-{
-    public List<IItem> Things { get; private set; } = []; 
-    
-    public (int, int) Picture => ItemLibrary.EmptyUv;
-    public string Name { get; } = "Pile";
-    public Glyph Glyph { get; } = Glyph.Bw(1, 1);
-    public bool CanBeUsed()
-    {
-        return false;
-    }
-
-    public bool CanBeShattered()
-    {
-        return false;
-    }
-
-    public IEnumerable ApplyItemUsed(ICharacter character)
-    {
-        yield break;
-    }
-
-    public IEnumerable ApplyItemPickedUp(IScreen ilevel, int x, int y, ICharacter character)
-    {
-        var level = ilevel as CombatMapScreen;
-        for (var i = Things.Count - 1; i >= 0; i--)
-        {
-            var thing = Things[i];
-            
-            var (isSuccess, _) = character.Inventory.Put(thing);
-            if (isSuccess)
-            {
-                Things.RemoveAt(i);
-            }
-        }
-
-        // if (Things.Count == 0)
-        // {
-        //     level.Floor.Remove((x, y));
-        // }
-
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
-    {
-        // var level = ilevel as CombatMapScreen;
-        // if (level.Floor.ContainsKey((x, y)))
-        // {
-        //     var onFloor = level.Floor[(x, y)];
-        //     if (onFloor is Pile pile)
-        //     {
-        //         pile.Things.Add(this);
-        //     }
-        //     else
-        //     {
-        //         var heap = new Pile();
-        //         heap.Things.Add(onFloor);
-        //         heap.Things.Add(this);
-        //         level.Floor[(x, y)] = heap;
-        //     }
-        // }
-        // else
-        // {
-        //     level.Floor[(x, y)] = this;
-        // }
-
-        yield break;
-    }
-
-    public IEnumerable ApplyItemShattered(IScreen level, int x, int y)
-    {
-        yield break;
-    }
-
-    public IEnumerable ApplyItemShattered(int X, int Y)
-    {
-        yield break;
-    }
-
-    public string GetName()
-    {
-        return Name;
-    }
-
-    public Glyph GetIcon()
-    {
-        return Glyph.Bw(1, 1);
-    }
+    public IEnumerable ApplyItemEquipped(ICharacter character);
+    public IEnumerable ApplyItemUnequipped(ICharacter character);
 }
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -123,14 +29,14 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
     public static Item Dummy(string name)
     {
         Console.WriteLine($"DUMMY REQUIRED FOR ITEM {name}");
-        return new Item($"{name} (DUMMY)", (0, 0));
+        return new Item($"!{name}", (0, 0));
     }
     
     ~Item()
     {
-        if (ItemLibrary.InstancedItems.ContainsKey(name))
+        if (ItemLibrary.InstancedItems.ContainsKey(Name))
         {
-            ItemLibrary.InstancedItems.Remove(name, this);
+            ItemLibrary.InstancedItems.Remove(Name, this);
         }
     }
 
@@ -158,56 +64,16 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
         yield break;
     }
 
-    public virtual IEnumerable ApplyItemPickedUp(IScreen ilevel, int x, int y, ICharacter character)
-    {
-        // var level = ilevel as CombatMapScreen;
-        // var (isSuccess, _) = character.Inventory.Put(this);
-        // if (isSuccess)
-        // {
-        //     if (level.Floor.ContainsKey((x, y)))
-        //     {
-        //         var onFloor = level.Floor[(x, y)];
-        //         if (onFloor == this)
-        //         {
-        //             level.Floor.Remove((x, y));
-        //         }
-        //     }
-        // }
-
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemLanded(IScreen ilevel, int x, int y)
-    {
-        // var level = ilevel as CombatMapScreen;
-        // if (level.Floor.ContainsKey((x, y)))
-        // {
-        //     var onFloor = level.Floor[(x, y)];
-        //     if (onFloor is Pile pile)
-        //     {
-        //         pile.Things.Add(this);
-        //     }
-        //     else
-        //     {
-        //         var heap = new Pile();
-        //         heap.Things.Add(onFloor);
-        //         heap.Things.Add(this);
-        //         level.Floor[(x, y)] = heap;
-        //     }
-        // }
-        // else
-        // {
-        //     level.Floor[(x, y)] = this;
-        // }
-
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemShattered(IScreen level, int x, int y)
+    public virtual IEnumerable ApplyItemEquipped(ICharacter character)
     {
         yield break;
     }
-
+    
+    public virtual IEnumerable ApplyItemUnequipped(ICharacter character)
+    {
+        yield break;
+    }
+    
     public virtual string GetName()
     {
         return Name;
@@ -221,69 +87,5 @@ public class Item(string name, (int, int) uv) : ICloneable, IItem
     public object Clone()
     {
         return this.MemberwiseClone();
-    }
-}
-
-public class ItemStack(Item item, int count) : Item(item.Name, item.Picture)
-{
-    public override (int, int) Picture => item.Picture;
-    public override Glyph Glyph => item.Glyph;
-
-    public override bool CanBeUsed()
-    {
-        if (count == 0) return false;
-        return item.CanBeUsed();
-    }
-
-    public override bool CanBeShattered()
-    {
-        if (count == 0) return false;
-        return item.CanBeShattered();
-    }
-
-    public override IEnumerable ApplyItemUsed(ICharacter character)
-    {
-        if (count == 0) yield break;
-        foreach (var i in item.ApplyItemUsed(character))
-        {
-            yield return i;
-        }
-    }
-
-    public override IEnumerable ApplyItemPickedUp(IScreen level, int x, int y, ICharacter character)
-    {
-        if (count == 0) yield break;
-        foreach (var i in item.ApplyItemPickedUp(level, x, y, character))
-        {
-            yield return i;
-        }
-    }
-
-    public override IEnumerable ApplyItemLanded(IScreen level, int x, int y)
-    {
-        if (count == 0) yield break;
-        foreach (var i in item.ApplyItemLanded(level, x, y))
-        {
-            yield return i;
-        }
-    }
-
-    public override IEnumerable ApplyItemShattered(IScreen level, int x, int y)
-    {
-        if (count == 0) yield break;
-        foreach (var i in item.ApplyItemShattered(level, x, y))
-        {
-            yield return i;
-        }
-    }
-
-    public override string GetName()
-    {
-        return $"{count}x {item.Name}";
-    }
-
-    public override Glyph GetIcon()
-    {
-        return item.Glyph;
     }
 }

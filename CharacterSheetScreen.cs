@@ -88,13 +88,7 @@ public class CharacterSheetScreen : IScreen
         
         (u, v) = ItemLibrary.EmptyUv;
         _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: --");
-        if (chr.Armor is { } arm)
-        {
-            (u, v) = arm.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: {arm.Name}");
-        }
-        _game.Layers["porsmol"].Set(2, 4, new Glyph(u, v, Color.Black, chr.Tint));
-
+        
         (u, v) = ItemLibrary.EmptyUv;
         _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: --");
         if (chr.Item is { } item)

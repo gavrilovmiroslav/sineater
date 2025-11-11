@@ -128,10 +128,10 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
                     if (!anyPathTaken) break;
                 }
 
-                if (!chr.GetTraits().Any(t => t is TraitFrenzied))
-                {
-                    yield return chr.AddTrait(new TraitFrenzied(5));
-                }
+                // if (!chr.GetTraits().Any(t => t is TraitFrenzied))
+                // {
+                //     yield return chr.AddTrait(new TraitFrenzied(5));
+                // }
 
                 yield return new WaitForSeconds(0.1f);
             }

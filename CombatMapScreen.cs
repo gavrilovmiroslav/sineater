@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using CommunityToolkit.HighPerformance.Helpers;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using RogueSharp.MapCreation;
@@ -26,22 +28,18 @@ public enum ETerrainKind
 public class CombatConfig
 {
     public int Phase;
-    public Trait? Reward;
     public int Sin;
     public ETerrainKind Terrain;
 }
 
 public class CombatMapScreen : IScreen
 {
-    public static CombatMapScreen? Level = null;
-
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
     private readonly int _fullWidth = 20, _fullHeight = 20;
     private int _width, _height;
     private SineaterGame _game;
     private ETerrainKind _kind;
-    public float[,] Distance = null;
     public LevelStructure Structure;
     private bool _rendered = false;
     private bool _debugView = false;
@@ -49,6 +47,13 @@ public class CombatMapScreen : IScreen
     public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
     internal CoroutineHandler CoroutineHandler = new();
+    internal FieldOfView<Cell> _fov;
+    private readonly CombatConfig? _config;
+    private readonly Arch.Core.World _world;
+    private MultiDictionary<(int, int), Color> _fgs = new(false);
+    
+    internal (int, int) DrawOffset { get; set; } = (8, 1);
+    internal bool ShouldUpdateView = true;
 
     public Domains Domains;
     public IMap? Map => Structure.Map;
@@ -64,13 +69,10 @@ public class CombatMapScreen : IScreen
     }
     
     private void Regenerate() => Regenerate(_kind);
-    private int _extraFill = 0;
-    private readonly CombatConfig? _config;
 
     public CombatMapScreen(SineaterGame game, CombatConfig? config = null, int width = -1, int height = -1, string title = "???")
     {
-        Level = this;
-        Structure = new LevelStructure();
+        _world = Arch.Core.World.Create();
         _config = config;
         _width = width;
         _height = height;
@@ -82,7 +84,6 @@ public class CombatMapScreen : IScreen
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
         Initialize(game);
         Regenerate(_width == -1 || _height == -1);
-        UpdateAttackSelections();
     }
 
     public void Initialize(SineaterGame game)
@@ -92,6 +93,7 @@ public class CombatMapScreen : IScreen
     
     private void Regenerate(ETerrainKind kind)
     {
+        ShouldUpdateView = true;
         CoroutineHandler.Clear();
         _kind = kind;
         var (a, b, c, d, e) = (0, 0, 0, _width, _height);
@@ -135,10 +137,10 @@ public class CombatMapScreen : IScreen
         
         var inner = RogueSharp.Map.Create(mapCreationStrategy);
         var map = RogueSharp.Map.Create(new FilledMapCreationStrategy<Map>(_fullWidth, _fullHeight));
-        map.Copy(inner, 0, 0);
+        map.Copy(inner, 1, 1);
 
         Structure = new LevelStructure(map);
-        
+        _fov = new(Map);
         for (var i = 0; i < _fullWidth; i++)
         {
             for (var j = 0; j < _fullHeight; j++)
@@ -158,6 +160,11 @@ public class CombatMapScreen : IScreen
             }
         }
 
+        foreach (var (tx, ty) in Structure.Treasure)
+        {
+            Map.SetCellProperties(tx, ty, false, false);
+        }
+        
         _rendered = false;
 
         for (var ci = 0; ci < 4; ci++)
@@ -165,50 +172,41 @@ public class CombatMapScreen : IScreen
             _game.Party.Characters[ci].X = Structure.Starts[ci].Item1;
             _game.Party.Characters[ci].Y = Structure.Starts[ci].Item2;
         }
+
+        foreach (var chr in _game.Party.Characters)
+        {
+            _world.Create(new FriendlyTeam(), new Combatant(chr), new LiveStats(new Stats(chr)), new Position(chr.X, chr.Y));
+        }
+
+        foreach (var enm in Structure.Enemies)
+        {
+            _world.Create(new EnemyTeam(), new Combatant(enm), new LiveStats(new Stats(enm)), new Position(enm.X, enm.Y));
+        }
     }
     
-    public IEnumerable EnemyMove(Enemy enemy)
-    {
-        _currentEnemy = enemy;
-        var (x, y) = enemy.GetIcon(true);
-        SineaterGame.Instance.Layers["mrmo"].Set(enemy.X, enemy.Y + 2, new Glyph(x, y, Color.Black, enemy.GetTint()));
-        yield return new WaitForSeconds(0.1f);
-        if (enemy.Stats.Clarity == 0)
-        {
-            yield return new BehaviorBlind().Do(enemy, this, enemy.X, enemy.Y);
-            yield return new WaitForSeconds(0.1f);
-            (x, y) = enemy.GetIcon(false);
-            SineaterGame.Instance.Layers["mrmo"].Set(enemy.X, enemy.Y + 2, new Glyph(x, y, Color.Black, enemy.GetTint()));
-            yield break;
-        }
-            
-        var beh = enemy.Behaviors[0];
-        enemy.Behaviors.RemoveAt(0);
-        if (!beh.ShouldFizzleOut())
-        {
-            enemy.Behaviors.Add(beh);
-        }
-
-        yield return beh.Do(enemy, this, enemy.X, enemy.Y);
-        yield return new WaitForSeconds(0.1f);
-        
-        (x, y) = enemy.GetIcon(false);
-        
-        enemy.Wait = enemy.Stats.Vigor;
-        SineaterGame.Instance.Layers["mrmo"].Set(enemy.X, enemy.Y + 2, new Glyph(x, y, Color.Black, enemy.GetTint()));
-        
-        _currentEnemy = null;
-    }
-
     public void Update(GameTime gameTime)
     {
+        if (KB.HasBeenPressed(Keys.U))
+        {
+            var dof = DrawOffset;
+            dof.Item1--;
+            DrawOffset = dof;
+        }
+        
+        if (KB.HasBeenPressed(Keys.I))
+        {
+            var dof = DrawOffset;
+            dof.Item1++;
+            DrawOffset = dof;
+        }
+        
         if (CoroutineHandler.IsActive())
         {
             CoroutineHandler.Update();
             return;
         }
 
-        if (Keyboard.GetState().IsKeyDown(Keys.Space))
+        if (Keyboard.GetState().IsKeyDown(Keys.F1))
         {
             Regenerate();
         }
@@ -220,49 +218,139 @@ public class CombatMapScreen : IScreen
         }
 
         CheckInputs();
+        CheckPlayerInputs();
+    }
+    
+    internal (int, int)? GetUV(int x, int y)
+    {
+        var (ox, oy) = DrawOffset;
+        return SineaterGame.Instance.Layers["mrmo"].GetUV(x + ox, y + oy);
     }
 
+    internal Color GetFg(int x, int y)
+    {
+        var (ox, oy) = DrawOffset;
+        return SineaterGame.Instance.Layers["mrmo"].GetFg(x + ox, y + oy);
+    }
+    
+    internal void Draw(int x, int y, Glyph g)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, g);
+    }
+    
+    internal void Draw(int x, int y, string s)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, s);
+    }
+    
+    internal void Draw(int x, int y, Color c)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, c);
+    }
+    
+    internal void Draw(int x, int y, string s, Color c)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, s, c);
+    }
+    
+    internal void Draw(int x, int y, string s, Color c, Color b)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, s, c, b);
+    }
+
+    internal void Draw(int x, int y, Color c, Color b)
+    {
+        var (ox, oy) = DrawOffset;
+        _game.Layers["mrmo"].Set(x + ox, y + oy, c, b);
+    }
+
+    void UpdateCombatView()
+    {
+        var selfFov = new FieldOfView(Map);
+        _fgs.Clear();
+        
+        for (var i = 0; i < 4; i++)
+        {
+            var w = _game.Party.Characters[i];
+
+            foreach (var cell in selfFov.ComputeFov(w.X, w.Y, w.Cla, true))
+            {
+                _fgs.Add((cell.X, cell.Y), w.Tint);
+            }
+            
+            if (i == 0)
+            {
+                _fov.ComputeFov(w.X, w.Y, w.Cla, true);
+            }
+            else
+            {
+                _fov.AppendFov(w.X, w.Y, w.Cla, true);
+            }
+        }
+    }
+    
     internal void DrawCombat(bool onlyNow = false)
     {
-        var index = 0;
-        
+        if (ShouldUpdateView)
+        {
+            UpdateCombatView();
+            ShouldUpdateView = false;
+        }
+
         _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(_fullWidth - 1, _fullHeight + 2), ' ');
         _game.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(_fullWidth * 2 - 2, _fullHeight * 2 + 2), ' ');
         
-        _game.ActionPoints.Draw(1, 25);
+        _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
 
+        MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)
         {
-            if (w.Job == ECharacterClass.Witch)
-            {
-                _game.ActionPoints.DrawCursor(w.X * 2 + 1, 25);
-            }
+            var g = w.Job.GetImage();
+            xs.Add(w.X, w);
         }
 
-        index = 0;
+        foreach (var x in xs.Keys.Order())
+        {
+            var y = 25 - xs[x].Count;
+            int n = 0;
+            foreach (var pm in xs[x].OrderBy(p => p.Y))
+            {
+                var (u, v) = pm.Job.GetImage();
+                Draw(x, y + n, new Glyph(u, v, Color.Black, pm.Tint));
+                n++;
+            }
+        }
+        
         for (var i = 0; i < _fullWidth; i++)
         {
             for (var j = 0; j < _fullHeight; j++)
             {
+                if (!showMap && !_fov.IsInFov(i, j)) continue;
+                var fg = Color.Black;
+                foreach (var f in _fgs[(i, j)])
+                {
+                    fg = Color.Lerp(fg, f, 0.75f);
+                }
+
+                fg = Color.Lerp(fg, Color.White, _fgs[(i, j)].Count / 4.0f);
+                
                 if (Structure.Map.IsWalkable(i, j))
                 {
                     var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
-                    g.Fg = Color.White;
+                    g.Fg = showMap ? Color.White : fg;
                     g.Bg = (i % 2 == j % 2) ? new Color(10, 0, 0, 1) : new Color(20, 10, 0, 1);
-            
-                    _game.Layers["mrmo"].Set(i, j, g);
+
+                    Draw(i, j, g);
                 }
                 else
                 {
-                    if (onlyNow) continue;
                     var g = _groundGlyphs[i, j];
-                    
-                    _game.Layers["mrmo"].Set(i, j, new Glyph(g.U, g.V, Color.Black, Color.Lerp(Color.Black, Color.Gray, 1)));
-
-                    if (1 >= 1.0f)
-                    {
-                        _game.Layers["mrmo"].Set(i, j, new Glyph(g.U, g.V, Color.Black, Color.White));
-                    }
+                    Draw(i, j, new Glyph(g.U, g.V, Color.Black, showMap ? Color.White : fg));
                 }
             }
         }
@@ -274,168 +362,108 @@ public class CombatMapScreen : IScreen
         
         foreach (var chr in _game.Party.Characters)
         {
+            if (!showMap && !_fov.IsInFov(chr.X, chr.Y))
+                continue;
+            
             var (ix, iy) = chr.Job.GetImage();
             var hasStamina = _game.ActionPoints.Count<StatusStamina>() > 0;
             if (chr.IsDone || !hasStamina)
             {
-                _game.Layers["mrmo"].Set(chr.X, chr.Y,
-                    new Glyph(ix, iy, Color.Black, Color.DarkGray));
+                Draw(chr.X, chr.Y, new Glyph(ix, iy, Color.Black, Color.DarkGray));
             }
             else
             {
-                _game.Layers["mrmo"].Set(chr.X, chr.Y,
-                    new Glyph(ix, iy, Color.Black, chr.Tint));
+                Draw(chr.X, chr.Y, new Glyph(ix, iy, Color.Black, chr.Tint));
             }
-
-            index++;
         }
 
         var max = Structure.Walkables.MaxDistance();
         var dm = Structure.Walkables.Distances[0];
-        var fov = new FieldOfView<Cell>(Map);
-        var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
+        var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && _fov.IsInFov(mx, my);
         
         var (gx, gy) = Structure.Goals[0];
-        _game.Layers["mrmo"].Set(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
+        Draw(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
 
         var colors = new List<Color>() { Color.Yellow, Color.OrangeRed, Color.Red, Color.Purple };
         
-        foreach (var chr in Structure.Enemies)
+        foreach (var chr in Structure.Enemies.Where(chr => showMap || _fov.IsInFov(chr.X, chr.Y)))
         {
             var (cu, cv) = chr.Icon;
-            _game.Layers["mrmo"].Set(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, colors[chr.Level - 1]));
+            Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, colors[chr.Level - 1]));
         }
         
-        foreach (var chr in Structure.Treasure)
+        foreach (var chr in Structure.Treasure.Where(chr => showMap || _fov.IsInFov(chr.Item1, chr.Item2)))
         {
-            _game.Layers["mrmo"].Set(chr.Item1, chr.Item2, "?", Color.White);
+            Draw(chr.Item1, chr.Item2, "?", Color.White);
         }
+
+        DrawParty();
     }
 
-    public bool SkipGUI { get; set; } = false;
-
-    private int _offset = 96;
+    private readonly List<int> _offsets =
+    [
+        1, 1, 0, 0
+    ];
     
-    private void DrawCharacterCard(ICharacter? chr, int h = 12, int dp = 0, bool header = true)
+    private readonly List<int> _xoffsets =
+    [
+        0, 0, 0, 0
+    ];
+    
+    private readonly List<(int, int)> _positions = [
+        (0, 0), (3, 0), (0, 3), (3, 3)
+    ];
+    
+    private void DrawParty()
     {
-        if (KB.HasBeenPressed(Keys.V)) _offset--;
-        if (KB.HasBeenPressed(Keys.B)) _offset++;
-        
-        if (chr == null) return;
-        if (chr is Dummy) return;
-        
-        var (ix, iy) = (0, 0);
-        if (chr is Enemy e)
+        var h = 19;
+        var index = 0;
+        foreach (var character in _game.Party.Characters)
         {
-            (ix, iy) = e.Icon;
-        }
-        else if (chr is PartyMember p)
-        {
-            (ix, iy) = p.Job.GetImage();
-        }
-        var tint = chr.GetTint();
-        if (chr is PartyMember pm)
-        {
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, h + 1,
-                new Glyph(ix, iy, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, h + 1, chr.GetName(),
-                Color.Lerp(Color.White, tint, 0.5f));
-
-            var ph = (h + 1) / 2 + dp;
-            var (u, v) = chr.GetPortait(); 
-            _game.Layers["porsmol"].Set(10, ph, new Glyph(u, v, Color.Black, tint));
-
-            (u, v) = ItemLibrary.EmptyUv;
-            var dh = 1;
-            var opt = 0;
-            _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["mini"].Set(2 * _fullWidth + _offset - 20, h + 10, $"  ");
-            _game.Layers["mini"].Set(2 * _fullWidth + 69, h + 11, $"                                                 ");
-            if (chr.GetLeftWeapon() is { } lw)
+            var (m, r) = character.Job.GetImage();
+            var (u, v) = character.GetPortait();
+            var (x, y) = _positions[index];
+            var (xoff, yoff) = (_xoffsets[index], _offsets[index]);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"CLA  WIL", character.Tint);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{character.Cla}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{character.Wil}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"POI  VIG ", character.Tint);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Vig}", Color.White);
+            
+            if (character.GetLeftWeapon() is {} lw)
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", character.Tint);
+            else
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.LightGray);
+            
+            if (character.GetRightWeapon() is {} rw)
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", character.Tint);
+            else
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.LightGray);
+            
+            if (character.GetItem() is {} it)
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", character.Tint);
+            else
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.LightGray);
+            
+            if (index < 2)
             {
-                (u, v) = lw.Picture;
-                _game.Layers["ascii"].Set(2 * _fullWidth + 1, h + 7 + dh, $"[ LH ] {lw.GetName()}", tint);
-                foreach (var att in lw.GetAvailableAttacks())
-                {
-                    dh++;
-                    opt++;
-                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Thing.Name}");
-                    if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
-                        _confirmedCombatFlow.WeaponAttack == att.Thing)
-                    {
-                        _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
-                    }
-                }
-                var exp = $"{(lw.ExperienceNow * 100 / lw.ExperienceNeeded)}%";
-                _game.Layers["mini"].Set(2 * _fullWidth + 70, h + 11, $"L{lw.Level}");
-                _game.Layers["mini"].Set(2 * _fullWidth + 77 - exp.Length, h + 11, exp);
-                dh++;
-                dh++;
-            }
-            _game.Layers["porsmol"].Set(11, ph, new Glyph(u, v, Color.Black, tint));
-
-            (u, v) = ItemLibrary.EmptyUv;
-            _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["mini"].Set(2 * _fullWidth + _offset - 10, h + 7 + dh, $"  ");
-            if (chr.GetRightWeapon() is { } rw)
-            {
-                (u, v) = rw.Picture;
-                _game.Layers["ascii"].Set(2 * _fullWidth + 1, h + 7 + dh, $"[ RH ] {rw.GetName()}", tint);
-                foreach (var att in rw.GetAvailableAttacks())
-                {
-                    dh++;
-                    opt++;
-                    _game.Layers["ascii"].Set(2 * _fullWidth + 3, h + 7 + dh, $" ({opt}) {att.Thing.Name}");
-                    if (_confirmedCombatFlow != null && _confirmedCombatFlow.WeaponAttack != null &&
-                        _confirmedCombatFlow.WeaponAttack == att.Thing)
-                    {
-                        _game.Layers["ascii"].Set(2 * _fullWidth + 3 - 1, h + 7 + dh, $">");
-                    }
-                }
-                var exp = $"{(rw.ExperienceNow * 100 / rw.ExperienceNeeded)}%";
-                _game.Layers["mini"].Set(2 * _fullWidth + 80, h + 11, $"L{rw.Level}");
-                _game.Layers["mini"].Set(2 * _fullWidth + 87 - exp.Length, h + 11, exp);
-            }
-
-            _game.Layers["porsmol"].Set(12, ph, new Glyph(u, v, Color.Black, tint));
-        
-            (u, v) = ItemLibrary.EmptyUv;
-            _game.Layers["porsmol"].Set(13, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["mini"].Set(2 * _fullWidth + _offset, h + 10, $"  ");
-            if (chr.GetArmor() is { } ar)
-            {
-                (u, v) = ar.Picture;
-                _game.Layers["mini"].Set(2 * _fullWidth + 89, h + 11, $" GUARD {ar.Guard}");
-            }
-            _game.Layers["porsmol"].Set(13, ph, new Glyph(u, v, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 1, h + 6, $"STEPS {pm.Steps}/{chr.Stats.Vigor}", tint);
-        }
-        else if (chr is Enemy en)
-        {
-            if (header)
-            {
-                _game.Layers["ascii"].Set(2 * _fullWidth - 1, h, "NAME       GRD  POI  LIF");
+                _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, character.Tint));
             }
             else
             {
-                h--;
+                _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                _game.Layers["portrait"].Set(x * 2, y, new Glyph(u, v, Color.Black, character.Tint));
             }
 
-            _game.Layers["mrmo"].Set(2 + _fullWidth - 3, h + 1,
-                new Glyph(ix, iy, Color.Black, tint));
-            _game.Layers["ascii"].Set(2 * _fullWidth + 2, h + 1, chr.GetName(),
-                Color.Lerp(Color.White, tint, 0.5f));
-
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 7, h + 1, (chr.GetArmor()?.Guard.ToString() ?? "--"),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 12, h + 1, (chr.Stats.Poise.ToString() ?? "--"),
-                Color.Lerp(Color.White, tint, 0.5f));
-            
-            _game.Layers["ascii"].Set(2 * _fullWidth + 4 + 17, h + 1, chr.HP.ToString(),
-                Color.Lerp(Color.White, tint, 0.5f));
+            index++;
         }
     }
+    
+    public bool SkipGUI { get; set; } = false;
+
+    private int _offset = 96;
     
     public void Draw(GameTime gameTime)
     {
@@ -452,8 +480,14 @@ public class CombatMapScreen : IScreen
         DrawCombat();
     }
 
+    private bool showMap = false;
     private void CheckInputs()
     {
+        if (KB.HasBeenPressed(Keys.Tab))
+        {
+            showMap = !showMap;
+        }
+        
         if (KB.HasBeenPressed(Keys.D))
         {
             _debugView = !_debugView;
@@ -461,272 +495,20 @@ public class CombatMapScreen : IScreen
         }
     }
     
-    private IEnumerable CombatAlgebra(SkirmishFlow flow, IPresentation step)
-    {
-        if (flow.Defender is Enemy enm)
-        {
-            enm.LastHit = flow.Attacker;
-        }
-        
-        if (step is Present_Notify notif)
-        {
-            SineaterGame.Instance.Layers["ascii"].SetRect(new Vector2(20, 0), new Vector2(55, 1), ' ');
-            SineaterGame.Instance.Layers["ascii"].Set(21, 0, notif.Message);
-        }
-        else if (step is Present_AttackRolled atk)
-        {
-            SineaterGame.Instance.Layers["ascii"].Set(1, 0, "ATK");
-            SineaterGame.Instance.Layers["ascii"].Set(1, 1, "DMG");
-            yield return new WaitForSeconds(0.1f);
-
-            _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(45, 2), ' ');
-            for (int i = 0; i < 6; i++)
-            {
-                for (int d = 0; d < flow.AttackDiceRolled.Count; d++)
-                {
-                    _game.Layers["mrmo"].Set(3 + d, 0,
-                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.Lerp(Color.Gray, Color.White, i / 5.0f)));
-                }
-
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            for (int i = 0; i < flow.AttackDiceRolled.Count; i++)
-            {
-                _game.Layers["mrmo"].Set(3 + i, 0,
-                    new Glyph(flow.AttackDiceRolled[i].Value - 1, 68, Color.Black, Color.Green));
-                for (int d = i + 1; d < flow.AttackDiceRolled.Count; d++)
-                {
-                    _game.Layers["mrmo"].Set(3 + d, 0,
-                        new Glyph(Rnd.Instance.D6 - 1, 68, Color.Black, Color.White));
-                }
-                yield return new WaitForSeconds(0.3f);
-            }
-        }
-        else if (step is Present_Crit crit)
-        {
-            _game.Layers["mrmo"].Set(3 + crit.index, 1,
-                new Glyph(8, 68, Color.Black, Color.Gold));
-            flow.Attacker.GetAP().Gain(flow.WeaponAttack?.OpeningsPerCrit ?? 1);
-            yield return new WaitForSeconds(0.2f);
-        }
-        else if (step is Present_ArmorDent dent)
-        {
-            _game.Layers["mrmo"].Set(3 + dent.index, 1,
-                new Glyph(6, 68, Color.Black, Color.Yellow));
-            if (flow.Defender is { } d)
-            {
-                if (d.GetArmor() is { } a)
-                {
-                    a.Guard--;
-                }
-            }
-            
-            yield return new WaitForSeconds(0.1f);
-        }
-        else if (step is Present_ArmorBreak brk)
-        {
-            _game.Layers["mrmo"].Set(3 + brk.index, 1,
-                new Glyph(6, 68, Color.Black, Color.Red));
-            if (flow.Defender.GetArmor().Guard < 0)
-            {
-                flow.Defender.RemoveArmor();
-            }
-            yield return new WaitForSeconds(0.2f);
-        }
-        else if (step is Present_GuardBreak grd)
-        {
-            _game.Layers["mrmo"].Set(3 + grd.index, 1,
-                new Glyph(10, 68, Color.Black, Color.Red));
-            yield return new WaitForSeconds(0.2f);
-        }
-        else if (step is Present_DealDamage dmg)
-        {
-            _game.Layers["mrmo"].Set(3 + dmg.index, 1,
-                new Glyph(dmg.damage - 1, 68, Color.Black, Color.Red));
-            if (flow.Defender is PartyMember p)
-            {
-                p.GetAP().AddN<StatusWounds>(dmg.damage);
-            }
-            else if (flow.Defender is Enemy e)
-            {
-                e.HP -= dmg.damage;
-                if (e.HP <= 0)
-                {
-                    e.IsDead = true;
-                }
-            }
-            yield return new WaitForSeconds(0.2f);
-        }
-    }
-
-    private IEnumerable PreviewAttack(CombatFlow flow, IEnumerable log)
-    {
-        foreach (var part in log)
-        {
-            if (part is IEnumerable enm)
-            {
-                // PROCESS TRAITS COMPLETELY
-                foreach (var p in enm)
-                {
-                    if (p is IEnumerable e)
-                    {
-                        Coroutine.Consume(e);
-                    }
-                }
-            }
-            else if (part is IPresentation step) 
-            {
-                // SKIP COMBAT ON PURPOSE!
-            }
-            else
-            {
-                yield return part;
-            }
-        }
-    }
-    
-    private IEnumerable ResolveAttack(SkirmishFlow flow, IEnumerable log)
-    {
-        foreach (var part in log)
-        {
-            if (part is IEnumerable enm)
-            {
-                yield return ResolveAttack(flow, enm);
-            }
-            else if (part is IPresentation step) 
-            {
-                yield return CombatAlgebra(flow, step);
-            }
-            else
-            {
-                yield return part;
-            }
-        }
-    }
-    
-    public IEnumerable Attack(CombatFlow flow)
-    {
-        if (flow.Weapon != null)
-        {
-            Console.WriteLine(
-                $"{flow.Weapon} (level {flow.Weapon.Level}, needed {flow.Weapon.ExperienceNeeded}); base: {flow.Weapon.ScalingBase}, scale: {flow.Weapon.ScalingCurve}, quality: {flow.Weapon.Quality}");
-        }
-
-        yield return flow.Attacker.GetTraits().OnCombatStarts(flow);
-        yield return flow.WeaponAttack?.Traits?.OnCombatStarts(flow);
-        
-        foreach (var skirmish in flow.Skirmishes)
-        {
-            yield return flow.Attacker.GetTraits().OnSkirmishStarts(skirmish);
-            yield return flow.WeaponAttack?.Traits?.OnSkirmishStarts(skirmish);
-
-            var (ox, oy) = (flow.Attacker.X, flow.Attacker.Y);
-            var (x, y) = skirmish.Position;
-            Positions.Swap((x, y), (ox, oy));
-            DrawCombat();
-            if (skirmish.Defender != null && skirmish.Defender is not Dummy)
-            {
-                yield return skirmish.Defender.GetTraits().OnSkirmishStarts(skirmish);
-
-                yield return ResolveAttack(skirmish, skirmish.Attack());
-                yield return new WaitForSeconds(0.5f);
-                SineaterGame.Instance.Layers["ascii"].SetRect(new Vector2(0, 0), new Vector2(45, 2), ' ');
-                SineaterGame.Instance.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(22, 2), ' ');
-                if (skirmish.Defender is Enemy { IsDead: true } e)
-                {
-                    //Party[0].AP.AddN<StatusSin>(5 - e.Wait);
-                    e.Die();
-
-                    SineaterGame.Instance.Layers["porsmol"].Clear();
-                    var (i, j) = e.Icon;
-                    var (u, v) = e.DeadIcon;
-                    //_enemies.Remove(e);
-
-                    for (int k = 0; k < 5; k++)
-                    {
-                        SineaterGame.Instance.Layers["mrmo"].Set(e.X, e.Y + 2, new Glyph(u, v, Color.Black, Color.Red));
-                        yield return new WaitForSeconds(0.01f);
-                        SineaterGame.Instance.Layers["mrmo"].Set(e.X, e.Y + 2, new Glyph(i, j, Color.Black, Color.Red));
-                        yield return new WaitForSeconds(0.01f);
-                    }
-
-                    DrawCombat();
-
-                    if (e.LastHit is PartyMember pm)
-                    {
-                        var transferable = e.Traits.Where(t => !(t is LimitedTrait)).ToList();
-                        if (transferable.Count > 0)
-                        {
-                            var t = transferable[Rnd.Instance.Next(0, transferable.Count)];
-                            yield return new ShowPopupWindowWithPortraitAndWaitForKey(pm.GetPortait(),
-                                (_, bnd) => { bnd.Add($"The {e.LastHit.GetName()} acquires {t.Name.ToUpper()}!"); },
-                                true);
-                            yield return e.LastHit.AddTrait(t);
-                        }
-                    }
-
-                    Draw(new GameTime());
-                }
-
-                yield return skirmish.GainExp();
-            }
-            else
-            {
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            yield return skirmish.Defender?.GetTraits().OnSkirmishEnds(skirmish);
-            yield return flow.Attacker.GetTraits().OnSkirmishEnds(skirmish);
-            yield return flow.WeaponAttack?.Traits?.OnSkirmishEnds(skirmish);
-        }
-        
-        yield return flow.Attacker.GetTraits().OnCombatEnds(flow);
-        yield return flow.WeaponAttack?.Traits?.OnCombatEnds(flow);
-
-        flow.Attacker.IsDone = true;
-        _confirmedCombatFlow = null;
-    }
-    
     private IEnumerable Coroutine_EndTurn()
     {
         yield return new WaitForSeconds(0.5f);
         //_presentation = EPresentationState.Done;
     }
-
-    private ICharacter _currentEnemy = null;
-    private CombatFlow? _confirmedCombatFlow = null;
-
-    private Dictionary<int, (Weapon, WeaponAttack)> _attackOptions = [];
-    
-    private void UpdateAttackSelections()
-    {
-        _attackOptions.Clear();
-        
-        var chr = _game.Party.Characters[PlayerSelectedIndex];
-        var opt = 0;
-        
-        if (chr.GetLeftWeapon() is { } lw)
-        {
-            foreach (var att in lw.GetAvailableAttacks())
-            {
-                opt++;
-                _attackOptions[opt] = (lw, att.Thing);
-            }
-        }
-
-        if (chr.GetRightWeapon() is { } rw)
-        {
-            foreach (var att in rw.GetAvailableAttacks())
-            {
-                opt++;
-                _attackOptions[opt] = (rw, att.Thing);
-            }
-        }
-    }
     
     private void CheckPlayerInputs()
     {
+        if (KB.HasBeenPressed(Keys.Space))
+        {
+            PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
+            UpdateCombatView();
+        }
+        
         var current = _game.Party.Characters[PlayerSelectedIndex];
         if (KB.HasBeenPressed(Keys.A))
         {
@@ -756,56 +538,6 @@ public class CombatMapScreen : IScreen
             CoroutineHandler.Run(Coroutine_EndTurn());
         }
         
-        if (_confirmedCombatFlow != null && KB.HasBeenPressed(Keys.Escape))
-        {
-            _confirmedCombatFlow = null;
-        }
-        
-        var choice = -1;
-        if (KB.HasBeenPressed(Keys.D1))
-        {
-            choice = 1;
-        }
-        else if (KB.HasBeenPressed(Keys.D2))
-        {
-            choice = 2;
-        }
-        else if (KB.HasBeenPressed(Keys.D3))
-        {
-            choice = 3;
-        }
-        else if (KB.HasBeenPressed(Keys.D4))
-        {
-            choice = 4;
-        }
-        else if (KB.HasBeenPressed(Keys.D5))
-        {
-            choice = 5;
-        }
-        else if (KB.HasBeenPressed(Keys.D6))
-        {
-            choice = 6;
-        }
-        else if (KB.HasBeenPressed(Keys.D7))
-        {
-            choice = 7;
-        }
-        else if (KB.HasBeenPressed(Keys.D8))
-        {
-            choice = 8;
-        }
-
-        if (choice != -1 && _attackOptions.ContainsKey(choice))
-        {
-            var (wpn, atk) = _attackOptions[choice];
-            var scored = Directions
-                .Select(d => new CombatFlow(this, current, wpn, atk, (current.X, current.Y), d))
-                .Select(cf => (cf, cf.Score()))
-                .ToList();
-            scored.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-            _confirmedCombatFlow = scored[0].cf;
-        }
-        
         // MOVE
         if (PlayerSelectedIndex > -1)
         {
@@ -825,13 +557,8 @@ public class CombatMapScreen : IScreen
                         var x = current.X;
                         var y = current.Y;
 
-                        if (_confirmedCombatFlow != null)
+                        if (Positions.IsCharacterAt(this, x + dx, y + dy) is { } c)
                         {
-                            _confirmedCombatFlow.Direction = (dx, dy);
-                        }
-                        else if (Positions.IsCharacterAt(x + dx, y + dy) is { } c)
-                        {
-                            _confirmedCombatFlow = null;
                             // SWAP CHARACTERS
                             c.X = x;
                             c.Y = y;
@@ -846,13 +573,12 @@ public class CombatMapScreen : IScreen
                                     .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
                             }
                         }
-                        else if (Positions.IsEnemyAt(x + dx, y + dy) is { } e)
+                        else if (Positions.IsEnemyAt(this, x + dx, y + dy) is { } e)
                         {
                             // do nothing
                         }
                         else if (Structure.Map.IsWalkable(x + dx, y + dy))
                         {
-                            _confirmedCombatFlow = null;
                             var oldX = current.X;
                             var oldY = current.Y;
                             current.X += dx;
@@ -878,7 +604,7 @@ public class CombatMapScreen : IScreen
                             {
                                 var pm = SineaterGame.Instance.Party.Characters[SineaterGame.Instance.Party.Selected];
                                 pm.Steps++;
-                                if (pm.Steps > pm.Stats.Vigor)
+                                if (pm.Steps > pm.Vig)
                                 {
                                     pm.Steps = 0;
                                     _game.ActionPoints.Spend(1);
@@ -886,6 +612,8 @@ public class CombatMapScreen : IScreen
                             }
                         }
                     }
+                    
+                    UpdateCombatView();
                 }
             }
         }

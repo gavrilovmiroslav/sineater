@@ -25,8 +25,6 @@ public class Library
 {
     public List<Weapon> Weapons { get; set; } = new();
     public List<Item> Items { get; set; } = new();
-    public List<Armor> Armors { get; set; } = new();
-    public List<Shield> Shields { get; set; } = new();
 }
 
 public static class ItemLibrary
@@ -34,8 +32,6 @@ public static class ItemLibrary
     public static readonly (int, int) EmptyUv = (0, 9);
     private static Library Library { get; set; } = new();
     public static readonly MultiDictionary<string, Weapon> InstancedWeapons = new(false);
-    public static readonly MultiDictionary<string, Armor> InstancedArmors = new(false);
-    public static readonly MultiDictionary<string, Shield> InstancedShields = new(false);
     public static readonly MultiDictionary<string, Item> InstancedItems = new(false);
 
     private static string GetLocalItems()
@@ -99,26 +95,6 @@ public static class ItemLibrary
             }
         }
         
-        foreach (var (k, w) in InstancedShields)
-        {
-            var original = Library?.Shields.Find(w => w.Name == k);
-            if (original == null) continue;
-            foreach (var instance in w)
-            {
-                instance?.Copy(original);
-            }
-        }
-        
-        foreach (var (k, w) in InstancedArmors)
-        {
-            var original = Library?.Armors.Find(w => w.Name == k);
-            if (original == null) continue;
-            foreach (var instance in w)
-            {
-                instance?.Copy(original);
-            }
-        }
-        
         foreach (var (k, w) in InstancedItems)
         {
             var original = Library.Items.Find(w => w.Name == k);
@@ -155,34 +131,6 @@ public static class ItemLibrary
 
         var dummy = Weapon.Dummy(name);
         InstancedWeapons.Add(name, dummy);
-        return dummy;
-    }
-
-    public static Armor? GetArmor(string name)
-    {
-        if (Library.Armors.Find(x => x.Name == name) is {} result)
-        {
-            var item = (Armor)result.Clone();
-            InstancedArmors.Add(result.GetName(), item);
-            return item;
-        }
-
-        var dummy = Armor.Dummy(name);
-        InstancedArmors.Add(name, dummy);
-        return dummy;
-    }
-
-    public static Shield? GetShield(string name)
-    {
-        if (Library.Shields.Find(x => x.Name == name) is {} result)
-        {
-            var item = (Shield)result.Clone();
-            InstancedShields.Add(result.GetName(), item);
-            return item;
-        }
-        
-        var dummy = Shield.Dummy(name);
-        InstancedShields.Add(name, dummy);
         return dummy;
     }
 

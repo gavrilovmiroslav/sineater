@@ -49,12 +49,12 @@ public class SineaterGame : Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public AP ActionPoints;
     public World World;
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
-
+    public AP ActionPoints { get; set; }
+    
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
     
@@ -107,6 +107,9 @@ public class SineaterGame : Game
         var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0));
         Layers.Add("portrait", portraitLayer);
         
+        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 32));
+        Layers.Add("portrait2", portrait2Layer);
+        
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
@@ -143,14 +146,14 @@ public class SineaterGame : Game
         
         Layers.Add("mrmo", mrmoLayer);
 
-        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(0, 3));
+        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(2, 3));
         ibmMiniLayer.SetOffset(1, 0);
         ibmMiniLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmMiniLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
         ibmMiniLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("mini", ibmMiniLayer);
         
-        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, Vector2.Zero);
+        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(2, 0));
         ibmLayer.SetOffset(1, 0);
         ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
@@ -170,7 +173,7 @@ public class SineaterGame : Game
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
         fmodInstanceMusic.Play();
     }
-    
+
     protected override void Update(GameTime gameTime)
     {
         SinMod.System.Update(gameTime);
@@ -188,11 +191,6 @@ public class SineaterGame : Game
         if (KB.HasBeenPressed(Keys.F5))
         {
             ItemLibrary.LoadItems(Content);
-        }
-
-        if (KB.HasBeenPressed(Keys.F6))
-        {
-            Console.WriteLine(Party.Characters[0].GetLeftWeapon()?.Attacks[0].Thing.Attack ?? 0);
         }
         
         if (KB.HasBeenPressed(Keys.F10))
@@ -244,7 +242,7 @@ public class SineaterGame : Game
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "porsmol", "mini" })
+        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" })
         {
             Layers[layer].Draw(_spriteBatch);
         }
