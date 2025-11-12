@@ -123,4 +123,13 @@ public class DistanceMap
             }
         }
     }
+
+    public IEnumerable<(int, int)> GetAllBeneath(int distance)
+    {
+        for (var i = 0; i < distance; i++)
+        {
+            foreach (var t in GetAllAt(i))
+                yield return t;
+        }
+    }
 }

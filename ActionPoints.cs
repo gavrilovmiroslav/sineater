@@ -209,7 +209,7 @@ public class AP
 
         j--;
 
-        if (found)
+        if (found && j >= 0)
         {
             position = j;
             return true;

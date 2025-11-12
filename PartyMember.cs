@@ -148,6 +148,14 @@ public class Stats
             _ => 5
         };
     }
+
+    public void Reset()
+    {
+        Will = 0;
+        Clarity = 0;
+        Poise = 0;
+        Vigor = 0;
+    }
 }
 
 public interface ICharacter
@@ -251,6 +259,82 @@ public abstract class Character : ICharacter
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public bool IsDone { get; set; } = false;
+    
+    public float Weight
+    {
+        // =MAX(3,IFERROR(I8/ATK_LH_LEVEL,0)+IFERROR(I9/ATK_RH_LEVEL,0)+I10)
+        get
+        {
+            var weight = 0.0f;
+            if (GetLeftWeapon() is { } lw)
+            {
+                weight += (int)lw.Weight / (float)lw.Level;
+            }
+            
+            if (GetRightWeapon() is { } rw)
+            {
+                weight += (int)rw.Weight / (float)rw.Level;
+            }
+            
+            if (GetItem() is { } it)
+            {
+                weight += (int)it.Weight;
+            }
+
+            return Math.Max(3.0f, weight);
+        }
+    }
+    
+    public float WeightFactor => (Cla + Poi) / Math.Max(0.1f, Weight);
+    
+    public float CountPhysical
+    {
+        get
+        {
+            var count = 0;
+            if (GetLeftWeapon() is { Element: EElement.Physical } lw)
+            {
+                count += lw.Level;
+            }
+            
+            if (GetRightWeapon() is { Element: EElement.Physical } rw)
+            {
+                count += rw.Level;
+            }
+            
+            if (GetItem() is { Element: EElement.Physical } it)
+            {
+                count++;
+            }
+
+            return count;
+        }
+    }
+    
+    public float CountMental
+    {
+        get
+        {
+            var count = 0;
+            if (GetLeftWeapon() is { Element: EElement.Mental } lw)
+            {
+                count += lw.Level;
+            }
+            
+            if (GetRightWeapon() is { Element: EElement.Mental } rw)
+            {
+                count += rw.Level;
+            }
+            
+            if (GetItem() is { Element: EElement.Mental } it)
+            {
+                count++;
+            }
+
+            return count;
+        }
+    }
+    
     public IItem? GetItem()
     {
         return Item;
@@ -262,11 +346,12 @@ public abstract class Character : ICharacter
     }
 
     public Stats Bonus { get; set; } = new(0, 0, 0, 0);
-
-    public int Wil => Stats.Will + Bonus.Will;
-    public int Cla => Stats.Clarity + Bonus.Clarity;
-    public int Poi => Stats.Poise + Bonus.Poise;
-    public int Vig => Stats.Vigor + Bonus.Vigor;
+    public Stats Temp  { get; set; } = new(0, 0, 0, 0);
+    
+    public int Wil => Stats.Will + Bonus.Will + Temp.Will;
+    public int Cla => Stats.Clarity + Bonus.Clarity + Temp.Clarity;
+    public int Poi => Stats.Poise + Bonus.Poise + Temp.Poise;
+    public int Vig => Stats.Vigor + Bonus.Vigor + Temp.Vigor;
     
     public int Index;
     public Color Tint;
@@ -282,8 +367,8 @@ public abstract class Character : ICharacter
         return Tint;
     }
 
-    public int X { get; set; }
-    public int Y { get; set; }
+    public virtual int X { get; set; }
+    public virtual int Y { get; set; }
     public int HP { get; set; }
     public bool Render { get; set; } = true;
     
@@ -382,6 +467,9 @@ public abstract class Character : ICharacter
 
 public class PartyMember : Character
 {
+    public HashSet<(int, int)> Zone = [];
+    public HashSet<(int, int)> Fov = [];
+    public (int, int) Origin = (0, 0);
     public int Steps = 0;
     public bool NoMove = false;
     public PartyMember(ECharacterClass? job = null)
@@ -410,11 +498,17 @@ public class PartyMember : Character
     {
         NoMove = true;
     }
+
+    public void SetOrigin()
+    {
+        Origin = (X, Y);
+    }
 }
 
 public record struct Party
 {
     private static readonly Color[] Colors = [Color.ForestGreen, Color.GreenYellow, Color.CornflowerBlue, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
+    public static readonly Color[] Zones = [new Color(34, 100, 34), new Color(100, 150, 34), new Color(30, 30, 100), Color.Lerp(Color.Purple, Color.Black, 0.5f)];
     public readonly PartyMember[] Characters = new PartyMember[4];
     
     public Party(AP actionPoints)

@@ -78,4 +78,9 @@ public class Enemy : Character
                 .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
         }
     }
+
+    public Enemy()
+    {
+        AP = new AP(40, SineaterGame.Instance.Layers["ascii"]);
+    }
 }
