@@ -16,7 +16,7 @@ public class Glyph(int u, int v, Color bg, Color fg)
     
     public static Glyph Bw(int u, int v)
     {
-        return  new Glyph(u, v, Color.Black, Color.White);
+        return new Glyph(u, v, Color.Black, Color.White);
     }
 
     public Glyph Recolored(Color bg, Color fg)
@@ -35,7 +35,7 @@ public static class RexColorExtensions {
 public record struct Sides<T>(T Top, T Left, T Bottom, T Right);
 public record struct Corners<T>(T TopLeft, T TopRight, T BottomLeft, T BottomRight);
 
-public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset)
+public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset, Vector2 empty)
 {
     private Vector2 _offset = Vector2.Zero;
     private readonly Dictionary<int, Glyph> _glyphs = new();
@@ -546,8 +546,8 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         foreach (var (xy, glyph) in _glyphs)
         {
             var (x, y) = FromPosition(xy);
-            src.X = 15 * (tx + ox);
-            src.Y = 63 * (ty + oy);
+            src.X = (int)empty.X * (tx + ox);
+            src.Y = (int)empty.Y * (ty + oy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
             spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, 

@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SINEATER.Content;
+using SINEATER.SinMod;
 
 namespace SINEATER;
 
@@ -176,7 +177,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 }, true);
 
             _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
@@ -188,7 +189,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You hear voices from within...");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 });
         
             _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);
@@ -200,7 +201,7 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} It might contain some precious bones.");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 });
         
             _game.ActionPoints.Reduce<StatusFatigue>(_game.ActionPoints.Count<StatusFatigue>() / 2);

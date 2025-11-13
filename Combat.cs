@@ -90,27 +90,28 @@ public static class Combat
         var defense = CalculateOffenseOrDefense(defender, false);
         if (defense >= offense)
         {
-            yield return new DealFatigue(1);
+            yield return new DealFatigueDamage(1);
         }
         else
         {
             var flatDamage = offense - defense;
-            var fatigueDamage = flatDamage % 10;
-            var woundDamage = (int)Math.Floor(flatDamage / 10.0) % 10;
-            var poiseDamage = (int)Math.Floor(flatDamage / 100.0) % 10;
+            var woundDamage = flatDamage % 10;
+            var poiseDamage = (int)Math.Floor(flatDamage / 10.0) % 10;
+            var hpDamage = (int)Math.Floor(flatDamage / 100.0) % 10;
 
-            var delta1 = Math.Sign(fatigueDamage - woundDamage);
-            var delta2 = Math.Sign(woundDamage - poiseDamage);
-            if (delta1 <= 0) fatigueDamage = 10;
-            if (delta2 <= 0 && delta1 <= 0) woundDamage = 10;
-
-            if (fatigueDamage > 0) yield return new DealFatigue(fatigueDamage);
-            if (woundDamage > 0) yield return new DealWound(woundDamage);
-            if (poiseDamage > 0) yield return new DealPoise(poiseDamage);
+            var delta1 = Math.Sign(woundDamage - poiseDamage);
+            var delta2 = Math.Sign(poiseDamage - hpDamage);
+            if (delta1 <= 0) woundDamage = 10;
+            if (delta2 <= 0 && delta1 <= 0) hpDamage += 1;
+            
+            if (woundDamage > 0) yield return new DealWoundDamage(woundDamage);
+            if (poiseDamage > 0) yield return new DealPoiseDamage(poiseDamage);
+            if (hpDamage > 0) yield return new DealHPDamage(hpDamage);
         }
     }
 }
 
-public record struct DealFatigue(int Amount);
-public record struct DealWound(int Amount);
-public record struct DealPoise(int Amount);
+public record struct DealFatigueDamage(int Amount);
+public record struct DealWoundDamage(int Amount);
+public record struct DealPoiseDamage(int Amount);
+public record struct DealHPDamage(int Amount);
