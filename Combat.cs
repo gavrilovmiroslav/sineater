@@ -35,35 +35,35 @@ public static class Combat
 
         var scalingAlign = wilScaling + claScaling + poiScaling + vigScaling;
         
-        var fatigueScaling = chr.AP.Count<StatusFatigue>() * Math.Max(
+        var fatigueScaling = chr.AP.Count(EStatus.Fatigue) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyFatigueScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirFatigueScaling ?? EScalingFactor.F));
         
-        var frostScaling = chr.AP.Count<StatusFrozen>() * Math.Max(
+        var frostScaling = chr.AP.Count(EStatus.Frozen) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyFrostScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirFrostScaling ?? EScalingFactor.F));
         
-        var fireScaling = chr.AP.Count<StatusFire>() * Math.Max(
+        var fireScaling = chr.AP.Count(EStatus.Fire) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyFireScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirFireScaling ?? EScalingFactor.F));
         
-        var poisonScaling = chr.AP.Count<StatusPoison>() * Math.Max(
+        var poisonScaling = chr.AP.Count(EStatus.Poison) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyPoisonScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirPoisonScaling ?? EScalingFactor.F));
 
-        var woundScaling = chr.AP.Count<StatusWounds>() * Math.Max(
+        var woundScaling = chr.AP.Count(EStatus.Wound) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyWoundScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirWoundScaling ?? EScalingFactor.F));
         
-        var insanityScaling = chr.AP.Count<StatusInsanity>() * Math.Max(
+        var insanityScaling = chr.AP.Count(EStatus.Insanity) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyInsanityScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirInsanityScaling ?? EScalingFactor.F));
         
-        var deathScaling = chr.AP.Count<StatusDeath>() * Math.Max(
+        var deathScaling = chr.AP.Count(EStatus.Death) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyDeathScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirDeathScaling ?? EScalingFactor.F));
         
-        var voidScaling = chr.AP.Count<StatusVoid>() * Math.Max(
+        var voidScaling = chr.AP.Count(EStatus.Void) * Math.Max(
             (int)(chr.GetLeftWeapon()?.MyVoidScaling ?? EScalingFactor.F), 
             (int)(chr.GetRightWeapon()?.TheirVoidScaling ?? EScalingFactor.F));
 
@@ -90,7 +90,7 @@ public static class Combat
         var defense = CalculateOffenseOrDefense(defender, false);
         if (defense >= offense)
         {
-            yield return new DealFatigueDamage(1);
+            yield return new DealWoundDamage(1);
         }
         else
         {

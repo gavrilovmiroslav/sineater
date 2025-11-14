@@ -81,6 +81,5 @@ public class Enemy : Character
 
     public Enemy()
     {
-        AP = new AP(40, SineaterGame.Instance.Layers["ascii"]);
     }
 }

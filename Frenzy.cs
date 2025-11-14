@@ -30,7 +30,7 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
         //chars.AddRange(level.Enemies);
         foreach (var chr in chars)
         {
-            var insanity = chr.GetAP().Count<StatusInsanity>();
+            var insanity = chr.GetAP().Count(EStatus.Insanity);
 
             if (Rnd.Instance.Next(0, insanity) > chr.Stats.Clarity)
             {
@@ -112,8 +112,8 @@ public class Frenzy(SineaterGame game, CombatMapScreen level) : IEnumerable
 
                             if (fields.ContainsKey((cell.X, cell.Y)))
                             {
-                                fields[(cell.X, cell.Y)].GetAP().Reduce<StatusInsanity>(1);
-                                fields[(cell.X, cell.Y)].GetAP().AddN<StatusWounds>(1);
+                                fields[(cell.X, cell.Y)].GetAP().Reduce(EStatus.Insanity, 1);
+                                fields[(cell.X, cell.Y)].GetAP().Add(EStatus.Wound, 1);
                             }
                             anyPathTaken = true;
 

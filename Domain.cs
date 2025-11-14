@@ -181,9 +181,9 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        if (character.GetAP().Count<StatusWounds>() > 0)
+        if (character.GetAP().Count(EStatus.Wound) > 0)
         {
-            character.GetAP().Reduce<StatusWounds>(1);
+            character.GetAP().Reduce(EStatus.Wound, 1);
             for (var i = 0; i < 10; i++)
             {
                 level.Draw(x, y, "+", Color.Lerp(Color.Black, Color.Green, i / 10.0f));
@@ -192,7 +192,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         }
         else
         {
-            character.GetAP().AddN<StatusInsanity>(1);
+            character.GetAP().Add(EStatus.Insanity, 5);
             for (var i = 0; i < 10; i++)
             {
                 level.Draw(x, y, "!", Color.Lerp(Color.Yellow, Color.DarkRed, i / 10.0f));
@@ -209,7 +209,7 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         circle.Shuffle();
 
         var ew = 0; //level.Enemies[0].GetAP().Count<StatusWounds>();
-        var pw = Caster.GetAP().Count<StatusWounds>();
+        var pw = Caster.GetAP().Count(EStatus.Wound);
         var wounds = pw + ew / 2;
 
         var walkable = circle.Where(c => level.Map.IsWalkable(c.X, c.Y)).ToList();
@@ -312,7 +312,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        character.GetAP().Reduce(1);
+        character.GetAP().Add(EStatus.Stamina, 1);
         
         if (!_steps.ContainsKey((oldX, oldY)))
         {
@@ -643,24 +643,24 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         var ap = character.GetAP();
         if (_glyphs[(x, y)].V != 0)
         {
-            if (ap.Count<StatusFrozen>() > 0)
+            if (ap.Count(EStatus.Frozen) > 0)
             {
-                ap.Reduce<StatusFrozen>(4);
+                ap.Reduce(EStatus.Frozen, 4);
             }
             else
             {
-                ap.AddN<StatusFire>(1);
+                ap.Add(EStatus.Fire, 1);
             }
         }
         else
         {
-            if (ap.Count<StatusFire>() > 0)
+            if (ap.Count(EStatus.Fire) > 0)
             {
-                character.GetAP().Reduce<StatusFire>(1);
+                character.GetAP().Reduce(EStatus.Fire, 1);
             }
             else
             {
-                character.GetAP().AddN<StatusFrozen>(1);
+                character.GetAP().Add(EStatus.Frozen, 1);
             }
         }
 

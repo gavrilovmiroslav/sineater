@@ -443,7 +443,7 @@ public class CombatMapScreen : IScreen
             {
                 iy -= 4;
             }
-            var hasStamina = _game.ActionPoints.Count<StatusStamina>() > 0;
+            var hasStamina = _game.ActionPoints.Count(EStatus.Stamina) > 0;
             if (chr.IsDone || !hasStamina)
             {
                 Draw(chr.X, chr.Y, new Glyph(ix, iy, Color.Black, Color.DarkGray));
@@ -621,7 +621,7 @@ public class CombatMapScreen : IScreen
             var ability = current.Ability;
             if (ability != null)
             {
-                if (ability.CanBeUsed(current, current.X, current.Y) && current.AP.Count<StatusStamina>() > 0)
+                if (ability.CanBeUsed(current, current.X, current.Y) && current.AP.Count(EStatus.Stamina) > 0)
                 {
                     CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
                     {
@@ -738,7 +738,7 @@ public class CombatMapScreen : IScreen
                     var (x, y) = (current.X + dx, current.Y + dy);
                     current.X = x;
                     current.Y = y;
-                    _game.ActionPoints.Add<StatusFatigue>((int)Math.Ceiling(current.Weight));
+                    _game.ActionPoints.Add(EStatus.Fatigue,(int)Math.Ceiling(current.Weight));
                     current.SetOrigin();
                     CalculateZone(current);
                 }
@@ -776,7 +776,7 @@ public class CombatMapScreen : IScreen
                 StartSubmenu(["CYCLE", "FORTIFY", "INSPECT"]);
             }
             
-            if (_game.ActionPoints.Count<StatusStamina>() > 0 && !current.IsDone)
+            if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
             {
                 var up = KB.HasBeenPressed(Keys.Up);
                 var down = KB.HasBeenPressed(Keys.Down);
@@ -895,34 +895,68 @@ public class CombatMapScreen : IScreen
         yield return new WaitForSeconds(0.1f);
         Draw(defender.X, defender.Y, new Glyph(guv.Item1, guv.Item2, Color.Black, defender.Tint));
         
-        //_game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
-        defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 24);
+        defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
         yield return new WaitForSeconds(0.5f);
         foreach (var effect in Combat.Attack(attacker, defender))
         {
             yield return new WaitForSeconds(0.2f);
             if (effect is DealFatigueDamage ftg)
             {
-                defender.AP.Add<StatusFatigue>(ftg.Amount);
+                defender.AP.Add(EStatus.Fatigue, ftg.Amount);
+                _game.Layers["ascii"].Set(50, 21, $"+{ftg.Amount} Fatigue");
             }
             else if (effect is DealWoundDamage wnd)
             {
-                defender.AP.Add<StatusWounds>(wnd.Amount);
+                defender.AP.Add(EStatus.Wound, wnd.Amount);
+                _game.Layers["ascii"].Set(30, 21, $"+{wnd.Amount} Wounds");
             }
             else if (effect is DealPoiseDamage poi)
             {
                 defender.Temp.Poise -= poi.Amount;
+                _game.Layers["ascii"].Set(40, 21, $"-{poi.Amount} Poise");
             }
             else if (effect is DealHPDamage hp)
             {
                 defender.HP -= hp.Amount;
                 if (defender.HP < 0) defender.HP = 0;
+                _game.Layers["ascii"].Set(20, 21, $"-{hp.Amount} HP");
             }
-            defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20);
+            defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
+            yield return new WaitForSeconds(0.5f);
 
-            if (defender.HP <= 0) defender.Die();
+            var wnds = defender.AP.Count(EStatus.Wound);
+            if (defender.Poi == 0 && wnds > 0 || wnds >= defender.HP)
+            {
+                defender.HP = 0;
+                _game.Layers["ascii"].Set(30, 22, $"HP break!");
+                defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
+                yield return new WaitForSeconds(0.5f);
+            }
+            else
+            {
+                if (defender is Enemy en)
+                {
+                    var death = (wnds / defender.Poi) + 1;
+                    _game.Layers["ascii"].Set(30, 22, $"Bleed! -{death} HP");
+                    defender.HP -= death;
+                    defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
+                    yield return new WaitForSeconds(0.5f);
+                }
+                else if (defender is PartyMember pa)
+                {
+                    var death = wnds / defender.Poi;
+                    _game.Layers["ascii"].Set(30, 22, $"Bleed! +{death} Death");
+                    defender.AP.Add(EStatus.Death, death);
+                }
+            }
+
+            if (defender.HP <= 0)
+            {
+                defender.Die();
+                _game.Layers["ascii"].Set(30, 23, $"{defender.GetName()} dies!");
+            }
         }
-        yield return new WaitForSeconds(2.0f);
+        yield return new WaitForSeconds(0.5f);
         if (defender is Enemy { IsDead: true } e)
         {
             Structure.Enemies.Remove(e);

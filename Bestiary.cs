@@ -30,9 +30,10 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (5, 1),
             Sin = 1,
-            HP = 1,
+            HP = 3,
             Tint = Color.Red,
-            Stats = new Stats(4, 2, 1, 2),
+            Stats = new Stats(2, 2, 1, 2),
+            AP = new AP(3, SineaterGame.Instance.Layers["ascii"])
         };
 
         bat.LeftWeapon = ItemLibrary.GetWeapon("Fang");
@@ -52,12 +53,13 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (0, 2),
             Sin = Rnd.Instance.D4,
-            HP = 3,
+            HP = 6,
             Tint = Color.LightGreen,
-            Stats = new Stats(2, 2, 2, Rnd.Instance.Next(3, 4)),
+            Stats = new Stats(2, 2, 2, 2),
+            AP = new AP(6, SineaterGame.Instance.Layers["ascii"])
         };
-        if (Rnd.Instance.D4 > gob.Sin)
-            gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
+        
+        gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
         gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
         return gob;
     }
@@ -73,13 +75,15 @@ public static class Bestiary
             Icon = (6, 64),
             DeadIcon = (8, 65),
             Portrait = (1, 2),
-            Sin = 3 + Rnd.Instance.D2,
-            HP = 3,
+            Sin = 3,
+            HP = 10,
             Tint = Color.Red,
-            Stats = new Stats(6, 3, 3, 4),
+            Stats = new Stats(4, 2, 2, 4),
+            AP = new AP(10, SineaterGame.Instance.Layers["ascii"])
         };
 
         gob.LeftWeapon = ItemLibrary.GetWeapon("Thorn Whip");
+        gob.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
         return gob;
     }
     
@@ -97,7 +101,8 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 5,
             Tint = Color.Red,
-            Stats = new Stats(5, 4, 4, 4),
+            Stats = new Stats(3, 4, 1, 4),
+            AP = new AP(5, SineaterGame.Instance.Layers["ascii"])
         };
 
         skel.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
@@ -119,7 +124,8 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 7,
             Tint = Color.Red,
-            Stats = new Stats(6, 5, 5, 5),
+            Stats = new Stats(3, 5, 2, 3),
+            AP = new AP(7, SineaterGame.Instance.Layers["ascii"])
         };
 
         skul.LeftWeapon = ItemLibrary.GetWeapon("Claymore");
@@ -141,7 +147,8 @@ public static class Bestiary
             Sin = 5 + Rnd.Instance.D2,
             HP = 10,
             Tint = Color.Green,
-            Stats = new Stats(6, 3, 3, 6),
+            Stats = new Stats(4, 3, 6, 2),
+            AP = new AP(10, SineaterGame.Instance.Layers["ascii"])
         };
 
         snek.LeftWeapon = ItemLibrary.GetWeapon("Fang");

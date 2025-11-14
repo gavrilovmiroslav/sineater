@@ -213,6 +213,8 @@ public record struct LevelStructure
                             Vector2.Distance(new Vector2(xy.Item1, xy.Item2), new Vector2(gx, gy))).GetEnumerator();
 
                     var spawned = 0;
+                    HashSet<(int, int)> usedEnemySpots = [];
+                    
                     while (res > 0)
                     {
                         Enemy enm;
@@ -230,8 +232,12 @@ public record struct LevelStructure
                                 }
 
                                 res -= cost;
-                                places.MoveNext();
+                                do
+                                {
+                                    places.MoveNext();
+                                } while (usedEnemySpots.Contains(places.Current));
                                 var (x, y) = places.Current;
+                                usedEnemySpots.Add((x, y));
                                 enm.X = x;
                                 enm.Y = y;
                                 if (Rnd.Instance.D100 > 30)
@@ -271,8 +277,13 @@ public record struct LevelStructure
                                             if (res > cost)
                                             {
                                                 res -= cost;
-                                                places.MoveNext();
+                                                
+                                                do
+                                                {
+                                                    places.MoveNext();
+                                                } while (usedEnemySpots.Contains(places.Current));
                                                 var (x, y) = places.Current;
+                                                usedEnemySpots.Add((x, y));
                                                 enm.X = x;
                                                 enm.Y = y;
                                                 if (Rnd.Instance.D100 > 30)
@@ -300,8 +311,12 @@ public record struct LevelStructure
                                         if (res > cost)
                                         {
                                             res -= cost;
-                                            places.MoveNext();
+                                            do
+                                            {
+                                                places.MoveNext();
+                                            } while (usedEnemySpots.Contains(places.Current));
                                             var (x, y) = places.Current;
+                                            usedEnemySpots.Add((x, y));
                                             enm.X = x;
                                             enm.Y = y;
                                             if (Rnd.Instance.D100 > 30)
