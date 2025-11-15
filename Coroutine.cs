@@ -60,8 +60,9 @@ public class CoroutineHandler
     {
         List<Coroutine> toAdd = [];
         List<Coroutine> toDelete = [];
-        
-        foreach (var cor in _coroutines.Where(cor => cor._waitingOn == null))
+
+        var updating = _coroutines.Where(cor => cor._waitingOn == null).ToList();
+        foreach (var cor in updating)
         {
             if (cor._enumerator.MoveNext())
             {
@@ -239,19 +240,7 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
     {
         var game = SineaterGame.Instance;
         game.Layers["mrmo"].SetRect(start, end, ' ');
-        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
-        {
-            Top = Glyph.Bw(10, 27),
-            Bottom = Glyph.Bw(10, 29),
-            Left = Glyph.Bw(9, 28),
-            Right = Glyph.Bw(11, 28),
-        }, new Corners<Glyph>()
-        {
-            BottomLeft = Glyph.Bw(11, 30), 
-            BottomRight = Glyph.Bw(10, 30), 
-            TopLeft = Glyph.Bw(11, 31), 
-            TopRight = Glyph.Bw(10, 31),
-        });
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
@@ -267,19 +256,7 @@ public class ShowPopupAndWaitForSeconds(float time, Vector2 start, Vector2 end, 
     {
         var game = SineaterGame.Instance;
         game.Layers["mrmo"].SetRect(start, end, ' ');
-        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
-        {
-            Top = Glyph.Bw(10, 27),
-            Bottom = Glyph.Bw(10, 29),
-            Left = Glyph.Bw(9, 28),
-            Right = Glyph.Bw(11, 28),
-        }, new Corners<Glyph>()
-        {
-            BottomLeft = Glyph.Bw(11, 30), 
-            BottomRight = Glyph.Bw(10, 30), 
-            TopLeft = Glyph.Bw(11, 31), 
-            TopRight = Glyph.Bw(10, 31),
-        });
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
@@ -299,19 +276,7 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
         game.Layers["mrmo"].SetRect(start, end, ' ');
         // 10,11 25,26
         // 10,11 39,40,41
-        game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
-        {
-            Top = Glyph.Bw(10, 27),
-            Bottom = Glyph.Bw(10, 29),
-            Left = Glyph.Bw(9, 28),
-            Right = Glyph.Bw(11, 28),
-        }, new Corners<Glyph>()
-        {
-            BottomLeft = Glyph.Bw(11, 30), 
-            BottomRight = Glyph.Bw(10, 30), 
-            TopLeft = Glyph.Bw(11, 31), 
-            TopRight = Glyph.Bw(10, 31),
-        });
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
         
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 15, start.Y + 1), 

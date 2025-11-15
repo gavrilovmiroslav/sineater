@@ -33,7 +33,46 @@ public static class RexColorExtensions {
 }
 
 public record struct Sides<T>(T Top, T Left, T Bottom, T Right);
+
+public static class Sides
+{
+    public static Sides<Glyph> Ascii = new Sides<Glyph>()
+    {
+        Top = Glyph.Bw(13, 6),
+        Bottom = Glyph.Bw(13, 6),
+        Left = Glyph.Bw(26, 5),
+        Right = Glyph.Bw(26, 5),
+    };
+    
+    public static Sides<Glyph> Mrmo = new Sides<Glyph>()
+    {
+        Top = Glyph.Bw(10, 27),
+        Bottom = Glyph.Bw(10, 29),
+        Left = Glyph.Bw(9, 28),
+        Right = Glyph.Bw(11, 28),
+    };
+}
+
 public record struct Corners<T>(T TopLeft, T TopRight, T BottomLeft, T BottomRight);
+
+public static class Corners
+{
+    public static Corners<Glyph> Ascii = new Corners<Glyph>()
+    {
+        BottomLeft = Glyph.Bw(8, 6),
+        BottomRight = Glyph.Bw(28, 5),
+        TopLeft = Glyph.Bw(9, 6),
+        TopRight = Glyph.Bw(27, 5),
+    };
+
+    public static Corners<Glyph> Mrmo = new Corners<Glyph>()
+    {
+        BottomLeft = Glyph.Bw(11 - 2, 31 - 4 + 2),
+        BottomRight = Glyph.Bw(10, 30),
+        TopLeft = Glyph.Bw(11 - 2, 31 - 4),
+        TopRight = Glyph.Bw(10, 31),
+    };
+}
 
 public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset, Vector2 empty)
 {

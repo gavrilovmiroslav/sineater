@@ -180,6 +180,12 @@ public class AP
 
         return false;
     }
+    
+    public void Unspend(int amount)
+    {
+        var voids = View.Count(s => s == EStatus.Void);
+        Reduce(EStatus.Void, Math.Min(voids, amount));
+    }
 
     public int Count(EStatus status)
     {

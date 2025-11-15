@@ -20,6 +20,29 @@ public enum ECharacterClass
 
 public static class ECharacterClassExtensions
 {
+    public static string GetShortName(this ECharacterClass job)
+    {
+        switch (job)
+        {
+            case ECharacterClass.Wizard:
+                return "WZD";
+            case ECharacterClass.Witch:
+                return "WIT";
+            case ECharacterClass.Knight:
+                return "KNT";
+            case ECharacterClass.Monk:
+                return "MNK";
+            case ECharacterClass.Sage:
+                return "SAG";
+            case ECharacterClass.Priest:
+                return "PRI";
+            case ECharacterClass.Thief:
+                return "THF";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(job), job, null);
+        }
+    }
+    
     public static (int, int) GetPortrait(this ECharacterClass job)
     {
         switch (job)
@@ -600,6 +623,11 @@ public record struct Party
         Characters[1].Bonus.Clarity += 2;
         Characters[2].Bonus.Poise += 2;
         Characters[3].Bonus.Vigor += 2;
+
+        for (var i = 0; i < 4; i++)
+        {
+            Characters[i].HP = Characters[i].Poi + Characters[i].Cla;
+        }
     }
         
     public int WorldSight {

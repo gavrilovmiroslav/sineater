@@ -111,7 +111,8 @@ public static class Combat
     }
 }
 
-public record struct DealFatigueDamage(int Amount);
-public record struct DealWoundDamage(int Amount);
-public record struct DealPoiseDamage(int Amount);
-public record struct DealHPDamage(int Amount);
+public interface IDamage;
+public record struct DealFatigueDamage(int Amount) : IDamage;
+public record struct DealWoundDamage(int Amount) : IDamage;
+public record struct DealPoiseDamage(int Amount) : IDamage;
+public record struct DealHPDamage(int Amount) : IDamage;

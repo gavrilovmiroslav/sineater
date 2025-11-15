@@ -242,7 +242,7 @@ public class SineaterGame : Game
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" })
+        foreach (var layer in LayerNames)
         {
             Layers[layer].Draw(_spriteBatch);
         }
@@ -276,7 +276,9 @@ public class SineaterGame : Game
         _spriteBatch.End();
         base.Draw(gameTime);
     }
-    
+
+    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
+
     private void SetupCrt(int w, int h)
     {
         _crt.Parameters["hardScan"]?.SetValue(-5.0f);
