@@ -7,6 +7,8 @@ namespace SINEATER.steam
 {
     internal class SteamManager
     {
+        public static SteamManager Instance = new SteamManager();
+
         public bool IsConnectedToSteam = false;
 
         public List<ISteamStat> Stats = new List<ISteamStat>();

@@ -15,8 +15,6 @@ public class SineaterGame : Game
     public static SineaterGame Instance;
     public static int DeltaTime;
 
-    private SteamManager _steamManager;
-
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -56,8 +54,6 @@ public class SineaterGame : Game
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
 
-        _steamManager = new SteamManager();
-
         var time = DateTime.Now;
         _currentHour = time.Hour;
         var currentMillis = time.Millisecond + time.Second * 1000 + time.Minute * 1000 * 60; 
@@ -71,7 +67,7 @@ public class SineaterGame : Game
 
     protected override void Initialize()
     {
-        _steamManager.Initialize(Content.Load<string>("stats"));
+        SteamManager.Instance.Initialize(Content.Load<string>("stats"));
 
         base.Initialize();
     }
@@ -181,7 +177,7 @@ public class SineaterGame : Game
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
 
-        _steamManager.Update();
+        SteamManager.Instance.Update();
 
         if (_currentMinutes > HourLengthMillis)
         {
@@ -281,7 +277,7 @@ public class SineaterGame : Game
 
     protected override void OnExiting(object sender, ExitingEventArgs args)
     {
-        _steamManager.ShutDown();
+        SteamManager.Instance.ShutDown();
         base.OnExiting(sender, args);
     }
     public static IEnumerable<string> LayerNames => ["mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini"];
