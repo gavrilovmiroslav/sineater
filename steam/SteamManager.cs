@@ -53,6 +53,22 @@ namespace SINEATER.steam
             SteamAPI.Shutdown();
         }
 
+        public void SetAchievement(string achievementName, bool condition = true)
+        {
+            SteamUserStats.GetAchievement(achievementName, out bool completed);
+            if (!completed && condition)
+            {
+                if (SteamUserStats.SetAchievement(achievementName))
+                {
+                    SteamUserStats.StoreStats();
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to activate achievement: {achievementName}");
+                }
+            }
+        }
+
         public bool UpdateIntStat(string name, int delta)
         {
             var stat = Stats.Find(x => x.Name == name);
@@ -75,6 +91,32 @@ namespace SINEATER.steam
                 return true;
             }
             return false;
+        }
+
+        public void GetStatValue(string name, out int value)
+        {
+            var stat = Stats.Find(x => x.Name == name);
+            if (stat != null)
+            {
+                value = stat is IntStat s ? s.Value : 0;
+            }
+            else
+            {
+                value = -1;
+            }
+        }
+
+        public void GetStatValue(string name, out float value)
+        {
+            var stat = Stats.Find(x => x.Name == name);
+            if (stat != null && stat is FloatStat floatStat)
+            {
+                value = floatStat.Value;
+            }
+            else
+            {
+                value = -1;
+            }
         }
 
         private void RequestStats()
@@ -100,33 +142,19 @@ namespace SINEATER.steam
 
         private void OnUserStatsRecieved(UserStatsReceived_t pCall, bool bIOFailure)
         {
-            foreach(var stat in Stats)
+            foreach (var stat in Stats)
             {
                 stat.RefreshValue();
             }
         }
         private void OnUserStatsStored(UserStatsStored_t param)
         {
-            SteamUserStats.GetStat("STAT_1", out int value);
 
         }
         private void OnGlobalStatsRecieved(GlobalStatsReceived_t pCall, bool bIOFailure)
         {
             SteamUserStats.GetGlobalStat("STAT_1", out long data);
-            SteamUserStats.GetStat("STAT_1", out int x);
         }
         #endregion
     }
 }
-
-
-/*
- * 
- *                     //if(SteamUserStats.SetAchievement("ACH_TEST"))
-                    {
-                        int xs = 0;
-                    }
-                    init = true;
-
-                    SteamUserStats.ClearAchievement("ACH_TEST");
- */
