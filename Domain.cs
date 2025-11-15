@@ -71,8 +71,8 @@ public class Domain(ICharacter caster, int x, int y, int radius)
                 for (int j = 0; j < 22; j++)
                 {
                     if (i == x && j == y) continue;
-                    var fg = mrmo.GetFg(i, j + 2);
-                    mrmo.Set(i, j + 2, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
+                    var fg = mrmo.GetFg(i, j);
+                    level.Draw(i, j, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
                 }
             }
 
@@ -82,7 +82,7 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         foreach (var cell in map.GetCellsInCircle(x, y, Radius))
         {
             if (cell.X == x && cell.Y == y) continue;
-            mrmo.Set(cell.X, cell.Y + 2, " ", Color.Black);
+            level.Draw(cell.X, cell.Y, " ", Color.Black);
         }
         yield return new WaitForSeconds(0.5f);
 
@@ -93,7 +93,7 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         {
             foreach (var cell in border)
             {
-                mrmo.Set(cell.X, cell.Y + 2, new Glyph(raise ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
+                level.Draw(cell.X, cell.Y, new Glyph(raise ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
             }
             yield return new WaitForSeconds(0.01f);
             raise = !raise;
@@ -101,13 +101,13 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         
         foreach (var cell in border)
         {
-            mrmo.Set(cell.X, cell.Y + 2, Glyph.Bw(12 - 2, 8 + 6));
+            level.Draw(cell.X, cell.Y, Glyph.Bw(12 - 2, 8 + 6));
             yield return new WaitForSeconds(0.001f);
         }
 
         foreach (var cell in border)
         {
-            mrmo.Set(cell.X, cell.Y + 2, " ", Color.White, Color.Black);
+            level.Draw(cell.X, cell.Y, " ", Color.White, Color.Black);
             yield return new WaitForSeconds(0.001f);
         }
     }
@@ -124,18 +124,16 @@ public class Domain(ICharacter caster, int x, int y, int radius)
 
     protected IEnumerable Blink(CombatMapScreen level)
     {
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
         for (var k = 0; k < 5; k++)
         {
             for (int i = 0; i < 24; i++)
             {
                 for (int j = 0; j < 22; j++)
                 {
-                    mrmo.Set(i, j + 2, " ", Color.Black, Color.Black);
+                    level.Draw(i, j, " ", Color.Black);
                 }
             }
             yield return new WaitForSeconds(0.01f * (6 - k));
-            level.UpdateFov();
             level.DrawCombat();
             yield return new WaitForSeconds(0.001f);
         }
@@ -143,7 +141,7 @@ public class Domain(ICharacter caster, int x, int y, int radius)
         yield return new WaitForSeconds(0.15f);
     }
 
-    public virtual IEnumerable ApplyOnDeath(CombatMapScreen combatMapScreen, int eX, int eY)
+    public virtual IEnumerable ApplyOnDeath(IScreen combatMapScreen, int eX, int eY)
     {
         yield break;
     }
@@ -183,23 +181,21 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        if (character.GetAP().Count<StatusWounds>() > 0)
+        if (character.GetAP().Count(EStatus.Wound) > 0)
         {
-            character.GetAP().Reduce<StatusWounds>(1);
+            character.GetAP().Reduce(EStatus.Wound, 1);
             for (var i = 0; i < 10; i++)
             {
-                SineaterGame.Instance.Layers["mrmo"]
-                    .Set(x, y + 2, "+", Color.Lerp(Color.Black, Color.Green, i / 10.0f));
+                level.Draw(x, y, "+", Color.Lerp(Color.Black, Color.Green, i / 10.0f));
                 yield return new WaitForSeconds(0.001f);
             }
         }
         else
         {
-            character.GetAP().Add<StatusInsanity>(1);
+            character.GetAP().Add(EStatus.Insanity, 5);
             for (var i = 0; i < 10; i++)
             {
-                SineaterGame.Instance.Layers["mrmo"]
-                    .Set(x, y + 2, "!", Color.Lerp(Color.Yellow, Color.DarkRed, i / 10.0f));
+                level.Draw(x, y, "!", Color.Lerp(Color.Yellow, Color.DarkRed, i / 10.0f));
                 yield return new WaitForSeconds(0.0001f);
             }
         }
@@ -207,14 +203,13 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
 
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
         yield return DefaultDomainOpening(level);
         
         var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
         circle.Shuffle();
 
-        var ew = level.Enemies[0].GetAP().Count<StatusWounds>();
-        var pw = Caster.GetAP().Count<StatusWounds>();
+        var ew = 0; //level.Enemies[0].GetAP().Count<StatusWounds>();
+        var pw = Caster.GetAP().Count(EStatus.Wound);
         var wounds = pw + ew / 2;
 
         var walkable = circle.Where(c => level.Map.IsWalkable(c.X, c.Y)).ToList();
@@ -233,8 +228,8 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
                 if (cell.X == x && cell.Y == y) continue;
                 c++;
                 var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y)) / Radius;
-                mrmo.Set(
-                    cell.X, cell.Y + 2, 
+                level.Draw(
+                    cell.X, cell.Y, 
                     new Glyph(
                         (int)(i + cell.Y) % 3, 
                         57 + (int)(2 * i + cell.X) % 3,
@@ -262,7 +257,6 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
         var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
         foreach (var cell in circle)
         {
-            if (!level.IsInActivePartyMemberFOV.Contains((cell.X, cell.Y))) continue;
             var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y));
             var dx = 0;
             var fg = Color.DarkRed;
@@ -271,8 +265,8 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
                 dx = 3;
                 fg = Color.White;
             }
-            mrmo.Set(
-                cell.X, cell.Y + 2, 
+            level.Draw(
+                cell.X, cell.Y, 
                 new Glyph(
                     dx + (int)(t + cell.X * t * 3.14f + cell.Y) % 3, 
                     57 + (int)(2 * t + cell.X * t * 1.28f + cell.Y) % 3,
@@ -309,7 +303,6 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             {
                 level.Map?.SetCellProperties(cell.X, cell.Y, true, true);
             }
-            level.UpdateFov();
         }
         else
         {
@@ -319,7 +312,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        character.GetAP().Reduce(1);
+        character.GetAP().Add(EStatus.Stamina, 1);
         
         if (!_steps.ContainsKey((oldX, oldY)))
         {
@@ -360,12 +353,12 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
                     var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y)) / Radius;
                     if (w.Contains(cell))
                     {
-                        mrmo.Set(cell.X, cell.Y + 2, ".", new Color(0.9f - Rnd.Instance.Next01() * 0.1f, 0.9f - Rnd.Instance.Next01() * 0.1f, 1.0f - Rnd.Instance.Next01() * 0.1f));
+                        level.Draw(cell.X, cell.Y, ".", new Color(0.9f - Rnd.Instance.Next01() * 0.1f, 0.9f - Rnd.Instance.Next01() * 0.1f, 1.0f - Rnd.Instance.Next01() * 0.1f));
                         alreadyFound.Add((cell.X, cell.Y));
                     }
                     else if (alreadyFound.Contains((cell.X, cell.Y)))
                     {
-                        mrmo.Set(cell.X, cell.Y + 2, ".", new Color(Rnd.Instance.Next01() * 0.1f, Rnd.Instance.Next01() * 0.1f, 1.0f - (0.5f * dist)));
+                        level.Draw(cell.X, cell.Y, ".", new Color(Rnd.Instance.Next01() * 0.1f, Rnd.Instance.Next01() * 0.1f, 1.0f - (0.5f * dist)));
                     }
                 }
 
@@ -377,15 +370,13 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
         foreach (var cell in level.Map?.GetCellsInCircle(x, y, Radius) ?? [])
         {
-            mrmo.Set(cell.X, cell.Y + 2, " ", Color.Black);
+            level.Draw(cell.X, cell.Y, " ", Color.Black);
             _oldTransparency[(cell.X, cell.Y)] = (level.Map.IsTransparent(cell.X, cell.Y), level.Map.IsWalkable(cell.X, cell.Y));
             level.Map.SetCellProperties(cell.X, cell.Y, true, true);
             level.Domains.Tiles[(cell.X, cell.Y)] = this;
         }
 
         yield return Blink(level);
-        
-        level.UpdateFov();
     }
 
     public override void Draw(CombatMapScreen level)
@@ -411,11 +402,11 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y)) / Radius;
             if (w.Contains(cell))
             {
-                mrmo.Set(cell.X, cell.Y + 2, ".", new Color(0.2f * dist + Rnd.Instance.Next(0, 2) * 0.1f, 0.2f * dist + Rnd.Instance.Next(0, 2) * 0.1f, 0.5f * dist));
+                level.Draw(cell.X, cell.Y, ".", new Color(0.2f * dist + Rnd.Instance.Next(0, 2) * 0.1f, 0.2f * dist + Rnd.Instance.Next(0, 2) * 0.1f, 0.5f * dist));
             }
             else
             {
-                mrmo.Set(cell.X, cell.Y + 2, ".", new Color(0.1f, 0.1f, 1.0f - (0.5f * dist)));
+                level.Draw(cell.X, cell.Y, ".", new Color(0.1f, 0.1f, 1.0f - (0.5f * dist)));
             }
         }
 
@@ -426,7 +417,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             var f = _steps[(xy.Item1, xy.Item2)] / 3.0f;
             f = 1.0f - MathF.Pow(1 - f, 3);
             var dark = new Color(0.1f, 0.1f, 1.0f - (0.5f * dist));
-            mrmo.Set(xy.Item1, xy.Item2 + 2, ".", Color.Lerp(dark, Color.White, f));
+            level.Draw(xy.Item1, xy.Item2, ".", Color.Lerp(dark, Color.White, f));
             _steps[(xy.Item1, xy.Item2)] -= 0.1f;
             if (_steps[(xy.Item1, xy.Item2)] <= 0.0f)
             {
@@ -446,20 +437,20 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
             {
                 var (u, v) = chr.Job.GetImage();
-                var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
-                SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
+                var color = level.GetFg(cx, cy + 1);
+                level.Draw(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
             }
         }
-        foreach (var chr in level.Enemies)
-        {
-            var (cx, cy) = (chr.X, chr.Y);
-            if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
-            {
-                var (u, v) = chr.Icon;
-                var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
-                SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
-            }
-        }
+        // foreach (var chr in level.Enemies)
+        // {
+        //     var (cx, cy) = (chr.X, chr.Y);
+        //     if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
+        //     {
+        //         var (u, v) = chr.Icon;
+        //         var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
+        //         SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
+        //     }
+        // }
         
         _waveRadius += 0.1f;
     }
@@ -496,8 +487,8 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             {
                 foreach (var cell in level.Map?.GetBorderCellsInCircle(x, y, i + 1) ?? [])
                 {
-                    mrmo.Set(cell.X, cell.Y + 2, " ", Color.White, new Color(0, 0, (int)(25 * (float)i / Radius)));
-                    mrmo.Set(cell.X, cell.Y + 2, new Glyph(n % 2 == 0 ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed,
+                    level.Draw(cell.X, cell.Y, " ", Color.White, new Color(0, 0, (int)(25 * (float)i / Radius)));
+                    level.Draw(cell.X, cell.Y, new Glyph(n % 2 == 0 ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed,
                         Color.Blue, n / 10.0f)));
                 }
 
@@ -508,7 +499,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             foreach (var cell in bcells)
             {
                 if (drawn.Contains((cell.X, cell.Y))) continue;
-                mrmo.Set(cell.X, cell.Y + 2, " ", Color.Yellow, new Color(0, 0, (int)(25 * (float)i / Radius)));
+                level.Draw(cell.X, cell.Y, " ", Color.Yellow, new Color(0, 0, (int)(25 * (float)i / Radius)));
             }
 
             var cells = level.Map?.GetCellsInCircle(x, y, i) ?? [];
@@ -525,18 +516,18 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                     {
                         _glyphs[xy] = new Glyph(Rnd.Instance.D4 - 1, 20,
                             new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
-                        mrmo.Set(cell.X, cell.Y + 2, _glyphs[xy]);
+                        level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                     else if (level.Map.IsWalkable(cell.X, cell.Y) && d20 == 5)
                     {
                         _glyphs[xy] = new Glyph(13 + Rnd.Instance.D2, 40 + Rnd.Instance.D2,
                             new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
-                        mrmo.Set(cell.X, cell.Y + 2, _glyphs[xy]);
+                        level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                     else
                     {
                         _glyphs[xy] = new Glyph(0, 0, new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
-                        mrmo.Set(cell.X, cell.Y + 2, _glyphs[xy]);
+                        level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                 }
             }
@@ -551,13 +542,13 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             level.Domains.Tiles[(cell.X, cell.Y)] = this;
         }
 
-        foreach (var enemy in level.Enemies)
-        {
-            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
-            {
-                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
-            }
-        }
+        // foreach (var enemy in level.Enemies)
+        // {
+        //     if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+        //     {
+        //         enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
+        //     }
+        // }
         
         yield return new WaitForSeconds(1f);
         yield return Blink(level);
@@ -604,13 +595,13 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             }
         }
         
-        foreach (var enemy in level.Enemies)
-        {
-            if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
-            {
-                enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
-            }
-        }
+        // foreach (var enemy in level.Enemies)
+        // {
+        //     if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
+        //     {
+        //         enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
+        //     }
+        // }
     }
 
     public override void Draw(CombatMapScreen level)
@@ -625,25 +616,23 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             var xnoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Cos(MathF.PI + _t));
             var ynoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Sin(MathF.PI / 2 + _t));
             var dist = Vector2.Distance(new Vector2(cx, cy), new Vector2(x, y)) / Radius;
-            if (level.IsInActivePartyMemberFOV?.Contains((cx, cy)) ?? false)
+            
+            var fg = Color.White;
+            var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
+                (int)(35 * dist - xnoise * 10 - ynoise * 10));
+            if (level.Map?.IsWalkable(cx, cy) ?? false)
             {
-                var fg = Color.White;
-                var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
-                    (int)(35 * dist - xnoise * 10 - ynoise * 10));
-                if (level.Map?.IsWalkable(cx, cy) ?? false)
+                if (g.V != 0)
                 {
-                    if (g.V != 0)
-                    {
-                        fg = Color.Lerp(Color.White, Color.Red, MathF.Abs(MathF.Sin(_t * 10)));
-                        color = Color.Lerp(color, Color.DarkRed, MathF.Abs(MathF.Cos(_t * 10)));
-                    }
-                    mrmo.Set(cx, cy + 2, g);
-                    mrmo.Set(cx, cy + 2, fg, color);
+                    fg = Color.Lerp(Color.White, Color.Red, MathF.Abs(MathF.Sin(_t * 10)));
+                    color = Color.Lerp(color, Color.DarkRed, MathF.Abs(MathF.Cos(_t * 10)));
                 }
-                else
-                {
-                    mrmo.Set(cx, cy + 2, color.Lighten(0.1f), color);
-                }
+                level.Draw(cx, cy, g);
+                level.Draw(cx, cy, fg, color);
+            }
+            else
+            {
+                level.Draw(cx, cy, color.Lighten(0.1f), color);
             }
         }
     }
@@ -654,24 +643,24 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         var ap = character.GetAP();
         if (_glyphs[(x, y)].V != 0)
         {
-            if (ap.Count<StatusFrozen>() > 0)
+            if (ap.Count(EStatus.Frozen) > 0)
             {
-                ap.Reduce<StatusFrozen>(4);
+                ap.Reduce(EStatus.Frozen, 4);
             }
             else
             {
-                ap.Add<StatusFire>(1);
+                ap.Add(EStatus.Fire, 1);
             }
         }
         else
         {
-            if (ap.Count<StatusFire>() > 0)
+            if (ap.Count(EStatus.Fire) > 0)
             {
-                character.GetAP().Reduce<StatusFire>(1);
+                character.GetAP().Reduce(EStatus.Fire, 1);
             }
             else
             {
-                character.GetAP().Add<StatusFrozen>(1);
+                character.GetAP().Add(EStatus.Frozen, 1);
             }
         }
 
@@ -689,7 +678,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
     Dictionary<ICharacter, int> _moves = [];
     private int _turns = 3;
 
-    public override IEnumerable ApplyOnDeath(CombatMapScreen level, int eX, int eY)
+    public override IEnumerable ApplyOnDeath(IScreen level, int eX, int eY)
     {
         List<(int, int, ICharacter)> toRemove = [];
         foreach (var (tx, ty, t) in _totems)
@@ -705,7 +694,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             _totems.Remove(rem);
         }
 
-        level.DrawCombat();
+        (level as CombatMapScreen)?.DrawCombat();
         yield break;
     }
 
@@ -740,7 +729,7 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
                  level.Domains.Tiles[(cell.X, cell.Y)] = this;
                  _shadows[(cell.X, cell.Y)] = sidx;
                  _shadowColors[(cell.X, cell.Y)] = Color.LightGray;
-                 mrmo.Set(cell.X, cell.Y + 2,
+                 level.Draw(cell.X, cell.Y,
                      new Glyph(sidx, 72, Color.Black, _shadowColors[(cell.X, cell.Y)]));
                  yield return new WaitForSeconds(0.01f);
              }
@@ -753,14 +742,13 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
     public IEnumerable SkullTotem(DomainOfFatigue domain, CombatMapScreen level, ICharacter c, int x, int y)
     {
         c.Render = false;
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
-        mrmo.Set(x, y + 2, new Glyph(13, 71, Color.Black, Color.White));
+        level.Draw(x, y, new Glyph(13, 71, Color.Black, Color.White));
         yield return new WaitForSeconds(0.5f);
         
         for (int i = 0; i < 3; i++)
         {
-            mrmo.Set(x, y + 1, new Glyph(13 + i, 71, Color.Black, Color.White));
-            mrmo.Set(x, y + 2, new Glyph(13 + i, 72, Color.Black, Color.White));
+            level.Draw(x, y - 1, new Glyph(13 + i, 71, Color.Black, Color.White));
+            level.Draw(x, y, new Glyph(13 + i, 72, Color.Black, Color.White));
             yield return new WaitForSeconds(0.5f);
         }
 
@@ -786,24 +774,6 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         _shadows.Clear();
         _shadowColors.Clear();
         
-        foreach (var e in level.Enemies)
-        {
-            if (e.Traits.Any(t => t is TraitProne))
-            {
-                e.Traits.RemoveAll(t => t is TraitProne);
-            }
-            e.Render = true;
-        }
-
-        foreach (var c in SineaterGame.Instance.Party.Characters)
-        {
-            if (c.Traits.Any(t => t is TraitProne))
-            {
-                c.Traits.RemoveAll(t => t is TraitProne);
-            }
-            c.Render = true;
-        }
-        
         level.DrawCombat();
         Close();
     }
@@ -815,17 +785,16 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             _moves[character] = 0;
         }
         
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
         _moves[character]++;
         
-        var uv = mrmo.GetUV(oldX, oldY + 2);
-        var fg = mrmo.GetFg(oldX, oldY + 2);
-        mrmo.Set(oldX, oldY + 2, $"{character.Stats.Clarity - _moves[character]}");
+        var uv = level.GetUV(oldX, oldY);
+        var fg = level.GetFg(oldX, oldY);
+        level.Draw(oldX, oldY, $"{character.Stats.Clarity - _moves[character]}");
         yield return new WaitForSeconds(0.3f);
         if (uv.HasValue)
         {
             var (u, v) = uv.Value;
-            mrmo.Set(oldX, oldY + 2, new Glyph(u, v, Color.Black, fg));
+            level.Draw(oldX, oldY, new Glyph(u, v, Color.Black, fg));
         }
 
         if (_moves[character] == character.Stats.Clarity)
@@ -833,13 +802,13 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
             yield return SkullTotem(this, level, character, x, y);
             if (character is PartyMember c)
             {
-                yield return c.AddTrait(new TraitProne(3));
+                //yield return c.AddTrait(new TraitProne(3));
                 _moves[character] = 0;
             }
             else if (character is Enemy e)
             {
                 e.IsDone = true;
-                yield return e.AddTrait(new TraitProne(3));
+                //yield return e.AddTrait(new TraitProne(3));
                 _moves[character] = 0;
             }
         }
@@ -867,14 +836,14 @@ public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : D
         {
             var (sx, sy) = shadowKeys[j];
             var s = 6 + (_shadows[(sx, sy)] - 6 + _t) % 6;
-            mrmo.Set(sx, sy + 2, new Glyph(s, 72, 
+            level.Draw(sx, sy, new Glyph(s, 72, 
                 Color.Black, Color.Lerp(_shadowColors[(sx, sy)], Color.MediumPurple, MathF.Pow(s / 12.0f, 3))));
         }
 
         foreach (var (tx, ty, _) in _totems)
         {
-            mrmo.Set(tx, ty + 1, new Glyph(15, 71, Color.Black, Color.White));
-            mrmo.Set(tx, ty + 2, new Glyph(15, 72, Color.Black, Color.White));
+            level.Draw(tx, ty - 1, new Glyph(15, 71, Color.Black, Color.White));
+            level.Draw(tx, ty, new Glyph(15, 72, Color.Black, Color.White));
         }
     }
 }
@@ -889,15 +858,15 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             for (int j = 0; j < 22; j++)
             {
                 if (i == x && j == y) continue;
-                var fg = mrmo.GetFg(i, j + 2);
-                mrmo.Set(i, j + 2, Color.Lerp(fg, Color.Black, 1.0f / 4.0f));
+                var fg = mrmo.GetFg(i, j);
+                level.Draw(i, j, Color.Lerp(fg, Color.Black, 1.0f / 4.0f));
             }
         }
         
         foreach (var cell in map.GetCellsInCircle(x, y, r))
         {
             if (cell.X == x && cell.Y == y) continue;
-            mrmo.Set(cell.X, cell.Y + 2, " ", Color.Black);
+            level.Draw(cell.X, cell.Y, " ", Color.Black);
         }
 
         yield return new WaitForSeconds(0.01f);
@@ -915,8 +884,8 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
                 for (int j = 0; j < 22; j++)
                 {
                     if (i == x && j == y) continue;
-                    var fg = mrmo.GetFg(i, j + 2);
-                    mrmo.Set(i, j + 2, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
+                    var fg = mrmo.GetFg(i, j);
+                    level.Draw(i, j, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
                 }
             }
             
@@ -937,7 +906,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             {
                 foreach (var cell in border)
                 {
-                    mrmo.Set(cell.X, cell.Y + 2,
+                    level.Draw(cell.X, cell.Y,
                         new Glyph(raise ? 12 : 13, 8, 
                             Color.Lerp(Color.Black, Color.Red, 1.0f - (float)r / Radius),
                             Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
@@ -953,25 +922,25 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
             chars[(ch.X, ch.Y)] = ch; 
         }
         
-        foreach (var ch in level.Enemies)
-        {
-            chars[(ch.X, ch.Y)] = ch; 
-        }
+        // foreach (var ch in level.Enemies)
+        // {
+        //     chars[(ch.X, ch.Y)] = ch; 
+        // }
         
-        var distances = new DistanceMap(map, false, x, y);
+        var distances = new DistanceMap(map, false, x, y, (m, mx, my) => m.IsWalkable(mx, my));
         for (var i = 1; i < distances.MaxDistance(); i++)
         {
             level.DrawCombat();
             foreach (var (rx, ry) in distances.GetAllAt(i - 2))
             {
-                mrmo.Set(rx, ry + 2, ".", Color.White, Color.Black);
+                level.Draw(rx, ry, ".", Color.White, Color.Black);
             }
 
             for (var n = 0; n < 3; n++)
             {
                 foreach (var (rx, ry) in distances.GetAllAt(i - 1))
                 {
-                    mrmo.Set(rx, ry + 2, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
+                    level.Draw(rx, ry, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
                 }
 
                 yield return new WaitForSeconds(0.001f);
@@ -979,22 +948,17 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
 
             foreach (var (rx, ry) in distances.GetAllAt(i))
             {
-                mrmo.Set(rx, ry + 2, new Glyph(12, 8, Color.OrangeRed, Color.White));
+                level.Draw(rx, ry, new Glyph(12, 8, Color.OrangeRed, Color.White));
 
-                if (level.IsInActivePartyMemberFOV?.Contains((rx, ry)) ?? false)
+                if (chars.ContainsKey((rx, ry)))
                 {
-                    if (chars.ContainsKey((rx, ry)))
-                    {
-                        yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
-                    }
+                    //yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
                 }
-                
-                level.Visited[rx, ry] = true;
             }
             
             foreach (var (rx, ry) in distances.GetAllAt(i + 1))
             {
-                mrmo.Set(rx, ry + 2, ".", Color.Yellow, Color.Black);
+                level.Draw(rx, ry, ".", Color.Yellow, Color.Black);
             }
 
             yield return new WaitForSeconds(0.005f);

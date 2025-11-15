@@ -16,11 +16,11 @@ public interface IEquippable {}
 
 public enum EWeightClass
 {
-    Tiny = 2,
-    Light = 4,
-    Medium = 6,
-    Heavy = 8,
-    Large = 10
+    Tiny = 0,
+    Light = 1,
+    Medium = 2,
+    Heavy = 4,
+    Large = 6
 }
 
 public static class WeightClassExtensions
@@ -45,20 +45,6 @@ public static class WeightClassExtensions
     }
 }
 
-public interface ISkirmishStep;
- public record struct SkirmishStep_Appear((int, int) position) : ISkirmishStep;
- public record struct SkirmishStep_Forwards(int n) : ISkirmishStep;
- public record struct SkirmishStep_Backwards(int n) : ISkirmishStep;
- public record struct SkirmishStep_SidestepLeft(int n) : ISkirmishStep;
- public record struct SkirmishStep_SidestepRight(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackFront(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackBack(int n) : ISkirmishStep;
- public record struct SkirmishStep_AttackHand : ISkirmishStep;
- public record struct SkirmishStep_AttackLeft : ISkirmishStep;
- public record struct SkirmishStep_AttackRight : ISkirmishStep;
- public record struct SkirmishStep_AttackRanged((int, int) position) : ISkirmishStep;
- public record struct SkirmishStep_AddTrait(Trait trait) : ISkirmishStep;
-
 public enum EScalingFactor
 {
     F = 0,
@@ -69,22 +55,75 @@ public enum EScalingFactor
     S = 10,
 }
 
-[JsonObject(MemberSerialization.OptIn)]
-public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight,
-    int quality, (int, int) inventoryPicture,
-    EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
-    EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
-    float scalingBase = 14.0f, float scalingCurve = 1.5f) : IEquippable, IItem
+public record struct Unlockable<T>(T Thing, int MinLevel);
+
+public record struct StatusScaling(
+    EScalingFactor fatigueScaling = EScalingFactor.F,
+    EScalingFactor frostScaling = EScalingFactor.F,
+    EScalingFactor fireScaling = EScalingFactor.F,
+    EScalingFactor poisonScaling = EScalingFactor.F,
+    EScalingFactor woundScaling = EScalingFactor.F,
+    EScalingFactor insanityScaling = EScalingFactor.F,
+    EScalingFactor deathScaling = EScalingFactor.F,
+    EScalingFactor voidScaling = EScalingFactor.F);
+
+public interface IWeaponUpgrade;
+
+public enum EElement
 {
+    None = 0,
+    Physical = 1,
+    Mental = 2,
+}
+
+[JsonObject(MemberSerialization.OptIn)]
+public class Weapon(string name, EWeightClass weight,
+    int quality, (int, int) inventoryPicture,
+    EElement element = EElement.None,
+    // STAT SCALING
+    EScalingFactor wilScaling = EScalingFactor.F, 
+    EScalingFactor claScaling = EScalingFactor.F,
+    EScalingFactor poiScaling = EScalingFactor.F, 
+    EScalingFactor vigScaling = EScalingFactor.F,
+    // STATUS SCALING (MINE)
+    EScalingFactor myFatigueScaling = EScalingFactor.F,
+    EScalingFactor myFrostScaling = EScalingFactor.F,
+    EScalingFactor myFireScaling = EScalingFactor.F,
+    EScalingFactor myPoisonScaling = EScalingFactor.F,
+    EScalingFactor myWoundScaling = EScalingFactor.F,
+    EScalingFactor myInsanityScaling = EScalingFactor.F,
+    EScalingFactor myDeathScaling = EScalingFactor.F,
+    EScalingFactor myVoidScaling = EScalingFactor.F,
+    // STATUS SCALING (ENEMY)
+    EScalingFactor theirFatigueScaling = EScalingFactor.F,
+    EScalingFactor theirFrostScaling = EScalingFactor.F,
+    EScalingFactor theirFireScaling = EScalingFactor.F,
+    EScalingFactor theirPoisonScaling = EScalingFactor.F,
+    EScalingFactor theirWoundScaling = EScalingFactor.F,
+    EScalingFactor theirInsanityScaling = EScalingFactor.F,
+    EScalingFactor theirDeathScaling = EScalingFactor.F,
+    EScalingFactor theirVoidScaling = EScalingFactor.F,
+    // SCALING CURVE VALUES
+    float scalingBase = 14.0f, float scalingCurve = 1.5f) : ICloneable, IEquippable, IItem
+{
+    ~Weapon()
+    {
+        if (ItemLibrary.InstancedWeapons.ContainsKey(Name))
+        {
+            ItemLibrary.InstancedWeapons.Remove(Name, this);
+        }
+    }
+    
     #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
     [JsonProperty]
-    public List<WeaponAttack> Attacks { get => attacks; set => attacks = value; }
-    [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
     [JsonProperty]
     public int Quality { get; set; } = quality;
+    [JsonProperty]
+    public EElement Element { get; set; } = element;
+
     [JsonProperty]
     public (int, int) Picture { get; set; } = inventoryPicture;
     [JsonProperty]
@@ -95,30 +134,56 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     public EScalingFactor PoiScaling { get; set; } = poiScaling;
     [JsonProperty]
     public EScalingFactor VigScaling { get; set; } = vigScaling;
+    
     [JsonProperty]
-    public float ScalingBase { get => scalingBase; set => scalingBase = value; }
+    public EScalingFactor MyFatigueScaling { get; set; } = myFatigueScaling;
     [JsonProperty]
-    public float ScalingCurve { get => scalingCurve; set => scalingCurve = value; }
+    public EScalingFactor MyFrostScaling { get; set; } = myFrostScaling;
+    [JsonProperty]
+    public EScalingFactor MyFireScaling { get; set; } = myFireScaling;
+    [JsonProperty]
+    public EScalingFactor MyPoisonScaling { get; set; } = myPoisonScaling;
+    [JsonProperty]
+    public EScalingFactor MyWoundScaling { get; set; } = myWoundScaling;
+    [JsonProperty]
+    public EScalingFactor MyInsanityScaling { get; set; } = myInsanityScaling;
+    [JsonProperty]
+    public EScalingFactor MyDeathScaling { get; set; } = myDeathScaling;
+    [JsonProperty]
+    public EScalingFactor MyVoidScaling { get; set; } = myVoidScaling;
+    
+    [JsonProperty]
+    public EScalingFactor TheirFatigueScaling { get; set; } = theirFatigueScaling;
+    [JsonProperty]
+    public EScalingFactor TheirFrostScaling { get; set; } = theirFrostScaling;
+    [JsonProperty]
+    public EScalingFactor TheirFireScaling { get; set; } = theirFireScaling;
+    [JsonProperty]
+    public EScalingFactor TheirPoisonScaling { get; set; } = theirPoisonScaling;
+    [JsonProperty]
+    public EScalingFactor TheirWoundScaling { get; set; } = theirWoundScaling;
+    [JsonProperty]
+    public EScalingFactor TheirInsanityScaling { get; set; } = theirInsanityScaling;
+    [JsonProperty]
+    public EScalingFactor TheirDeathScaling { get; set; } = theirDeathScaling;
+    [JsonProperty]
+    public EScalingFactor TheirVoidScaling { get; set; } = theirVoidScaling;
+
+    [JsonProperty] 
+    public float ScalingBase { get; set; } = scalingBase;
+    [JsonProperty] 
+    public float ScalingCurve { get; set; } = scalingCurve;
+    
     #endregion // Serialization
 
     public int Level { get; set; } = 1;
 
     //            base   level scaling   quality^2            level
     // =Floor((Pow($B$24 * A3, $B$25 - $B$26 * $B$26 * 0.01 / A3)))
-    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(scalingBase * Level, scalingCurve - Quality * Quality * 0.01f / Level));
+    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(ScalingBase * Level, ScalingCurve - Quality * Quality * 0.01f / Level));
     public int ExperienceNow { get; set; } = 0;
     
     public Glyph Glyph => Glyph.Bw(14, 67);
-
-    public bool CanBeUsed()
-    {
-        return false;
-    }
-
-    public virtual bool CanBeShattered()
-    {
-        return false;
-    }
 
     public IEnumerable ApplyItemUsed(ICharacter character)
     {
@@ -134,82 +199,17 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     {
         yield break;
     }
-
-    public IEnumerable ApplyItemPickedUp(CombatMapScreen level, int x, int y, ICharacter character)
-    {
-        if (character is PartyMember chr)
-        {
-            if (chr.LeftWeapon == null)
-            {
-                chr.LeftWeapon = this;
-            }
-            else if (chr.RightWeapon == null)
-            {
-                chr.RightWeapon = this;
-            }
-            else
-            {
-                character.Inventory.Put(this);
-            }
-        }
-        
-        yield break;
-    }
-
-    public IEnumerable ApplyItemLanded(CombatMapScreen level, int x, int y)
-    {
-        if (Rnd.Instance.D10 < this.Quality)
-        {
-            foreach (var chr in SineaterGame.Instance.Party.Characters)
-            {
-                if (chr.X == x && chr.Y == y)
-                {
-                    chr.AP.Add<StatusWounds>(1);
-                }
-            }
-
-            foreach (var enm in level.Enemies)
-            {
-                if (enm.X == x && enm.Y == y)
-                {
-                    enm.AP.Add<StatusWounds>(1);
-                }
-            }
-        }
-        
-        if (level.Floor.ContainsKey((x, y)))
-        {
-            var onFloor = level.Floor[(x, y)];
-            if (onFloor is Pile pile)
-            {
-                pile.Things.Add(this);
-            }
-            else
-            {
-                var heap = new Pile();
-                heap.Things.Add(onFloor);
-                heap.Things.Add(this);
-                level.Floor[(x, y)] = heap;
-            }
-        }
-        else
-        {
-            level.Floor[(x, y)] = this;
-        }
-
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemShattered(CombatMapScreen level, int x, int y)
-    {
-        yield break;
-    }
-
+    
     public override string ToString()
     {
         return $"{Name}";
     }
-    
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
+    }
+
     public virtual string ToLongString()
     {
         return $"{Name} (Quality: {Quality}, Weight: {Weight.ToString()})";
@@ -219,88 +219,38 @@ public class Weapon(string name, List<WeaponAttack> attacks, EWeightClass weight
     {
         return Name;
     }
-
-    public List<WeaponAttack> GetAvailableAttacks()
-    {
-        return attacks;
-    }
     
     public virtual Glyph GetIcon()
     {
         return Glyph;
     }
+
+    public void Copy(Weapon original)
+    {
+        this.WilScaling = original.WilScaling;
+        this.ClaScaling = original.ClaScaling;
+        this.PoiScaling = original.PoiScaling;
+        this.VigScaling = original.VigScaling;
+
+        this.ExperienceNow = original.ExperienceNow;
+        this.Name = original.Name;
+        this.Picture = original.Picture;
+        this.Quality = original.Quality;
+        this.Weight = original.Weight;
+        this.ScalingBase = original.ScalingBase;
+        this.ScalingCurve = original.ScalingCurve;
+    }
+
+    public static Weapon Dummy(string name)
+    {
+        Console.WriteLine($"DUMMY REQUIRED FOR WEAPON {name}");
+        return new Weapon($"!{name}", EWeightClass.Medium, 0, (0, 0));
+    }
 }
 
 public record struct WeaponAttack(
      string Name,
-     int Attack,
-     int CritOn = 6,
-     int OpeningsPerCrit = 1,
-     List<Trait>? Traits = null,
-     List<ISkirmishStep>? Steps = null,
-     int MinLelel = 1
-    );
-
-public class TraitShielded(Shield shield) : ItemTrait("Shielded", "Sh", shield, "SHIELD: Adds defense dice as if the shield is an armor."), ISkirmish_GuardUp, ISkirmish_ArmorBreak
-{
-    public Shield Owner { get; private set; } = shield;
-    
-    public IEnumerable AsDefender_OnGuardUp(SkirmishFlow flow)
-    {
-        yield return new Present_Notify($"{Owner.GetName()} adds +{Owner.Defense} guard!");
-        flow.DefenderArmor += Owner.Defense;
-    }
-
-    public IEnumerable AsDefender_OnArmorBreak(SkirmishFlow flow)
-    {
-        yield return new Present_Notify($"{Owner.GetName()} cracks under the heavy attack.");
-        flow.ArmorBreak = false;
-        Owner.Defense--;
-        if (Owner.Defense < 0)
-        {
-            Owner.Defense = 0;
-        }
-    }
-
-    public IEnumerable AsAttacker_OnGuardUp(SkirmishFlow flow) { yield break; }
-    public IEnumerable AsAttacker_OnArmorBreak(SkirmishFlow flow) { yield break; }
-}
-
-public class Shield(string name, List<WeaponAttack> attacks, int defense, EWeightClass weight, int quality, (int, int) inventoryPicture, 
-    EScalingFactor wilScaling = EScalingFactor.F, EScalingFactor claScaling = EScalingFactor.F,
-    EScalingFactor poiScaling = EScalingFactor.F, EScalingFactor vigScaling = EScalingFactor.F,
-    float scalingBase = 14.0f, float scalingCurve = 1.5f)
-    : Weapon(name, attacks, weight, quality, inventoryPicture, wilScaling, claScaling, poiScaling, vigScaling, scalingBase, scalingCurve)
-{
-    public int Defense { get; set; } = defense;
-
-    public override string ToString()
-    {
-        return $"{Name} ({Defense}G)";
-    }
-
-    public override string ToLongString()
-    {
-        return $"{Name} (Guard: {Defense}, Weight: {Weight.ToString()})";
-    }
-
-    public override IEnumerable ApplyItemEquipped(ICharacter character)
-    {
-        if (this.Defense > 0)
-        {
-            character.GetTraits().Add(new TraitShielded(this));
-        }
-
-        yield break;
-    }
-
-    public override IEnumerable ApplyItemUnequipped(ICharacter character)
-    {
-        foreach (var trait in character.GetTraits().Where(t => t is TraitShielded s && s.Owner == this).ToArray())
-        {
-            character.GetTraits().Remove(trait);
-        }
-
-        yield break;
-    }
-}
+     int Attack, //Power
+     int Stamina,
+     int Accuracy
+);

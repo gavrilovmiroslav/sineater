@@ -39,7 +39,7 @@ public class CharacterSheetScreen : IScreen
         if (KB.HasBeenPressed(Keys.Escape))
         {
             _game.ScreenStack.Pop();
-            _game.Layers["mrmo"].SetRect(new Vector2(0, 0), new Vector2(36, 28), ' ');
+            _game.Layers["mrmo"].Clear();
             _game.ScreenStack.Peek().Draw(gameTime);
         }
 
@@ -56,21 +56,9 @@ public class CharacterSheetScreen : IScreen
         
         var start = new Vector2(2, 3);
         var end = new Vector2(33, 16);
-        _game.Layers["mrmo"].SetRect(start - Vector2.One, end + Vector2.One, ' ');
-        _game.Layers["ascii"].SetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1), ' ');
-        _game.Layers["mrmo"].SetBox(start, end, new Sides<Glyph>()
-        {
-            Top = Glyph.Bw(10, 27),
-            Bottom = Glyph.Bw(10, 29),
-            Left = Glyph.Bw(9, 28),
-            Right = Glyph.Bw(11, 28),
-        }, new Corners<Glyph>()
-        {
-            BottomLeft = Glyph.Bw(11 - 2, 31 - 4 + 2), 
-            BottomRight = Glyph.Bw(10, 30), 
-            TopLeft = Glyph.Bw(11 - 2, 31 - 4), 
-            TopRight = Glyph.Bw(10, 31),
-        });
+        _game.Layers["mrmo"].UnsetRect(start - Vector2.One, end + Vector2.One);
+        _game.Layers["ascii"].UnsetRect(new Vector2(start.X * 2 - 1, start.Y - 1), new Vector2(end.X * 2 + 1, end.Y + 1));
+        _game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
         
         var chr = _game.Party.Characters[_charIndex];
         _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 1, $"CHARACTER PROFILE - {chr.Job}");
@@ -88,13 +76,7 @@ public class CharacterSheetScreen : IScreen
         
         (u, v) = ItemLibrary.EmptyUv;
         _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: --");
-        if (chr.Armor is { } arm)
-        {
-            (u, v) = arm.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: {arm.Name}");
-        }
-        _game.Layers["porsmol"].Set(2, 4, new Glyph(u, v, Color.Black, chr.Tint));
-
+        
         (u, v) = ItemLibrary.EmptyUv;
         _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: --");
         if (chr.Item is { } item)

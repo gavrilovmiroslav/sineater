@@ -4,11 +4,21 @@ using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
+using MonoJ;
+using Newtonsoft.Json.Linq;
 using SINEATER.steam;
 using SINEATER.Serialization;
-using System.IO;
 
 namespace SINEATER;
 
@@ -42,12 +52,12 @@ public class SineaterGame : Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public ActionPoints ActionPoints;
     public World World;
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
-
+    public AP ActionPoints { get; set; }
+    
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
     
@@ -80,8 +90,6 @@ public class SineaterGame : Game
 
     protected override void LoadContent()
     {
-        ItemLibrary.LoadItems(Content);
-
         SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;
@@ -91,7 +99,9 @@ public class SineaterGame : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderTargetGame = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         _renderTargetMonitor = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
-    
+        
+        ItemLibrary.LoadItems(Content);
+        
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
@@ -103,13 +113,16 @@ public class SineaterGame : Game
         
         _monitor = Content.Load<Texture2D>("fingerprints");
 
-        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(75, -25));
+        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(75, -25), new Vector2(0, 0));
         Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0));
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0), new Vector2(0, 0));
         Layers.Add("portrait", portraitLayer);
         
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3));
+        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 32), new Vector2(0, 0));
+        Layers.Add("portrait2", portrait2Layer);
+        
+        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
         mrmoLayer.Map(" ", 0, 0);
         mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mrmoLayer.Map("@abcdefghijklmno", 0, 55);
@@ -145,14 +158,14 @@ public class SineaterGame : Game
         
         Layers.Add("mrmo", mrmoLayer);
 
-        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(0, 3));
+        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(2, 3), new Vector2(0, 0));
         ibmMiniLayer.SetOffset(1, 0);
         ibmMiniLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmMiniLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
         ibmMiniLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("mini", ibmMiniLayer);
         
-        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, Vector2.Zero);
+        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(2, 0), new Vector2(31, 7));
         ibmLayer.SetOffset(1, 0);
         ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
@@ -163,7 +176,7 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        ActionPoints = new ActionPoints(40, ibmLayer, new StatusStamina());
+        ActionPoints = new AP(40, ibmLayer);
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new ExplorationMapScreen(this));
@@ -172,7 +185,7 @@ public class SineaterGame : Game
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
         fmodInstanceMusic.Play();
     }
-    
+
     protected override void Update(GameTime gameTime)
     {
         SinMod.System.Update(gameTime);
@@ -187,6 +200,11 @@ public class SineaterGame : Game
             _currentHour = (_currentHour + 1) % 24;
             _nextHour = (_nextHour + 1) % 24;
             _currentMinutes = 0;
+        }
+
+        if (KB.HasBeenPressed(Keys.F5))
+        {
+            ItemLibrary.LoadItems(Content);
         }
         
         if (KB.HasBeenPressed(Keys.F10))
@@ -238,7 +256,7 @@ public class SineaterGame : Game
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-        foreach (var layer in new[]{ "mrmo", "ascii", "portrait", "porsmol", "mini" })
+        foreach (var layer in LayerNames)
         {
             Layers[layer].Draw(_spriteBatch);
         }
@@ -262,13 +280,13 @@ public class SineaterGame : Game
         _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.45f));
         _spriteBatch.End();
         
-        this.Window.Title = $"SINEATER | {_dHour}";
-        
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
+        
         // var cos = MathF.Cos(((float)_currentHour / 12) * 3.14f) * 0.5f + 0.5f;
         // _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
         //     new Color(1, 1, 1, cos), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
         //     SpriteEffects.None, 0.0f);
+        
         _spriteBatch.End();
         base.Draw(gameTime);
     }
@@ -278,6 +296,7 @@ public class SineaterGame : Game
         _steamManager.ShutDown();
         base.OnExiting(sender, args);
     }
+
     private void SetupCrt(int w, int h)
     {
         _crt.Parameters["hardScan"]?.SetValue(-5.0f);

@@ -345,9 +345,7 @@
 /build:fingerprints.png
 
 #begin items/items.json
-/importer:JSONImporter
-/processor:JSONProcessor
-/build:items/items.json
+/copy:items/items.json
 
 #begin MRMOTEXT.png
 /importer:TextureImporter
@@ -372,6 +370,9 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:room.png
+
+#begin sheets.nosj.txt
+/copy:sheets.nosj.txt
 
 #begin swordnsorcery_portraits.png
 /importer:TextureImporter

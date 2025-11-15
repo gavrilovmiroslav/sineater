@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SINEATER.Content;
+using SINEATER.SinMod;
 
 namespace SINEATER;
 
@@ -21,7 +22,6 @@ public class ExplorationMapScreen : IScreen
     private (int, int) _position;
     private HashSet<(int, int)> _history = [];
     private HashSet<(int, int)> _gossip = [];
-    private Dictionary<(int, int), Trait?> _promised = [];
     private HashSet<(int, int)> _seen = [];
     private Dictionary<(int, int), ILocation> _locations = [];
     private Map<Cell> _map;
@@ -29,7 +29,6 @@ public class ExplorationMapScreen : IScreen
     private FieldOfView<Cell> _fov;
     public float Time = 0.0f;
     private bool _debug = false;
-    public List<Trait> UnusedTraits = [];
 
     public void UpdateFov(int sightRedux = 0)
     {
@@ -47,12 +46,6 @@ public class ExplorationMapScreen : IScreen
 
     public ExplorationMapScreen(SineaterGame game)
     {
-        foreach (var typ in Trait.All)
-        {
-            UnusedTraits.Add((Trait)Activator.CreateInstance(typ));
-        }
-        UnusedTraits.Shuffle();
-        
         _game = game;
         _game.World = new(_fullWidth, _fullHeight);
         _map = new Map(_fullWidth, _fullHeight);
@@ -154,21 +147,11 @@ public class ExplorationMapScreen : IScreen
                         }
 
                         if (l is LocationForest f)
-                        {
-                            if (Rnd.Instance.D100 < 25)
-                            {
-                                _game.ActionPoints.Add<StatusTired>(1);
-                            }
+                        { 
+                            _game.ActionPoints.Add(EStatus.Fatigue, 1);
                         } else if (l is LocationNPC npc)
                         {
                             _position = (x, y);
-                        }
-                    }
-                    else
-                    {
-                        if (Rnd.Instance.D100 < 15)
-                        {
-                            _game.ActionPoints.Add<StatusTired>(1);
                         }
                     }
                 }
@@ -184,16 +167,9 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You go in to explore.");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 }, true);
-
-            Trait? p = null;
-            if (_promised.ContainsKey((x, y)))
-            {
-                p = _promised[(x, y)];
-            }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
-            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase }));
         }
         else if (l is LocationTemple temple)
         {
@@ -201,16 +177,10 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} You hear voices from within...");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 });
         
-            Trait? p = null;
-            if (_promised.ContainsKey((x, y)))
-            {
-                p = _promised[(x, y)];
-            }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
-            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Temple, Phase = _phase }));
         }
         else if (l is LocationTomb tomb)
         {
@@ -218,29 +188,13 @@ public class ExplorationMapScreen : IScreen
                 (_, bnd) =>
                 {
                     bnd.Add($"{_locations[(x, y)].GetName()} It might contain some precious bones.");
-                    SinMod.System.GetLabelledInstance("bgm")?.SetParam("BGMusicMood", 1);
+                    Muse.SetCombatMood();
                 });
         
-            Trait? p = null;
-            if (_promised.ContainsKey((x, y)))
-            {
-                p = _promised[(x, y)];
-            }
-            _game.ActionPoints.Reduce<StatusTired>(_game.ActionPoints.Count<StatusTired>() / 2);
-            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Cave, Phase = _phase, Reward = p }));
+            yield return new FadeOutAndLoadScreen(1, new CombatMapScreen(_game, new CombatConfig() { Terrain = ETerrainKind.Tomb, Phase = _phase }));
         }
         else if (l is LocationTreasure treasure)
         {
-            yield return new ShowPopupWindowAndWaitForKey(
-                (_, bnd) =>
-                {
-                    IItem pot = Rnd.Instance.D4 < 2 ? new PotionBloodReliquary() : new PotionGhylagsTear();
-                    bnd.Add($"{_locations[(x, y)].GetName()} You found...");
-                    bnd.Newline();
-                    bnd.Add($"  a {pot}!");
-                    _game.Party.Characters[Rnd.Instance.D4 - 1].Inventory.Put(pot);
-                    _locations.Remove((x, y));
-                });
         }
         else if (l is LocationNPC npc)
         {
@@ -273,12 +227,6 @@ public class ExplorationMapScreen : IScreen
                             }
                         }
 
-                        if (lo is not LocationNPC && lo is not LocationTreasure && UnusedTraits.Count > 0 && Rnd.Instance.D100 < 80)
-                        {
-                            var t = UnusedTraits[0];
-                            UnusedTraits.RemoveAt(0);
-                            _promised[(x, y)] = t;
-                        }
                         Draw(new GameTime());
                         
                         bnd.Add($"{_locations[(x, y)].GetName()} You camp together. You learn about ");
@@ -303,13 +251,6 @@ public class ExplorationMapScreen : IScreen
                             bnd.Add($"an ancient tomb", Color.Gold);
                         }
                         bnd.Add(".");
-                        
-                        if (_promised.ContainsKey((x, y)))
-                        {
-                            bnd.Add("They mention a ");
-                            bnd.Add(_promised[(x, y)].Name.ToUpper(), Color.DarkRed);
-                            bnd.Add(" opponent there...");
-                        } 
                     }
                 });
             
@@ -329,14 +270,7 @@ public class ExplorationMapScreen : IScreen
             var (u, v) = character.GetPortait();
             _game.Layers["mrmo"].Set(10 * index, h - 1, new Glyph(m, r, Color.Black, character.Tint));
             _game.Layers["ascii"].Set(20 * index + 4, h - 1, $"{index + 1}. {character.Job}", character.Tint);
-            for (int i = 0; i < character.Traits.Count; i++)
-            {
-                if (character.Traits[i] is ItemTrait)
-                    _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"<{character.Traits[i].ShortName}>", character.Tint);
-                else
-                    _game.Layers["ascii"].Set(20 * index + (index > 1 ? -2 : 12), h + i, $"[{character.Traits[i].ShortName}]", character.Tint);
-            }
-
+            
             _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
             _game.Layers["portrait"].Set(index * 2, 4, new Glyph(u, v, Color.Black, character.Tint));
             index++;
@@ -350,7 +284,7 @@ public class ExplorationMapScreen : IScreen
         _game.Layers["mrmo"].Clear();
         _game.Layers["portrait"].Clear();
 
-        _game.ActionPoints.Draw(10, 25);
+        _game.ActionPoints.Draw(17, 26);
         
         Time += SineaterGame.DeltaTime * 0.001f;
         for (var i = 3; i < _fullHeight; i++)

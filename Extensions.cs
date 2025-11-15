@@ -26,13 +26,13 @@ internal static class Extensions
     public static Color Darken(this Color color, float factor)
     {
         color.ToHSV(out var h, out var s, out var l);
-        return color.FromHSV(h, s, Math.Max(0, l - factor * 100));
+        return color.FromHSV(h, s, Math.Max(0.0f, Math.Min(1.0f, l - factor * 100)));
     }
     
     public static Color Lighten(this Color color, float factor)
     {
         color.ToHSV(out var h, out var s, out var l);
-        return color.FromHSV(h, s, Math.Max(0, l + factor * 100));
+        return color.FromHSV(h, s, Math.Max(0.0f, Math.Min(1.0f, l + factor * 100)));
     }
     
     public static void Shuffle<T> (this T[] array)
