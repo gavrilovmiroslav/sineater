@@ -4,21 +4,9 @@ using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
-using MonoJ;
-using Newtonsoft.Json.Linq;
 using SINEATER.steam;
-using SINEATER.Serialization;
 
 namespace SINEATER;
 
@@ -83,7 +71,7 @@ public class SineaterGame : Game
 
     protected override void Initialize()
     {
-        _steamManager.Initialize();
+        _steamManager.Initialize(Content.Load<string>("stats"));
 
         base.Initialize();
     }
@@ -296,6 +284,7 @@ public class SineaterGame : Game
         _steamManager.ShutDown();
         base.OnExiting(sender, args);
     }
+    public static IEnumerable<string> LayerNames => ["mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini"];
 
     private void SetupCrt(int w, int h)
     {

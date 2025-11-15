@@ -374,6 +374,11 @@
 #begin sheets.nosj.txt
 /copy:sheets.nosj.txt
 
+#begin stats.json
+/importer:JSONImporter
+/processor:JSONProcessor
+/build:stats.json
+
 #begin swordnsorcery_portraits.png
 /importer:TextureImporter
 /processor:TextureProcessor
