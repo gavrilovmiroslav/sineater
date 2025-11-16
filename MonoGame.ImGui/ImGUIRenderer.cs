@@ -6,13 +6,15 @@ using MonoGame.ImGui.Data;
 using MonoGame.ImGui.Exceptions;
 using MonoGame.ImGui.Utilities;
 
-namespace MonoGame.ImGui; 
+namespace MonoGame.ImGui;
 
 /// <summary>
 ///     Responsible for rendering the ImGui elements to the screen.
 /// </summary>
-public class ImGuiRenderer {
-    public ImGuiRenderer(Game owner) {
+public class ImGuiRenderer
+{
+    public ImGuiRenderer(Game owner)
+    {
         Owner = owner;
         _effect = new BasicEffect(owner.GraphicsDevice);
         _textureData = new TextureData();
@@ -26,30 +28,35 @@ public class ImGuiRenderer {
     public GraphicsDevice GraphicsDevice => Owner.GraphicsDevice;
 
 
-    public virtual void BeginLayout(GameTime gameTime) {
-        ImGuiNET.ImGui.GetIO().DeltaTime = (float) gameTime.ElapsedGameTime.TotalSeconds;
+    public virtual void BeginLayout(GameTime gameTime)
+    {
+        ImGuiNET.ImGui.GetIO().DeltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _inputData.Update(Owner);
 
         ImGuiNET.ImGui.NewFrame();
     }
 
-    public virtual void EndLayout() {
+    public virtual void EndLayout()
+    {
         ImGuiNET.ImGui.Render();
         RenderDrawData(ImGuiNET.ImGui.GetDrawData());
     }
 
-    public virtual IntPtr BindTexture(Texture2D texture) {
+    public virtual IntPtr BindTexture(Texture2D texture)
+    {
         var id = new IntPtr(_textureData.GetNextTextureId());
         _textureData.Loaded.Add(id, texture);
 
         return id;
     }
 
-    public virtual void UnbindTexture(IntPtr textureId) {
+    public virtual void UnbindTexture(IntPtr textureId)
+    {
         _textureData.Loaded.Remove(textureId);
     }
 
-    public ImGuiRenderer Initialize() {
+    public ImGuiRenderer Initialize()
+    {
         var context = ImGuiNET.ImGui.CreateContext();
         ImGuiNET.ImGui.SetCurrentContext(context);
 
@@ -58,7 +65,8 @@ public class ImGuiRenderer {
         return this;
     }
 
-    public virtual unsafe ImGuiRenderer RebuildFontAtlas() {
+    public virtual unsafe ImGuiRenderer RebuildFontAtlas()
+    {
         // Get font texture from ImGui
         var io = ImGuiNET.ImGui.GetIO();
         io.Fonts.GetTexDataAsRGBA32(out byte* pixelData, out var width, out var height, out var bytesPerPixel);
@@ -83,7 +91,8 @@ public class ImGuiRenderer {
         return this;
     }
 
-    private void RenderDrawData(ImDrawDataPtr drawData) {
+    private void RenderDrawData(ImDrawDataPtr drawData)
+    {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers
         var lastViewport = GraphicsDevice.Viewport;
         var lastScissorRect = GraphicsDevice.ScissorRectangle;
@@ -109,15 +118,18 @@ public class ImGuiRenderer {
         GraphicsDevice.ScissorRectangle = lastScissorRect;
     }
 
-    private void RenderCommandLists(ImDrawDataPtr drawData) {
+    private void RenderCommandLists(ImDrawDataPtr drawData)
+    {
         GraphicsDevice.SetVertexBuffer(_vertex.Buffer);
         GraphicsDevice.Indices = _index.Buffer;
 
         var vertexOffset = 0;
         var indexOffset = 0;
-        for (var i = 0; i < drawData.CmdListsCount; ++i) {
+        for (var i = 0; i < drawData.CmdListsCount; ++i)
+        {
             var commandList = drawData.CmdLists[i];
-            for (var commandIndex = 0; commandIndex < commandList.CmdBuffer.Size; ++commandIndex) {
+            for (var commandIndex = 0; commandIndex < commandList.CmdBuffer.Size; ++commandIndex)
+            {
                 var drawCommand = commandList.CmdBuffer[commandIndex];
 
                 if (!_textureData.Loaded.ContainsKey(drawCommand.TextureId))
@@ -126,40 +138,44 @@ public class ImGuiRenderer {
                 GraphicsDevice.ScissorRectangle = GenerateScissorRect(drawCommand);
                 var effect = UpdateEffect(_textureData.Loaded[drawCommand.TextureId]);
 
-                foreach (var pass in effect.CurrentTechnique.Passes) {
+                foreach (var pass in effect.CurrentTechnique.Passes)
+                {
                     pass.Apply();
                     DrawPrimitives(vertexOffset, indexOffset, commandList, drawCommand);
                 }
 
-                indexOffset += (int) drawCommand.ElemCount;
+                indexOffset += (int)drawCommand.ElemCount;
             }
 
             vertexOffset += commandList.VtxBuffer.Size;
         }
     }
 
-    private Rectangle GenerateScissorRect(ImDrawCmdPtr drawCommand) {
+    private Rectangle GenerateScissorRect(ImDrawCmdPtr drawCommand)
+    {
         return new Rectangle(
-            (int) drawCommand.ClipRect.X,
-            (int) drawCommand.ClipRect.Y,
-            (int) (drawCommand.ClipRect.Z - drawCommand.ClipRect.X),
-            (int) (drawCommand.ClipRect.W - drawCommand.ClipRect.Y));
+            (int)drawCommand.ClipRect.X,
+            (int)drawCommand.ClipRect.Y,
+            (int)(drawCommand.ClipRect.Z - drawCommand.ClipRect.X),
+            (int)(drawCommand.ClipRect.W - drawCommand.ClipRect.Y));
     }
 
-    private void DrawPrimitives(int vertexOffset, int indexOffset, ImDrawListPtr commandList, ImDrawCmdPtr drawCommand) {
+    private void DrawPrimitives(int vertexOffset, int indexOffset, ImDrawListPtr commandList, ImDrawCmdPtr drawCommand)
+    {
 #pragma warning disable CS0618
 
 #pragma warning disable CS0618
 
         GraphicsDevice.DrawIndexedPrimitives(
             PrimitiveType.TriangleList, vertexOffset, 0,
-            commandList.VtxBuffer.Size, indexOffset, (int) (drawCommand.ElemCount / 3));
+            commandList.VtxBuffer.Size, indexOffset, (int)(drawCommand.ElemCount / 3));
 
 
 #pragma warning restore CS0618
     }
 
-    protected virtual Effect UpdateEffect(Texture2D texture) {
+    protected virtual Effect UpdateEffect(Texture2D texture)
+    {
         var io = ImGuiNET.ImGui.GetIO();
         var displaySize = io.DisplaySize;
 
@@ -174,21 +190,24 @@ public class ImGuiRenderer {
         return _effect;
     }
 
-    private unsafe void UpdateBuffers(ImDrawDataPtr drawData) {
+    private unsafe void UpdateBuffers(ImDrawDataPtr drawData)
+    {
         if (drawData.TotalVtxCount == 0)
             return;
 
-        if (drawData.TotalVtxCount > _vertex.BufferSize) {
+        if (drawData.TotalVtxCount > _vertex.BufferSize)
+        {
             _vertex.Buffer?.Dispose();
-            _vertex.BufferSize = (int) (drawData.TotalVtxCount * 1.5f);
+            _vertex.BufferSize = (int)(drawData.TotalVtxCount * 1.5f);
             _vertex.Buffer = new VertexBuffer(GraphicsDevice, DrawVertDeclaration.Declaration, _vertex.BufferSize, BufferUsage.None);
             _vertex.Data = new byte[_vertex.BufferSize * DrawVertDeclaration.Size];
         }
 
-        if (drawData.TotalIdxCount > _index.BufferSize) {
+        if (drawData.TotalIdxCount > _index.BufferSize)
+        {
             _index.Buffer?.Dispose();
 
-            _index.BufferSize = (int) (drawData.TotalIdxCount * 1.5f);
+            _index.BufferSize = (int)(drawData.TotalIdxCount * 1.5f);
             _index.Buffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, _index.BufferSize, BufferUsage.None);
             _index.Data = new byte[_index.BufferSize * sizeof(ushort)];
         }
@@ -196,12 +215,14 @@ public class ImGuiRenderer {
         var vertexOffset = 0;
         var indexOffset = 0;
 
-        for (var i = 0; i < drawData.CmdListsCount; ++i) {
+        for (var i = 0; i < drawData.CmdListsCount; ++i)
+        {
             var commands = drawData.CmdLists[i];
             fixed (void* vtxDstPtr = &_vertex.Data[vertexOffset * DrawVertDeclaration.Size])
-            fixed (void* idxDstPtr = &_index.Data[indexOffset * sizeof(ushort)]) {
-                Buffer.MemoryCopy((void*) commands.VtxBuffer.Data, vtxDstPtr, _vertex.Data.Length, commands.VtxBuffer.Size * DrawVertDeclaration.Size);
-                Buffer.MemoryCopy((void*) commands.IdxBuffer.Data, idxDstPtr, _index.Data.Length, commands.IdxBuffer.Size * sizeof(ushort));
+            fixed (void* idxDstPtr = &_index.Data[indexOffset * sizeof(ushort)])
+            {
+                Buffer.MemoryCopy((void*)commands.VtxBuffer.Data, vtxDstPtr, _vertex.Data.Length, commands.VtxBuffer.Size * DrawVertDeclaration.Size);
+                Buffer.MemoryCopy((void*)commands.IdxBuffer.Data, idxDstPtr, _index.Data.Length, commands.IdxBuffer.Size * sizeof(ushort));
             }
 
             vertexOffset += commands.VtxBuffer.Size;

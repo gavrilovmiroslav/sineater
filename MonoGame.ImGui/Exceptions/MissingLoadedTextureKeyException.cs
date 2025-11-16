@@ -1,9 +1,11 @@
-﻿namespace MonoGame.ImGui.Exceptions; 
+﻿namespace MonoGame.ImGui.Exceptions;
 
-public class MissingLoadedTextureKeyException : InvalidOperationException {
+public class MissingLoadedTextureKeyException : InvalidOperationException
+{
     private readonly IntPtr _textureId;
 
-    public MissingLoadedTextureKeyException(IntPtr textureId) {
+    public MissingLoadedTextureKeyException(IntPtr textureId)
+    {
         _textureId = textureId;
     }
 

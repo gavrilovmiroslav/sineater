@@ -1,14 +1,17 @@
 ﻿using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace MonoGame.ImGui; 
+namespace MonoGame.ImGui;
 
-public static class DrawVertDeclaration {
+public static class DrawVertDeclaration
+{
     public static readonly int Size;
     public static readonly VertexDeclaration Declaration;
 
-    static DrawVertDeclaration() {
-        unsafe {
+    static DrawVertDeclaration()
+    {
+        unsafe
+        {
             Size = sizeof(ImDrawVert);
         }
 

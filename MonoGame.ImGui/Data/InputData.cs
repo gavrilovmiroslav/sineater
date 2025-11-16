@@ -4,24 +4,27 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Vector2 = System.Numerics.Vector2;
 
-namespace MonoGame.ImGui.Data; 
+namespace MonoGame.ImGui.Data;
 
 /// <summary>
 ///     Contains the GUIRenderer's input data elements.
 /// </summary>
-public class InputData {
+public class InputData
+{
     public List<int> KeyMap;
     public int Scrollwheel;
 
-    public InputData() {
+    public InputData()
+    {
         Scrollwheel = 0;
         KeyMap = new List<int>();
     }
 
-    public void Update(Game game) {
+    public void Update(Game game)
+    {
         if (!game.IsActive)
             return;
-        
+
         var io = ImGuiNET.ImGui.GetIO();
         var mouse = Mouse.GetState();
         var keyboard = Keyboard.GetState();
@@ -47,9 +50,10 @@ public class InputData {
         io.MouseWheel = scrollDelta > 0 ? 1 : scrollDelta < 0 ? -1 : 0;
         Scrollwheel = mouse.ScrollWheelValue;
     }
-   
 
-    public InputData Initialize(Game game) {
+
+    public InputData Initialize(Game game)
+    {
         var io = ImGuiNET.ImGui.GetIO();
 
         //io.AddKeyEvent(ImGuiKey)
@@ -73,7 +77,8 @@ public class InputData {
         //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Y] = (int) Keys.Y);
         //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Z] = (int) Keys.Z);
 
-        game.Window.TextInput += (sender, args) => {
+        game.Window.TextInput += (sender, args) =>
+        {
             if (args.Character != '\t')
                 io.AddInputCharacter(args.Character);
         };

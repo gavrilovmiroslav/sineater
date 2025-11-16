@@ -1,7 +1,9 @@
-﻿namespace MonoGame.ImGui; 
+﻿namespace MonoGame.ImGui;
 
-public static class DrawText {
-    public static void Perform(string text) {
+public static class DrawText
+{
+    public static void Perform(string text)
+    {
         ImGuiNET.ImGui.Text(text);
     }
 }
