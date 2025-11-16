@@ -1,6 +1,5 @@
 ﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Vector2 = System.Numerics.Vector2;
 
@@ -11,13 +10,13 @@ namespace MonoGame.ImGui.Data;
 /// </summary>
 public class InputData
 {
-    public List<int> KeyMap;
+    public Dictionary<ImGuiKey, Keys> KeyMap;
     public int Scrollwheel;
 
     public InputData()
     {
         Scrollwheel = 0;
-        KeyMap = new List<int>();
+        KeyMap = new Dictionary<ImGuiKey, Keys>();
     }
 
     public void Update(Game game)
@@ -29,8 +28,10 @@ public class InputData
         var mouse = Mouse.GetState();
         var keyboard = Keyboard.GetState();
 
-        //for (var i = 0; i < KeyMap.Count; i++)
-        //    io.KeysDown[KeyMap[i]] = keyboard.IsKeyDown((Keys) KeyMap[i]);
+        foreach(var (key, value) in KeyMap)
+        {
+            io.AddKeyEvent(key, keyboard.IsKeyDown(value));
+        }
 
         io.KeyShift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
         io.KeyCtrl = keyboard.IsKeyDown(Keys.LeftControl) || keyboard.IsKeyDown(Keys.RightControl);
@@ -50,32 +51,23 @@ public class InputData
         io.MouseWheel = scrollDelta > 0 ? 1 : scrollDelta < 0 ? -1 : 0;
         Scrollwheel = mouse.ScrollWheelValue;
     }
-
-
     public InputData Initialize(Game game)
     {
         var io = ImGuiNET.ImGui.GetIO();
 
-        //io.AddKeyEvent(ImGuiKey)
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Tab] = (int) Keys.Tab);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.LeftArrow] = (int) Keys.Left);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.RightArrow] = (int) Keys.Right);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.UpArrow] = (int) Keys.Up);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.DownArrow] = (int) Keys.Down);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.PageUp] = (int) Keys.PageUp);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.PageDown] = (int) Keys.PageDown);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Home] = (int) Keys.Home);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.End] = (int) Keys.End);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Delete] = (int) Keys.Delete);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Backspace] = (int) Keys.Back);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Enter] = (int) Keys.Enter);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Escape] = (int) Keys.Escape);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.A] = (int) Keys.A);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.C] = (int) Keys.C);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.V] = (int) Keys.V);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.X] = (int) Keys.X);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Y] = (int) Keys.Y);
-        //KeyMap.Add(io.KeyMap[(int) ImGuiKey.Z] = (int) Keys.Z);
+        KeyMap.Add(ImGuiKey.Tab, Keys.Tab);
+        KeyMap.Add(ImGuiKey.LeftArrow, Keys.Left);
+        KeyMap.Add(ImGuiKey.RightArrow, Keys.Right);
+        KeyMap.Add(ImGuiKey.UpArrow, Keys.Up);
+        KeyMap.Add(ImGuiKey.DownArrow, Keys.Down);
+        KeyMap.Add(ImGuiKey.PageUp, Keys.PageUp);
+        KeyMap.Add(ImGuiKey.PageDown, Keys.PageDown);
+        KeyMap.Add(ImGuiKey.Home, Keys.Home);
+        KeyMap.Add(ImGuiKey.End, Keys.End);
+        KeyMap.Add(ImGuiKey.Delete, Keys.Delete);
+        KeyMap.Add(ImGuiKey.Backspace, Keys.Back);
+        KeyMap.Add(ImGuiKey.Enter, Keys.Enter);
+        KeyMap.Add(ImGuiKey.Escape, Keys.Escape);
 
         game.Window.TextInput += (sender, args) =>
         {
