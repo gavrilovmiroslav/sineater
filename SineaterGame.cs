@@ -1,13 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ImGuiNET;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monogame.ImGuiExamples;
+using MonoGame.ImGui;
 using SINEATER.Content;
+using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
-using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using MonoGame.ImGui;
-using ImGuiNET;
 
 namespace SINEATER;
 
@@ -287,12 +288,15 @@ public class SineaterGame : Game
 
         base.Draw(gameTime);
     }
-
     private void DrawImgui(GameTime time)
     {
         _render.BeginLayout(time);
 
-        ImGui.Text("Hello!");
+        // Imgui code begin
+
+        TemplateExamples.Example1();
+
+        // Imgui code end
 
         _render.EndLayout();
     }
