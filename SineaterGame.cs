@@ -4,20 +4,10 @@ using Microsoft.Xna.Framework.Input;
 using SINEATER.Content;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
-using MonoJ;
-using Newtonsoft.Json.Linq;
-using SINEATER.Serialization;
+using MonoGame.ImGui;
+using ImGuiNET;
 
 namespace SINEATER;
 
@@ -57,7 +47,10 @@ public class SineaterGame : Game
     
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
-    
+
+    private bool _drawImgui = false;
+    private ImGuiRenderer _render;
+
     public SineaterGame()
     {
         Instance = this;
@@ -75,7 +68,14 @@ public class SineaterGame : Game
 
         Barks.Load(Content);
     }
-    
+
+
+    protected override void Initialize()
+    {
+        _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
+        base.Initialize();
+    }
+
     protected override void LoadContent()
     {
         SinMod.System.Init("audio/GUIDs.txt");
@@ -219,6 +219,11 @@ public class SineaterGame : Game
             ScreenStack.Push(new ExplorationMapScreen(this));
         }
 
+        if (KB.HasBeenPressed(Keys.F2))
+        {
+            _drawImgui = !_drawImgui;
+        }
+
         if (ScreenStack?.Peek() is { } screen)
         {
             screen.Update(gameTime);
@@ -274,9 +279,23 @@ public class SineaterGame : Game
         //     SpriteEffects.None, 0.0f);
         
         _spriteBatch.End();
+
+        if (_drawImgui)
+        {
+            DrawImgui(gameTime);
+        }
+
         base.Draw(gameTime);
     }
 
+    private void DrawImgui(GameTime time)
+    {
+        _render.BeginLayout(time);
+
+        ImGui.Text("Hello!");
+
+        _render.EndLayout();
+    }
     public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
