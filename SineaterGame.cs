@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using SINEATER.Content;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +17,7 @@ using Google.Apis.Sheets.v4.Data;
 using MonoJ;
 using Newtonsoft.Json.Linq;
 using SINEATER.Serialization;
+using SINEATER.Input;
 
 namespace SINEATER;
 

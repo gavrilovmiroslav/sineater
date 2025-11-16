@@ -10,7 +10,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using RogueSharp.MapCreation;
-using SINEATER.Content;
+using SINEATER.Input;
 using SINEATER.SinMod;
 using Wintellect.PowerCollections;
 using YamlDotNet.Core.Tokens;

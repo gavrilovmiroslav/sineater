@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
-using SINEATER.Content;
+using SINEATER.Input;
 using SINEATER.SinMod;
 
 namespace SINEATER;
