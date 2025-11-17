@@ -164,14 +164,14 @@ public static class Combat
             gear.AffectDefense(ref damage);
         }
         
-        if (defense >= offense)
+        if (damage.Defense >= damage.Offense)
         {
             damage.Flat = 1;
             damage.Wounds = 1;
         }
         else
         {
-            damage.Flat = offense - defense;
+            damage.Flat = damage.Offense - damage.Defense;
             damage.Wounds = damage.Flat % 10;
             damage.HP = (damage.Flat / 10) % 10;
             damage.Poise = (damage.Flat / 100) % 10;
@@ -195,6 +195,11 @@ public static class Combat
                 damage.Wounds = -defender.AP.Width + rem;
                 
                 damage.Poise = (damage.Flat / 100) % 10;
+            }
+
+            if (damage.Poise >= 0 && damage.HP < damage.Poise)
+            {
+                damage.HP = Math.Min(5, damage.HP + 2);
             }
             
             if (damage.Wounds >= 0 && damage.Wounds < damage.HP)
