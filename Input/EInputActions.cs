@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
+using System;
 
-namespace SINEATER.Input
+namespace SINEATER.Input;
+
+internal enum EInputActions
 {
-    internal enum EInputActions
-    {
-        Move,
-
-    }
+    None,
+    Move,
+    Attack,
+    Dancee
 }

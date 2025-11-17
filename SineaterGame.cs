@@ -75,7 +75,13 @@ public class SineaterGame : Game
 
         Barks.Load(Content);
     }
-    
+
+    protected override void Initialize()
+    {
+        InputManager.Instance.Initialize("");
+        base.Initialize();
+    }
+
     protected override void LoadContent()
     {
         SinMod.System.Init("audio/GUIDs.txt");
