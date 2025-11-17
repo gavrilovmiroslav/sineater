@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Key = Microsoft.Xna.Framework.Input.Keys;
 
-namespace SINEATER.Content;
+namespace SINEATER.Input;
 
 public class KB
 {
