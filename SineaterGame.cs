@@ -31,6 +31,7 @@ public class SineaterGame : Game
 
     private Texture2D _mrmo;
     private Texture2D _ibm;
+    private Texture2D _largeNums;
     private Texture2D _portraits;
     private Texture2D[] _room = new Texture2D[24];
     private float _dHour;
@@ -92,6 +93,7 @@ public class SineaterGame : Game
         
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _ibm = Content.Load<Texture2D>("Codepage");
+        _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
         
         for (int i = 0; i < 24; i++)
@@ -159,7 +161,11 @@ public class SineaterGame : Game
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
         ibmLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("ascii", ibmLayer);
-        
+
+        var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(10, 2), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
+        largeNums.Map("1234567890", 0, 0);
+        Layers.Add("largenums", largeNums);
+
         _crt = Content.Load<Effect>("crt");
         SetupCrt(Width, Height);
 
@@ -277,7 +283,7 @@ public class SineaterGame : Game
         base.Draw(gameTime);
     }
 
-    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
+    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
 
     private void SetupCrt(int w, int h)
     {

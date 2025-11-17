@@ -298,9 +298,21 @@ public class CombatMapScreen : IScreen
                 CalculateZone(w);
             }
         }
+    }
 
+    private void UpdateEnemyActivation()
+    {
+        var player = _game.Party.Characters[PlayerSelectedIndex];
+        var enemyFov = new FieldOfView(Structure.Map);
+        //                                                          not active and player sees them
         foreach (var enemy in Structure.Enemies.Where(e => !e.Active && _fov.IsInFov(e.X, e.Y)))
         {
+            if (enemy.ShouldWakeUp)
+            {
+                enemy.Active = true;
+                continue;
+            }
+            
             if (enemy.SleepyTime < 0)
             {
                 enemy.SleepyTime = enemy.Level * 4;
@@ -310,12 +322,23 @@ public class CombatMapScreen : IScreen
                 enemy.SleepyTime--;
                 if (enemy.SleepyTime <= 0)
                 {
-                    var dist = new DistanceMap(Structure.Map, true, enemy.X, enemy.Y, Predicate.Walkable);
-                    var p = _game.Party.Characters[PlayerSelectedIndex];
-                    var d = dist.Get(p.X, p.Y);
-            
-                    var roll = Rnd.Instance.Next(0, d);
-                    enemy.Active = roll <= enemy.Cla * 2;
+                    var fov = enemyFov.ComputeFov(enemy.X, enemy.Y, enemy.Cla, false);
+                    if (enemyFov.IsInFov(player.X, player.Y))
+                    {
+                        var dist = new DistanceMap(Structure, true, enemy.X, enemy.Y, Predicate.Walkable);
+                        var d = dist.Get(player.X, player.Y);
+
+                        if (d > 2)
+                        {
+                            var roll = Rnd.Instance.Next(0, d);
+                            enemy.Active = roll <= enemy.Cla;
+                        }
+                        else
+                        {
+                            enemy.ShouldWakeUp = true;
+                            Console.WriteLine("WILL WAKE UP!");
+                        }
+                    }
                 }
             }
         }
@@ -331,48 +354,45 @@ public class CombatMapScreen : IScreen
         }
         else
         {
+            SelectNextAvailablePartyMember();
+        }
+    }
+
+    private void SelectNextAvailablePartyMember()
+    {
+        for (int i = 1; i <= 4; i++)
+        {
             PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
-            ShouldUpdateView = true;
+            if (!_game.Party.Characters[PlayerSelectedIndex].IsDone)
+            {
+                ShouldUpdateView = true;
+                break;
+            }
         }
     }
 
     private IEnumerable RunEnemyMoves()
     {
         // TODO: this shouldn't be the behaviour of EVERY enemy
-        var goals = new DistanceMap(Structure.Map, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
-        foreach (var enemy in Structure.Enemies.Where(enemy => enemy.Active).OrderByDescending(enemy => enemy.Level))
+        var goals = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
+        foreach (var enemy in Structure.Enemies.Where(enemy => enemy.Active).OrderByDescending(enemy => enemy.Level + 
+                     Structure.Map.GetAdjacentCells(enemy.X, enemy.Y, false).Where(c =>
+                     Positions.GetCharAt(this, c.X, c.Y) == null && Structure.Map.IsWalkable(c.X, c.Y)).ToList().Count))
         {
-            var wounds = enemy.AP.Count(EStatus.Wound);
-            var roll = Rnd.Instance.Next(0, enemy.AP.Width);
-            if (roll < wounds)
-            {
-                enemy.HP--;
-                for (var i = 0; i < 3; i++)
-                {
-                    var (u, v) = enemy.GetIcon(true);
-                    Draw(enemy.X, enemy.Y, new Glyph(u, v, Color.DarkMagenta, Color.White));
-                    yield return new WaitForSeconds(0.01f);
-                    Draw(enemy.X, enemy.Y, new Glyph(u, v + 4, Color.Black, enemy.Tint));
-                    yield return new WaitForSeconds(0.01f);
-                }
-
-                if (enemy.HP <= 0)
-                {
-                    enemy.Die();
-                    Structure.Enemies.Remove(enemy);
-                    UpdateCombatView();
-                    DrawCombat();
-                }
-
-                continue;
-            }
-
-            for (int ev = 0; ev < enemy.Vig; ev++)
+            for (var ev = 0; ev < enemy.Vig; ev++)
             {
                 if (enemy.IsDone) break;
                 if (_game.Party.Characters[0].AP.Count(EStatus.Void) == 0)
                 {
-                    break;
+                    if (enemy.AP.Count(EStatus.Stamina) > 0)
+                    {
+                        enemy.AP.Spend(1);
+                    }
+                    else
+                    {
+                        enemy.AP.Unspend(enemy.Stamina);
+                        break;
+                    }
                 }
 
                 var dist = goals.Get(enemy.X, enemy.Y);
@@ -391,7 +411,7 @@ public class CombatMapScreen : IScreen
                             var (u, v) = enemy.GetIcon(true);
                             Draw(enemy.X, enemy.Y, new Glyph(u, v, Color.Black, Color.White));
                             yield return new WaitForSeconds(0.01f);
-                            Draw(enemy.X, enemy.Y, new Glyph(u, v + 4, Color.Black, enemy.Tint));
+                            Draw(enemy.X, enemy.Y, new Glyph(u, v + 4, Color.Black, enemy.Active ? enemy.Tint : Color.Gray));
                             yield return new WaitForSeconds(0.01f);
                         }
                         yield return Coroutine_Attack(enemy, def);
@@ -448,7 +468,7 @@ public class CombatMapScreen : IScreen
     private void CalculateZone(PartyMember w)
     {
         w.Zone.Clear();
-        var dis = new DistanceMap(Structure.Map, false, [w.Origin], Predicate.Walkable);
+        var dis = new DistanceMap(Structure, false, [w.Origin], Predicate.Walkable);
         var walkRadius = (int)Math.Max(1, w.Vig + w.Poi + w.Wil - w.Weight);
         w.Zone = dis.GetAllBeneath(walkRadius + 1).ToHashSet();
         w.Zone.IntersectWith(Structure.Map.
@@ -712,7 +732,7 @@ public class CombatMapScreen : IScreen
             _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
             _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count), Sides.Ascii, Corners.Ascii);
 
-            for (int i = 0; i < _submenu.Count; i++)
+            for (var i = 0; i < _submenu.Count; i++)
             {
                 _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {_submenu[i]}");
             }
@@ -744,62 +764,84 @@ public class CombatMapScreen : IScreen
 
         if (defender is { } d)
         {
-            var attack = Combat.Attack(attacker, defender);
-            var hpDamage = 0;
-            var woundDamage = 0;
-            var poiseDamage = 0;
+            var damage = Combat.Attack(attacker, defender);
             
-            foreach (var atk in attack)
-            {
-                if (atk is DealHPDamage dmg)
-                {
-                    hpDamage += dmg.Amount;
-                }
-                else if (atk is DealWoundDamage dmw)
-                {
-                    woundDamage += dmw.Amount;
-                }
-                else if (atk is DealPoiseDamage dmp)
-                {
-                    poiseDamage += dmp.Amount;
-                }
-            }
-            
-            if (d is Enemy e)
-                DrawSubmenuAttackEnemy(e, hpDamage, woundDamage, poiseDamage);
+            DrawSubmenuAttackEnemy(defender, damage);
         }
     }
 
-    private void DrawSubmenuAttackEnemy(Enemy enemy, int dhp = 0, int dwnd = 0, int dpoi = 0)
+    private void DrawSubmenuAttackEnemy(Character enemy, Damage? dmg = null)
     {
-        var woundsBefore = enemy.AP.Count(EStatus.Wound);
-        var woundsAfter = woundsBefore + dwnd;
+        _game.Layers["largenums"].Set(11, 11, $"{dmg?.Flat.ToString().PadLeft(3, '0')}");
+        _game.Layers["largenums"].Set(13, 12, Glyph.Bw(0, 1));
+        _game.Layers["largenums"].Set(12, 12, Glyph.Bw(1, 1));
+        _game.Layers["largenums"].Set(11, 12, Glyph.Bw(2, 1));
         
-        var chanceBefore = Math.Clamp((int)(100 * (woundsBefore / (float)enemy.AP.Width)), 0, 100);
-        var chanceAfter = Math.Clamp((int)(100 * (woundsAfter / (float)enemy.AP.Width)), 0, 100);
+        var nextAP = enemy.AP.Copy();
+        nextAP.Add(EStatus.Wound, dmg?.Wounds ?? 0);
+        nextAP.Add(EStatus.Fatigue, dmg?.StatusFatigue ?? 0);
+        nextAP.Add(EStatus.Fire, dmg?.StatusFire ?? 0);
+        nextAP.Add(EStatus.Frozen, dmg?.StatusFrost ?? 0);
+        nextAP.Add(EStatus.Insanity, dmg?.StatusInsanity ?? 0);
+        nextAP.Add(EStatus.Poison, dmg?.StatusPoison ?? 0);
+        nextAP.Add(EStatus.Death, dmg?.StatusDeath ?? 0);
 
-        var (m, r) = enemy.Icon;
+        if (dmg?.SelfDamage > 0 && _time < 800 && dmg?.Attacker is PartyMember pm)
+        {
+            var nextSelfAP = pm.AP.Copy();
+            nextSelfAP.Add(EStatus.Wound, dmg?.SelfWound ?? 0);
+            nextSelfAP.Add(EStatus.Fatigue, dmg?.SelfFatigue ?? 0);
+            nextSelfAP.Add(EStatus.Fire, dmg?.SelfFire ?? 0);
+            nextSelfAP.Add(EStatus.Frozen, dmg?.SelfFrost ?? 0);
+            nextSelfAP.Add(EStatus.Insanity, dmg?.SelfInsanity ?? 0);
+            nextSelfAP.Add(EStatus.Poison, dmg?.SelfPoison ?? 0);
+            nextSelfAP.Add(EStatus.Death, dmg?.SelfDeath ?? 0);
+            nextSelfAP.Draw(DrawOffset.Item1 * 2 + 1, 26);
+        }
+        
+        var (m, r) = enemy is Enemy e ? e.Icon : enemy.Job.GetImage();
         var (u, v) = enemy.GetPortait();
         var (x, y) = (2, 2);
         var (xoff, yoff) = (0, 1);
-        _game.Layers["ascii"].SetRect(new Vector2(20 * x - 3, 5 * y - 3 + yoff), new Vector2(20 * x + 14, 5 * y + yoff + 12), ' ');
-        _game.Layers["ascii"].SetBox(new Vector2(20 * x - 4, 5 * y - 4 + yoff), new Vector2(20 * x + 15, 5 * y + yoff + 13), Sides.Ascii, Corners.Ascii);
-        _game.Layers["ascii"].Set(20 * x - 2, 4 * y + yoff - 1, $"{enemy.GetName()}", enemy.Tint);
-        var hp = $"HP{enemy.HP}";
-        var len = hp.Length;
-        _game.Layers["ascii"].Set(20 * x + 2 - len, 5 * y + yoff - 2, hp, Color.White);
-        _game.Layers["ascii"].Set(20 * x + 2 - len, 5 * y + yoff - 2, $"HP", enemy.Tint);
+        _game.Layers["ascii"].SetRect(new Vector2(20 * x - 2, 5 * y - 8 + yoff), new Vector2(20 * x + 14, 5 * y + yoff + 12), ' ');
+        _game.Layers["ascii"].SetBox(new Vector2(20 * x - 3, 5 * y - 7 + yoff), new Vector2(20 * x + 15, 5 * y + yoff + 13), Sides.Ascii, Corners.Ascii);
 
-        if (dwnd > 0 && (_time > 600))
+        if (dmg?.HP == 0 || _time < 800)
         {
-            _game.Layers["ascii"].Set(20 * x + 5 + len - 10, 4 * y + yoff + 13, $"+{dwnd} WND", Color.OrangeRed);
-            _game.Layers["ascii"].Set(20 * x + 5 + len - 10, 4 * y + yoff + 14, $"{chanceBefore}~{chanceAfter} HP DOWN%", Color.OrangeRed);
+            var hp = $"{enemy.HP}";
+            _game.Layers["ascii"].Set(20 * x - 1, 4 * y + yoff - 4, $"HP{hp} {enemy.GetName()}", enemy.Tint);
+            _game.Layers["ascii"].Set(20 * x + 1, 4 * y + yoff - 4, hp, Color.White);
+        }
+        else
+        {
+            var hp = $"{enemy.HP - dmg?.HP}";
+            _game.Layers["ascii"].Set(20 * x - 1, 4 * y + yoff - 4, $"HP{hp} {enemy.GetName()}", enemy.Tint);
+            _game.Layers["ascii"].Set(20 * x + 1, 4 * y + yoff - 4, hp, Color.Red);
         }
 
-        if (dhp > 0 && (_time > 600))
+        _game.Layers["ascii"].SetRect(new Vector2(20 * x - 2, 4 * y + yoff - 3), new Vector2(20 * x + 14, 4 * y + yoff - 3), Glyph.Bw(13, 6));
+        _game.Layers["ascii"].Set(20 * x - 3, 4 * y + yoff - 3, Glyph.Bw(12, 6));
+        _game.Layers["ascii"].Set(20 * x + 15, 4 * y + yoff - 3, Glyph.Bw(14, 6));
+        
+        if (enemy is Enemy en)
         {
-            _game.Layers["ascii"].Set(20 * x + 6 - len, 5 * y + yoff - 2, new Glyph(9, 5, Color.Black, Color.OrangeRed));
-            _game.Layers["ascii"].Set(20 * x + 8 - len, 5 * y + yoff - 2, $"{Math.Max(0, enemy.HP - dhp)}", Color.OrangeRed);
+            _game.Layers["mini"].Set(40 * x + 1, 8 * y + yoff - 2, $"Destiny", Color.White);
+
+            if (_time < 800)
+            {
+                en.AP.Draw(39, 8);
+            }
+            else
+            {
+                nextAP.Draw(39, 8);
+            }
+        }
+        else
+        {
+            if (_time >= 800)
+            {
+                nextAP.Draw(DrawOffset.Item1 * 2 + 1, 26);
+            }
         }
 
         _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA", enemy.Tint);
@@ -807,22 +849,29 @@ public class CombatMapScreen : IScreen
         _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{enemy.Cla}", Color.White);
         _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI ", enemy.Tint);
         _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{enemy.Vig}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{enemy.Poi}", Color.White);
-        
-        if (enemy.GetLeftWeapon() is {} lw)
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", enemy.Tint);
+        if (dmg?.Poise == 0 || _time < 800)
+        {
+            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{enemy.Poi}", Color.White);
+        }
         else
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
+        {
+            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{enemy.Poi - dmg?.Poise}", Color.White);
+        }
+
+        if (enemy.GetLeftWeapon() is {} lw)
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", enemy.Tint);
+        else
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
         
         if (enemy.GetRightWeapon() is {} rw)
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", enemy.Tint);
         else
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
         
         if (enemy.GetItem() is {} it)
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 9 + yoff, $"{it.Name}", enemy.Tint);
         else
-            _game.Layers["ascii"].Set(20 * x - 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
+            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
         
         _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
         _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, enemy.Tint));
@@ -973,7 +1022,7 @@ public class CombatMapScreen : IScreen
                     current.Temp.Reset();
                     MarkDone(current);
                 }
-                else if (opt == "EXERT")
+                else if (opt == "PUSH ON")
                 {
                     var (dx, dy) = _submenuDelta;
                     var (x, y) = (current.X + dx, current.Y + dy);
@@ -985,8 +1034,7 @@ public class CombatMapScreen : IScreen
                 }
                 else if (opt == "CYCLE")
                 {
-                    PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
-                    ShouldUpdateView = true;
+                    SelectNextAvailablePartyMember();
                 }
                 else if (opt == "CONSUME")
                 {
@@ -1007,8 +1055,7 @@ public class CombatMapScreen : IScreen
         {
             if (KB.HasBeenPressed(Keys.Tab))
             {
-                PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
-                ShouldUpdateView = true;
+                SelectNextAvailablePartyMember();
             }
 
             if (KB.HasBeenPressed(Keys.Space))
@@ -1076,12 +1123,13 @@ public class CombatMapScreen : IScreen
                             if (!current.Zone.Contains((nx, ny)))
                             {
                                 _submenuDelta = (dx, dy);
-                                StartSubmenu(["FORTIFY", "EXERT"]);
+                                StartSubmenu(["FORTIFY", "PUSH ON"]);
                             }
                             else
                             {
                                 current.X += dx;
                                 current.Y += dy;
+                                UpdateEnemyActivation();
                             }
                         }
                         else if (Structure.Treasure.Contains((current.X + dx, current.Y + dy)))
@@ -1136,105 +1184,46 @@ public class CombatMapScreen : IScreen
         yield return new WaitForSeconds(0.1f);
         Draw(defender.X, defender.Y, new Glyph(guv.Item1, guv.Item2, Color.Black, defender.Tint));
         
-        if (defender is not PartyMember)
-            defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
+        var damage = Combat.Attack(attacker, defender);
+
+        defender.AP.Add(EStatus.Wound, damage.Wounds);
+        defender.AP.Add(EStatus.Fatigue, damage.StatusFatigue);
+        defender.AP.Add(EStatus.Fire, damage.StatusFire);
+        defender.AP.Add(EStatus.Frozen, damage.StatusFrost);
+        defender.AP.Add(EStatus.Poison, damage.StatusPoison);
+        defender.AP.Add(EStatus.Insanity, damage.StatusInsanity);
+        defender.AP.Add(EStatus.Death, damage.StatusDeath);
         
-        yield return new WaitForSeconds(0.5f);
-        foreach (var effect in Combat.Attack(attacker, defender))
+        attacker.AP.Add(EStatus.Wound, damage.SelfWound);
+        attacker.AP.Add(EStatus.Fatigue, damage.SelfFatigue);
+        attacker.AP.Add(EStatus.Fire, damage.SelfFire);
+        attacker.AP.Add(EStatus.Frozen, damage.SelfFrost);
+        attacker.AP.Add(EStatus.Insanity, damage.SelfInsanity);
+        attacker.AP.Add(EStatus.Poison, damage.SelfPoison);
+        attacker.AP.Add(EStatus.Death, damage.SelfDeath);
+        
+        defender.HP -= damage.HP;
+        defender.Temp.Poise -= damage.Poise;
+
+        if (defender is Enemy { Active: false } dfn)
         {
-            yield return new WaitForSeconds(0.2f);
-            _game.Layers["ascii"].SetRect(new Vector2(20, 20), new Vector2(60, 24), ' ');
-            if (effect is DealFatigueDamage ftg)
-            {
-                defender.AP.Add(EStatus.Fatigue, ftg.Amount);
-                _game.Layers["ascii"].Set(50, 21, $"+{ftg.Amount} Fatigue");
-            }
-            else if (effect is DealWoundDamage wnd)
-            {
-                var woundsBefore = Math.Clamp((int)(100 * (defender.AP.Count(EStatus.Wound) / (float)defender.AP.Width)), 0, 100);
-                defender.AP.Add(EStatus.Wound, wnd.Amount);
-                var totalWounds = Math.Clamp((int)(100 * (defender.AP.Count(EStatus.Wound) / (float)defender.AP.Width)), 0, 100);
-                
-                _game.Layers["ascii"].Set(30, 21, $"+{wnd.Amount} WND ({woundsBefore}~{totalWounds} HP DOWN%)");
-            }
-            else if (effect is DealPoiseDamage poi)
-            {
-                defender.Temp.Poise -= poi.Amount;
-                _game.Layers["ascii"].Set(40, 21, $"-{poi.Amount} Poise");
-            }
-            else if (effect is DealHPDamage hp)
-            {
-                defender.HP -= hp.Amount;
-                if (defender.HP < 0) defender.HP = 0;
-                _game.Layers["ascii"].Set(20, 21, $"-{hp.Amount} HP");
-            }
-            
-            if (defender is not PartyMember)
-                defender.AP.Draw(DrawOffset.Item1 * 2 + 1, 20, defender);
-            
-            yield return new WaitForSeconds(0.5f);
-
-            var wounds = defender.AP.Count(EStatus.Wound);
-            var superCrit = wounds >= defender.AP.Width && defender.HP > 1;
-            var roll = Rnd.Instance.Next(0, defender.AP.Width);
-            if (roll <= wounds || superCrit)
-            {
-                var nextHP = defender.HP;
-                var damage = 0;
-                if (superCrit)
-                {
-                    damage = nextHP - 1;
-                }
-                else if (roll < Math.Max(1, wounds / 5))
-                {
-                    damage = 3;
-                }
-                else
-                {
-                    damage = 1;
-                }
-                nextHP -= damage;
-                if (nextHP < 0) nextHP = 0;
-
-                for (var i = 0; i < 5; i++)
-                {
-                    if (superCrit)
-                    {
-                        _game.Layers["ascii"].Set(30, 22, $"HP BREAK!", i % 2 == 0 ? Color.White : Color.Red);
-                    }
-                    else if (damage == 1)
-                    {
-                        _game.Layers["ascii"].Set(30, 22, $"-{damage} HP!", i % 2 == 0 ? Color.White : Color.Red);
-                    }
-                    else if (damage == 3)
-                    {
-                        _game.Layers["ascii"].Set(30, 22, $"CRIT! -{damage} HP!", i % 2 == 0 ? Color.White : Color.Red);
-                    }
-
-                    if (i % 2 == 0)
-                    {
-                        _game.Layers["ascii"].Set(DrawOffset.Item1 * 2 + 1, 21, $"HP {defender.HP}    ");
-                    }
-                    else
-                    {
-                        _game.Layers["ascii"].Set(DrawOffset.Item1 * 2 + 1, 21, $"HP {nextHP}    ");
-                    }
-                    yield return new WaitForSeconds(0.005f);
-                }
-                _game.Layers["ascii"].Set(DrawOffset.Item1 * 2 + 1, 21, $"HP {nextHP}    ");
-                yield return new WaitForSeconds(0.01f);
-                defender.HP = nextHP;
-            }
-
-            if (defender.HP <= 0)
-            {
-                defender.Die();
-                _game.Layers["ascii"].Set(30, 23, $"{defender.GetName()} dies!");
-            }
+            dfn.Active = true;
         }
+        
+        if (defender.HP <= 0) defender.Die();
+        
         yield return new WaitForSeconds(0.5f);
         if (defender is Enemy { IsDead: true } e)
         {
+            for (int i = 0; i < 5; i++)
+            {
+                var (gu, gv) = guv;
+                Draw(defender.X, defender.Y, new Glyph(gu, gv, Color.Black, defender.Tint));
+                yield return new WaitForSeconds(0.02f);
+                Draw(defender.X, defender.Y, " ");
+                yield return new WaitForSeconds(0.02f);
+            }
+
             Structure.Enemies.Remove(e);
             UpdateCombatView();
         }
@@ -1269,5 +1258,7 @@ public class CombatMapScreen : IScreen
                 n.NoMove = true;
             }
         }
+        
+        DrawCombat();
     }
 }
