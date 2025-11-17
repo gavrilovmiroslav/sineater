@@ -14,9 +14,34 @@ public interface IItem : IAbilitySource
     public Glyph Glyph { get; }
     public EWeightClass Weight { get; }
     public EElement Element { get; }
+    public List<ITrait> Traits { get; set; }
 
     public IEnumerable ApplyItemEquipped(ICharacter character);
     public IEnumerable ApplyItemUnequipped(ICharacter character);
+
+    public virtual void AffectOffense(ref Damage dmg)
+    {
+        foreach (var trait in Traits)
+            trait.AffectOffense(ref dmg);
+    }
+
+    public virtual void AffectDefense(ref Damage dmg)
+    {
+        foreach (var trait in Traits)
+            trait.AffectDefense(ref dmg);
+    }
+
+    public virtual void AffectDamage(ref Damage dmg)
+    {
+        foreach (var trait in Traits)
+            trait.AffectDamage(ref dmg);
+    }
+
+    public virtual void AffectStatuses(ref Damage dmg)
+    {
+        foreach (var trait in Traits)
+            trait.AffectStatuses(ref dmg);
+    }
 }
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -51,7 +76,10 @@ public class Item(string name, (int, int) uv, EElement element = EElement.None, 
     public virtual EWeightClass Weight { get; set; } = weight;
     [JsonProperty]
     public virtual EElement Element { get; set; } = element;
-#endregion // Serialization
+
+    public List<ITrait> Traits { get; set; } = [];
+
+    #endregion // Serialization
 
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
 

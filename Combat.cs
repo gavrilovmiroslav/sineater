@@ -3,19 +3,76 @@ using System.Collections;
 
 namespace SINEATER;
 
+public record struct Damage(
+    Character Attacker,
+    Character Defender,
+    int Offense,
+    int Defense,
+    int Flat,
+    int Wounds,
+    int HP,
+    int Poise,
+    int StatusFatigue,
+    int StatusFire,
+    int StatusFrost,
+    int StatusPoison,
+    int StatusInsanity,
+    int StatusDeath,
+    int SelfFatigue,
+    int SelfFire,
+    int SelfFrost,
+    int SelfPoison,
+    int SelfWound,
+    int SelfInsanity,
+    int SelfDeath)
+{
+    public int SelfDamage => 
+        SelfWound + SelfFatigue + SelfFire + SelfFrost + 
+        SelfPoison + SelfInsanity + SelfDeath;
+}
+
 public static class Combat
 {
     private static int CalculateOffenseOrDefense(Character chr, bool isAttacking)
     {
         var physical = chr.CountPhysical;
         var mental = chr.CountMental;
+        var lhWeapon = chr.GetLeftWeapon() ?? Weapon.Dummy("");
+        var rhWeapon = chr.GetRightWeapon() ?? Weapon.Dummy("");
+        
         var physicalAttack = chr.Vig * Math.Max(1, 1 + physical * 0.2f);
         var mentalAttack = chr.Wil * Math.Max(1, 1 + mental * 0.2f);
-        var baseAttack = Math.Ceiling((physicalAttack + mentalAttack) * chr.WeightFactor);
-        
+
         var physicalDefense = chr.Poi * Math.Max(1, 1 + physical * 0.2f);
         var mentalDefense = chr.Cla * Math.Max(1, 1 + mental * 0.2f);
-        var baseDefense = Math.Ceiling((physicalDefense + mentalDefense) * chr.WeightFactor);
+        
+        var weaponAttack = 0.0f;
+        var weaponDefense = 0.0f;
+        
+        if (chr.IsRightHanded)
+        {
+            weaponAttack = rhWeapon.Attack * 0.2f * rhWeapon.Base;
+            weaponAttack += lhWeapon.Attack * 0.1f * lhWeapon.Base;
+            
+            weaponDefense = rhWeapon.Defense * 0.2f * rhWeapon.Base;
+            weaponDefense += lhWeapon.Defense * 0.1f * lhWeapon.Base;
+        }
+        else
+        {
+            weaponAttack = lhWeapon.Attack * 0.2f * lhWeapon.Base;
+            weaponAttack += rhWeapon.Attack * 0.1f * rhWeapon.Base;
+            
+            weaponDefense = lhWeapon.Defense * 0.2f * lhWeapon.Base;
+            weaponDefense += rhWeapon.Defense * 0.1f * rhWeapon.Base;
+        }
+
+        var baseAttack = MathF.Ceiling((physicalAttack + mentalAttack) * weaponAttack);
+        var baseDefense = MathF.Ceiling((physicalDefense + mentalDefense) * weaponDefense);
+        
+        if (chr is Enemy { Active: false })
+        {
+            baseDefense *= 0.33f;
+        }
         
         var wilScaling = chr.Wil * Math.Max(
             (int)(chr.GetLeftWeapon()?.WilScaling ?? EScalingFactor.F), 
@@ -84,35 +141,83 @@ public static class Combat
         }
     }
     
-    public static IEnumerable Attack(Character attacker, Character defender)
+    // TODO
+    public static Damage Attack(Character attacker, Character defender)
     {
-        var offense = CalculateOffenseOrDefense(attacker, true);
-        var defense = CalculateOffenseOrDefense(defender, false);
-        if (defense >= offense)
+        var offense = (int)Math.Ceiling(CalculateOffenseOrDefense(attacker, true) * (1.5f - (attacker.AP.Count(EStatus.Wound) / (float)attacker.AP.Width)));
+        var defense = (int)Math.Ceiling(CalculateOffenseOrDefense(defender, false) * (1.25f - (defender.AP.Count(EStatus.Wound) / (float)defender.AP.Width)));
+        var damage = new Damage
         {
-            yield return new DealWoundDamage(1);
+            Attacker = attacker,
+            Defender = defender,
+            Offense = offense,
+            Defense = defense
+        };
+
+        foreach (var gear in attacker.GetGear())
+        {
+            gear.AffectOffense(ref damage);
+        }
+        
+        foreach (var gear in defender.GetGear())
+        {
+            gear.AffectDefense(ref damage);
+        }
+        
+        if (damage.Defense >= damage.Offense)
+        {
+            damage.Flat = 1;
+            damage.Wounds = 1;
         }
         else
         {
-            var flatDamage = offense - defense;
-            var woundDamage = flatDamage % 10;
-            var poiseDamage = (int)Math.Floor(flatDamage / 10.0) % 10;
-            var hpDamage = (int)Math.Floor(flatDamage / 100.0) % 10;
+            damage.Flat = damage.Offense - damage.Defense;
+            damage.Wounds = damage.Flat % 10;
+            damage.HP = (damage.Flat / 10) % 10;
+            damage.Poise = (damage.Flat / 100) % 10;
 
-            var delta1 = Math.Sign(woundDamage - poiseDamage);
-            var delta2 = Math.Sign(poiseDamage - hpDamage);
-            if (delta1 <= 0) woundDamage = 10;
-            if (delta2 <= 0 && delta1 <= 0) hpDamage += 1;
+            foreach (var gear in attacker.GetGear())
+            {
+                gear.AffectDamage(ref damage);
+            }
+        
+            foreach (var gear in defender.GetGear())
+            {
+                gear.AffectDamage(ref damage);
+            }
             
-            if (woundDamage > 0) yield return new DealWoundDamage(woundDamage);
-            if (poiseDamage > 0) yield return new DealPoiseDamage(poiseDamage);
-            if (hpDamage > 0) yield return new DealHPDamage(hpDamage);
+            if (defender.AP.Count(EStatus.Wound) + damage.Wounds > defender.AP.Width)
+            {
+                damage.HP += 2;
+                damage.Flat += 20;
+                
+                var rem = defender.AP.Count(EStatus.Wound) + damage.Wounds - defender.AP.Width;
+                damage.Wounds = -defender.AP.Width + rem;
+                
+                damage.Poise = (damage.Flat / 100) % 10;
+            }
+
+            if (damage.Poise >= 0 && damage.HP < damage.Poise)
+            {
+                damage.HP = Math.Min(5, damage.HP + 2);
+            }
+            
+            if (damage.Wounds >= 0 && damage.Wounds < damage.HP)
+            {
+                damage.Wounds = Math.Min(9, damage.HP + 1);
+            }
         }
+
+        foreach (var gear in attacker.GetGear())
+        {
+            gear.AffectStatuses(ref damage);
+        }
+        
+        foreach (var gear in defender.GetGear())
+        {
+            gear.AffectStatuses(ref damage);
+        }
+        
+        return damage;
     }
 }
-
-public interface IDamage;
-public record struct DealFatigueDamage(int Amount) : IDamage;
-public record struct DealWoundDamage(int Amount) : IDamage;
-public record struct DealPoiseDamage(int Amount) : IDamage;
-public record struct DealHPDamage(int Amount) : IDamage;

@@ -10,24 +10,24 @@ public class DistanceMap
     private readonly Dictionary<(int, int), int> _distances = [];
     private readonly Dictionary<int, List<(int, int)>> _buckets = [];
     
-    public DistanceMap(IMap<Cell> map, bool diagonals, int x, int y, Func<IMap<Cell>, int, int, bool> pred)
+    public DistanceMap(LevelStructure s, bool diagonals, int x, int y, Func<LevelStructure, int, int, bool> pred)
     {
-        CreateDistanceMap(map, diagonals, [(x, y)], pred);
+        CreateDistanceMap(s, diagonals, [(x, y)], pred);
     }
     
-    public DistanceMap(IMap<Cell> map, bool diagonals, IEnumerable<(int, int)> sources, Func<IMap<Cell>, int, int, bool> pred)
+    public DistanceMap(LevelStructure s, bool diagonals, IEnumerable<(int, int)> sources, Func<LevelStructure, int, int, bool> pred)
     {
-        CreateDistanceMap(map, diagonals, sources, pred);
+        CreateDistanceMap(s, diagonals, sources, pred);
     }
 
-    public IEnumerable<(int, int)> Flood(IMap<Cell> map, Func<IMap<Cell>, int, int, bool> pred, int x, int y, bool diagonals = false)
+    public IEnumerable<(int, int)> Flood(LevelStructure s, Func<LevelStructure, int, int, bool> pred, int x, int y, bool diagonals = false)
     {
         List<(int, int)> result = [];
         Queue<(int, int)> waitList = [];
         HashSet<Cell> visited = [];
         
         waitList.Enqueue((x, y));
-        if (pred(map, x, y))
+        if (pred(s, x, y))
         {
             result.Add((x, y));
         }
@@ -35,9 +35,9 @@ public class DistanceMap
         while (waitList.TryDequeue(out var xy))
         {
             var (a, b) = xy;
-            foreach (var adj in map.GetAdjacentCells(a, b, diagonals).Where(adj => !visited.Contains(adj)))
+            foreach (var adj in s.Map.GetAdjacentCells(a, b, diagonals).Where(adj => !visited.Contains(adj)))
             {
-                if (adj != null && pred(map, adj.X, adj.Y))
+                if (adj != null && pred(s, adj.X, adj.Y))
                 {
                     result.Add((adj.X, adj.Y));
                     visited.Add(adj);
@@ -49,13 +49,13 @@ public class DistanceMap
         return result;
     }
     
-    void CreateDistanceMap(IMap<Cell> map, bool diagonals, IEnumerable<(int, int)> sources, Func<IMap<Cell>, int, int, bool> pred)
+    void CreateDistanceMap(LevelStructure s, bool diagonals, IEnumerable<(int, int)> sources, Func<LevelStructure, int, int, bool> pred)
     {
         Queue<(int, int)> waitList = [];
 
         foreach (var (mx, my) in sources)
         {
-            if (pred.Invoke(map, mx, my))
+            if (pred.Invoke(s, mx, my))
             {
                 waitList.Enqueue((mx, my));
                 _distances[(mx, my)] = 0;
@@ -71,9 +71,9 @@ public class DistanceMap
         {
             var (x, y) = xy;
             var d = _distances.ContainsKey((x, y)) ? _distances[(x, y)] : 0;
-            foreach (var adj in map.GetAdjacentCells(x, y, diagonals))
+            foreach (var adj in s.Map.GetAdjacentCells(x, y, diagonals))
             {
-                if (adj != null && pred(map, adj.X, adj.Y)) 
+                if (adj != null && pred(s, adj.X, adj.Y)) 
                 {
                     var axy = (adj.X, adj.Y);
                     if (!_distances.ContainsKey(axy))

@@ -15,7 +15,9 @@ public class Enemy : Character
 {
     public bool NoMove = false;
     public bool Active = false;
+    public bool ShouldWakeUp = false;
     public int SleepyTime = -1;
+    public int Stamina = 0;
     public int Level = 0;
     public int Crew = 1;
     public ECrewChoice CrewChoice = ECrewChoice.None;
@@ -83,5 +85,10 @@ public class Enemy : Character
 
     public Enemy()
     {
+    }
+
+    public void Init()
+    {
+        AP = new AP(15, SineaterGame.Instance.Layers["ascii"], 15 - Stamina);
     }
 }

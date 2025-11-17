@@ -83,17 +83,40 @@ public class AP
     public List<EStatus> View => _statuses[_start..(_start + Width)];
     
     public int Width { get; set; }
+    public int Empty { get; set; }
     public TextLayer Layer { get; set; }
 
-    public AP(int width, TextLayer layer)
+    public AP Copy()
+    {
+        var ap = new AP(Width, Layer, Empty, this);
+        return ap;
+    }
+
+    private AP(int width, TextLayer layer, int empty, AP original)
     {
         Width = width;
         Layer = layer;
+        Empty = empty;
+        
+        _start = original._start;
+        foreach (var status in original._statuses)
+        {
+            _statuses.Add(status);
+        }
+    }
+    
+    public AP(int width, TextLayer layer, int empty = 0)
+    {
+        Width = width;
+        Layer = layer;
+        Empty = empty;
         
         for (var i = 0; i < Width; i++)
         {
             _statuses.Add(EStatus.Stamina);
         }
+        
+        Add(EStatus.Void, empty);
     }
     
     public void Update(GameTime time)
@@ -119,6 +142,19 @@ public class AP
 
     public void Add(EStatus status, int amount)
     {
+        if (amount == 0) return;
+        if (amount < 0)
+        {
+            Reduce(status, -amount);
+            return;
+        }
+        
+        if (status != EStatus.Void)
+        {
+            var voids = Count(EStatus.Void);
+            Reduce(EStatus.Void, amount <= voids ? amount : voids);
+        }
+
         if (Count(status) > 0)
         {
             var index = View.FindLastIndex(s => s == status);
@@ -170,15 +206,10 @@ public class AP
         }
     }
 
-    public bool Spend(int amount)
+    public void Spend(int amount)
     {
-        if (View.Count(s => s == EStatus.Stamina) >= amount)
-        {
-            Add(EStatus.Void, amount);
-            return true;
-        }
-
-        return false;
+        var stam = View.Count(s => s == EStatus.Stamina);
+        Add(EStatus.Void, Math.Min(amount, stam));
     }
     
     public void Unspend(int amount)

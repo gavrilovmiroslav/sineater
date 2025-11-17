@@ -282,6 +282,28 @@ public abstract class Character : ICharacter
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public bool IsDone { get; set; } = false;
+    public bool IsRightHanded { get; set; } = true;
+
+    public IEnumerable<IItem> GetGear()
+    {
+        if (GetItem() is { } item)
+            yield return item;
+
+        if (!IsRightHanded)
+        {
+            if (GetLeftWeapon() is { } lhs)
+                yield return lhs;
+            if (GetRightWeapon() is { } rhs)
+                yield return rhs;
+        }
+        else
+        {
+            if (GetRightWeapon() is { } rhs)
+                yield return rhs;
+            if (GetLeftWeapon() is { } lhs)
+                yield return lhs;
+        }
+    }
     
     public float Weight
     {
@@ -495,6 +517,7 @@ public class PartyMember : Character
     public (int, int) Origin = (0, 0);
     public int Steps = 0;
     public bool NoMove = false;
+    
     public PartyMember(ECharacterClass? job = null)
     {
         if (job == null)
@@ -525,6 +548,11 @@ public class PartyMember : Character
     public void SetOrigin()
     {
         Origin = (X, Y);
+    }
+
+    public override void Die()
+    {
+        
     }
 }
 
@@ -569,22 +597,23 @@ public record struct Party
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Witch:
+                    Characters[i].IsRightHanded = true;
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Kris"));
                     Characters[i].EquipItem(ItemLibrary.GetItem("Old Bell"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
-                    Characters[i].Stats.Vigor = 2;
+                    Characters[i].Stats.Vigor = 3;
                     Characters[i].Ability = new DomainExpansion();
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Red Sign"));
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
                     Characters[i].EquipItem(ItemLibrary.GetItem("Ruby Plate"));
-                    Characters[i].Stats.Will = 5;
+                    Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
-                    Characters[i].Stats.Vigor = 1;
+                    Characters[i].Stats.Vigor = 5;
                     break;
                 case ECharacterClass.Monk:
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolm Staff"));
@@ -600,7 +629,7 @@ public record struct Party
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 3;
-                    Characters[i].Stats.Vigor = 2;
+                    Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Priest:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
@@ -611,18 +640,18 @@ public record struct Party
                     break;
                 case ECharacterClass.Thief:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
-                    Characters[i].Stats.Will = 2;
+                    Characters[i].Stats.Will = 6;
                     Characters[i].Stats.Clarity = 6;
                     Characters[i].Stats.Poise = 2;
-                    Characters[i].Stats.Vigor = 1;
+                    Characters[i].Stats.Vigor = 2;
                     break;
             }
         }
         
         Characters[0].Bonus.Will += 2;
         Characters[1].Bonus.Clarity += 2;
-        Characters[2].Bonus.Poise += 2;
-        Characters[3].Bonus.Vigor += 2;
+        Characters[2].Bonus.Vigor += 2;
+        Characters[3].Bonus.Poise += 2;
 
         for (var i = 0; i < 4; i++)
         {
