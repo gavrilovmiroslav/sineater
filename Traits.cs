@@ -36,4 +36,15 @@ public class TraitDisturbed : Trait
         dmg.Offense = (int)Math.Floor(dmg.Offense * (1.0f - factor));
         dmg.SelfInsanity = -1;
     }
-} 
+}
+
+public class TraitOneHandProficiency : Trait
+{
+    public override void AffectOffense(ref Damage dmg)
+    {
+        if (dmg.Attacker.GetLeftWeapon() == null || dmg.Attacker.GetRightWeapon() == null)
+        {
+            dmg.Offense = (int)(dmg.Offense * 1.1f);
+        }
+    }
+}

@@ -404,6 +404,7 @@ public abstract class Character : ICharacter
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
     public IItem? Item = null;
+    public readonly List<Trait> Traits = [];
     public Ability? Ability = null;
     public AP AP;
     
@@ -647,11 +648,11 @@ public record struct Party
                     break;
             }
         }
-        
-        Characters[0].Bonus.Will += 2;
-        Characters[1].Bonus.Clarity += 2;
-        Characters[2].Bonus.Vigor += 2;
-        Characters[3].Bonus.Poise += 2;
+
+        Characters[0].Stats.Will = 7;
+        Characters[1].Stats.Clarity = 7;
+        Characters[2].Stats.Poise = 7;
+        Characters[3].Stats.Vigor = 7;
 
         for (var i = 0; i < 4; i++)
         {

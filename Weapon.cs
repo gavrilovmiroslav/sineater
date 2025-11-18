@@ -19,8 +19,8 @@ public enum EWeightClass
     Tiny = 0,
     Light = 1,
     Medium = 2,
-    Heavy = 4,
-    Large = 6
+    Heavy = 3,
+    Large = 4
 }
 
 public static class WeightClassExtensions

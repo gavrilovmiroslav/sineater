@@ -799,33 +799,31 @@ public class CombatMapScreen : IScreen
             nextSelfAP.Draw(DrawOffset.Item1 * 2 + 1, 26);
         }
         
-        var (m, r) = enemy is Enemy e ? e.Icon : enemy.Job.GetImage();
         var (u, v) = enemy.GetPortait();
-        var (x, y) = (2, 2);
-        var (xoff, yoff) = (0, 1);
-        _game.Layers["ascii"].SetRect(new Vector2(20 * x - 2, 5 * y - 8 + yoff), new Vector2(20 * x + 14, 5 * y + yoff + 12), ' ');
-        _game.Layers["ascii"].SetBox(new Vector2(20 * x - 3, 5 * y - 7 + yoff), new Vector2(20 * x + 15, 5 * y + yoff + 13), Sides.Ascii, Corners.Ascii);
+        
+        _game.Layers["ascii"].SetRect(new Vector2(38, 3), new Vector2(54, 23), ' ');
+        _game.Layers["ascii"].SetBox(new Vector2(37, 4), new Vector2(55, 24), Sides.Ascii, Corners.Ascii);
 
         if (dmg?.HP == 0 || _time < 800)
         {
             var hp = $"{enemy.HP}";
-            _game.Layers["ascii"].Set(20 * x - 1, 4 * y + yoff - 4, $"HP{hp} {enemy.GetName()}", enemy.Tint);
-            _game.Layers["ascii"].Set(20 * x + 1, 4 * y + yoff - 4, hp, Color.White);
+            _game.Layers["ascii"].Set(39, 5, $"HP{hp} {enemy.GetName()}", enemy.Tint);
+            _game.Layers["ascii"].Set(41, 5, hp, Color.White);
         }
         else
         {
-            var hp = $"{enemy.HP - dmg?.HP}";
-            _game.Layers["ascii"].Set(20 * x - 1, 4 * y + yoff - 4, $"HP{hp} {enemy.GetName()}", enemy.Tint);
-            _game.Layers["ascii"].Set(20 * x + 1, 4 * y + yoff - 4, hp, Color.Red);
+            var hp = $"{Math.Max(0, enemy.HP - dmg?.HP ?? 0)}";
+            _game.Layers["ascii"].Set(39, 5, $"HP{hp} {enemy.GetName()}", enemy.Tint);
+            _game.Layers["ascii"].Set(41, 5, hp, Color.Red);
         }
 
-        _game.Layers["ascii"].SetRect(new Vector2(20 * x - 2, 4 * y + yoff - 3), new Vector2(20 * x + 14, 4 * y + yoff - 3), Glyph.Bw(13, 6));
-        _game.Layers["ascii"].Set(20 * x - 3, 4 * y + yoff - 3, Glyph.Bw(12, 6));
-        _game.Layers["ascii"].Set(20 * x + 15, 4 * y + yoff - 3, Glyph.Bw(14, 6));
+        _game.Layers["ascii"].SetRect(new Vector2(38, 6), new Vector2(54, 6), Glyph.Bw(13, 6));
+        _game.Layers["ascii"].Set(37, 6, Glyph.Bw(12, 6));
+        _game.Layers["ascii"].Set(55, 6, Glyph.Bw(14, 6));
         
         if (enemy is Enemy en)
         {
-            _game.Layers["mini"].Set(40 * x + 1, 8 * y + yoff - 2, $"Destiny", Color.White);
+            _game.Layers["mini"].Set(81, 15, $"Destiny", Color.White);
 
             if (_time < 800)
             {
@@ -844,37 +842,103 @@ public class CombatMapScreen : IScreen
             }
         }
 
-        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA", enemy.Tint);
-        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{enemy.Wil}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{enemy.Cla}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI ", enemy.Tint);
-        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{enemy.Vig}", Color.White);
+        _game.Layers["ascii"].Set(42, 15, $"WIL  CLA", enemy.Tint);
+        _game.Layers["ascii"].Set(45, 15, $"{enemy.Wil}", Color.White);
+        _game.Layers["ascii"].Set(50, 15, $"{enemy.Cla}", Color.White);
+        _game.Layers["ascii"].Set(42, 16, $"VIG  POI ", enemy.Tint);
+        _game.Layers["ascii"].Set(45, 16, $"{enemy.Vig}", Color.White);
         if (dmg?.Poise == 0 || _time < 800)
         {
-            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{enemy.Poi}", Color.White);
+            _game.Layers["ascii"].Set(50, 16, $"{enemy.Poi}", Color.White);
         }
         else
         {
-            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{enemy.Poi - dmg?.Poise}", Color.White);
+            _game.Layers["ascii"].Set(50, 16, $"{Math.Max(0, enemy.Poi - dmg?.Poise ?? 0)}", Color.White);
         }
 
         if (enemy.GetLeftWeapon() is {} lw)
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 18, $"{lw.Name}", enemy.Tint);
         else
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
+            _game.Layers["ascii"].Set(39, 18, "[LEFT ARM]", Color.Gray);
         
         if (enemy.GetRightWeapon() is {} rw)
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 19, $"{rw.Name}", enemy.Tint);
         else
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
+            _game.Layers["ascii"].Set(39, 19, "[RIGHT ARM]", Color.Gray);
         
         if (enemy.GetItem() is {} it)
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 9 + yoff, $"{it.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 20, $"{it.Name}", enemy.Tint);
         else
-            _game.Layers["ascii"].Set(20 * x - 1 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
-        
-        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-        _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, enemy.Tint));
+            _game.Layers["ascii"].Set(39, 20, "[EQUIPMENT]", Color.Gray);
+
+        _debugView = KB.IsPressed(Keys.LeftAlt);
+        if (!_debugView)
+        {
+            _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+            _game.Layers["portrait2"].Set(4, 2, new Glyph(u, v, Color.Black, enemy.Tint));
+        }
+
+        if (_debugView)
+        {
+            _game.Layers["ascii"].SetRect(new Vector2(20, 5), new Vector2(35, 23), ' ');
+            _game.Layers["ascii"].SetBox(new Vector2(19, 4), new Vector2(36, 24), Sides.Ascii, Corners.Ascii);
+
+            {
+                int n = 5;
+                var write = (string s) => _game.Layers["ascii"].Set(21, n++, s);
+                var writes = (string s) => _game.Layers["mini"].Set(42, 1 + 2 * n++, s);
+                if (dmg is { } d)
+                {
+                    write("ATTACKER");
+                    write($"  BODY:    {Math.Round(d.OffenseCalc.PhysicalAttack).ToString().PadLeft(3, '0'),3}");
+                    write($"  MIND:    {Math.Round(d.OffenseCalc.MentalAttack).ToString().PadLeft(3, '0'),3}");
+                    write($"  WPN:     {Math.Round(d.OffenseCalc.WeaponAttack).ToString().PadLeft(3, '0'),3}");
+                    writes("     (BODY + MIND) x WPN =");
+                    write($"  BASE:    {Math.Round(d.OffenseCalc.BaseAttack).ToString().PadLeft(3, '0'),3}");
+                    write($"  STAT:    {Math.Round(d.OffenseCalc.StatAlign).ToString().PadLeft(3, '0'),3}");
+                    write($"  SCALE:   {Math.Round(d.OffenseCalc.StatusAlign).ToString().PadLeft(3, '0'),3}");
+                    writes("     BASE + STAT + SCALE =");
+                    var str = d.OffenseCalc.BaseAttack + d.OffenseCalc.StatAlign + d.OffenseCalc.StatusAlign;
+                    write($"  SCALE:   {Math.Round(str).ToString().PadLeft(3, '0'),3}");
+                    var wndPercent = 1.5f - d.Attacker.AP.Count(EStatus.Wound) / (float)d.Attacker.AP.Width;
+                    write($"  WND%:    {wndPercent.ToString().PadLeft(3, '0'),3}");
+                    writes("     STR x WND% =");
+                    write($"OFFENSE: {(str * wndPercent).ToString().PadLeft(3, '0'),3}");
+                    writes("     AFTER GEAR MODIFIERS");
+                    write($"GEAR OFF:  {d.Offense.ToString().PadLeft(3, '0'),3}");
+                }
+            }
+
+            {
+                _game.Layers["ascii"].SetRect(new Vector2(38, 5), new Vector2(53, 23), ' ');
+                _game.Layers["ascii"].SetBox(new Vector2(37, 4), new Vector2(54, 24), Sides.Ascii, Corners.Ascii);
+
+                int n = 5;
+                var write = (string s) => _game.Layers["ascii"].Set(39, n++, s);
+                var writes = (string s) => _game.Layers["mini"].Set(78, 1 + 2 * n++, s);
+                if (dmg is { } d)
+                {
+                    write("DEFENDER");
+                    write($"  BODY:    {Math.Round(d.DefenseCalc.PhysicalDefense).ToString().PadLeft(3, '0'),3}");
+                    write($"  MIND:    {Math.Round(d.DefenseCalc.MentalDefense).ToString().PadLeft(3, '0'),3}");
+                    write($"  WPN:     {Math.Round(d.DefenseCalc.WeaponDefense).ToString().PadLeft(3, '0'),3}");
+                    writes("     (BODY + MIND) x WPN =");
+                    write($"  BASE:    {Math.Round(d.DefenseCalc.BaseDefense).ToString().PadLeft(3, '0'),3}");
+                    write($"  STAT:    {Math.Round(d.DefenseCalc.StatAlign).ToString().PadLeft(3, '0'),3}");
+                    write($"  SCALE:   {Math.Round(d.DefenseCalc.StatusAlign).ToString().PadLeft(3, '0'),3}");
+                    writes("     BASE + STAT + SCALE =");
+                    var str = d.DefenseCalc.BaseDefense + d.DefenseCalc.StatAlign + d.DefenseCalc.StatusAlign;
+                    write($"  SCALE:   {Math.Round(str).ToString().PadLeft(3, '0'),3}");
+                    var wndPercent = 1.2f - d.Defender.AP.Count(EStatus.Wound) / (float)d.Defender.AP.Width;
+                    write($"  WND%:    {wndPercent.ToString().PadLeft(3, '0'),3}");
+                    writes("     STR x WND% =");
+                    write($"DEFENSE: {(str * wndPercent).ToString().PadLeft(3, '0'),3}");
+                    writes("     AFTER GEAR MODIFIERS");
+                    write($"GEAR DEF:  {d.Defense.ToString().PadLeft(3, '0'),3}");
+                    write($"FLAT DMG:  {d.Flat.ToString().PadLeft(3, '0'),3}");
+                }
+            }
+        }
     }
 
     private bool showMap = false;
@@ -1223,6 +1287,9 @@ public class CombatMapScreen : IScreen
                 Draw(defender.X, defender.Y, " ");
                 yield return new WaitForSeconds(0.02f);
             }
+
+            var ap = _game.Party.Characters[0].AP;
+            ap.Add(EStatus.Sin, e.Level);
 
             Structure.Enemies.Remove(e);
             UpdateCombatView();
