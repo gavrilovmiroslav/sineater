@@ -19,8 +19,8 @@ public enum EWeightClass
     Tiny = 0,
     Light = 1,
     Medium = 2,
-    Heavy = 4,
-    Large = 6
+    Heavy = 3,
+    Large = 4
 }
 
 public static class WeightClassExtensions
@@ -74,10 +74,12 @@ public enum EElement
     None = 0,
     Physical = 1,
     Mental = 2,
+    Both = 3,
 }
 
 [JsonObject(MemberSerialization.OptIn)]
 public class Weapon(string name, EWeightClass weight,
+    int attack, int defense,
     int quality, (int, int) inventoryPicture,
     EElement element = EElement.None,
     // STAT SCALING
@@ -122,7 +124,13 @@ public class Weapon(string name, EWeightClass weight,
     [JsonProperty]
     public int Quality { get; set; } = quality;
     [JsonProperty]
+    public int Attack { get; set; } = attack;
+    [JsonProperty]
+    public int Defense { get; set; } = defense;
+    [JsonProperty]
     public EElement Element { get; set; } = element;
+    [JsonProperty]
+    public List<ITrait> Traits { get; set; } = [];
 
     [JsonProperty]
     public (int, int) Picture { get; set; } = inventoryPicture;
@@ -185,6 +193,8 @@ public class Weapon(string name, EWeightClass weight,
     
     public Glyph Glyph => Glyph.Bw(14, 67);
 
+    public float Base => Level * (int)Weight;
+
     public IEnumerable ApplyItemUsed(ICharacter character)
     {
         yield break;
@@ -244,7 +254,7 @@ public class Weapon(string name, EWeightClass weight,
     public static Weapon Dummy(string name)
     {
         Console.WriteLine($"DUMMY REQUIRED FOR WEAPON {name}");
-        return new Weapon($"!{name}", EWeightClass.Medium, 0, (0, 0));
+        return new Weapon($"!{name}", EWeightClass.Medium, 1, 1, 0, (0, 0));
     }
 }
 
