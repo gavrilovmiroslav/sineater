@@ -30,6 +30,7 @@ public class SineaterGame : Game
     private SpriteBatch _spriteBatch;
 
     private Texture2D _mrmo;
+    private Texture2D _mapmotext;
     private Texture2D _ibm;
     private Texture2D _largeNums;
     private Texture2D _portraits;
@@ -99,6 +100,7 @@ public class SineaterGame : Game
         ItemLibrary.LoadItems(Content);
         
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
+        _mapmotext = Content.Load<Texture2D>("mapmotext");
         _ibm = Content.Load<Texture2D>("Codepage");
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
@@ -152,9 +154,20 @@ public class SineaterGame : Game
             mrmoLayer.SetFlip(u, v - 4, SpriteEffects.FlipHorizontally);
             mrmoLayer.SetFlip(u, v + 5, SpriteEffects.FlipHorizontally);
         }
-        
         Layers.Add("mrmo", mrmoLayer);
-
+        
+        var mapLayer = new TextLayer(_mapmotext, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
+        mapLayer.Map(" ", 0, 0);
+        mapLayer.Map("!\"#$%&'()*+,-./", 1, 54);
+        mapLayer.Map("@abcdefghijklmno", 0, 55);
+        mapLayer.Map("ABCDEFGHIJKLMNO", 1, 55);
+        mapLayer.Map("`{|}~", 0, 56);
+        mapLayer.Map(":;<=>?", 10, 59);
+        mapLayer.Map("0123456789", 6, 57);
+        mapLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
+        mapLayer.Map("PQRSTUVWXYZ", 0, 60);
+        Layers.Add("map", mapLayer);
+        
         var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(2, 3), new Vector2(0, 0));
         ibmMiniLayer.SetOffset(1, 0);
         ibmMiniLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
@@ -180,7 +193,7 @@ public class SineaterGame : Game
         ActionPoints = new AP(40, ibmLayer);
         
         Party = new Party(ActionPoints);
-        ScreenStack.Push(new ExplorationMapScreen(this));
+        ScreenStack.Push(new WorldMapScreen(this));
 
         SinMod.System.LoadBank(@"audio/Desktop/Master");
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
@@ -231,7 +244,7 @@ public class SineaterGame : Game
         if (InputM.IsActive(EInputAction.ExplorationMapScreen))
         {
             ScreenStack.Pop();
-            ScreenStack.Push(new ExplorationMapScreen(this));
+            ScreenStack.Push(new WorldMapScreen(this));
         }
 
         if (ScreenStack?.Peek() is { } screen)
@@ -291,7 +304,7 @@ public class SineaterGame : Game
         base.Draw(gameTime);
     }
 
-    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
+    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
 
     private void SetupCrt(int w, int h)
     {
