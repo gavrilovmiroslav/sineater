@@ -70,46 +70,41 @@ public class ExplorationMapScreen : IScreen
         }
         else
         {
-            if (KB.HasBeenPressed(Keys.C))
+            if (InputM.IsActive(EInputAction.ChacterSheetEnter))
             {
                 _game.ScreenStack.Push(new CharacterSheetScreen(_game));
             }
-            else if (KB.HasBeenPressed(Keys.I))
+            else if (InputM.IsActive(EInputAction.OpenInventory))
             {
                 _game.ScreenStack.Push(new InventoryScreen(_game));
             }
-            else if (KB.HasBeenPressed(Keys.O))
+            else if (InputM.IsActive(EInputAction.OpenInventoryOutfit))
             {
                 _game.ScreenStack.Push(new InventoryScreen(_game, true));
             };
             
-            if (KB.HasBeenPressed(Keys.F10))
+            if (InputM.IsActive(EInputAction.ExplorationDebug))
             {
                 _debug = !_debug;
             }
 
-            if (KB.HasBeenPressed(Keys.Tab))
-            {
-                _stats = !_stats;
-            }
-
             var (x, y) = _position;
-            if (KB.HasBeenPressed(Keys.Left))
+            if (InputM.IsActive(EInputAction.MoveLeft))
             {
                 _position = (x - 1, y);
             }
 
-            if (KB.HasBeenPressed(Keys.Right))
+            if (InputM.IsActive(EInputAction.MoveRight))
             {
                 _position = (x + 1, y);
             }
 
-            if (KB.HasBeenPressed(Keys.Up))
+            if (InputM.IsActive(EInputAction.MoveUp))
             {
                 _position = (x, y - 1);
             }
 
-            if (KB.HasBeenPressed(Keys.Down))
+            if (InputM.IsActive(EInputAction.MoveDown))
             {
                 _position = (x, y + 1);
             }

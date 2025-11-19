@@ -131,13 +131,13 @@ public class WaitForSeconds(float seconds) : IEnumerable
     }
 }
 
-public class WaitForKey(Keys key) : IEnumerable
+public class WaitForInput(EInputAction action) : IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
         while (true)
         {
-            if (KB.HasBeenPressed(key))
+            if (InputM.IsActive(action))
             {
                 break;
             }
@@ -245,7 +245,7 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
         game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<  OK >");
-        yield return new WaitForKey(Keys.Space);
+        yield return new WaitForInput(EInputAction.Confirm);
         game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "< ... >");
     }
 }
@@ -284,6 +284,6 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
         game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<OK>");
         game.Layers["portrait"].SetFlip(u, v, flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
         game.Layers["portrait"].Set(1, 2, Glyph.Bw(u, v));
-        yield return new WaitForKey(Keys.Space);
+        yield return new WaitForInput(EInputAction.Confirm);
     }
 }

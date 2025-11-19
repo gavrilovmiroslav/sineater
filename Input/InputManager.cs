@@ -3,158 +3,181 @@ using Newtonsoft.Json;
 using SINEATER.Serialization;
 using System.Collections.Generic;
 
-namespace SINEATER.Input;
-
-internal class InputManager
+namespace SINEATER.Input
 {
-    public static InputManager Instance = new();
 
-    private enum EInputSource
+
+    public static class InputM
     {
-        Keyboard = 0,
-        GamePad = 1,
+        public static bool IsActive(EInputAction action) => InputManager.Instance.IsActionActive(action);
     }
 
-    private List<InputContext> _loadedContexts = new();
-
-    private Stack<InputContext> InputStacks = new();
-
-    private KeyboardState currentKeyState;
-    private KeyboardState previousKeyState;
-    private GamePadState currentGamepadState;
-    private GamePadState previousGamepadState;
-
-    // default input source to Keyboard
-    private EInputSource inputSource = EInputSource.Keyboard;
-
-    public void Initialize(string json)
+    internal class InputManager
     {
-        JsonSerializerSettings settings = new JsonSerializerSettings
+        public static InputManager Instance = new();
+
+        private enum EInputSource
         {
-            TypeNameHandling = TypeNameHandling.Objects,
-            SerializationBinder = new InputDefinitionsSerializationBinder()
-        };
-
-        _loadedContexts = DataSerializer.Load<List<InputContext>>(json, settings);
-    }
-
-    public void Save()
-    {
-        JsonSerializerSettings settings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.Objects,
-            SerializationBinder = new InputDefinitionsSerializationBinder()
-        };
-
-        DataSerializer.Serialize(_loadedContexts, settings);
-    }
-
-    public void Update(int gameTime)
-    {
-        if (InputStacks.Count == 0)
-            return;
-
-        var newKeyboardState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
-        var newGamePadState = Microsoft.Xna.Framework.Input.GamePad.GetState(0);
-
-        // Update input source based on state (thanks Microsoft :) )
-        if (inputSource != EInputSource.GamePad && newGamePadState != currentGamepadState)
-        {
-            inputSource = EInputSource.GamePad;
-        }
-        else
-        {
-            inputSource = EInputSource.Keyboard;
+            Keyboard = 0,
+            GamePad = 1,
         }
 
-        foreach (var input in InputStacks.Peek().Inputs)
+        private List<InputContext> _loadedContexts = new();
+
+        private Stack<InputContext> InputStacks = new();
+
+        private KeyboardState currentKeyState;
+        private GamePadState currentGamepadState;
+
+        // default input source to Keyboard
+        private EInputSource _inputSource = EInputSource.Keyboard;
+
+        public void Initialize(string json)
         {
-            if (input.IsHold)
+            JsonSerializerSettings settings = new JsonSerializerSettings
             {
-                input.UpdateHold(gameTime);
+                TypeNameHandling = TypeNameHandling.Objects,
+                SerializationBinder = new InputDefinitionsSerializationBinder()
+            };
+
+            InitDefault();
+
+            //_loadedContexts = DataSerializer.Load<List<InputContext>>(json, settings);
+        }
+
+        public void Save()
+        {
+            JsonSerializerSettings settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+                SerializationBinder = new InputDefinitionsSerializationBinder()
+            };
+
+            DataSerializer.Serialize(_loadedContexts, settings);
+        }
+
+        public void Update(int gameTime)
+        {
+            if (InputStacks.Count == 0)
+                return;
+
+            var newKeyboardState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+            var newGamePadState = Microsoft.Xna.Framework.Input.GamePad.GetState(0);
+
+            // Update input source based on state (thanks Microsoft :) )
+            if (_inputSource != EInputSource.GamePad && newGamePadState != currentGamepadState)
+            {
+                _inputSource = EInputSource.GamePad;
             }
-        }
-
-        previousKeyState = currentKeyState;
-        previousGamepadState = currentGamepadState;
-        currentKeyState = newKeyboardState;
-        currentGamepadState = newGamePadState;
-    }
-
-    public bool IsActionActive(EInputActions action)
-    {
-        var context = InputStacks.Peek();
-        if (context != null)
-        {
-            var definition = context.Inputs.Find(x => x.InputAction == action);
-            if (definition != null)
+            else if (_inputSource != EInputSource.Keyboard && newKeyboardState != currentKeyState)
             {
-                if (inputSource == EInputSource.Keyboard)
+                _inputSource = EInputSource.Keyboard;
+            }
+
+            foreach (var input in InputStacks.Peek().Inputs)
+            {
+                if (_inputSource == EInputSource.Keyboard)
                 {
-                    return definition != null ? definition.IsActive(previousKeyState, currentKeyState) : false;
+                    input.Update(currentKeyState, newKeyboardState, gameTime);
                 }
                 else
                 {
-                    return definition != null ? definition.IsActive(previousGamepadState, currentGamepadState) : false;
+                    input.Update(currentGamepadState, newGamePadState, gameTime);
                 }
             }
+            currentKeyState = newKeyboardState;
+            currentGamepadState = newGamePadState;
         }
-        return false;
-    }
 
-    public void PushContext(string contextName)
-    {
-        var context = _loadedContexts.Find(x => x.Name == contextName);
-        if (context != null)
+        public bool IsActionActive(EInputAction action)
         {
-            InputStacks.Push(context);
-        }
-    }
-
-    public void PopContext()
-    {
-        InputStacks.Pop();
-    }
-
-    private void InitTest()
-    {
-        _loadedContexts = new();
-        _loadedContexts.Add(new InputContext
-        {
-            Name = "Move",
-            Inputs = new List<IInputDefinition>
+            var context = InputStacks.Peek();
+            if (context != null)
             {
-                new PressInputDefinition
+                var definition = context.Inputs.Find(x => x.InputActionType == action);
+                if (definition != null)
                 {
-                InputAction = EInputActions.Move,
-                Keyboard = Keys.E,
-                Gamepad = Buttons.B
-                },
-                new HoldInputDefinition
-                {
-                    InputAction = EInputActions.Attack,
-                    Keyboard = Keys.Space,
-                    Gamepad = Buttons.B
-                },
-                new ComboInputDefinition
-                {
-                    InputAction = EInputActions.Dancee,
-                    inputDefinitions = new List<IInputDefinition>
-                    {
-                        new PressInputDefinition
-                        {
-                            Keyboard = Keys.E,
-                            Gamepad = Buttons.B
-                        },
-                        new HoldInputDefinition
-                        {
-                            Keyboard = Keys.Space,
-                            Gamepad = Buttons.RightShoulder
-                        }
-                    }
+                    return definition.IsActive;
                 }
+            }
+            return false;
         }
+
+        public void PushContext(string contextName)
+        {
+            var context = _loadedContexts.Find(x => x.Name == contextName);
+            if (context != null)
+            {
+                InputStacks.Push(context);
+            }
         }
-        );
+
+        public void PopContext()
+        {
+            InputStacks.Pop();
+        }
+
+        private void InitDefault()
+        {
+            _loadedContexts = new();
+            _loadedContexts.Add(new InputContext
+            {
+                Name = "Default",
+                Inputs = new List<InputAction>
+            {
+                MakeAction(EInputAction.Exit, Keys.Escape, Buttons.Back, true, 200),
+
+                MakeAction(EInputAction.MoveUp, Keys.Up, Buttons.DPadUp),
+                MakeAction(EInputAction.MoveDown, Keys.Down, Buttons.DPadDown),
+                MakeAction(EInputAction.MoveLeft, Keys.Left, Buttons.DPadLeft),
+                MakeAction(EInputAction.MoveRight, Keys.Right, Buttons.DPadRight),
+                MakeAction(EInputAction.Confirm, Keys.Space, Buttons.A),
+
+                MakeAction(EInputAction.SubmenuUp, Keys.Up, Buttons.DPadUp),
+                MakeAction(EInputAction.SubmenuDown, Keys.Down, Buttons.DPadDown),
+                MakeAction(EInputAction.SubmenuConfirm, Keys.Space, Buttons.A),
+
+                MakeAction(EInputAction.VolumeDown, Keys.PageDown, Buttons.None),
+                MakeAction(EInputAction.VolumeUp, Keys.PageUp, Buttons.None),
+                MakeAction(EInputAction.Mute, Keys.End, Buttons.None),
+
+                MakeAction(EInputAction.LoadItems, Keys.F5, Buttons.None),
+                MakeAction(EInputAction.ExplorationMapScreen, Keys.F1, Buttons.None),
+                MakeAction(EInputAction.ExplorationDebug, Keys.F10, Buttons.None),
+
+                MakeAction(EInputAction.ChacterSheetEnter, Keys.C, Buttons.Y),
+                MakeAction(EInputAction.ChacterSheetCycle, Keys.Space, Buttons.A),
+                MakeAction(EInputAction.ChacterSheetExit, Keys.Escape, Buttons.B),
+
+                MakeAction(EInputAction.OpenInventory, Keys.I, Buttons.None),
+                MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
+
+                MakeAction(EInputAction.MoveMapLeft, Keys.U, Buttons.None),
+                MakeAction(EInputAction.MoveMapRight, Keys.I, Buttons.None),
+                MakeAction(EInputAction.Regenerate, Keys.F1, Buttons.None),
+                MakeAction(EInputAction.ShowMap, Keys.F10, Buttons.None),
+
+                MakeAction(EInputAction.ExitInspect, Keys.F10, Buttons.B),
+                MakeAction(EInputAction.Ability, Keys.A, Buttons.X),
+                MakeAction(EInputAction.ActionsMenu, Keys.Space, Buttons.A),
+                MakeAction(EInputAction.EndTurn, Keys.Enter, Buttons.B),
+                MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
+                MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
+            }
+            }
+            );
+        }
+
+        private InputAction MakeAction(EInputAction action, Keys key, Buttons button, bool isHold = false, int HoldTime = 0)
+        {
+            return new InputAction
+            {
+                InputActionType = action,
+                Gamepad = button,
+                Keyboard = key,
+                IsHold = isHold,
+                HoldTime = HoldTime
+            };
+        }
     }
 }

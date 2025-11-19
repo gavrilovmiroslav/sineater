@@ -1,12 +1,48 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿namespace SINEATER.Input;
 
-namespace SINEATER.Input;
-
-internal enum EInputActions
+public enum EInputAction
 {
     None,
-    Move,
-    Attack,
-    Dancee
+    Exit,
+    MoveLeft,
+    MoveRight,
+    MoveUp,
+    MoveDown,
+
+    Confirm,
+
+    SubmenuUp,
+    SubmenuDown,
+    SubmenuConfirm,
+
+    #region Sound
+    VolumeDown,
+    VolumeUp,
+    Mute,
+    #endregion
+
+    #region Debug
+    LoadItems,
+    ExplorationMapScreen,
+    ExplorationDebug,
+    #endregion
+
+    ChacterSheetEnter,
+    ChacterSheetCycle,
+    ChacterSheetExit,
+
+    OpenInventory,
+    OpenInventoryOutfit,
+
+    MoveMapLeft,
+    MoveMapRight,
+    Regenerate,
+    ShowMap,
+
+    ExitInspect,
+    Ability,
+    ActionsMenu,
+    EndTurn,
+    SelectNextCharacter,
+    SelectPreviousCharacter,
 }

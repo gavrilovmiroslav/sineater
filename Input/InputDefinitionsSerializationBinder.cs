@@ -10,16 +10,8 @@ namespace SINEATER.Input
         private Dictionary<Type, string> _typesMapping = new Dictionary<Type, string>
         {
             {
-                typeof(PressInputDefinition),
-                "Press"
-            },
-            {
-                typeof(HoldInputDefinition),
-                "Hold"
-            },
-            {
-                typeof(ComboInputDefinition),
-                "Combo"
+                typeof(InputAction),
+                "Input"
             },
             {
                 typeof(InputContext),

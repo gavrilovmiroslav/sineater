@@ -183,14 +183,14 @@ public class CombatMapScreen : IScreen
     
     public void Update(GameTime gameTime)
     {
-        if (KB.HasBeenPressed(Keys.U))
+        if (InputM.IsActive(EInputAction.MoveMapLeft))
         {
             var dof = DrawOffset;
             dof.Item1--;
             DrawOffset = dof;
         }
         
-        if (KB.HasBeenPressed(Keys.I))
+        if (InputM.IsActive(EInputAction.MoveMapRight))
         {
             var dof = DrawOffset;
             dof.Item1++;
@@ -203,7 +203,7 @@ public class CombatMapScreen : IScreen
             return;
         }
 
-        if (Keyboard.GetState().IsKeyDown(Keys.F1))
+        if (InputM.IsActive(EInputAction.Regenerate))
         {
             Regenerate();
         }
@@ -363,6 +363,19 @@ public class CombatMapScreen : IScreen
         for (int i = 1; i <= 4; i++)
         {
             PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
+            if (!_game.Party.Characters[PlayerSelectedIndex].IsDone)
+            {
+                ShouldUpdateView = true;
+                break;
+            }
+        }
+    }
+
+    private void SelectPreviousAvailablePartyMember()
+    {
+        for (int i = 1; i <= 4; i++)
+        {
+            PlayerSelectedIndex = (PlayerSelectedIndex + 3) % 4;
             if (!_game.Party.Characters[PlayerSelectedIndex].IsDone)
             {
                 ShouldUpdateView = true;
@@ -880,7 +893,7 @@ public class CombatMapScreen : IScreen
     private bool showMap = false;
     private void CheckInputs()
     {
-        if (KB.HasBeenPressed(Keys.F12))
+        if (InputM.IsActive(EInputAction.ShowMap))
         {
             showMap = !showMap;
         }
@@ -898,7 +911,7 @@ public class CombatMapScreen : IScreen
     {
         if (_inspectMode)
         {
-            if (KB.HasBeenPressed(Keys.Escape))
+            if (InputM.IsActive(EInputAction.ExitInspect))
             {
                 _inspectMode = false;
             }
@@ -906,7 +919,7 @@ public class CombatMapScreen : IScreen
         }
         
         var current = _game.Party.Characters[PlayerSelectedIndex];
-        if (KB.HasBeenPressed(Keys.A))
+        if (InputM.IsActive(EInputAction.Ability))
         {
             var ability = current.Ability;
             if (ability != null)
@@ -929,14 +942,14 @@ public class CombatMapScreen : IScreen
             }
         }
         
-        if (KB.HasBeenPressed(Keys.Enter))
+        if (InputM.IsActive(EInputAction.EndTurn))
         {
             CoroutineHandler.Run(Coroutine_EndTurn());
         }
         
         if (_submenu.Count > 0)
         {
-            if (KB.HasBeenPressed(Keys.Up))
+            if (InputM.IsActive(EInputAction.SubmenuUp))
             {
                 if (_submenuSelection == 0)
                 {
@@ -947,7 +960,7 @@ public class CombatMapScreen : IScreen
                     _submenuSelection--;
                 }
             }
-            else if (KB.HasBeenPressed(Keys.Down))
+            else if (InputM.IsActive(EInputAction.SubmenuDown))
             {
                 if (_submenuSelection == _submenu.Count - 1)
                 {
@@ -958,7 +971,7 @@ public class CombatMapScreen : IScreen
                     _submenuSelection++;
                 }
             }
-            else if (KB.HasBeenPressed(Keys.Space))
+            else if (InputM.IsActive(EInputAction.SubmenuConfirm))
             {
                 var opt = _submenu[_submenuSelection];
                 _submenu.Clear();
@@ -1053,12 +1066,16 @@ public class CombatMapScreen : IScreen
         // MOVE
         else if (PlayerSelectedIndex > -1)
         {
-            if (KB.HasBeenPressed(Keys.Tab))
+            if (InputM.IsActive(EInputAction.SelectNextCharacter))
             {
                 SelectNextAvailablePartyMember();
             }
+            else if(InputM.IsActive(EInputAction.SelectPreviousCharacter))
+            {
+                SelectPreviousAvailablePartyMember();
+            }
 
-            if (KB.HasBeenPressed(Keys.Space))
+            if (InputM.IsActive(EInputAction.ActionsMenu))
             {
                 _submenuDelta = (0, 0);
                 StartSubmenu(["CYCLE", "FORTIFY", "INSPECT"]);
@@ -1066,10 +1083,10 @@ public class CombatMapScreen : IScreen
             
             if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
             {
-                var up = KB.HasBeenPressed(Keys.Up);
-                var down = KB.HasBeenPressed(Keys.Down);
-                var left = KB.HasBeenPressed(Keys.Left);
-                var right = KB.HasBeenPressed(Keys.Right);
+                var up = InputM.IsActive(EInputAction.MoveUp);
+                var down = InputM.IsActive(EInputAction.MoveDown);
+                var left = InputM.IsActive(EInputAction.MoveLeft);
+                var right = InputM.IsActive(EInputAction.MoveRight);
 
                 if (up || down || left || right)
                 {
