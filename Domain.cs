@@ -927,7 +927,7 @@ public class DomainOfFire(ICharacter character, int x, int y, int radius) : Doma
         //     chars[(ch.X, ch.Y)] = ch; 
         // }
         
-        var distances = new DistanceMap(map, false, x, y, (m, mx, my) => m.IsWalkable(mx, my));
+        var distances = new DistanceMap(level.Structure, false, x, y, (m, mx, my) => m.Map.IsWalkable(mx, my));
         for (var i = 1; i < distances.MaxDistance(); i++)
         {
             level.DrawCombat();

@@ -33,11 +33,12 @@ public static class Bestiary
             HP = 3,
             Tint = Color.Red,
             Stats = new Stats(2, 2, 1, 2),
-            AP = new AP(3, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 1,
         };
 
         bat.LeftWeapon = ItemLibrary.GetWeapon("Fang");
         bat.RightWeapon = ItemLibrary.GetWeapon("Fang");
+        bat.Init();
         return bat;
     }
 
@@ -56,11 +57,12 @@ public static class Bestiary
             HP = 6,
             Tint = Color.LightGreen,
             Stats = new Stats(2, 2, 2, 2),
-            AP = new AP(6, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 2,
         };
         
-        gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
+        gob.LeftWeapon = ItemLibrary.GetWeapon("Claw");
         gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
+        gob.Init();
         return gob;
     }
     
@@ -79,11 +81,12 @@ public static class Bestiary
             HP = 10,
             Tint = Color.Red,
             Stats = new Stats(4, 2, 2, 4),
-            AP = new AP(10, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 3,
         };
 
-        gob.LeftWeapon = ItemLibrary.GetWeapon("Thorn Whip");
-        gob.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
+        gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
+        gob.RightWeapon = ItemLibrary.GetWeapon("Wood Shield");
+        gob.Init();
         return gob;
     }
     
@@ -102,11 +105,12 @@ public static class Bestiary
             HP = 5,
             Tint = Color.Red,
             Stats = new Stats(3, 4, 1, 4),
-            AP = new AP(5, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 4,
         };
-
+        
         skel.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
         skel.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
+        skel.Init();
         return skel;
     }
     
@@ -125,11 +129,12 @@ public static class Bestiary
             HP = 7,
             Tint = Color.Red,
             Stats = new Stats(3, 5, 2, 3),
-            AP = new AP(7, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 5,
         };
 
         skul.LeftWeapon = ItemLibrary.GetWeapon("Claymore");
         skul.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
+        skul.Init();
         return skul;
     }
     
@@ -148,11 +153,12 @@ public static class Bestiary
             HP = 10,
             Tint = Color.Green,
             Stats = new Stats(4, 3, 6, 2),
-            AP = new AP(10, SineaterGame.Instance.Layers["ascii"])
+            Stamina = 6,
         };
 
         snek.LeftWeapon = ItemLibrary.GetWeapon("Fang");
         snek.RightWeapon = ItemLibrary.GetWeapon("Fang");
+        snek.Init();
         return snek;
     }
 }

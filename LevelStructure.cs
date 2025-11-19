@@ -58,7 +58,7 @@ public class TiledStructure
     
     public int Count => RoomsByTiles.Count;
 
-    public void Initialize(IMap map, Func<IMap<Cell>, int, int, bool> pred)
+    public void Initialize(LevelStructure map, Func<LevelStructure, int, int, bool> pred)
     {
         for (int i = 0; i < Count; i++)
         {
@@ -68,7 +68,7 @@ public class TiledStructure
         }
     }
     
-    public void Initialize(IMap map, Func<IMap<Cell>, int, int, bool> pred, IEnumerable<(int, int)> sources)
+    public void Initialize(LevelStructure map, Func<LevelStructure, int, int, bool> pred, IEnumerable<(int, int)> sources)
     {
         var xys = sources.ToList();
         for (int i = 0; i < Count; i++)
@@ -116,14 +116,14 @@ public record struct LevelStructure
 
         Walkables = new TiledStructure();
         
-        UnionFind.Perform(walkable, map, Predicate.Walkable, ref Walkables);
-        Walkables.Initialize(map, Predicate.Walkable);
+        UnionFind.Perform(walkable, this, Predicate.Walkable, ref Walkables);
+        Walkables.Initialize(this, Predicate.Walkable);
 
         Obstacles = new TiledStructure();
-        UnionFind.Perform(obstacle, map, Predicate.Obstacle, ref Obstacles);
-        Obstacles.Initialize(map, Predicate.Obstacle, Walkables.TilesInRooms.Keys);
+        UnionFind.Perform(obstacle, this, Predicate.Obstacle, ref Obstacles);
+        Obstacles.Initialize(this, Predicate.Obstacle, Walkables.TilesInRooms.Keys);
         
-        Walkables.Initialize(map, Predicate.Walkable, Obstacles.TilesInRooms.Keys);
+        Walkables.Initialize(this, Predicate.Walkable, Obstacles.TilesInRooms.Keys);
         var largest = 0;
         if (Walkables.Count > 1)
         {
@@ -149,13 +149,14 @@ public record struct LevelStructure
                 var max = dm.MaxDistance();
                 var fov = new FieldOfView<Cell>(Map);
 
-                var pred = (IMap<Cell> mp, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
-                var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(map, pred, e.Item1, e.Item2).ToList().Count).ToList();
+                var pred = (LevelStructure s, int mx, int my) => dm.Get(mx, my) >= 2 && fov.IsInFov(mx, my);
+                var s = this;
+                var heap = dm.GetAllAt(max).OrderBy(e => dm.Flood(s, pred, e.Item1, e.Item2).ToList().Count).ToList();
                 if (heap.Count == 0) continue;
                 var start = heap.First();
 
                 Goals.Add(start);
-                Walkables.Initialize(map, Predicate.Walkable, [start]);
+                Walkables.Initialize(this, Predicate.Walkable, [start]);
 
                 Heat = new HeatMap(Map);
 
@@ -166,9 +167,9 @@ public record struct LevelStructure
                 Entry = far[Rnd.Instance.Next(0, far.Count)];
                 Heat.PaintPaths(Entry, Goals[0], Color.Green);
 
-                Walkables.Initialize(map, Predicate.Walkable, [Entry]);
+                Walkables.Initialize(this, Predicate.Walkable, [Entry]);
                 Heat.PaintPaths(Entry, Goals[0], Color.Blue);
-                Walkables.Initialize(map, Predicate.Walkable, [Entry, ..Goals, ..Heat.GetAll()]);
+                Walkables.Initialize(this, Predicate.Walkable, [Entry, ..Goals, ..Heat.GetAll()]);
 
                 var n = 0;
 
@@ -180,12 +181,12 @@ public record struct LevelStructure
                     Goals.Add((x, y));
                     Heat.PaintPaths(Entry, (x, y), new Color(0.2f, 0.2f, 0.0f));
 
-                    Walkables.Initialize(map, Predicate.Walkable, [Entry, ..Goals]);
+                    Walkables.Initialize(this, Predicate.Walkable, [Entry, ..Goals]);
                     n++;
                     if (n > 5) break;
                 } while (true);
 
-                Walkables.Initialize(map, Predicate.Walkable, [Entry]);
+                Walkables.Initialize(this, Predicate.Walkable, [Entry]);
                 var entrySight = fov.ComputeFov(Entry.Item1, Entry.Item2, 6, false);
                 foreach (var (dx, dy) in Walkables.Distances[w].GetAllAt(2))
                 {
@@ -352,7 +353,7 @@ public record struct LevelStructure
 
                 for (var i = 0; i < 5; i++)
                 {
-                    Walkables.Initialize(map, Predicate.Walkable, [..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
+                    Walkables.Initialize(this, Predicate.Walkable, [..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
                     var en = new Vector2(Entry.Item1, Entry.Item2);
                     var t = Walkables.Distances[w].GetAllAt(1)
                         .OrderByDescending(t => Vector2.Distance(new Vector2(t.Item1, t.Item2), en)).ToList();
@@ -373,7 +374,7 @@ public record struct LevelStructure
 
                 for (var i = 0; i < 3; i++)
                 {
-                    Walkables.Initialize(map, Predicate.Walkable,
+                    Walkables.Initialize(this, Predicate.Walkable,
                         [Entry, ..Enemies.Select(e => (e.X, e.Y)), ..Treasure, Goals[0]]);
                     var en = new Vector2(Entry.Item1, Entry.Item2);
                     var t = Walkables.Distances[w].GetAllAt(Walkables.Distances[w].MaxDistance())
@@ -396,7 +397,7 @@ public record struct LevelStructure
             }
         }
         
-        Walkables.Initialize(map, Predicate.Walkable, [Entry]);
+        Walkables.Initialize(this, Predicate.Walkable, [Entry]);
         var wd = Walkables.Distances[largest];
         Starts.Add(Entry);
 

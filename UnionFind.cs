@@ -6,7 +6,7 @@ namespace SINEATER;
 
 public static class UnionFind
 {
-    public static void Perform(Queue<(int, int)> queue, IMap map, Func<IMap, int, int, bool> pred, ref TiledStructure structure)
+    public static void Perform(Queue<(int, int)> queue, LevelStructure s, Func<LevelStructure, int, int, bool> pred, ref TiledStructure structure)
     {
         int index = 0;
         while (queue.Count > 0)
@@ -30,9 +30,9 @@ public static class UnionFind
                     {
                         if (dx == 0 && dy == 0) continue;
                         var (nx, ny) = (ox + dx, oy + dy);
-                        if (nx >= 0 && nx < map.Width && ny >= 0 && ny < map.Height)
+                        if (nx >= 0 && nx < s.Map.Width && ny >= 0 && ny < s.Map.Height)
                         {
-                            if (!structure.Contains((nx, ny)) && pred.Invoke(map, nx, ny))
+                            if (!structure.Contains((nx, ny)) && pred.Invoke(s, nx, ny))
                             {
                                 structure.Add((nx, ny), index);
                                 walk.Enqueue((nx, ny));
