@@ -72,10 +72,11 @@ public class SineaterGame : Game
         Barks.Load(Content);
     }
 
-
     protected override void Initialize()
     {
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
+        InputManager.Instance.Initialize("");
+        InputManager.Instance.PushContext("Default");
         base.Initialize();
     }
 
@@ -207,32 +208,35 @@ public class SineaterGame : Game
             _nextHour = (_nextHour + 1) % 24;
             _currentMinutes = 0;
         }
-        if (KB.HasBeenPressed(Keys.F5))
+
+        InputManager.Instance.Update(DeltaTime);
+
+        if (InputM.IsActive(EInputAction.LoadItems))
         {
             ItemLibrary.LoadItems(Content);
         }
         
-        if (KB.HasBeenPressed(Keys.F10))
+        if (InputM.IsActive(EInputAction.Exit))
         {
             Exit();
         }
 
-        if (KB.HasBeenPressed(Keys.PageUp))
+        if (InputM.IsActive(EInputAction.VolumeUp))
         {
             fmodInstanceMusic.ModVolume(0.1f, true);
         }
         
-        if (KB.HasBeenPressed(Keys.PageDown))
+        if (InputM.IsActive(EInputAction.VolumeDown))
         {
             fmodInstanceMusic.ModVolume(-0.1f, true);
         }
 
-        if (KB.HasBeenPressed(Keys.End))
+        if (InputM.IsActive(EInputAction.Mute))
         {
             fmodInstanceMusic.SetVolume(0, true);
         }
 
-        if (KB.HasBeenPressed(Keys.F1))
+        if (InputM.IsActive(EInputAction.ExplorationMapScreen))
         {
             ScreenStack.Pop();
             ScreenStack.Push(new WorldMapScreen(this));
@@ -252,7 +256,6 @@ public class SineaterGame : Game
         //_focus.Update();
 
         base.Update(gameTime);
-        KB.Update();
     }
 
     protected override void Draw(GameTime gameTime)
