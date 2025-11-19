@@ -153,7 +153,7 @@ public class WorldMapScreen : IScreen
             _game.Layers[layer].Clear();
         }
         
-        _game.Layers["mrmo"].SetRex(8, 2, _map);
+        _game.Layers["map"].SetRex(8, 2, _map, KB.IsPressed(Keys.LeftAlt) ? 0 : 1);
         
         _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
         

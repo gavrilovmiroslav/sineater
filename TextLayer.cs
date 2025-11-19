@@ -556,12 +556,18 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 if (layer[i, j].Background == SadRex.Color.Transparent) continue;
                 
                 var c = layer[i, j].Character;
-                if (c == 32) continue; 
                 var y = c / (int)mapSize.X;
                 var x = c % (int)mapSize.X;
                 var b = layer[i, j].Background;
                 var f = layer[i, j].Foreground;
-                Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
+                if (c == 32)
+                {
+                    Set(sx + i, sy + j, new Glyph(0, 0, b.ToXNA(), f.ToXNA()));
+                }
+                else
+                {
+                    Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
+                }
             }
         }
     }
