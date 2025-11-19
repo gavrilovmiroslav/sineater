@@ -43,7 +43,7 @@ public class CombatMapScreen : IScreen
     private ETerrainKind _kind;
     public LevelStructure Structure;
     private bool _rendered = false;
-    private bool _debugView = false;
+    private bool _detailedView = false;
     private int _time = 0;
     public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
@@ -551,7 +551,7 @@ public class CombatMapScreen : IScreen
                             // *0.5 = -0.5..0.5
                             // +0.5 = 0..1
                             g.Fg = Color.Lerp(g.Fg, Color.Black,
-                                (MathF.Sin((i % 2 == j % 2 ? Single.Pi : 0) + _time * 0.0001f) * 0.5f + 0.5f));
+                                (MathF.Sin((i % 2 == j % 2 ? Single.Pi : 0) + _time * 0.001f) * 0.5f + 0.5f));
                         }
                     }
                     g.Bg = bg;
@@ -823,7 +823,10 @@ public class CombatMapScreen : IScreen
         
         if (enemy is Enemy en)
         {
-            _game.Layers["mini"].Set(81, 15, $"Destiny", Color.White);
+            if (!_detailedView)
+            {
+                _game.Layers["mini"].Set(81, 15, $"Destiny", Color.White);
+            }
 
             if (_time < 800)
             {
@@ -871,73 +874,84 @@ public class CombatMapScreen : IScreen
         else
             _game.Layers["ascii"].Set(39, 20, "[EQUIPMENT]", Color.Gray);
 
-        _debugView = KB.IsPressed(Keys.LeftAlt);
-        if (!_debugView)
+        _detailedView = KB.IsPressed(Keys.LeftAlt);
+        if (!_detailedView)
         {
             _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
             _game.Layers["portrait2"].Set(4, 2, new Glyph(u, v, Color.Black, enemy.Tint));
+            _game.Layers["ascii"].Set(35, 23, "<ALT");
         }
-
-        if (_debugView)
+        else
         {
-            _game.Layers["ascii"].SetRect(new Vector2(20, 5), new Vector2(35, 23), ' ');
-            _game.Layers["ascii"].SetBox(new Vector2(19, 4), new Vector2(36, 24), Sides.Ascii, Corners.Ascii);
+            var x = 18;
+            var w = 17;
+            _game.Layers["ascii"].SetRect(new Vector2(x, 5), new Vector2(x + w, 23), ' ');
+            _game.Layers["ascii"].SetBox(new Vector2(x - 1, 4), new Vector2(x + w + 1, 24), Sides.Ascii, Corners.Ascii);
 
             {
                 int n = 5;
-                var write = (string s) => _game.Layers["ascii"].Set(21, n++, s);
-                var writes = (string s) => _game.Layers["mini"].Set(42, 1 + 2 * n++, s);
+                var write = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.LightGray);
+                var writeb = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.White);
+                var writes = (string s) => _game.Layers["mini"].Set((x + 1) * 2, 1 + 2 * n++, s);
                 if (dmg is { } d)
                 {
                     write("ATTACKER");
-                    write($"  BODY:    {Math.Round(d.OffenseCalc.PhysicalAttack).ToString().PadLeft(3, '0'),3}");
-                    write($"  MIND:    {Math.Round(d.OffenseCalc.MentalAttack).ToString().PadLeft(3, '0'),3}");
-                    write($"  WPN:     {Math.Round(d.OffenseCalc.WeaponAttack).ToString().PadLeft(3, '0'),3}");
-                    writes("     (BODY + MIND) x WPN =");
-                    write($"  BASE:    {Math.Round(d.OffenseCalc.BaseAttack).ToString().PadLeft(3, '0'),3}");
-                    write($"  STAT:    {Math.Round(d.OffenseCalc.StatAlign).ToString().PadLeft(3, '0'),3}");
-                    write($"  SCALE:   {Math.Round(d.OffenseCalc.StatusAlign).ToString().PadLeft(3, '0'),3}");
+                    write($"  BODY:   {Math.Round(d.OffenseCalc.PhysicalAttack), 6:0.0}");
+                    write($"  MIND:   {Math.Round(d.OffenseCalc.MentalAttack), 6:0.0}");
+                    write($"  ATTACK: {Math.Round(d.OffenseCalc.WeaponAttack), 6:0.0}");
+                    writes("     (BODY + MIND) x ATTACK =");
+                    write($"  BASE:   {Math.Round(d.OffenseCalc.BaseAttack), 6:0.0}");
+                    write($"  STAT:   {Math.Round(d.OffenseCalc.StatAlign), 6:0.0}");
+                    write($"  SCALE:  {Math.Round(d.OffenseCalc.StatusAlign), 6:0.0}");
                     writes("     BASE + STAT + SCALE =");
                     var str = d.OffenseCalc.BaseAttack + d.OffenseCalc.StatAlign + d.OffenseCalc.StatusAlign;
-                    write($"  SCALE:   {Math.Round(str).ToString().PadLeft(3, '0'),3}");
+                    write($"  SCALE:  {Math.Round(str), 6:0.0}");
                     var wndPercent = 1.5f - d.Attacker.AP.Count(EStatus.Wound) / (float)d.Attacker.AP.Width;
-                    write($"  WND%:    {wndPercent.ToString().PadLeft(3, '0'),3}");
+                    write($"  WND%:   {wndPercent, 6:0.0}");
                     writes("     STR x WND% =");
-                    write($"OFFENSE: {(str * wndPercent).ToString().PadLeft(3, '0'),3}");
-                    writes("     AFTER GEAR MODIFIERS");
-                    write($"GEAR OFF:  {d.Offense.ToString().PadLeft(3, '0'),3}");
+                    write($"OFFENSE:  {(str * wndPercent), 6:0.0}");
+                    writes("     + STRENGTH MODIFIERS");
+                    writeb($"TOTAL ATK:{d.Offense.ToString().PadLeft(3, '0'), 6}");
+                    writeb($"         -{d.Defense.ToString().PadLeft(3, '0'), 6} <----");
+                    writeb($"FLAT DMG: {d.Flat.ToString().PadLeft(3, '0'), 6}");
+                    writes("     + DAMAGE MODIFIERS");
+                    writeb($"TOTAL DMG:{d.Flat.ToString().PadLeft(3, '0'), 6}");
                 }
             }
 
-            {
-                _game.Layers["ascii"].SetRect(new Vector2(38, 5), new Vector2(53, 23), ' ');
-                _game.Layers["ascii"].SetBox(new Vector2(37, 4), new Vector2(54, 24), Sides.Ascii, Corners.Ascii);
+            x = x + w + 3;
+            _game.Layers["ascii"].SetRect(new Vector2(x, 5), new Vector2(x + w, 23), ' ');
+            _game.Layers["ascii"].SetBox(new Vector2(x - 1, 4), new Vector2(x + w + 1, 24), Sides.Ascii, Corners.Ascii);
 
+            {
                 int n = 5;
-                var write = (string s) => _game.Layers["ascii"].Set(39, n++, s);
-                var writes = (string s) => _game.Layers["mini"].Set(78, 1 + 2 * n++, s);
+                var write = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.LightGray);
+                var writeb = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.White);
+                var writes = (string s) => _game.Layers["mini"].Set((x + 1) * 2, 1 + 2 * n++, s);
+
                 if (dmg is { } d)
                 {
                     write("DEFENDER");
-                    write($"  BODY:    {Math.Round(d.DefenseCalc.PhysicalDefense).ToString().PadLeft(3, '0'),3}");
-                    write($"  MIND:    {Math.Round(d.DefenseCalc.MentalDefense).ToString().PadLeft(3, '0'),3}");
-                    write($"  WPN:     {Math.Round(d.DefenseCalc.WeaponDefense).ToString().PadLeft(3, '0'),3}");
-                    writes("     (BODY + MIND) x WPN =");
-                    write($"  BASE:    {Math.Round(d.DefenseCalc.BaseDefense).ToString().PadLeft(3, '0'),3}");
-                    write($"  STAT:    {Math.Round(d.DefenseCalc.StatAlign).ToString().PadLeft(3, '0'),3}");
-                    write($"  SCALE:   {Math.Round(d.DefenseCalc.StatusAlign).ToString().PadLeft(3, '0'),3}");
+                    write($"  BODY:   {Math.Round(d.DefenseCalc.PhysicalDefense), 6:0.0}");
+                    write($"  MIND:   {Math.Round(d.DefenseCalc.MentalDefense), 6:0.0}");
+                    write($"  GUARD:  {Math.Round(d.DefenseCalc.WeaponDefense), 6:0.0}");
+                    writes("     (BODY + MIND) x GUARD =");
+                    write($"  BASE:   {Math.Round(d.DefenseCalc.BaseDefense), 6:0.0}");
+                    write($"  STAT:   {Math.Round(d.DefenseCalc.StatAlign), 6:0.0}");
+                    write($"  SCALE:  {Math.Round(d.DefenseCalc.StatusAlign), 6:0.0}");
                     writes("     BASE + STAT + SCALE =");
                     var str = d.DefenseCalc.BaseDefense + d.DefenseCalc.StatAlign + d.DefenseCalc.StatusAlign;
-                    write($"  SCALE:   {Math.Round(str).ToString().PadLeft(3, '0'),3}");
+                    write($"  SCALE:  {Math.Round(str), 6:0.0}");
                     var wndPercent = 1.2f - d.Defender.AP.Count(EStatus.Wound) / (float)d.Defender.AP.Width;
-                    write($"  WND%:    {wndPercent.ToString().PadLeft(3, '0'),3}");
+                    write($"  WND%:   {wndPercent, 6:0.0}");
                     writes("     STR x WND% =");
-                    write($"DEFENSE: {(str * wndPercent).ToString().PadLeft(3, '0'),3}");
+                    write($"DEFENSE:  {(str * wndPercent), 6:0.0}");
+                    writes("");
                     writes("     AFTER GEAR MODIFIERS");
-                    write($"GEAR DEF:  {d.Defense.ToString().PadLeft(3, '0'),3}");
-                    write($"FLAT DMG:  {d.Flat.ToString().PadLeft(3, '0'),3}");
+                    writeb($"TOTAL DEF:{d.Defense.ToString().PadLeft(3, '0'), 6}");
                 }
             }
+            _game.Layers["ascii"].Set(36, 20, "<<");
         }
     }
 

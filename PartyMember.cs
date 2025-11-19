@@ -532,7 +532,7 @@ public class PartyMember : Character
             Console.WriteLine($"Created character with {Stats} and class: {Job}");
         }
 
-        HP = Stats.Poise + Rnd.Instance.D2;
+        HP = Math.Min(Stats.Poise + Rnd.Instance.D2, 9);
     }
     
     public string GetRandomBark()
@@ -656,7 +656,7 @@ public record struct Party
 
         for (var i = 0; i < 4; i++)
         {
-            Characters[i].HP = Characters[i].Poi + Characters[i].Cla;
+            Characters[i].HP = Math.Min(9, Characters[i].Poi + Characters[i].Cla);
         }
     }
         
