@@ -66,9 +66,7 @@ public class SineaterGame : Game
 
         Barks.Load(Content);
 
-        Loca l = new();
-        l.Load("");
-
+        Loca.Load("");
     }
     
     protected override void LoadContent()
