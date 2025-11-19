@@ -36,14 +36,14 @@ public class CharacterSheetScreen : IScreen
             return;
         }
         
-        if (KB.HasBeenPressed(Keys.Escape))
+        if (InputM.IsActive(EInputAction.ChacterSheetExit))
         {
             _game.ScreenStack.Pop();
             _game.Layers["mrmo"].Clear();
             _game.ScreenStack.Peek().Draw(gameTime);
         }
 
-        if (KB.HasBeenPressed(Keys.Space))
+        if (InputM.IsActive(EInputAction.ChacterSheetCycle))
         {
             _charIndex = (_charIndex + 1) % 4;
         }
