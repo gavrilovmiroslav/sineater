@@ -163,12 +163,13 @@ namespace SINEATER.Input
                 MakeAction(EInputAction.EndTurn, Keys.Enter, Buttons.B),
                 MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
                 MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
+                MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.None, eInput: EInputTrigger.Down),
             }
             }
             );
         }
 
-        private InputAction MakeAction(EInputAction action, Keys key, Buttons button, bool isHold = false, int HoldTime = 0)
+        private InputAction MakeAction(EInputAction action, Keys key, Buttons button, bool isHold = false, int HoldTime = 0, EInputTrigger eInput = EInputTrigger.JustPressed)
         {
             return new InputAction
             {
@@ -176,7 +177,8 @@ namespace SINEATER.Input
                 Gamepad = button,
                 Keyboard = key,
                 IsHold = isHold,
-                HoldTime = HoldTime
+                HoldTime = HoldTime,
+                InputType = eInput
             };
         }
     }

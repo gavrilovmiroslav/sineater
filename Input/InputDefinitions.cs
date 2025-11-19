@@ -4,6 +4,13 @@ using Newtonsoft.Json.Converters;
 
 namespace SINEATER.Input;
 
+internal enum EInputTrigger
+{
+    JustPressed,
+    Down,
+    JustReleased
+}
+
 internal class InputAction
 {
     [JsonConverter(typeof(StringEnumConverter))]
@@ -21,6 +28,8 @@ internal class InputAction
     public bool IsHold = false;
     public int HoldTime = 0;
     private int _currentHoldTime = 0;
+
+    public EInputTrigger InputType = EInputTrigger.JustPressed;
 
     public void Update(KeyboardState previous, KeyboardState current, int gametime) 
     {
@@ -43,7 +52,7 @@ internal class InputAction
         }
         else
         {
-            IsActive = !previous.IsKeyDown(Keyboard) && current.IsKeyDown(Keyboard);
+            IsActive = (!previous.IsKeyDown(Keyboard) || InputType == EInputTrigger.Down) && current.IsKeyDown(Keyboard);
         }
     }
     public void Update(GamePadState previous, GamePadState current, int gametime)

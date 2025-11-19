@@ -887,7 +887,7 @@ public class CombatMapScreen : IScreen
         else
             _game.Layers["ascii"].Set(39, 20, "[EQUIPMENT]", Color.Gray);
 
-        _detailedView = KB.IsPressed(Keys.LeftAlt);
+        _detailedView = InputM.IsActive(EInputAction.DetailedView);
         if (!_detailedView)
         {
             _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);

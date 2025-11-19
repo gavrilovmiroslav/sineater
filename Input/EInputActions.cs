@@ -45,4 +45,6 @@ public enum EInputAction
     EndTurn,
     SelectNextCharacter,
     SelectPreviousCharacter,
+
+    DetailedView,
 }
