@@ -1,23 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ImGuiNET;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monogame.ImGuiExamples;
+using MonoGame.ImGui;
+using SINEATER.Input;
+using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
-using MonoJ;
-using Newtonsoft.Json.Linq;
-using SINEATER.Serialization;
-using SINEATER.Input;
 
 namespace SINEATER;
 
@@ -59,7 +50,10 @@ public class SineaterGame : Game
     
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
-    
+
+    private bool _drawImgui = false;
+    private ImGuiRenderer _render;
+
     public SineaterGame()
     {
         Instance = this;
@@ -80,6 +74,7 @@ public class SineaterGame : Game
 
     protected override void Initialize()
     {
+        _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");
         InputManager.Instance.PushContext("Default");
         base.Initialize();
@@ -247,6 +242,11 @@ public class SineaterGame : Game
             ScreenStack.Push(new WorldMapScreen(this));
         }
 
+        if (KB.HasBeenPressed(Keys.F2))
+        {
+            _drawImgui = !_drawImgui;
+        }
+
         if (ScreenStack?.Peek() is { } screen)
         {
             screen.Update(gameTime);
@@ -301,10 +301,27 @@ public class SineaterGame : Game
         //     SpriteEffects.None, 0.0f);
         
         _spriteBatch.End();
+
+        if (_drawImgui)
+        {
+            DrawImgui(gameTime);
+        }
+
         base.Draw(gameTime);
     }
+    private void DrawImgui(GameTime time)
+    {
+        _render.BeginLayout(time);
 
-    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
+        // Imgui code begin
+
+        TemplateExamples.Example1();
+
+        // Imgui code end
+
+        _render.EndLayout();
+    }
+    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
     {
