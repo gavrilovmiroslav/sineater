@@ -247,7 +247,7 @@ public class SineaterGame : Game
             ScreenStack.Push(new WorldMapScreen(this));
         }
 
-        if (KB.HasBeenPressed(Keys.F2))
+        if (InputM.IsActive(EInputAction.ShowImGui))
         {
             _drawImgui = !_drawImgui;
         }
@@ -333,8 +333,6 @@ public class SineaterGame : Game
     }
     
     public static IEnumerable<string> LayerNames => ["mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini"];
-        
-    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
     {

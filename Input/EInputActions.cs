@@ -25,6 +25,7 @@ public enum EInputAction
     LoadItems,
     ExplorationMapScreen,
     ExplorationDebug,
+    ShowImGui,
     #endregion
 
     ChacterSheetEnter,
