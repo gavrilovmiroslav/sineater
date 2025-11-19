@@ -15,11 +15,11 @@ namespace SINEATER.Serialization
             return deserializedObject;
         }
 
-        public static void Serialize<T>(T target)
+        public static void Serialize<T>(T target, bool ignoreTypes = false)
         {
             string serializedJson = JsonConvert.SerializeObject(target, Formatting.Indented, new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.Objects,
+                TypeNameHandling = ignoreTypes ? TypeNameHandling.None : TypeNameHandling.Objects
             });
 
             using (var sw = new StreamWriter("result.json"))

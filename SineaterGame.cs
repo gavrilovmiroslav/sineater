@@ -3,21 +3,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
-using MonoJ;
-using Newtonsoft.Json.Linq;
-using SINEATER.Serialization;
 using SINEATER.Input;
+using SINEATER.Localization;
 
 namespace SINEATER;
 
@@ -76,6 +65,10 @@ public class SineaterGame : Game
         _dHour += (float)time.Second * 1000.0f;
 
         Barks.Load(Content);
+
+        Loca l = new();
+        l.Load("");
+
     }
     
     protected override void LoadContent()
