@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.steam;
+using SINEATER.Input;
 
 namespace SINEATER;
 
