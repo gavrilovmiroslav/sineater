@@ -1,6 +1,6 @@
-﻿using System.Timers;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Timer = System.Timers.Timer;
 
 namespace SINEATER;
 

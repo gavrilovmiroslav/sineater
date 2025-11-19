@@ -8,7 +8,10 @@ using SINEATER.Input;
 using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
+using SINEATER.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using SINEATER.steam;
+using SINEATER.Input;
 
 namespace SINEATER;
 
@@ -16,7 +19,7 @@ public class SineaterGame : Game
 {
     public static SineaterGame Instance;
     public static int DeltaTime;
-    
+
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -201,7 +204,9 @@ public class SineaterGame : Game
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
-        
+
+        SteamManager.Instance.Update();
+
         if (_currentMinutes > HourLengthMillis)
         {
             _currentHour = (_currentHour + 1) % 24;
@@ -314,13 +319,21 @@ public class SineaterGame : Game
         _render.BeginLayout(time);
 
         // Imgui code begin
-
         TemplateExamples.Example1();
 
         // Imgui code end
 
         _render.EndLayout();
     }
+    
+    protected override void OnExiting(object sender, ExitingEventArgs args)
+    {
+        SteamManager.Instance.ShutDown();
+        base.OnExiting(sender, args);
+    }
+    
+    public static IEnumerable<string> LayerNames => ["mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini"];
+        
     public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
