@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Monogame.ImGuiExamples;
 using MonoGame.ImGui;
-using SINEATER.Content;
+using SINEATER.Input;
 using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
@@ -207,7 +207,6 @@ public class SineaterGame : Game
             _nextHour = (_nextHour + 1) % 24;
             _currentMinutes = 0;
         }
-
         if (KB.HasBeenPressed(Keys.F5))
         {
             ItemLibrary.LoadItems(Content);
