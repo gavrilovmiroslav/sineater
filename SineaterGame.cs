@@ -8,10 +8,10 @@ using SINEATER.Input;
 using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
-using SINEATER.SinMod;
+using SINEATER.steam;
 using Color = Microsoft.Xna.Framework.Color;
-using SINEATER.Input;
 using SINEATER.Localization;
+using System.IO;
 
 namespace SINEATER;
 
@@ -73,13 +73,13 @@ public class SineaterGame : Game
         _dHour += (float)time.Second * 1000.0f;
 
         Barks.Load(Content);
-
-        Loca.Load("");
     }
 
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
+
+        Loca.Load(File.ReadAllText("Content/loca/english.json"));
         
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");

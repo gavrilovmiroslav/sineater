@@ -1,7 +1,7 @@
 ﻿namespace SINEATER.Localization;
 
-internal enum LocaIDs
+public enum LocaIDs
 {
-    Invalid = 0,
+    None = 0,
     Weapon_Name_Dagger,
 }

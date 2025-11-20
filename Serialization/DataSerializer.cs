@@ -11,11 +11,11 @@ namespace SINEATER.Serialization
 
             return deserializedObject;
         }
-        public static T? Load<T>(string json)
+        public static T? Load<T>(string json, bool ignoreTypes = false)
         {
             var deserializedObject = JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.Objects
+                TypeNameHandling = ignoreTypes ? TypeNameHandling.None : TypeNameHandling.Objects
             });
 
             return deserializedObject;
@@ -29,14 +29,14 @@ namespace SINEATER.Serialization
                 sw.WriteLine(serializedJson);
             }
         }
-        public static void Serialize<T>(T target, bool ignoreTypes = false)
+        public static void Serialize<T>(T target, bool ignoreTypes = false, string fileName = "result.json")
         {
             string serializedJson = JsonConvert.SerializeObject(target, Formatting.Indented, new JsonSerializerSettings
             {
                 TypeNameHandling = ignoreTypes ? TypeNameHandling.None : TypeNameHandling.Objects
             });
 
-            using (var sw = new StreamWriter("result.json"))
+            using (var sw = new StreamWriter(fileName))
             {
                 sw.WriteLine(serializedJson);
             }

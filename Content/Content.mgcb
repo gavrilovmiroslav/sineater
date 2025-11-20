@@ -359,6 +359,9 @@
 /processorParam:TextureFormat=Color
 /build:largenumbers.png
 
+#begin loca/english.json
+/copy:loca/english.json
+
 #begin map.xp
 /copy:map.xp
 

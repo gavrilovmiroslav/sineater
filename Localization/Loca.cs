@@ -1,4 +1,6 @@
-﻿using SINEATER.Serialization;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using SINEATER.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,14 +11,17 @@ internal static class Loca
 {
     private static Dictionary<LocaIDs, string> _localizedStrings = new();
 
+    public static event EventHandler LocalizationChanged = delegate { };
     public static string GetString(LocaIDs locaIDs) => _localizedStrings[locaIDs];
     public static void Load(string json)
     {
-        _localizedStrings.Add(LocaIDs.Weapon_Name_Dagger, "Dagger");
-        DataSerializer.Serialize(_localizedStrings);
+        _localizedStrings = DataSerializer.Load<Dictionary<LocaIDs, string>>(json, true);
+        //_localizedStrings.Add(LocaIDs.Weapon_Name_Dagger, "Dagger");
+        //DataSerializer.Serialize(_localizedStrings);
+        //GenerateLocaFile("eng.json");
+        //var xx = DataSerializer.Load<Dictionary<LocaIDs, string>>(File.ReadAllText("eng.json"), true);
     }
-
-    public static void GenerateLocaFile(string name)
+    public static void GenerateLocaFile(string fileName)
     {
         Dictionary<LocaIDs, string> pairs = new Dictionary<LocaIDs, string>();
         foreach (var kvp in Enum.GetValues(typeof(LocaIDs)))
@@ -25,7 +30,7 @@ internal static class Loca
         }
 
         bool ignoreTypes = true;
-        DataSerializer.Serialize(pairs, ignoreTypes);
+        DataSerializer.Serialize(pairs, ignoreTypes, fileName);
     }
 
     public static void RegenerateFiles()
@@ -41,7 +46,6 @@ internal static class Loca
                 {
                     _localizedStrings.Add((LocaIDs)kvp, "");
                 }
-
             }
         }
     }

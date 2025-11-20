@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using SINEATER.Localization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -119,6 +120,9 @@ public class Weapon(string name, EWeightClass weight,
     #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
+
+    [JsonProperty]
+    public LocalizedString LocaName { get; set; } = new LocalizedString(name);
     [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
     [JsonProperty]
