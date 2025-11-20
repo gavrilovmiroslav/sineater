@@ -1,6 +1,7 @@
-using System;
 using Newtonsoft.Json;
+using SINEATER.Localization;
 using SINEATER.Serialization;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -70,6 +71,8 @@ public class Item(string name, (int, int) uv, EElement element = EElement.None, 
 #region Serialization
     [JsonProperty]
     public string Name { get; set; } = name;
+    [JsonProperty]
+    public LocalizedString LocaName { get; set; } = new LocalizedString(name);
     [JsonProperty]
     public virtual (int, int) Picture { get; set; } = (uv.Item1, uv.Item2);
     [JsonProperty]

@@ -70,7 +70,7 @@ public class CharacterSheetScreen : IScreen
         if (chr.LeftWeapon is { } lw)
         {
             (u, v) = lw.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: {lw.GetName()}");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: {lw.LocaName}");
         }
         _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
         
@@ -82,7 +82,7 @@ public class CharacterSheetScreen : IScreen
         if (chr.Item is { } item)
         {
             (u, v) = item.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.Name}");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.LocaName}");
         }
         _game.Layers["porsmol"].Set(3, 4, new Glyph(u, v, Color.Black, chr.Tint));
 
@@ -91,7 +91,7 @@ public class CharacterSheetScreen : IScreen
         if (chr.RightWeapon is { } rw)
         {
             (u, v) = rw.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: {rw.GetName()}");
+            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: {rw.LocaName}");
         }
         _game.Layers["porsmol"].Set(4, 2, new Glyph(u, v, Color.Black, chr.Tint));
     }

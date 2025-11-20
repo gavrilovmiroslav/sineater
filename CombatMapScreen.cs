@@ -689,17 +689,17 @@ public class CombatMapScreen : IScreen
             }
 
             if (character.GetLeftWeapon() is {} lw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", tint);
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.LocaName}", tint);
             else
                 _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
             
             if (character.GetRightWeapon() is {} rw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", tint);
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.LocaName}", tint);
             else
                 _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
             
             if (character.GetItem() is {} it)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", tint);
+                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.LocaName}", tint);
             else
                 _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
             
@@ -873,17 +873,17 @@ public class CombatMapScreen : IScreen
         }
 
         if (enemy.GetLeftWeapon() is {} lw)
-            _game.Layers["ascii"].Set(39, 18, $"{lw.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 18, $"{lw.LocaName}", enemy.Tint);
         else
             _game.Layers["ascii"].Set(39, 18, "[LEFT ARM]", Color.Gray);
         
         if (enemy.GetRightWeapon() is {} rw)
-            _game.Layers["ascii"].Set(39, 19, $"{rw.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 19, $"{rw.LocaName}", enemy.Tint);
         else
             _game.Layers["ascii"].Set(39, 19, "[RIGHT ARM]", Color.Gray);
         
         if (enemy.GetItem() is {} it)
-            _game.Layers["ascii"].Set(39, 20, $"{it.Name}", enemy.Tint);
+            _game.Layers["ascii"].Set(39, 20, $"{it.LocaName}", enemy.Tint);
         else
             _game.Layers["ascii"].Set(39, 20, "[EQUIPMENT]", Color.Gray);
 

@@ -9,7 +9,8 @@ namespace SINEATER;
 
 public interface IAbilitySource
 {
-    public string GetName();
+    [JsonProperty]
+    public LocalizedString LocaName { get; set; }
     public Glyph GetIcon();
 }
 
@@ -228,11 +229,6 @@ public class Weapon(string name, EWeightClass weight,
     {
         return $"{Name} (Quality: {Quality}, Weight: {Weight.ToString()})";
     }
-
-    public string GetName()
-    {
-        return Name;
-    }
     
     public virtual Glyph GetIcon()
     {
@@ -248,6 +244,7 @@ public class Weapon(string name, EWeightClass weight,
 
         this.ExperienceNow = original.ExperienceNow;
         this.Name = original.Name;
+        this.LocaName = original.LocaName;
         this.Picture = original.Picture;
         this.Quality = original.Quality;
         this.Weight = original.Weight;
