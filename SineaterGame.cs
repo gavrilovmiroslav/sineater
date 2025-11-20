@@ -81,7 +81,7 @@ public class SineaterGame : Game
         
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");
-        InputManager.Instance.PushContext("Default");
+        InputManager.Instance.PushContext("Default"); 
         base.Initialize();
     }
 
