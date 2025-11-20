@@ -153,8 +153,7 @@ public class WorldMapScreen : IScreen
             _game.Layers[layer].Clear();
         }
         
-        _game.Layers["map"].SetRex(8, 2, _map, KB.IsPressed(Keys.LeftAlt) ? 0 : 1);
-        
+        _game.Layers["map"].SetRexFg(8, 2, _map, 1);
         _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
         
         DrawParty();
@@ -287,7 +286,7 @@ public class WorldMapScreen : IScreen
     {
         if (_inspectMode)
         {
-            if (KB.HasBeenPressed(Keys.Escape))
+            if (InputM.IsActive(EInputAction.ExitInspect))
             {
                 _inspectMode = false;
             }
@@ -295,7 +294,7 @@ public class WorldMapScreen : IScreen
         }
         
         var current = _game.Party.Characters[PlayerSelectedIndex];
-        if (KB.HasBeenPressed(Keys.A))
+        if (InputM.IsActive(EInputAction.Ability))
         {
             var ability = current.Ability;
             if (ability != null)
@@ -320,7 +319,7 @@ public class WorldMapScreen : IScreen
         
         if (_submenu.Count > 0)
         {
-            if (KB.HasBeenPressed(Keys.Up))
+            if (InputM.IsActive(EInputAction.SubmenuUp))
             {
                 if (_submenuSelection == 0)
                 {
@@ -331,7 +330,7 @@ public class WorldMapScreen : IScreen
                     _submenuSelection--;
                 }
             }
-            else if (KB.HasBeenPressed(Keys.Down))
+            else if (InputM.IsActive(EInputAction.SubmenuDown))
             {
                 if (_submenuSelection == _submenu.Count - 1)
                 {
@@ -346,17 +345,17 @@ public class WorldMapScreen : IScreen
         // MOVE
         else if (PlayerSelectedIndex > -1)
         {
-            if (KB.HasBeenPressed(Keys.Tab))
+            if (InputM.IsActive(EInputAction.SelectNextCharacter))
             {
                 SelectNextAvailablePartyMember();
             }
             
             if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
             {
-                var up = KB.HasBeenPressed(Keys.Up);
-                var down = KB.HasBeenPressed(Keys.Down);
-                var left = KB.HasBeenPressed(Keys.Left);
-                var right = KB.HasBeenPressed(Keys.Right);
+                var up = InputM.IsActive(EInputAction.MoveUp);
+                var down = InputM.IsActive(EInputAction.MoveDown);
+                var left = InputM.IsActive(EInputAction.MoveLeft);
+                var right = InputM.IsActive(EInputAction.MoveRight);
 
                 if (up || down || left || right)
                 {

@@ -1,6 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ImGuiNET;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monogame.ImGuiExamples;
+using MonoGame.ImGui;
+using SINEATER.Input;
+using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
 using SINEATER.SinMod;
@@ -14,7 +19,7 @@ public class SineaterGame : Game
 {
     public static SineaterGame Instance;
     public static int DeltaTime;
-    
+
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -48,7 +53,10 @@ public class SineaterGame : Game
     
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
-    
+
+    private bool _drawImgui = false;
+    private ImGuiRenderer _render;
+
     public SineaterGame()
     {
         Instance = this;
@@ -68,7 +76,17 @@ public class SineaterGame : Game
 
         Loca.Load("");
     }
-    
+
+    protected override void Initialize()
+    {
+        SteamManager.Instance.Initialize(Content.Load<string>("stats"));
+        
+        _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
+        InputManager.Instance.Initialize("");
+        InputManager.Instance.PushContext("Default"); 
+        base.Initialize();
+    }
+
     protected override void LoadContent()
     {
         SinMod.System.Init("audio/GUIDs.txt");
@@ -140,7 +158,7 @@ public class SineaterGame : Game
         }
         Layers.Add("mrmo", mrmoLayer);
         
-        var mapLayer = new TextLayer(_mapmotext, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
+        var mapLayer = new TextLayer(_mapmotext,new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
         mapLayer.Map(" ", 0, 0);
         mapLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mapLayer.Map("@abcdefghijklmno", 0, 55);
@@ -190,7 +208,9 @@ public class SineaterGame : Game
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
-        
+
+        SteamManager.Instance.Update();
+
         if (_currentMinutes > HourLengthMillis)
         {
             _currentHour = (_currentHour + 1) % 24;
@@ -198,35 +218,42 @@ public class SineaterGame : Game
             _currentMinutes = 0;
         }
 
-        if (KB.HasBeenPressed(Keys.F5))
+        InputManager.Instance.Update(DeltaTime);
+
+        if (InputM.IsActive(EInputAction.LoadItems))
         {
             ItemLibrary.LoadItems(Content);
         }
         
-        if (KB.HasBeenPressed(Keys.F10))
+        if (InputM.IsActive(EInputAction.Exit))
         {
             Exit();
         }
 
-        if (KB.HasBeenPressed(Keys.PageUp))
+        if (InputM.IsActive(EInputAction.VolumeUp))
         {
             fmodInstanceMusic.ModVolume(0.1f, true);
         }
         
-        if (KB.HasBeenPressed(Keys.PageDown))
+        if (InputM.IsActive(EInputAction.VolumeDown))
         {
             fmodInstanceMusic.ModVolume(-0.1f, true);
         }
 
-        if (KB.HasBeenPressed(Keys.End))
+        if (InputM.IsActive(EInputAction.Mute))
         {
             fmodInstanceMusic.SetVolume(0, true);
         }
 
-        if (KB.HasBeenPressed(Keys.F1))
+        if (InputM.IsActive(EInputAction.RestartExploration))
         {
             ScreenStack.Pop();
             ScreenStack.Push(new WorldMapScreen(this));
+        }
+
+        if (InputM.IsActive(EInputAction.DetailedView))
+        {
+            _drawImgui = !_drawImgui;
         }
 
         if (ScreenStack?.Peek() is { } screen)
@@ -238,7 +265,6 @@ public class SineaterGame : Game
         //_focus.Update();
 
         base.Update(gameTime);
-        KB.Update();
     }
 
     protected override void Draw(GameTime gameTime)
@@ -284,10 +310,33 @@ public class SineaterGame : Game
         //     SpriteEffects.None, 0.0f);
         
         _spriteBatch.End();
+
+        if (_drawImgui)
+        {
+            DrawImgui(gameTime);
+        }
+
         base.Draw(gameTime);
     }
+    private void DrawImgui(GameTime time)
+    {
+        _render.BeginLayout(time);
 
-    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
+        // Imgui code begin
+        TemplateExamples.Example1();
+
+        // Imgui code end
+
+        _render.EndLayout();
+    }
+    
+    protected override void OnExiting(object sender, ExitingEventArgs args)
+    {
+        SteamManager.Instance.ShutDown();
+        base.OnExiting(sender, args);
+    }
+    
+    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
     {

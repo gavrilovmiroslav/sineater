@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SadRex;
@@ -520,54 +521,66 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
 
-    public void SetRex(int sx, int sy, Image rex)
+    public void SetRex(int sx, int sy, Image rex, IEnumerable<(int, int)>? selected = null)
     {
+        var sels = selected?.ToHashSet() ?? [];
         for (var i = 0; i < rex.Width; i++)
         {
             for (var j = 0; j < rex.Height; j++)
             {
                 foreach (var layer in rex.Layers)
                 {
-                        var c = layer[i, j].Character;
-                        var y = c / (int)mapSize.X;
-                        var x = c % (int)mapSize.X;
-                        var b = layer[i, j].Background;
-                        var f = layer[i, j].Foreground;
-                        if (c == 32)
-                        {
-                            Set(sx + i, sy + j, new Glyph(0, 0, b.ToXNA(), f.ToXNA()));
-                        }
-                        else
-                        {
-                            Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
-                        }
+                    if (selected != null && !sels.Contains((i, j))) continue;
+                    if (layer[i, j].Background == SadRex.Color.Transparent) continue;
+                    var c = layer[i, j].Character;
+                    var y = c / (int)mapSize.X;
+                    var x = c % (int)mapSize.X;
+                    var b = layer[i, j].Background;
+                    var f = layer[i, j].Foreground;
+                    
+                    Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
                 }
             }
         }
     }
     
-    public void SetRex(int sx, int sy, Image rex, int layerIndex)
+    public void SetRex(int sx, int sy, Image rex, int layerIndex, IEnumerable<(int, int)>? selected = null)
     {
         var layer = rex.Layers[layerIndex];
+        var sels = selected?.ToHashSet() ?? [];
         for (var i = 0; i < rex.Width; i++)
         {
             for (var j = 0; j < rex.Height; j++)
             {
+                if (selected != null && !sels.Contains((i, j))) continue;
                 if (layer[i, j].Background == SadRex.Color.Transparent) continue;
                 
                 var c = layer[i, j].Character;
-                var y = c / (int)mapSize.X;
-                var x = c % (int)mapSize.X;
+                var y = c == 32 ? 63 : c / (int)mapSize.X;
+                var x = c == 32 ? 15 : c % (int)mapSize.X;
                 var b = layer[i, j].Background;
                 var f = layer[i, j].Foreground;
-                if (c == 32)
-                {
-                    Set(sx + i, sy + j, new Glyph(0, 0, b.ToXNA(), f.ToXNA()));
-                }
-                else
-                {
-                    Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
-                }
+                Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
+            }
+        }
+    }
+    
+    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, IEnumerable<(int, int)>? selected = null)
+    {
+        var layer = rex.Layers[layerIndex];
+        var sels = selected?.ToHashSet() ?? [];
+        for (var i = 0; i < rex.Width; i++)
+        {
+            for (var j = 0; j < rex.Height; j++)
+            {
+                if (selected != null && !sels.Contains((i, j))) continue;
+                if (layer[i, j].Background == SadRex.Color.Transparent) continue;
+                
+                var c = layer[i, j].Character;
+                var y = c == 32 ? 63 : c / (int)mapSize.X;
+                var x = c == 32 ? 15 : c % (int)mapSize.X;
+                var f = layer[i, j].Foreground;
+                Set(sx + i, sy + j, new Glyph(x, y, Color.Black, f.ToXNA()));
             }
         }
     }
@@ -598,14 +611,15 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             src.Y = (int)empty.Y * (ty + oy);
             pos.X = (edge.X + x) * tx * scale;
             pos.Y = (edge.Y + y) * ty * scale;
-            spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, 
-                _flips.Contains((glyph.U, glyph.V)) ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0.0f);
+            spriteBatch.Draw(font, pos + offset, src, glyph.Bg, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
         }
         spriteBatch.End();
 
         spriteBatch.Begin(samplerState: SamplerState.PointClamp, blendState: BlendState.AlphaBlend);
         foreach (var (xy, glyph) in _glyphs)
         {
+            if (glyph is { U: 0, V: 0 }) continue;
+            if (glyph is { U: 15, V: 63 }) continue;
             var (x, y) = FromPosition(xy);
             src.X = glyph.U * (tx + ox);
             src.Y = glyph.V * (ty + oy);

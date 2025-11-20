@@ -1,0 +1,22 @@
+[
+  {
+    "$type": "SINEATER.steam.IntStat, SINEATER",
+    "Name": "STAT_1",
+    "ID": 2
+  },
+  {
+    "$type": "SINEATER.steam.FloatStat, SINEATER",
+    "Name": "STAT_2",
+    "ID": 3
+  },
+  {
+    "$type": "SINEATER.steam.FloatStat, SINEATER",
+    "Name": "STAT_4",
+    "ID": 4
+  },
+  {
+    "$type": "SINEATER.steam.FloatStat, SINEATER",
+    "Name": "STAT_5",
+    "ID": 5
+  }
+]
