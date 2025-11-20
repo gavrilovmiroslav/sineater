@@ -15,6 +15,7 @@ using SINEATER.Input;
 using SINEATER.SinMod;
 using Wintellect.PowerCollections;
 using YamlDotNet.Core.Tokens;
+using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
@@ -39,7 +40,9 @@ public class WorldMapScreen : IScreen
     internal (int, int) DrawOffset { get; set; } = (8, 1);
     internal bool ShouldUpdateView = true;
     
-    private readonly Image _map;
+    private readonly Image _rex;
+    public readonly Dictionary<int, Map<Cell>> Maps = [];
+    public int CurrentMapLayer = 1;
     
     public WorldMapScreen(SineaterGame game)
     {
@@ -48,7 +51,8 @@ public class WorldMapScreen : IScreen
 
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
-        _map = Image.Load(stream);
+        _rex = Image.Load(stream);
+        InitializeMapLayers();
         
         Initialize(game);
     }
@@ -56,6 +60,26 @@ public class WorldMapScreen : IScreen
     public void Initialize(SineaterGame game)
     {
         _game = game;
+    }
+
+    private void InitializeMapLayers()
+    {
+        foreach (var layer in _rex.Layers)
+        {
+            var levelMap = new Map<Cell>(20, 20);
+            var layerIndex = 1;
+            for (var y = 0; y < 20; y++)
+            {
+                for (var x = 0; x < 20; x++)
+                {
+                    var bg = _rex.Layers[layerIndex][x, y].Background;
+                    var isAccessible = bg == SadRex.Color.Transparent || bg == new SadRex.Color(0, 0, 0);
+                    levelMap.SetCellProperties(x, y, isAccessible, isAccessible);
+                }
+            }
+            
+            Maps[layerIndex] = levelMap;
+        }
     }
     
     public void Update(GameTime gameTime)
@@ -152,8 +176,8 @@ public class WorldMapScreen : IScreen
         {
             _game.Layers[layer].Clear();
         }
-        
-        _game.Layers["map"].SetRexFg(8, 2, _map, 1);
+
+        _game.Layers["map"].SetRexFg(8, 2, _rex, 1);
         _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
         
         DrawParty();
