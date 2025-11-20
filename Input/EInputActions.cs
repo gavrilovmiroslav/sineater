@@ -23,7 +23,7 @@ public enum EInputAction
 
     #region Debug
     LoadItems,
-    ExplorationMapScreen,
+    RestartExploration,
     ExplorationDebug,
     #endregion
 

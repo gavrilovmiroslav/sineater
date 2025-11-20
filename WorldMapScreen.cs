@@ -154,7 +154,6 @@ public class WorldMapScreen : IScreen
         }
         
         _game.Layers["map"].SetRex(8, 2, _map, InputM.IsActive(EInputAction.DetailedView) ? 0 : 1);
-        
         _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
         
         DrawParty();

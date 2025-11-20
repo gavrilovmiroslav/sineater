@@ -77,6 +77,8 @@ public class SineaterGame : Game
 
     protected override void Initialize()
     {
+        SteamManager.Instance.Initialize(Content.Load<string>("stats"));
+        
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");
         InputManager.Instance.PushContext("Default");
@@ -154,7 +156,7 @@ public class SineaterGame : Game
         }
         Layers.Add("mrmo", mrmoLayer);
         
-        var mapLayer = new TextLayer(_mapmotext, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
+        var mapLayer = new TextLayer(_mapmotext,new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
         mapLayer.Map(" ", 0, 0);
         mapLayer.Map("!\"#$%&'()*+,-./", 1, 54);
         mapLayer.Map("@abcdefghijklmno", 0, 55);
@@ -241,13 +243,13 @@ public class SineaterGame : Game
             fmodInstanceMusic.SetVolume(0, true);
         }
 
-        if (InputM.IsActive(EInputAction.ExplorationMapScreen))
+        if (InputM.IsActive(EInputAction.RestartExploration))
         {
             ScreenStack.Pop();
             ScreenStack.Push(new WorldMapScreen(this));
         }
 
-        if (KB.HasBeenPressed(Keys.F2))
+        if (InputM.IsActive(EInputAction.DetailedView))
         {
             _drawImgui = !_drawImgui;
         }
@@ -332,9 +334,7 @@ public class SineaterGame : Game
         base.OnExiting(sender, args);
     }
     
-    public static IEnumerable<string> LayerNames => ["mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini"];
-        
-    public static IEnumerable<string> LayerNames => [ "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
+    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
 
     private void SetupCrt(int w, int h)
     {
