@@ -84,11 +84,11 @@ public record struct LevelStructure
     public readonly TiledStructure Walkables;
     public readonly TiledStructure Obstacles;
     public readonly List<TiledStructure> Rooms = [];
-    public (int, int) Entry;
-    public readonly List<(int, int)> Starts = [];
-    public readonly List<(int, int)> Goals = [];
+    public (int X, int Y) Entry;
+    public readonly List<(int X, int Y)> Starts = [];
+    public readonly List<(int X, int Y)> Goals = [];
     public readonly List<Enemy> Enemies = [];
-    public readonly List<(int, int)> Treasure = [];
+    public readonly List<(int X, int Y)> Treasure = [];
     public readonly HeatMap Heat;
     
     public LevelStructure(IMap map)

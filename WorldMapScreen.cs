@@ -35,14 +35,15 @@ public class WorldMapScreen : IScreen
     internal CoroutineHandler CoroutineHandler = new();
     private List<string> _submenu = [];
     private int _submenuSelection = 0;
-    private (int, int) _submenuDelta = (0, 0);
+    private (int X, int Y) _submenuDelta = (0, 0);
     
-    internal (int, int) DrawOffset { get; set; } = (8, 1);
+    internal (int X, int Y) DrawOffset { get; set; } = (8, 1);
     internal bool ShouldUpdateView = true;
     
     private readonly Image _rex;
-    public readonly Dictionary<int, Map<Cell>> Maps = [];
+    public readonly Dictionary<int, (Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
     public int CurrentMapLayer = 1;
+    public (int X, int Y) CurrentPlayerPosition = (2, 7);
     
     public WorldMapScreen(SineaterGame game)
     {
@@ -73,12 +74,12 @@ public class WorldMapScreen : IScreen
                 for (var x = 0; x < 20; x++)
                 {
                     var bg = _rex.Layers[layerIndex][x, y].Background;
-                    var isAccessible = bg == SadRex.Color.Transparent || bg == new SadRex.Color(0, 0, 0);
+                    var isAccessible = bg != SadRex.Color.Transparent && bg != new SadRex.Color(0, 0, 0);
                     levelMap.SetCellProperties(x, y, isAccessible, isAccessible);
                 }
             }
             
-            Maps[layerIndex] = levelMap;
+            Maps[layerIndex] = (levelMap, new FieldOfView<Cell>(levelMap));
         }
     }
     
@@ -177,8 +178,19 @@ public class WorldMapScreen : IScreen
             _game.Layers[layer].Clear();
         }
 
-        _game.Layers["map"].SetRexFg(8, 2, _rex, 1);
-        _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
+        var (map, fov) = Maps[CurrentMapLayer];
+        var (x, y) = CurrentPlayerPosition;
+        var light = fov.ComputeFov(x, y, 4, true);
+        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: true);
+        _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, light.Select(Predicate.CellToPosition).ToList());
+
+        var tick = _time is < 400 or > 800 and < 1200;
+        
+        var chr = _game.Party.Characters[PlayerSelectedIndex];
+        var (u, v) = chr.Job.GetImage();
+        _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+        
+        _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
         
         DrawParty();
     }
@@ -374,25 +386,27 @@ public class WorldMapScreen : IScreen
                 SelectNextAvailablePartyMember();
             }
             
-            if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
-            {
-                var up = InputM.IsActive(EInputAction.MoveUp);
-                var down = InputM.IsActive(EInputAction.MoveDown);
-                var left = InputM.IsActive(EInputAction.MoveLeft);
-                var right = InputM.IsActive(EInputAction.MoveRight);
+            var up = InputM.IsActive(EInputAction.MoveUp);
+            var down = InputM.IsActive(EInputAction.MoveDown);
+            var left = InputM.IsActive(EInputAction.MoveLeft);
+            var right = InputM.IsActive(EInputAction.MoveRight);
 
-                if (up || down || left || right)
+            if (up || down || left || right)
+            {
+                var dx = (left ? -1 : 0) + (right ? 1 : 0);
+                var dy = (up ? -1 : 0) + (down ? 1 : 0);
+                if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
                 {
-                    var dx = (left ? -1 : 0) + (right ? 1 : 0);
-                    var dy = (up ? -1 : 0) + (down ? 1 : 0);
-                    if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
+                    var x = CurrentPlayerPosition.X + dx;
+                    var y = CurrentPlayerPosition.Y + dy;
+                    if (x >= 0 && y >= 0 && x < 20 && y < 20 && Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                     {
-                        current.X += dx;
-                        current.Y += dy;
+                        CurrentPlayerPosition.X = x;
+                        CurrentPlayerPosition.Y = y;
                     }
-                    
-                    UpdateCombatView();
                 }
+                
+                UpdateCombatView();
             }
         }
     }

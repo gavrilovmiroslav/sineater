@@ -13,14 +13,14 @@ public static class Directions
         { ( 0,  0), ( 9, 59) },
     };
 
-    public static (int, int) GoForwards((int, int) position, (int, int) direction, int n = 1)
+    public static (int X, int Y) GoForwards((int X, int Y) position, (int X, int Y) direction, int n = 1)
     {
-        return (position.Item1 + direction.Item1 * n, position.Item2 + direction.Item2 * n);
+        return (position.X + direction.X * n, position.Y + direction.Y * n);
     }
     
-    public static (int, int) GoBackwards((int, int) position, (int, int) direction, int n = 1)
+    public static (int X, int Y) GoBackwards((int X, int Y) position, (int X, int Y) direction, int n = 1)
     {
-        return (position.Item1 - direction.Item1 * n, position.Item2 - direction.Item2 * n);
+        return (position.X - direction.X * n, position.Y - direction.Y * n);
     }
     
     public static (int, int) GoLeft((int, int) position, (int, int) direction)

@@ -565,7 +565,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
     
-    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, IEnumerable<(int, int)>? selected = null)
+    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, bool grayscale = false, IEnumerable<(int, int)>? selected = null)
     {
         var layer = rex.Layers[layerIndex];
         var sels = selected?.ToHashSet() ?? [];
@@ -579,8 +579,14 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 var c = layer[i, j].Character;
                 var y = c == 32 ? 63 : c / (int)mapSize.X;
                 var x = c == 32 ? 15 : c % (int)mapSize.X;
-                var f = layer[i, j].Foreground;
-                Set(sx + i, sy + j, new Glyph(x, y, Color.Black, f.ToXNA()));
+                var f = layer[i, j].Foreground.ToXNA();
+                var fg = dim ? Color.Lerp(f, Color.Black, 0.75f) : f;
+                if (grayscale)
+                {
+                    var g = (fg.R + fg.G + fg.B) / 3;
+                    fg = new Color(g, g, g);
+                }
+                Set(sx + i, sy + j, new Glyph(x, y, Color.Black, fg));
             }
         }
     }
