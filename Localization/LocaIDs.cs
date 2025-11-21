@@ -3,5 +3,43 @@
 public enum LocaIDs
 {
     None = 0,
+
+    Stats_Short_Will,
+    Stats_Short_Clarity,
+    Stats_Short_Poise,
+    Stats_Short_Vigor,
+    Stats_Short_Health,
+
+    Equipment_Left_Arm,
+    Equipment_Right_Arm,
+    Equipment_Equipment,
+
+    Witch_Enough_Sin,
+    Witch_Not_Enough_Sin,
+
+    Class_Wizard_Short,
+    Class_Witch_Short,
+    Class_Knight_Short,
+    Class_Monk_Short,
+    Class_Sage_Short,
+    Class_Priest_Short,
+    Class_Thief_Short,
+
+    Location_Name_Unknown,
+    Location_Name_Forest,
+    Location_Name_Tomb,
+    Location_Name_Temple,
+    Location_Name_Cave,
+    Location_Name_Traveler,
+    Location_Name_Treasure,
+
+    Weapon_Name_Fang,
+    Weapon_Name_Claw,
     Weapon_Name_Dagger,
+    Weapon_Name_Kris,
+    Weapon_Name_Mesericorde,
+    Weapon_Name_WoodShield,
+    Weapon_Name_RoundShield,
+    Weapon_Name_RedSign,
+    Weapon_Name_Claymore,
 }

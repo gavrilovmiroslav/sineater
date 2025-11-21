@@ -13,9 +13,19 @@ internal static class Loca
 
     public static event EventHandler LocalizationChanged = delegate { };
     public static string GetString(LocaIDs locaIDs) => _localizedStrings[locaIDs];
+    public static void Setstring(LocaIDs locaIDs, string s) => _localizedStrings[locaIDs] = s;
+
+    public static void GetString(LocaIDs id, ref string s) => s = _localizedStrings[id];
     public static void Load(string json)
     {
         _localizedStrings = DataSerializer.Load<Dictionary<LocaIDs, string>>(json, true);
+        foreach (var kvp in Enum.GetValues(typeof(LocaIDs)))
+        {
+            if (!_localizedStrings.ContainsKey((LocaIDs)kvp))
+            {
+                _localizedStrings.Add((LocaIDs)kvp, "");
+            }
+        }
         //_localizedStrings.Add(LocaIDs.Weapon_Name_Dagger, "Dagger");
         //DataSerializer.Serialize(_localizedStrings);
         //GenerateLocaFile("eng.json");

@@ -12,6 +12,7 @@ using SINEATER.steam;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Localization;
 using System.IO;
+using ImGuiTools;
 
 namespace SINEATER;
 
@@ -251,7 +252,7 @@ public class SineaterGame : Game
             ScreenStack.Push(new WorldMapScreen(this));
         }
 
-        if (InputM.IsActive(EInputAction.DetailedView))
+        if (InputM.IsActive(EInputAction.ShowImGui))
         {
             _drawImgui = !_drawImgui;
         }
@@ -315,6 +316,7 @@ public class SineaterGame : Game
         {
             DrawImgui(gameTime);
         }
+        var x = Environment.UserName;
 
         base.Draw(gameTime);
     }
@@ -323,7 +325,7 @@ public class SineaterGame : Game
         _render.BeginLayout(time);
 
         // Imgui code begin
-        TemplateExamples.Example1();
+        ImGuiTools.Tools.ShowTools();
 
         // Imgui code end
 

@@ -34,10 +34,13 @@ public class ImGuiRenderer
         _inputData.Update(Owner);
 
         ImGuiNET.ImGui.NewFrame();
+
     }
 
     public virtual void EndLayout()
     {
+        ImGuiNET.ImGui.EndFrame();
+
         ImGuiNET.ImGui.Render();
         RenderDrawData(ImGuiNET.ImGui.GetDrawData());
     }
