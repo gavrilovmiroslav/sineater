@@ -28,7 +28,6 @@ namespace ImGuiTools
 
             if(ImGui.Button("Save Loca"))
             {
-                Loca.
             }
 
             foreach (var x in locaIDs)
