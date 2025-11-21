@@ -1,24 +1,95 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using CommunityToolkit.HighPerformance.Helpers;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using RogueSharp;
-using RogueSharp.MapCreation;
 using SadRex;
 using SINEATER.Input;
-using SINEATER.SinMod;
-using Wintellect.PowerCollections;
-using YamlDotNet.Core.Tokens;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
+
+public record struct Atmosphere((Color Tint, float Strength) Bg, (Color Tint, float Strength) Fg);
+
+public static class Atmospheres
+{
+    private static bool _editorOpened = false;
+    public static readonly Atmosphere[] TimeOfDay =
+    [
+        new Atmosphere((Color.LightPink, 0.0f), ( Color.Purple, 0.0f)),
+        new Atmosphere((Color.White, 0.0f), (Color.White, 0.0f)),
+        new Atmosphere((Color.Crimson, 0.0f), (Color.White, 0.0f)),
+        new Atmosphere((Color.LightBlue, 0.0f), (Color.DarkSlateBlue, 0.0f))
+    ];
+
+    public static void ImguiAtmo(string name, ref Atmosphere atmo)
+    {
+        var f = atmo.Fg.Tint;
+        var fstr = atmo.Fg.Strength;
+        var b = atmo.Bg.Tint;
+        var bstr = atmo.Bg.Strength;
+        
+        var fg = new System.Numerics.Vector3((float)f.R / 255, (float)f.G / 255, (float)f.B / 255);
+        var bg = new System.Numerics.Vector3((float)b.R / 255, (float)b.G / 255, (float)b.B / 255);
+        
+        ImGui.BeginGroup();
+        if (ImGui.ColorEdit3($"[{name}] Bg##{name}-color-bg", ref bg))
+        {
+            atmo.Bg = (new Color(bg.X, bg.Y, bg.Z), atmo.Bg.Strength);
+        }
+        if (ImGui.SliderFloat($"%##{name}-str-bg", ref bstr, 0.0f, 1.0f))
+        {
+            atmo.Bg = (atmo.Bg.Tint, bstr);
+        }
+        ImGui.EndGroup();
+        
+        ImGui.BeginGroup();
+        if (ImGui.ColorEdit3($"[{name}] Fg##{name}-color-fg", ref fg))
+        {
+            atmo.Fg = (new Color(fg.X, fg.Y, fg.Z), atmo.Fg.Strength);
+        }
+        if (ImGui.SliderFloat($"%##{name}-str-fg", ref fstr, 0.0f, 1.0f))
+        {
+            atmo.Fg = (atmo.Fg.Tint, fstr);
+        }
+        ImGui.EndGroup();
+        ImGui.Separator();
+    }
+    
+    public static void ImguiEditor()
+    {
+        ImGui.Begin("Atmosphere", ref _editorOpened);
+        ImguiAtmo("Morning", ref Atmospheres.TimeOfDay[0]);
+        ImguiAtmo("Afternoon", ref Atmospheres.TimeOfDay[0]);
+        ImguiAtmo("Evening", ref Atmospheres.TimeOfDay[0]);
+        ImguiAtmo("Night", ref Atmospheres.TimeOfDay[0]);
+        ImGui.End();
+    }
+}
+
+public class CoAnimateTimeOfDay(ETimeOfDay prev, ETimeOfDay next, WorldMapScreen screen) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var p = Atmospheres.TimeOfDay[(int)prev];
+        var n = Atmospheres.TimeOfDay[(int)next];
+        for (var i = 0; i < 10; i++)
+        {
+            var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, i / 10.0f);
+            var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, i / 10.0f);
+            var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, i / 10.0f);
+            var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, i / 10.0f);
+            screen.AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr));
+            screen.DrawWorld();
+            yield return new WaitForSeconds(0.01f);
+        }
+
+        screen.AtmosphereOverride = null;
+    }
+}
 
 public class WorldMapScreen : IScreen
 {
@@ -41,15 +112,50 @@ public class WorldMapScreen : IScreen
     internal bool ShouldUpdateView = true;
     
     private readonly Image _rex;
+    public int AtmosphereIndex;
+    public Atmosphere? AtmosphereOverride;
+    
     public readonly Dictionary<int, (Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
     public int CurrentMapLayer = 1;
     public (int X, int Y) CurrentPlayerPosition = (2, 7);
-    
+    public ETimeOfDay PreviousTimeOfDay = ETimeOfDay.Morning;
+    public ETimeOfDay TimeOfDay = ETimeOfDay.Morning;
+    public int HoursOfDay = 0;
+
+    private static string[] HourNames =
+    [
+        "Midnight", // 0
+        "the Ere-hour",
+        "Second of the Night",
+        "the Witching hour",
+        "the Wolf hour",
+        "the Dead of Night",
+        "Daybreak", // 6
+        "Dawn", // 7
+        "the Eighth Hour",
+        "the Ninth hour",
+        "Tenure",
+        "Forenoon",
+        "Midday", // 12
+        "the Slow hour",
+        "Second of the Day",
+        "Third of the Day",
+        "Fourforths",
+        "Dusk",
+        "Gloaming", // 18
+        "Nightfall",
+        "Eventide", // 20
+        "the Ninth of the Night", // 21
+        "the Shakes of Ten",
+        "Snake Eyes",
+    ];
     public WorldMapScreen(SineaterGame game)
     {
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
-
+        AtmosphereIndex = 0;
+        AtmosphereOverride = null;
+        
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
         _rex = Image.Load(stream);
@@ -69,13 +175,15 @@ public class WorldMapScreen : IScreen
         {
             var levelMap = new Map<Cell>(20, 20);
             var layerIndex = 1;
+            
             for (var y = 0; y < 20; y++)
             {
                 for (var x = 0; x < 20; x++)
                 {
                     var bg = _rex.Layers[layerIndex][x, y].Background;
+                    var transparent = _rex.Layers[layerIndex + 2][x, y].Character != 32;
                     var isAccessible = bg != SadRex.Color.Transparent && bg != new SadRex.Color(0, 0, 0);
-                    levelMap.SetCellProperties(x, y, isAccessible, isAccessible);
+                    levelMap.SetCellProperties(x, y, isAccessible || transparent, isAccessible);
                 }
             }
             
@@ -181,9 +289,10 @@ public class WorldMapScreen : IScreen
         var (map, fov) = Maps[CurrentMapLayer];
         var (x, y) = CurrentPlayerPosition;
         var light = fov.ComputeFov(x, y, 4, true);
-        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: true);
-        _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, light.Select(Predicate.CellToPosition).ToList());
-
+        var atmo = AtmosphereOverride ?? Atmospheres.TimeOfDay[AtmosphereIndex];
+        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: true, atmo: atmo);
+        _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
+        
         var tick = _time is < 400 or > 800 and < 1200;
         
         var chr = _game.Party.Characters[PlayerSelectedIndex];
@@ -193,6 +302,9 @@ public class WorldMapScreen : IScreen
         _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
         
         DrawParty();
+        
+        var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
+        _game.Layers["ascii"].Set(20, 0, $"{TimeOfDay}, {HourNames[h]}");
     }
 
     private readonly List<int> _offsets =
@@ -403,6 +515,16 @@ public class WorldMapScreen : IScreen
                     {
                         CurrentPlayerPosition.X = x;
                         CurrentPlayerPosition.Y = y;
+
+                        HoursOfDay++;
+                        if (HoursOfDay > 5)
+                        {
+                            PreviousTimeOfDay = TimeOfDay;
+                            AtmosphereIndex = (AtmosphereIndex + 1) % 4;
+                            TimeOfDay = (ETimeOfDay)AtmosphereIndex;
+                            CoroutineHandler.Run(new CoAnimateTimeOfDay(PreviousTimeOfDay, TimeOfDay, this));
+                            HoursOfDay = 0;
+                        }
                     }
                 }
                 

@@ -544,7 +544,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
     
-    public void SetRex(int sx, int sy, Image rex, int layerIndex, IEnumerable<(int, int)>? selected = null)
+    public void SetRex(int sx, int sy, Image rex, int layerIndex, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null)
     {
         var layer = rex.Layers[layerIndex];
         var sels = selected?.ToHashSet() ?? [];
@@ -558,14 +558,23 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 var c = layer[i, j].Character;
                 var y = c == 32 ? 63 : c / (int)mapSize.X;
                 var x = c == 32 ? 15 : c % (int)mapSize.X;
-                var b = layer[i, j].Background;
-                var f = layer[i, j].Foreground;
-                Set(sx + i, sy + j, new Glyph(x, y, b.ToXNA(), f.ToXNA()));
+                var bg = layer[i, j].Background.ToXNA();
+                var fg = layer[i, j].Foreground.ToXNA();
+
+                //var bg = Color.Black;
+                if (atmo is {} p)
+                {
+                    fg = Color.Lerp(fg, p.Fg.Tint, p.Fg.Strength * 0.66f);
+                    var df = ((i + j) % 2 == 0) ? 1.0f : 0.7f;
+                    bg = Color.Lerp(bg, p.Bg.Tint, p.Bg.Strength * 0.9f * df);
+                }
+
+                Set(sx + i, sy + j, new Glyph(x, y, bg, fg));
             }
         }
     }
     
-    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, bool grayscale = false, IEnumerable<(int, int)>? selected = null)
+    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, bool grayscale = false, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null)
     {
         var layer = rex.Layers[layerIndex];
         var sels = selected?.ToHashSet() ?? [];
@@ -586,7 +595,19 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                     var g = (fg.R + fg.G + fg.B) / 3;
                     fg = new Color(g, g, g);
                 }
-                Set(sx + i, sy + j, new Glyph(x, y, Color.Black, fg));
+
+                var bg = Color.Black;
+                if (atmo is {} p)
+                {
+                    fg = Color.Lerp(fg, p.Fg.Tint, p.Fg.Strength);
+                    var df = ((i + j) % 2 == 0) ? 1.0f : 0.5f;
+                    bg = Color.Lerp(bg, p.Bg.Tint, p.Bg.Strength * df);
+                }
+
+                if (grayscale && c != 208)
+                {
+                    Set(sx + i, sy + j, new Glyph(x, y, bg, fg));
+                }
             }
         }
     }

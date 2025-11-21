@@ -321,7 +321,8 @@ public class SineaterGame : Game
         _render.BeginLayout(time);
 
         // Imgui code begin
-        TemplateExamples.Example1();
+        //TemplateExamples.AtmosphereEditor();
+        Atmospheres.ImguiEditor();
 
         // Imgui code end
 
