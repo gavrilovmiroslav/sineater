@@ -257,10 +257,3 @@ public class Weapon(string name, EWeightClass weight,
         return new Weapon($"!{name}", EWeightClass.Medium, 1, 1, 0, (0, 0));
     }
 }
-
-public record struct WeaponAttack(
-     string Name,
-     int Attack, //Power
-     int Stamina,
-     int Accuracy
-);

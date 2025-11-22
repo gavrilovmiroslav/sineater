@@ -574,7 +574,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
     
-    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, bool grayscale = false, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null)
+    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, float grayscale = 0.0f, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null)
     {
         var layer = rex.Layers[layerIndex];
         var sels = selected?.ToHashSet() ?? [];
@@ -589,12 +589,12 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 var y = c == 32 ? 63 : c / (int)mapSize.X;
                 var x = c == 32 ? 15 : c % (int)mapSize.X;
                 var f = layer[i, j].Foreground.ToXNA();
-                var fg = dim ? Color.Lerp(f, Color.Black, 0.75f) : f;
-                if (grayscale)
-                {
-                    var g = (fg.R + fg.G + fg.B) / 3;
-                    fg = new Color(g, g, g);
-                }
+                var fg = dim ? Color.Lerp(f, Color.Black, grayscale * 0.75f) : f;
+                
+                var g = (fg.R + fg.G + fg.B) / 3;
+                var gr = new Color(g, g, g);
+
+                fg = Color.Lerp(fg, gr, grayscale);
 
                 var bg = Color.Black;
                 if (atmo is {} p)
@@ -604,7 +604,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                     bg = Color.Lerp(bg, p.Bg.Tint, p.Bg.Strength * df);
                 }
 
-                if (grayscale && c != 208)
+                if (c != 208)
                 {
                     Set(sx + i, sy + j, new Glyph(x, y, bg, fg));
                 }

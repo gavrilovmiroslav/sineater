@@ -319,20 +319,8 @@ public class SineaterGame : Game
     private void DrawImgui(GameTime time)
     {
         _render.BeginLayout(time);
-
-        // Imgui code begin
-        //TemplateExamples.AtmosphereEditor();
-        Atmospheres.ImguiEditor();
-
-        // Imgui code end
-
+        Ambient.ImguiEditor();
         _render.EndLayout();
-    }
-    
-    protected override void OnExiting(object sender, ExitingEventArgs args)
-    {
-        SteamManager.Instance.ShutDown();
-        base.OnExiting(sender, args);
     }
     
     public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];

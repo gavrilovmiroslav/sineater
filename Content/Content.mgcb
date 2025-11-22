@@ -38,6 +38,9 @@
 /processorParam:TextureFormat=Color
 /build:Codepage.png
 
+#begin colors.json
+/copy:colors.json
+
 #begin crt.fx
 /importer:EffectImporter
 /processor:EffectProcessor
