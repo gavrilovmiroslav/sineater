@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using RogueSharp;
 using SadRex;
+using SINEATER.ImGuiTools;
 using SINEATER.Input;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
