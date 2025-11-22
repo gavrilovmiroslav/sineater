@@ -1,12 +1,9 @@
 ﻿using ImGuiNET;
 using SINEATER.Localization;
+using SINEATER.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Core.Tokens;
+using System.IO;
 
 namespace ImGuiTools
 {
@@ -26,8 +23,12 @@ namespace ImGuiTools
                 IsInit = true;
             }
 
+
             if(ImGui.Button("Save Loca"))
             {
+                var dir = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+                Loca.Save($"{dir}/Content/loca/english.json");
+                Loca.Save("Content/loca/english.json");
             }
 
             foreach (var x in locaIDs)

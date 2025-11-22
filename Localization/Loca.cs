@@ -31,6 +31,12 @@ internal static class Loca
         //GenerateLocaFile("eng.json");
         //var xx = DataSerializer.Load<Dictionary<LocaIDs, string>>(File.ReadAllText("eng.json"), true);
     }
+
+    public static void Save(string path)
+    {
+        DataSerializer.Serialize<Dictionary<LocaIDs, string>>(_localizedStrings, true, path);
+    }
+
     public static void GenerateLocaFile(string fileName)
     {
         Dictionary<LocaIDs, string> pairs = new Dictionary<LocaIDs, string>();

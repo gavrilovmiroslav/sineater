@@ -7,9 +7,7 @@ namespace ImGuiTools
 
         public static void ShowTools()
         {
-            //ImGuiNET.ImGui.SetWindowSize(new System.Numerics.Vector2(1000.0f, 500.0f));
-            ImGuiNET.ImGui.Begin("Tools");
-
+            ImGui.Begin("Tools");
 
             if (ImGui.BeginTabBar("#ToolsTabBar"))
             {
