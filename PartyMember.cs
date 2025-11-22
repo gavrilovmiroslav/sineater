@@ -513,9 +513,9 @@ public abstract class Character : ICharacter
 
 public class PartyMember : Character
 {
-    public HashSet<(int, int)> Zone = [];
-    public HashSet<(int, int)> Fov = [];
-    public (int, int) Origin = (0, 0);
+    public HashSet<(int X, int Y)> Zone = [];
+    public HashSet<(int X, int Y)> Fov = [];
+    public (int X, int Y) Origin = (0, 0);
     public int Steps = 0;
     public bool NoMove = false;
     

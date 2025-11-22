@@ -124,50 +124,49 @@ namespace SINEATER.Input
             {
                 Name = "Default",
                 Inputs = new List<InputAction>
-            {
-                MakeAction(EInputAction.Exit, Keys.Escape, Buttons.Back, true, 200),
+                {
+                    MakeAction(EInputAction.Exit, Keys.Escape, Buttons.Back, true, 200),
 
-                MakeAction(EInputAction.MoveUp, Keys.Up, Buttons.DPadUp),
-                MakeAction(EInputAction.MoveDown, Keys.Down, Buttons.DPadDown),
-                MakeAction(EInputAction.MoveLeft, Keys.Left, Buttons.DPadLeft),
-                MakeAction(EInputAction.MoveRight, Keys.Right, Buttons.DPadRight),
-                MakeAction(EInputAction.Confirm, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.MoveUp, Keys.Up, Buttons.DPadUp),
+                    MakeAction(EInputAction.MoveDown, Keys.Down, Buttons.DPadDown),
+                    MakeAction(EInputAction.MoveLeft, Keys.Left, Buttons.DPadLeft),
+                    MakeAction(EInputAction.MoveRight, Keys.Right, Buttons.DPadRight),
+                    MakeAction(EInputAction.Confirm, Keys.Space, Buttons.A),
 
-                MakeAction(EInputAction.SubmenuUp, Keys.Up, Buttons.DPadUp),
-                MakeAction(EInputAction.SubmenuDown, Keys.Down, Buttons.DPadDown),
-                MakeAction(EInputAction.SubmenuConfirm, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.SubmenuUp, Keys.Up, Buttons.DPadUp),
+                    MakeAction(EInputAction.SubmenuDown, Keys.Down, Buttons.DPadDown),
+                    MakeAction(EInputAction.SubmenuConfirm, Keys.Space, Buttons.A),
 
-                MakeAction(EInputAction.VolumeDown, Keys.PageDown, Buttons.None),
-                MakeAction(EInputAction.VolumeUp, Keys.PageUp, Buttons.None),
-                MakeAction(EInputAction.Mute, Keys.End, Buttons.None),
+                    MakeAction(EInputAction.VolumeDown, Keys.PageDown, Buttons.None),
+                    MakeAction(EInputAction.VolumeUp, Keys.PageUp, Buttons.None),
+                    MakeAction(EInputAction.Mute, Keys.End, Buttons.None),
 
-                MakeAction(EInputAction.LoadItems, Keys.F5, Buttons.None),
-                MakeAction(EInputAction.RestartExploration, Keys.F1, Buttons.None),
-                MakeAction(EInputAction.ExplorationDebug, Keys.F10, Buttons.None),
-                MakeAction(EInputAction.ShowImGui, Keys.F2, Buttons.None),
+                    MakeAction(EInputAction.LoadItems, Keys.F5, Buttons.None),
+                    MakeAction(EInputAction.RestartExploration, Keys.F1, Buttons.None),
+                    MakeAction(EInputAction.ExplorationDebug, Keys.F10, Buttons.None),
+                    MakeAction(EInputAction.ShowImGui, Keys.F2, Buttons.None),
 
-                MakeAction(EInputAction.ChacterSheetEnter, Keys.C, Buttons.Y),
-                MakeAction(EInputAction.ChacterSheetCycle, Keys.Space, Buttons.A),
-                MakeAction(EInputAction.ChacterSheetExit, Keys.Escape, Buttons.B),
+                    MakeAction(EInputAction.ChacterSheetEnter, Keys.C, Buttons.Y),
+                    MakeAction(EInputAction.ChacterSheetCycle, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.ChacterSheetExit, Keys.Escape, Buttons.B),
 
-                MakeAction(EInputAction.OpenInventory, Keys.I, Buttons.None),
-                MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
+                    MakeAction(EInputAction.OpenInventory, Keys.I, Buttons.None),
+                    MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
 
-                MakeAction(EInputAction.MoveMapLeft, Keys.U, Buttons.None),
-                MakeAction(EInputAction.MoveMapRight, Keys.I, Buttons.None),
-                MakeAction(EInputAction.Regenerate, Keys.F1, Buttons.None),
-                MakeAction(EInputAction.ShowMap, Keys.F10, Buttons.None),
+                    MakeAction(EInputAction.MoveMapLeft, Keys.U, Buttons.None),
+                    MakeAction(EInputAction.MoveMapRight, Keys.I, Buttons.None),
+                    MakeAction(EInputAction.Regenerate, Keys.F1, Buttons.None),
+                    MakeAction(EInputAction.ShowMap, Keys.F10, Buttons.None),
 
-                MakeAction(EInputAction.ExitInspect, Keys.F10, Buttons.B),
-                MakeAction(EInputAction.Ability, Keys.A, Buttons.X),
-                MakeAction(EInputAction.ActionsMenu, Keys.Space, Buttons.A),
-                MakeAction(EInputAction.EndTurn, Keys.Enter, Buttons.B),
-                MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
-                MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
-                MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.None, eInput: EInputTrigger.Down),
-            }
-            }
-            );
+                    MakeAction(EInputAction.ExitInspect, Keys.F10, Buttons.B),
+                    MakeAction(EInputAction.Ability, Keys.A, Buttons.X),
+                    MakeAction(EInputAction.ActionsMenu, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.EndTurn, Keys.Enter, Buttons.B),
+                    MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
+                    MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
+                    MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.None, eInput: EInputTrigger.JustReleased),
+                }
+            });
         }
 
         private InputAction MakeAction(EInputAction action, Keys key, Buttons button, bool isHold = false, int HoldTime = 0, EInputTrigger eInput = EInputTrigger.JustPressed)

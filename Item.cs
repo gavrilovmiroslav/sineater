@@ -46,7 +46,7 @@ public interface IItem : IAbilitySource
 }
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Item(string name, (int, int) uv, EElement element = EElement.None, EWeightClass weight = EWeightClass.Medium) : ICloneable, IItem
+public class Item(string name, (int U, int V) uv, EElement element = EElement.None, EWeightClass weight = EWeightClass.Medium) : ICloneable, IItem
 {
     public void Copy(Item original)
     {
@@ -74,7 +74,7 @@ public class Item(string name, (int, int) uv, EElement element = EElement.None, 
     [JsonProperty]
     public LocalizedString LocaName { get; set; } = new LocalizedString(name);
     [JsonProperty]
-    public virtual (int, int) Picture { get; set; } = (uv.Item1, uv.Item2);
+    public virtual (int, int) Picture { get; set; } = (uv.U, uv.V);
     [JsonProperty]
     public virtual EWeightClass Weight { get; set; } = weight;
     [JsonProperty]

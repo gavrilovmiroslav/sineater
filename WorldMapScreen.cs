@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using CommunityToolkit.HighPerformance.Helpers;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using RogueSharp;
-using RogueSharp.MapCreation;
 using SadRex;
+using SINEATER.ImGuiTools;
 using SINEATER.Input;
-using SINEATER.SinMod;
-using Wintellect.PowerCollections;
-using YamlDotNet.Core.Tokens;
+using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
@@ -34,28 +32,99 @@ public class WorldMapScreen : IScreen
     internal CoroutineHandler CoroutineHandler = new();
     private List<string> _submenu = [];
     private int _submenuSelection = 0;
-    private (int, int) _submenuDelta = (0, 0);
+    private (int X, int Y) _submenuDelta = (0, 0);
     
-    internal (int, int) DrawOffset { get; set; } = (8, 1);
+    internal (int X, int Y) DrawOffset { get; set; } = (8, 1);
     internal bool ShouldUpdateView = true;
     
-    private readonly Image _map;
+    private readonly Image _rex;
+    public int AtmosphereIndex;
+    public Atmosphere? AtmosphereOverride;
+    
+    public readonly Dictionary<int, (Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
+    public int CurrentMapLayer = 1;
+    public (int X, int Y) CurrentPlayerPosition = (2, 7);
+    public ETimeOfDay PreviousTimeOfDay = ETimeOfDay.Morning;
+    public ETimeOfDay TimeOfDay = ETimeOfDay.Morning;
+    public int HoursOfDay = 0;
+    
+    private readonly List<int> _offsets = [ 1, 1, 0, 0 ];
+    private readonly List<int> _xoffsets = [ 0, 0, 0, 0 ];
+    private readonly List<(int, int)> _positions = [ (0, 0), (3, 0), (0, 3), (3, 3) ];
+    private readonly List<string> _positionStats = [ "WIL", "CLA", "POI", "VIG" ];
+
+    private static string[] HourNames =
+    [
+        "Midnight", // 0
+        "The Silent Hour",
+        "Second of the Night",
+        "The Witching Hour",
+        "Dead of Night",
+        "The Wolf Hour",
+        "First Watch", // 6
+        "Dawnrise", // 7
+        "The Eighth of the Day",
+        "The Ninth Hour",
+        "Decadence",
+        "Forenoon",
+        "Midday", // 12
+        "The Slow Hour",
+        "Second Watch",
+        "Third of the Day",
+        "Hecatombs",
+        "Fifth of the Day",
+        "Gloaming", // 18
+        "Nightfall",
+        "Eventide", // 20
+        "Third Watch", // 21
+        "The Shakes of Ten",
+        "Snake Eyes", // 11
+    ];
     
     public WorldMapScreen(SineaterGame game)
     {
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
-
+        AtmosphereIndex = 0;
+        AtmosphereOverride = null;
+        
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
-        _map = Image.Load(stream);
+        _rex = Image.Load(stream);
+        InitializeMapLayers();
         
         Initialize(game);
+
+        var colors = TitleContainer.OpenStream("Content\\colors.json");
+        var c = string.Join("\n", colors.ReadLines(Encoding.Default));
+        Ambient.Atmospheres = JsonConvert.DeserializeObject<Atmospheres>(c) ?? new Atmospheres();
     }
 
     public void Initialize(SineaterGame game)
     {
         _game = game;
+    }
+
+    private void InitializeMapLayers()
+    {
+        foreach (var layer in _rex.Layers)
+        {
+            var levelMap = new Map<Cell>(20, 20);
+            var layerIndex = 1;
+            
+            for (var y = 0; y < 20; y++)
+            {
+                for (var x = 0; x < 20; x++)
+                {
+                    var bg = _rex.Layers[layerIndex][x, y].Background;
+                    var transparent = _rex.Layers[layerIndex + 2][x, y].Character != 32;
+                    var isAccessible = bg != SadRex.Color.Transparent && bg != new SadRex.Color(0, 0, 0);
+                    levelMap.SetCellProperties(x, y, isAccessible || transparent, isAccessible);
+                }
+            }
+            
+            Maps[layerIndex] = (levelMap, new FieldOfView<Cell>(levelMap));
+        }
     }
     
     public void Update(GameTime gameTime)
@@ -152,31 +221,48 @@ public class WorldMapScreen : IScreen
         {
             _game.Layers[layer].Clear();
         }
+
+        var (map, fov) = Maps[CurrentMapLayer];
+        var (x, y) = CurrentPlayerPosition;
+        var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
+        var radius = h switch
+        {
+            < 6 => 2,
+            < 10 => 3,
+            < 15 => 4,
+            < 16 => 5,
+            < 19 => 4,
+            < 22 => 3,
+            _ => 2
+        };
+        var light = fov.ComputeFov(x, y, radius, true);
         
-        _game.Layers["map"].SetRexFg(8, 2, _map, 1);
-        _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
+        var p = Ambient.Atmospheres[(int)TimeOfDay];
+        var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
+        
+        var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, HoursOfDay / 6.0f);
+        var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, HoursOfDay / 6.0f);
+        var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, HoursOfDay / 6.0f);
+        var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, HoursOfDay / 6.0f);
+        var gr = float.Lerp(p.Grayscale, n.Grayscale, HoursOfDay / 6.0f);
+        AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr), gr);
+        
+        var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
+        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo);
+        _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
+        
+        var tick = _time is < 400 or > 800 and < 1200;
+        
+        var chr = _game.Party.Characters[PlayerSelectedIndex];
+        var (u, v) = chr.Job.GetImage();
+        _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+        
+        _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
         
         DrawParty();
+        
+        _game.Layers["ascii"].Set(20, 0, $"{HourNames[h]} ({TimeOfDay})");
     }
-
-    private readonly List<int> _offsets =
-    [
-        1, 1, 0, 0
-    ];
-    
-    private readonly List<int> _xoffsets =
-    [
-        0, 0, 0, 0
-    ];
-    
-    private readonly List<(int, int)> _positions = [
-        (0, 0), (3, 0), (0, 3), (3, 3)
-    ];
-
-    private readonly List<string> _positionStats =
-    [
-        "WIL", "CLA", "POI", "VIG"
-    ];
     
     private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null)
     {
@@ -352,25 +438,36 @@ public class WorldMapScreen : IScreen
                 SelectNextAvailablePartyMember();
             }
             
-            if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
-            {
-                var up = InputM.IsActive(EInputAction.MoveUp);
-                var down = InputM.IsActive(EInputAction.MoveDown);
-                var left = InputM.IsActive(EInputAction.MoveLeft);
-                var right = InputM.IsActive(EInputAction.MoveRight);
+            var up = InputM.IsActive(EInputAction.MoveUp);
+            var down = InputM.IsActive(EInputAction.MoveDown);
+            var left = InputM.IsActive(EInputAction.MoveLeft);
+            var right = InputM.IsActive(EInputAction.MoveRight);
 
-                if (up || down || left || right)
+            if (up || down || left || right)
+            {
+                var dx = (left ? -1 : 0) + (right ? 1 : 0);
+                var dy = (up ? -1 : 0) + (down ? 1 : 0);
+                if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
                 {
-                    var dx = (left ? -1 : 0) + (right ? 1 : 0);
-                    var dy = (up ? -1 : 0) + (down ? 1 : 0);
-                    if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
+                    var x = CurrentPlayerPosition.X + dx;
+                    var y = CurrentPlayerPosition.Y + dy;
+                    if (x >= 0 && y >= 0 && x < 20 && y < 20 && Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                     {
-                        current.X += dx;
-                        current.Y += dy;
+                        CurrentPlayerPosition.X = x;
+                        CurrentPlayerPosition.Y = y;
+
+                        HoursOfDay++;
+                        if (HoursOfDay > 5)
+                        {
+                            PreviousTimeOfDay = TimeOfDay;
+                            AtmosphereIndex = (AtmosphereIndex + 1) % 4;
+                            TimeOfDay = (ETimeOfDay)AtmosphereIndex;
+                            HoursOfDay = 0;
+                        }
                     }
-                    
-                    UpdateCombatView();
                 }
+                
+                UpdateCombatView();
             }
         }
     }

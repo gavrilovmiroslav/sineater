@@ -1,27 +1,28 @@
 ﻿using ImGuiNET;
 
-namespace ImGuiTools
+namespace SINEATER.ImGuiTools
 {
     public static class Tools
     {
-
-        public static void ShowTools()
+        public static void ShowTools(ref bool isOpen)
         {
-            ImGui.Begin("Tools");
+            ImGui.Begin("Tools", ref isOpen);
 
-            if (ImGui.BeginTabBar("#ToolsTabBar"))
+            if (ImGui.BeginTabBar("#ToolsTabBar", ImGuiTabBarFlags.Reorderable))
             {
-                if (ImGui.BeginTabItem("Localization"))
+                if (ImGui.BeginTabItem("Ambient"))
                 {
-                    LocaTool.Show();
+                    Ambient.ImguiEditor();
+
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Empty"))
+                {
+                    ImGui.Text("EMPTY!");
 
                     ImGui.EndTabItem();
                 }
 
-                if (ImGui.BeginTabItem("Second"))
-                {
-                    ImGui.EndTabItem();
-                }
                 ImGui.EndTabBar();
             }
 

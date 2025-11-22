@@ -5,9 +5,8 @@ namespace Monogame.ImGuiExamples
     public static class TemplateExamples
     {
         private static bool _secondWindowOpened = false;
-        public static void Example1()
+        public static void AtmosphereEditor()
         {
-
             ImGui.Text("Hello!");
 
             string _input = "";

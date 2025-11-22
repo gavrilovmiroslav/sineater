@@ -35,7 +35,7 @@ public class CombatConfig
 
 public class CombatMapScreen : IScreen
 {
-    private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+    private static readonly (int X, int Y)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
     private readonly int _fullWidth = 20, _fullHeight = 20;
     private int _width, _height;
@@ -53,9 +53,9 @@ public class CombatMapScreen : IScreen
     private MultiDictionary<(int, int), Color> _fgs = new(false);
     private List<string> _submenu = [];
     private int _submenuSelection = 0;
-    private (int, int) _submenuDelta = (0, 0);
+    private (int X, int Y) _submenuDelta = (0, 0);
     
-    internal (int, int) DrawOffset { get; set; } = (8, 1);
+    internal (int X, int Y) DrawOffset { get; set; } = (8, 1);
     internal bool ShouldUpdateView = true;
 
     public Domains Domains;
@@ -162,7 +162,7 @@ public class CombatMapScreen : IScreen
             }
         }
 
-        Map.SetCellProperties(Structure.Goals[0].Item1, Structure.Goals[0].Item2, false, false);
+        Map.SetCellProperties(Structure.Goals[0].X, Structure.Goals[0].Y, false, false);
         
         foreach (var (tx, ty) in Structure.Treasure)
         {
@@ -173,8 +173,8 @@ public class CombatMapScreen : IScreen
 
         for (var ci = 0; ci < 4; ci++)
         {
-            _game.Party.Characters[ci].X = Structure.Starts[ci].Item1;
-            _game.Party.Characters[ci].Y = Structure.Starts[ci].Item2;
+            _game.Party.Characters[ci].X = Structure.Starts[ci].X;
+            _game.Party.Characters[ci].Y = Structure.Starts[ci].Y;
             _game.Party.Characters[ci].SetOrigin();
         }
         
@@ -186,14 +186,14 @@ public class CombatMapScreen : IScreen
         if (InputM.IsActive(EInputAction.MoveMapLeft))
         {
             var dof = DrawOffset;
-            dof.Item1--;
+            dof.X--;
             DrawOffset = dof;
         }
         
         if (InputM.IsActive(EInputAction.MoveMapRight))
         {
             var dof = DrawOffset;
-            dof.Item1++;
+            dof.X++;
             DrawOffset = dof;
         }
         
@@ -485,7 +485,7 @@ public class CombatMapScreen : IScreen
         var walkRadius = (int)Math.Max(1, w.Vig + w.Poi + w.Wil - w.Weight);
         w.Zone = dis.GetAllBeneath(walkRadius + 1).ToHashSet();
         w.Zone.IntersectWith(Structure.Map.
-            GetCellsInCircle(w.Origin.Item1, w.Origin.Item2, walkRadius).
+            GetCellsInCircle(w.Origin.X, w.Origin.Y, walkRadius).
             Select(Predicate.CellToPosition).ToHashSet());
     }
 
@@ -502,7 +502,7 @@ public class CombatMapScreen : IScreen
             _game.Layers[layer].Clear();
         }
         
-        _game.ActionPoints.Draw(DrawOffset.Item1 * 2 + 1, 26);
+        _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)
@@ -620,9 +620,9 @@ public class CombatMapScreen : IScreen
             Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Active ? colors[chr.Level - 1] : Color.Gray));
         }
         
-        foreach (var chr in Structure.Treasure.Where(chr => showMap || _fov.IsInFov(chr.Item1, chr.Item2)))
+        foreach (var chr in Structure.Treasure.Where(chr => showMap || _fov.IsInFov(chr.X, chr.Y)))
         {
-            Draw(chr.Item1, chr.Item2, "?", Color.White);
+            Draw(chr.X, chr.Y, "?", Color.White);
         }
 
         DrawParty();
@@ -757,7 +757,7 @@ public class CombatMapScreen : IScreen
                     _game.Party.Characters[PlayerSelectedIndex].X,
                     _game.Party.Characters[PlayerSelectedIndex].Y);
                 
-                DrawSubmenuAttackInfo(px + _submenuDelta.Item1, py + _submenuDelta.Item2);
+                DrawSubmenuAttackInfo(px + _submenuDelta.X, py + _submenuDelta.Y);
             }
         }
     }
@@ -809,7 +809,7 @@ public class CombatMapScreen : IScreen
             nextSelfAP.Add(EStatus.Insanity, dmg?.SelfInsanity ?? 0);
             nextSelfAP.Add(EStatus.Poison, dmg?.SelfPoison ?? 0);
             nextSelfAP.Add(EStatus.Death, dmg?.SelfDeath ?? 0);
-            nextSelfAP.Draw(DrawOffset.Item1 * 2 + 1, 26);
+            nextSelfAP.Draw(DrawOffset.X * 2 + 1, 26);
         }
         
         var (u, v) = enemy.GetPortait();
@@ -854,7 +854,7 @@ public class CombatMapScreen : IScreen
         {
             if (_time >= 800)
             {
-                nextAP.Draw(DrawOffset.Item1 * 2 + 1, 26);
+                nextAP.Draw(DrawOffset.X * 2 + 1, 26);
             }
         }
 

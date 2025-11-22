@@ -1,8 +1,5 @@
-﻿using ImGuiNET;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Monogame.ImGuiExamples;
 using MonoGame.ImGui;
 using SINEATER.Input;
 using SINEATER.SinMod;
@@ -323,19 +320,10 @@ public class SineaterGame : Game
     private void DrawImgui(GameTime time)
     {
         _render.BeginLayout(time);
-
-        // Imgui code begin
-        ImGuiTools.Tools.ShowTools();
-
-        // Imgui code end
+        
+        Tools.ShowTools(ref _drawImgui);
 
         _render.EndLayout();
-    }
-    
-    protected override void OnExiting(object sender, ExitingEventArgs args)
-    {
-        SteamManager.Instance.ShutDown();
-        base.OnExiting(sender, args);
     }
     
     public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
