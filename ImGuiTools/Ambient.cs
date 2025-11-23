@@ -28,6 +28,7 @@ namespace SINEATER.ImGuiTools
                 atmo.Bg = (new Color(bg.X, bg.Y, bg.Z), atmo.Bg.Strength);
                 changed = true;
             }
+            
             if (ImGui.SliderFloat($"%##{name}-str-bg", ref bstr, 0.0f, 1.0f))
             {
                 atmo.Bg = (atmo.Bg.Tint, bstr);
@@ -41,6 +42,7 @@ namespace SINEATER.ImGuiTools
                 atmo.Fg = (new Color(fg.X, fg.Y, fg.Z), atmo.Fg.Strength);
                 changed = true;
             }
+            
             if (ImGui.SliderFloat($"%##{name}-str-fg", ref fstr, 0.0f, 1.0f))
             {
                 atmo.Fg = (atmo.Fg.Tint, fstr);
@@ -48,7 +50,7 @@ namespace SINEATER.ImGuiTools
             }
             ImGui.EndGroup();
 
-            if (ImGui.SliderFloat($"Grayscale##{name}-grayscale", ref gr, 0, 1))
+            if (ImGui.SliderFloat($"Grayscale##{name}-grayscale", ref gr, 0.0f, 1.0f))
             {
                 atmo.Grayscale = gr;
                 changed = true;
@@ -60,27 +62,21 @@ namespace SINEATER.ImGuiTools
 
         public static void ImguiEditor()
         {
-            var changed = false;
-            if (ImGui.Button("Force Save"))
-            {
-                changed = true;
-            }
+            bool changed = ImGui.Button("Force Save");
 
             changed |= ImguiAtmo("Morning", ref Atmospheres.morning);
             changed |= ImguiAtmo("Afternoon", ref Atmospheres.afternoon);
             changed |= ImguiAtmo("Evening", ref Atmospheres.evening);
             changed |= ImguiAtmo("Night", ref Atmospheres.night);
 
-            if (changed)
-            {
-                var colors =
-                    System.IO.Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
-                        $"Content\\colors.json");
-                using StreamWriter sw = new StreamWriter(colors);
-                using JsonWriter writer = new JsonTextWriter(sw);
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(writer, Atmospheres);
-            }
+            if (!changed) return;
+            var colors =
+                System.IO.Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
+                    $"Content\\colors.json");
+            using var sw = new StreamWriter(colors);
+            using var writer = new JsonTextWriter(sw);
+            var serializer = new JsonSerializer();
+            serializer.Serialize(writer, Atmospheres);
         }
     }
 }

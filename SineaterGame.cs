@@ -41,7 +41,6 @@ public class SineaterGame : Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public World World;
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
@@ -50,7 +49,7 @@ public class SineaterGame : Game
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
 
-    private bool _drawImgui = false;
+    public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
     public SineaterGame()
@@ -247,7 +246,7 @@ public class SineaterGame : Game
 
         if (InputM.IsActive(EInputAction.DetailedView))
         {
-            _drawImgui = !_drawImgui;
+            ShouldDrawImgui = !ShouldDrawImgui;
         }
 
         if (ScreenStack?.Peek() is { } screen)
@@ -305,7 +304,7 @@ public class SineaterGame : Game
         
         _spriteBatch.End();
 
-        if (_drawImgui)
+        if (ShouldDrawImgui)
         {
             DrawImgui(gameTime);
         }
@@ -316,7 +315,7 @@ public class SineaterGame : Game
     {
         _render.BeginLayout(time);
         
-        Tools.ShowTools(ref _drawImgui);
+        Tools.ShowTools(ref ShouldDrawImgui);
 
         _render.EndLayout();
     }

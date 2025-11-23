@@ -1,19 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using CommunityToolkit.HighPerformance.Helpers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using RogueSharp.MapCreation;
 using SINEATER.Input;
 using SINEATER.SinMod;
 using Wintellect.PowerCollections;
-using YamlDotNet.Core.Tokens;
 
 namespace SINEATER;
 
@@ -33,29 +28,20 @@ public class CombatConfig
     public ETerrainKind Terrain;
 }
 
-public class CombatMapScreen : IScreen
+public class CombatMapScreen : Screen
 {
     private static readonly (int X, int Y)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
-    private readonly int _fullWidth = 20, _fullHeight = 20;
-    private int _width, _height;
-    private SineaterGame _game;
     private ETerrainKind _kind;
     public LevelStructure Structure;
     private bool _rendered = false;
     private bool _detailedView = false;
-    private int _time = 0;
     public int PlayerSelectedIndex = 0;
     private Glyph[,] _groundGlyphs;
-    internal CoroutineHandler CoroutineHandler = new();
     internal FieldOfView<Cell> _fov;
     private readonly CombatConfig? _config;
     private MultiDictionary<(int, int), Color> _fgs = new(false);
-    private List<string> _submenu = [];
-    private int _submenuSelection = 0;
-    private (int X, int Y) _submenuDelta = (0, 0);
     
-    internal (int X, int Y) DrawOffset { get; set; } = (8, 1);
     internal bool ShouldUpdateView = true;
 
     public Domains Domains;
@@ -73,7 +59,7 @@ public class CombatMapScreen : IScreen
     
     private void Regenerate() => Regenerate(_kind);
 
-    public CombatMapScreen(SineaterGame game, CombatConfig? config = null, int width = -1, int height = -1, string title = "???")
+    public CombatMapScreen(SineaterGame game, CombatConfig? config = null, int width = -1, int height = -1, string title = "???") : base(game)
     {
         _config = config;
         _width = width;
@@ -84,14 +70,11 @@ public class CombatMapScreen : IScreen
         _kind = _config?.Terrain ?? ETerrainKind.Cave;
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
-        Initialize(game);
         Regenerate(_width == -1 || _height == -1);
     }
 
-    public void Initialize(SineaterGame game)
-    {
-        _game = game;
-    }
+    public override void Initialize(SineaterGame game)
+    {}
     
     private void Regenerate(ETerrainKind kind)
     {
@@ -181,7 +164,7 @@ public class CombatMapScreen : IScreen
         
     }
     
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         if (InputM.IsActive(EInputAction.MoveMapLeft))
         {
@@ -218,54 +201,6 @@ public class CombatMapScreen : IScreen
         CheckPlayerInputs();
     }
     
-    internal (int, int)? GetUV(int x, int y)
-    {
-        var (ox, oy) = DrawOffset;
-        return SineaterGame.Instance.Layers["mrmo"].GetUV(x + ox, y + oy);
-    }
-
-    internal Color GetFg(int x, int y)
-    {
-        var (ox, oy) = DrawOffset;
-        return SineaterGame.Instance.Layers["mrmo"].GetFg(x + ox, y + oy);
-    }
-    
-    internal void Draw(int x, int y, Glyph g)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, g);
-    }
-    
-    internal void Draw(int x, int y, string s)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, s);
-    }
-    
-    internal void Draw(int x, int y, Color c)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, c);
-    }
-    
-    internal void Draw(int x, int y, string s, Color c)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, s, c);
-    }
-    
-    internal void Draw(int x, int y, string s, Color c, Color b)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, s, c, b);
-    }
-
-    internal void Draw(int x, int y, Color c, Color b)
-    {
-        var (ox, oy) = DrawOffset;
-        _game.Layers["mrmo"].Set(x + ox, y + oy, c, b);
-    }
-
     void UpdateCombatView()
     {
         var selfFov = new FieldOfView(Map);
@@ -722,7 +657,7 @@ public class CombatMapScreen : IScreen
 
     private int _offset = 96;
     
-    public void Draw(GameTime gameTime)
+    public override void Draw(GameTime gameTime)
     {
         if (CoroutineHandler.IsActive())
         {
