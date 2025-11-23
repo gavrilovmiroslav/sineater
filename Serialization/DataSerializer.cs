@@ -20,6 +20,15 @@ namespace SINEATER.Serialization
 
             return deserializedObject;
         }
+        public static void Load<T>(string json, out T result)
+        {
+            var deserializedObject = JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+            });
+
+            result =  deserializedObject;
+        }
         public static void Serialize<T>(T target, JsonSerializerSettings settings)
         {
             string serializedJson = JsonConvert.SerializeObject(target, Formatting.Indented, settings);
@@ -40,6 +49,15 @@ namespace SINEATER.Serialization
             {
                 sw.WriteLine(serializedJson);
             }
+        }
+
+        public static void Serialize<T>(T target, out string result)
+        {
+            result = JsonConvert.SerializeObject(target, Formatting.Indented, new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+            });
+
         }
     }
 }

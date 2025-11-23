@@ -4,11 +4,13 @@ namespace SINEATER;
 
 public class ComponentStorage<T>
 {
-    public Dictionary<(int X, int Y), T> InternalStorage = [];
+    private int _magicNumber = 20;
+
+    public Dictionary<int, T> InternalStorage = [];
 
     public void Add((int X, int Y) key, T value)
     {
-        InternalStorage[key] = value;
+        InternalStorage[key.Y * _magicNumber + key.X] = value;
     }
 }
 

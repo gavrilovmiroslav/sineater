@@ -9,6 +9,7 @@ using RogueSharp;
 using SadRex;
 using SINEATER.ImGuiTools;
 using SINEATER.Input;
+using SINEATER.Serialization;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
@@ -82,9 +83,9 @@ public class WorldMapScreen : Screen
 
         var world = new World();
         world.Introduction.Add((2, 3), new Introduction("The statues loom over you"));
-        var w = JsonConvert.SerializeObject(world);
+        DataSerializer.Serialize(world, out string w);
         Console.WriteLine(w);
-        var www = JsonConvert.DeserializeObject<World>(w);
+        DataSerializer.Load(w, out World www);
         
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
@@ -93,7 +94,7 @@ public class WorldMapScreen : Screen
         
         var colors = TitleContainer.OpenStream("Content\\colors.json");
         var c = string.Join("\n", colors.ReadLines(Encoding.Default));
-        Ambient.Atmospheres = JsonConvert.DeserializeObject<Atmospheres>(c) ?? new Atmospheres();
+        Ambient.Atmospheres = DataSerializer.Load<Atmospheres>(c);
     }
 
     public override void Initialize(SineaterGame game)
