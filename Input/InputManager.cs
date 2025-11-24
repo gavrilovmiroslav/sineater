@@ -165,7 +165,7 @@ namespace SINEATER.Input
                     MakeAction(EInputAction.EndTurn, Keys.Enter, Buttons.B),
                     MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
                     MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
-                    MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.None, eInput: EInputTrigger.JustReleased),
+                    MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.None, isHold: true),
                 }
             });
         }

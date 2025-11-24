@@ -1,0 +1,9 @@
+{
+  "$type": "SINEATER.World, SINEATER",
+  "Introduction": {
+    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Introduction, SINEATER]], SINEATER"
+  },
+  "Encounters": {
+    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Encounter, SINEATER]], SINEATER"
+  }
+}

@@ -81,11 +81,7 @@ public class WorldMapScreen : Screen
         _atmosphereIndex = 0;
         _atmosphereOverride = null;
 
-        var world = new World();
-        world.Introduction.Add((2, 3), new Introduction("The statues loom over you"));
-        DataSerializer.Serialize(world, out string w);
-        Console.WriteLine(w);
-        DataSerializer.Load(w, out World www);
+        World.LoadOrCreate("Content\\world.json");
         
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);

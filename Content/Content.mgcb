@@ -421,6 +421,6 @@
 /processorParam:TextureFormat=Color
 /build:swordnsorcery_portraits.png
 
-#begin world.dat
-/copy:world.dat
+#begin world.json
+/copy:world.json
 

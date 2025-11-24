@@ -189,7 +189,8 @@ public class SineaterGame : Game
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));
-
+        ScreenStack.Push(new CombatMapScreen(this));
+        
         SinMod.System.LoadBank(@"audio/Desktop/Master");
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
         fmodInstanceMusic.Play();
@@ -244,7 +245,7 @@ public class SineaterGame : Game
             ScreenStack.Push(new WorldMapScreen(this));
         }
 
-        if (InputM.IsActive(EInputAction.DetailedView))
+        if (InputM.IsActive(EInputAction.ShowImGui))
         {
             ShouldDrawImgui = !ShouldDrawImgui;
         }

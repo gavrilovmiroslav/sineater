@@ -3,7 +3,6 @@
 public enum EInputAction
 {
     None,
-    Debug,
     Exit,
     MoveLeft,
     MoveRight,
@@ -23,6 +22,7 @@ public enum EInputAction
     #endregion
 
     #region Debug
+    Debug,
     LoadItems,
     RestartExploration,
     ExplorationDebug,
