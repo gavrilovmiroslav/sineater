@@ -21,7 +21,7 @@ public class ComponentStorage<T> where T : struct
         return Get(key.X, key.Y);
     }
     
-    public T? Get(int x, int y)
+    public T Get(int x, int y)
     {
         var index = y * 20 + x;
         if (InternalStorage.ContainsKey(index))
@@ -30,8 +30,20 @@ public class ComponentStorage<T> where T : struct
         }
         else
         {
-            return null;
+            throw new Exception("Cannot get value");
         }
+    }
+
+    public bool Has(int x, int y)
+    {
+        var index = y * 20 + x;
+        return InternalStorage.ContainsKey(index);
+    }
+
+    public void Set(int x, int y, T t)
+    {
+        var index = y * 20 + x;
+        InternalStorage[index] = t;
     }
 }
 
@@ -39,8 +51,8 @@ public class World
 {
     public ComponentStorage<Introduction> Introduction = new();
     public ComponentStorage<Encounter> Encounters = new();
-
-    public static void LoadOrCreate(string path)
+    
+    public static World LoadOrCreate(string path)
     {
         using var stream = TitleContainer.OpenStream(path);
         using var reader = new StreamReader(stream);
@@ -64,5 +76,7 @@ public class World
             
             File.WriteAllText(writePath, json);
         }
+
+        return world;
     }
 }

@@ -189,7 +189,7 @@ public class SineaterGame : Game
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));
-        ScreenStack.Push(new CombatMapScreen(this));
+        //ScreenStack.Push(new CombatMapScreen(this));
         
         SinMod.System.LoadBank(@"audio/Desktop/Master");
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");

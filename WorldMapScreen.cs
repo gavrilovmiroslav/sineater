@@ -72,6 +72,8 @@ public class WorldMapScreen : Screen
 
     private bool _debug = false;
     private (int X, int Y) _lastPosBeforeDebug = (0, 0);
+    private World _world = null;
+    public World World => _world;
     
     internal bool Debug => _debug;
     internal (int X, int Y) LastPosBeforeDebug => _lastPosBeforeDebug;
@@ -81,7 +83,7 @@ public class WorldMapScreen : Screen
         _atmosphereIndex = 0;
         _atmosphereOverride = null;
 
-        World.LoadOrCreate("Content\\world.json");
+        _world = World.LoadOrCreate("Content\\world.json");
         
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
