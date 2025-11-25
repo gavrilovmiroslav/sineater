@@ -73,6 +73,8 @@ public class SineaterGame : Game
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
+
+        this.Window.AllowUserResizing = true;
         
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");

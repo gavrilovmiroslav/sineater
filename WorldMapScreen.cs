@@ -135,6 +135,22 @@ public class WorldMapScreen : Screen
             _time = 0;
         }
 
+        if (InputM.IsActive(EInputAction.Debug))
+        {
+            _debug = !_debug;
+            _game.ShouldDrawImgui |= _debug;
+            if (_debug)
+            {
+                _lastPosBeforeDebug = CurrentPlayerPosition;
+                Tools.DebugScreen = this;
+            }
+            else
+            {
+                CurrentPlayerPosition = _lastPosBeforeDebug;
+                Tools.DebugScreen = null;
+            }
+        }
+        
         CheckPlayerInputs();
     }
     
@@ -321,33 +337,8 @@ public class WorldMapScreen : Screen
     
     private void CheckPlayerInputs()
     {
-        if (InputM.IsActive(EInputAction.Debug))
-        {
-            _debug = !_debug;
-            _game.ShouldDrawImgui |= _debug;
-            if (_debug)
-            {
-                _lastPosBeforeDebug = CurrentPlayerPosition;
-                Tools.DebugScreen = this;
-            }
-            else
-            {
-                CurrentPlayerPosition = _lastPosBeforeDebug;
-                Tools.DebugScreen = null;
-            }
-        }
-        
-        if (_inspectMode)
-        {
-            if (InputM.IsActive(EInputAction.ExitInspect))
-            {
-                _inspectMode = false;
-            }
-            return;
-        }
-        
         var current = _game.Party.Characters[_playerSelectedIndex];
-        if (InputM.IsActive(EInputAction.Ability))
+        if (!_debug && InputM.IsActive(EInputAction.Ability))
         {
             var ability = current.Ability;
             if (ability != null)
@@ -398,7 +389,7 @@ public class WorldMapScreen : Screen
         // MOVE
         else if (_playerSelectedIndex > -1)
         {
-            if (InputM.IsActive(EInputAction.SelectNextCharacter))
+            if (!_debug && InputM.IsActive(EInputAction.SelectNextCharacter))
             {
                 SelectNextAvailablePartyMember();
             }

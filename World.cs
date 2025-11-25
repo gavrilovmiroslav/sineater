@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
-using Newtonsoft.Json;
 using SINEATER.Serialization;
 
 namespace SINEATER;
 
+[Serializable]
 public class ComponentStorage<T> where T : struct
 {
-    private readonly Dictionary<int, T> InternalStorage = [];
+    public readonly Dictionary<int, T> InternalStorage = [];
 
     public void Add((int X, int Y) key, T value)
     {
@@ -45,12 +46,28 @@ public class ComponentStorage<T> where T : struct
         var index = y * 20 + x;
         InternalStorage[index] = t;
     }
+
+    public void Remove(int x, int y)
+    {
+        var index = y * 20 + x;
+        InternalStorage.Remove(index);
+    }
 }
 
-public class World
+public class World(string path)
 {
+    public string Path => path; 
     public ComponentStorage<Introduction> Introduction = new();
     public ComponentStorage<Encounter> Encounters = new();
+
+    public void Save()
+    {
+        DataSerializer.Serialize(this, out var json);
+        var writePath =
+            System.IO.Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, Path);
+            
+        File.WriteAllText(writePath, json);
+    }
     
     public static World LoadOrCreate(string path)
     {
@@ -69,7 +86,7 @@ public class World
 
         if (world == null)
         {
-            world = new World();
+            world = new World(path);
             DataSerializer.Serialize(world, out var json);
             var writePath =
                 System.IO.Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, path);

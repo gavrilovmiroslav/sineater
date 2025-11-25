@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Numerics;
+using System.Reflection.Metadata;
 using ImGuiNET;
 
 namespace SINEATER.ImGuiTools
@@ -7,34 +10,92 @@ namespace SINEATER.ImGuiTools
     {
         public static IScreen? DebugScreen;
 
-        public static T? MakeEditor<T>(T instance)
+        public static (T Editor, bool Changed, bool Deleted) MakeEditor<T>(T instance, string name) where T: struct
         {
-            foreach (var field in typeof(T).GetProperties())
+            var changed = false;
+            object boxed = instance;
+
+            if (ImGui.CollapsingHeader($"{instance.GetType().Name}##HEADER{name}{instance.GetType().Name}"))
             {
-                if (field.PropertyType == typeof(string))
+                if (ImGui.Button($"Delete##DEL{name}{instance.GetType().Name}"))
                 {
-                    string value = field.GetValue(instance)?.ToString() ?? "";
-                    if (ImGui.InputText(field.Name, ref value, 100))
-                    {
-                        field.SetValue(instance, value);
-                        return instance;
-                    }
+                    return (instance, true, true);
                 }
-                else if (field.PropertyType == typeof(int))
+
+                ImGui.Separator();
+                foreach (var prop in typeof(T).GetProperties())
                 {
-                    if (field.GetValue(instance) is int i)
+                    var field = $"{prop.Name}##{name}{instance.GetType().Name}{prop.Name}";
+                    if (prop.PropertyType == typeof(string) &&
+                        prop.GetCustomAttributes(true).Any(t => t is LargeTextAttribute))
                     {
-                        if (ImGui.InputInt(field.Name, ref i, 1))
+                        field = $"##{name}{instance.GetType().Name}{prop.Name}";
+                        var value = prop.GetValue(instance)?.ToString() ?? "";
+                        ImGui.Text($"{prop.Name}:");
+                        if (ImGui.InputTextMultiline(field, ref value, 1024,
+                                new Vector2(ImGui.GetWindowWidth() - 30, 8 * ImGui.GetTextLineHeight())))
                         {
-                            field.SetValue(instance, i);
-                            return instance;
+                            prop.SetValue(boxed, value);
+                            changed = true;
+                        }
+                    }
+                    else if (prop.PropertyType == typeof(string))
+                    {
+                        var value = prop.GetValue(instance)?.ToString() ?? "";
+                        if (ImGui.InputText(field, ref value, 100))
+                        {
+                            prop.SetValue(boxed, value);
+                            changed = true;
+                        }
+                    }
+                    else if (prop.PropertyType == typeof(int))
+                    {
+                        if (prop.GetValue(instance) is int i)
+                        {
+                            if (ImGui.InputInt(field, ref i, 1))
+                            {
+                                prop.SetValue(boxed, i);
+                                changed = true;
+                            }
                         }
                     }
                 }
             }
-            ImGui.Separator();
 
-            return default(T);
+            instance = (T)boxed;
+            return (instance, changed, false);
+        }
+
+        private static void MakeButtonFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct
+        {
+            if (!ts.Has(x, y))
+            {
+                if (ImGui.Button($"Add {typeof(T).Name}"))
+                {
+                    ts.Add((x, y), new T());
+                }
+            }
+        }
+        
+        private static bool MakeEditorFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct
+        {
+            bool changed = false;
+            if (ts.Has(x, y))
+            {
+                if (MakeEditor<T>(ts.Get(x, y), $"{x}{y}{typeof(T).Name}") is { } e)
+                {
+                    if (e.Deleted)
+                    {
+                        ts.Remove(x, y);
+                    }
+                    else
+                    {
+                        ts.Set(x, y, e.Editor);
+                        changed |= e.Changed;
+                    }
+                }
+            }
+            return changed;
         }
         
         public static void ShowTools(ref bool isOpen)
@@ -50,36 +111,14 @@ namespace SINEATER.ImGuiTools
                         var changed = false;
                         var (x, y) = w.CurrentPlayerPosition;
                         ImGui.Text($"Current Tile: {x}, {y}");
-                        if (!w.World.Encounters.Has(x, y))
+                        MakeButtonFor(w.World.Introduction, x, y);
+                        MakeButtonFor(w.World.Encounters, x, y);
+                        ImGui.Separator();
+                        changed |= MakeEditorFor(w.World.Introduction, x, y);
+                        changed |= MakeEditorFor(w.World.Encounters, x, y);
+                        if (changed)
                         {
-                            if (ImGui.Button("Add Introduction"))
-                            {
-                                w.World.Introduction.Add((x, y), new Introduction());
-                            }
-                        }
-                        if (!w.World.Encounters.Has(x, y))
-                        {
-                            if (ImGui.Button("Add Encounter"))
-                            {
-                                w.World.Encounters.Add((x, y), new Encounter());
-                            }
-                        }
-                        
-                        
-                        if (w.World.Encounters.Has(x, y))
-                        {
-                            if (MakeEditor<Encounter>(w.World.Encounters.Get(x, y)) is { } e)
-                            {
-                                w.World.Encounters.Set(x, y, e);
-                            }
-                        }
-                        
-                        if (w.World.Introduction.Has(x, y))
-                        {
-                            if (MakeEditor<Introduction>(w.World.Introduction.Get(x, y)) is { } i)
-                            {
-                                w.World.Introduction.Set(x, y, i);
-                            }
+                            w.World.Save();
                         }
                     }
                     ImGui.EndTabItem();

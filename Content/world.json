@@ -1,9 +1,38 @@
 {
   "$type": "SINEATER.World, SINEATER",
   "Introduction": {
-    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Introduction, SINEATER]], SINEATER"
+    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Introduction, SINEATER]], SINEATER",
+    "InternalStorage": {
+      "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, System.Private.CoreLib],[SINEATER.Introduction, SINEATER]], System.Private.CoreLib",
+      "142": {
+        "$type": "SINEATER.Introduction, SINEATER",
+        "Default": "qweqwe",
+        "InMorning": "qweqwe",
+        "InAfternoon": "qweqwe",
+        "InEvening": null,
+        "InNight": null
+      }
+    }
   },
   "Encounters": {
-    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Encounter, SINEATER]], SINEATER"
-  }
+    "$type": "SINEATER.ComponentStorage`1[[SINEATER.Encounter, SINEATER]], SINEATER",
+    "InternalStorage": {
+      "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, System.Private.CoreLib],[SINEATER.Encounter, SINEATER]], System.Private.CoreLib",
+      "143": {
+        "$type": "SINEATER.Encounter, SINEATER",
+        "MinEnemyLevel": 1,
+        "MaxEnemyLevel": 3,
+        "ResourceCap": 300,
+        "Reward": "Dagger"
+      },
+      "142": {
+        "$type": "SINEATER.Encounter, SINEATER",
+        "MinEnemyLevel": 2,
+        "MaxEnemyLevel": 3,
+        "ResourceCap": 200,
+        "Reward": "Sword"
+      }
+    }
+  },
+  "Path": "Content\\world.json"
 }
