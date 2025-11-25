@@ -75,6 +75,12 @@ namespace SINEATER.ImGuiTools
                     ts.Add((x, y), new T());
                 }
             }
+            else
+            {
+                ImGui.BeginDisabled();
+                ImGui.Button($"Add {typeof(T).Name}");
+                ImGui.EndDisabled();
+            }
         }
         
         private static bool MakeEditorFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct
@@ -112,6 +118,7 @@ namespace SINEATER.ImGuiTools
                         var (x, y) = w.CurrentPlayerPosition;
                         ImGui.Text($"Current Tile: {x}, {y}");
                         MakeButtonFor(w.World.Introduction, x, y);
+                        ImGui.SameLine();
                         MakeButtonFor(w.World.Encounters, x, y);
                         ImGui.Separator();
                         changed |= MakeEditorFor(w.World.Introduction, x, y);

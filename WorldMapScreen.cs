@@ -220,8 +220,36 @@ public class WorldMapScreen : Screen
 
         if (_debug)
         {
-            var (dx, dy) = _lastPosBeforeDebug;
-            _game.Layers["mrmo"].Set(dx + 8, dy + 2, "@", Color.Gray, Color.Black);
+            if (_time % 400 < 200)
+            {
+                var (dx, dy) = _lastPosBeforeDebug;
+                _game.Layers["mrmo"].Set(dx + 8, dy + 2, "@", Color.Gray, Color.Black);
+            }
+
+            for (var i = 0; i < 20; i++)
+            {
+                for (var j = 0; j < 20; j++)
+                {
+                    var en = _world.Encounters.Has(i, j);
+                    var it = _world.Introduction.Has(i, j);
+                    var c = ' ';
+                    switch ((en, it))
+                    {
+                        case (true, true): c = '*'; break;
+                        case (true, false): c = 'E'; break;
+                        case (false, true): c = 'I'; break;
+                        default: break;
+                    }
+
+                    if (c == ' ') continue;
+                    _game.Layers["mrmo"].Set(i + 8, j + 2, $"{c}", Color.Gray, Color.Black);
+                }
+            }
+
+            if (_time < 800)
+            {
+                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+            }
         }
         
         _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
