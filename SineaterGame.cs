@@ -191,7 +191,7 @@ public class SineaterGame : Game
         
         Party = new Party(ActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));
-        //ScreenStack.Push(new CombatMapScreen(this));
+        ScreenStack.Push(new CombatMapScreen(this));
         
         SinMod.System.LoadBank(@"audio/Desktop/Master");
         fmodInstanceMusic = SinMod.System.CreateInstance("BGMusic", "bgm");
@@ -314,6 +314,7 @@ public class SineaterGame : Game
 
         base.Draw(gameTime);
     }
+    
     private void DrawImgui(GameTime time)
     {
         _render.BeginLayout(time);
@@ -323,7 +324,8 @@ public class SineaterGame : Game
         _render.EndLayout();
     }
     
-    public static IEnumerable<string> LayerNames => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini" ];
+    public static IEnumerable<string> LayerNames 
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
 
     private void SetupCrt(int w, int h)
     {

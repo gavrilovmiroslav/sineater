@@ -720,11 +720,6 @@ public class CombatMapScreen : Screen
 
     private void DrawSubmenuAttackEnemy(Character enemy, Damage? dmg = null)
     {
-        _game.Layers["largenums"].Set(11, 11, $"{dmg?.Flat.ToString().PadLeft(3, '0')}");
-        _game.Layers["largenums"].Set(13, 12, Glyph.Bw(0, 1));
-        _game.Layers["largenums"].Set(12, 12, Glyph.Bw(1, 1));
-        _game.Layers["largenums"].Set(11, 12, Glyph.Bw(2, 1));
-        
         var nextAP = enemy.AP.Copy();
         nextAP.Add(EStatus.Wound, dmg?.Wounds ?? 0);
         nextAP.Add(EStatus.Fatigue, dmg?.StatusFatigue ?? 0);
@@ -901,6 +896,11 @@ public class CombatMapScreen : Screen
             }
             _game.Layers["ascii"].Set(36, 20, "<<");
         }
+        
+        _game.Layers["largenums"].Set(11, 11, $"{dmg?.Flat.ToString().PadLeft(3, '0')}");
+        _game.Layers["largenums"].Set(13, 12, Glyph.Bw(0, 1));
+        _game.Layers["largenums"].Set(12, 12, Glyph.Bw(1, 1));
+        _game.Layers["largenums"].Set(11, 12, Glyph.Bw(2, 1));
     }
 
     private bool showMap = false;
