@@ -230,19 +230,10 @@ public class WorldMapScreen : Screen
             {
                 for (var j = 0; j < 20; j++)
                 {
-                    var en = _world.Encounters.Has(i, j);
-                    var it = _world.Introduction.Has(i, j);
-                    var c = ' ';
-                    switch ((en, it))
-                    {
-                        case (true, true): c = '*'; break;
-                        case (true, false): c = 'E'; break;
-                        case (false, true): c = 'I'; break;
-                        default: break;
-                    }
-
-                    if (c == ' ') continue;
-                    _game.Layers["mrmo"].Set(i + 8, j + 2, $"{c}", Color.Gray, Color.Black);
+                    var exists = _world.AnythingOn(i, j);
+                    var changed = _world.AnythingChanged(i, j);
+                    if (!exists) continue;
+                    _game.Layers["mrmo"].Set(i + 8, j + 2, "*", changed ? Color.Red : Color.Green, Color.Black);
                 }
             }
 

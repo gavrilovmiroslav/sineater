@@ -422,5 +422,7 @@
 /build:swordnsorcery_portraits.png
 
 #begin world.json
-/copy:world.json
+/importer:JSONImporter
+/processor:JSONProcessor
+/build:world.json
 

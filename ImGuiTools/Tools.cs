@@ -59,6 +59,16 @@ namespace SINEATER.ImGuiTools
                             }
                         }
                     }
+                    else if (prop.PropertyType.IsEnum)
+                    {
+                        var values = prop.PropertyType.GetEnumNames();
+                        var value = prop.GetValue(instance);
+                        var index = (int)value;
+                        if (index < 0) index = 0;
+                        ImGui.Combo(field, ref index, values, values.Length);
+                        prop.SetValue(boxed, (prop.PropertyType.GetEnumValues().GetValue(index)));
+                        changed = true;
+                    }
                 }
             }
 
@@ -66,7 +76,7 @@ namespace SINEATER.ImGuiTools
             return (instance, changed, false);
         }
 
-        private static void MakeButtonFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct
+        private static void MakeButtonFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct, IWorldComponent
         {
             if (!ts.Has(x, y))
             {
@@ -83,7 +93,7 @@ namespace SINEATER.ImGuiTools
             }
         }
         
-        private static bool MakeEditorFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct
+        private static bool MakeEditorFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct, IWorldComponent
         {
             bool changed = false;
             if (ts.Has(x, y))
@@ -117,12 +127,15 @@ namespace SINEATER.ImGuiTools
                         var changed = false;
                         var (x, y) = w.CurrentPlayerPosition;
                         ImGui.Text($"Current Tile: {x}, {y}");
-                        MakeButtonFor(w.World.Introduction, x, y);
-                        ImGui.SameLine();
+                        MakeButtonFor(w.World.GeneralDescriptions, x, y);
+                        MakeButtonFor(w.World.SpecificDescriptions, x, y);
                         MakeButtonFor(w.World.Encounters, x, y);
+                        MakeButtonFor(w.World.SlowDowns, x, y);
                         ImGui.Separator();
-                        changed |= MakeEditorFor(w.World.Introduction, x, y);
+                        changed |= MakeEditorFor(w.World.GeneralDescriptions, x, y);
+                        changed |= MakeEditorFor(w.World.SpecificDescriptions, x, y);
                         changed |= MakeEditorFor(w.World.Encounters, x, y);
+                        changed |= MakeEditorFor(w.World.SlowDowns, x, y);
                         if (changed)
                         {
                             w.World.Save();
