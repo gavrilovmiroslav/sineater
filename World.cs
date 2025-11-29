@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -129,6 +130,7 @@ public class World(string path)
         const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
         var inspect = res.Get(APPS_ID, $"Inspect!A1:T20").Execute();
         var slowdown = res.Get(APPS_ID, $"Time!A1:T20").Execute();
+        var combats = res.Get(APPS_ID, $"Combat!A1:T20").Execute();
         var world = new World(path);
         
         for (var i = 0; i < 20; i++)
@@ -144,6 +146,17 @@ public class World(string path)
                 if (int.TryParse(slowdown.Values[j][i].ToString() ?? "/", out var time))
                 {
                     world.SlowDowns.Add((i, j), new SlowDown(time, time > 3 ? time - 3 : 0));
+                }
+
+                foreach (Match match in Regex.Matches(combats.Values[j][i].ToString() ?? "/", 
+                             @"(\w+), (\d+), (\d+), (\d+), (\w+)"))
+                {
+                    var m = match.Groups;
+                    world.Encounters.Add((i, j), new Encounter(
+                        (ETerrainKind) Enum.Parse(typeof(ETerrainKind), m[1].ToString()),
+                        int.Parse(m[3].ToString()), 
+                        int.Parse(m[4].ToString()), 
+                        int.Parse(m[2].ToString()), m[5].ToString()));
                 }
             }
         }

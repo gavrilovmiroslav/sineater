@@ -91,7 +91,7 @@ public record struct LevelStructure
     public readonly List<(int X, int Y)> Treasure = [];
     public readonly HeatMap Heat;
     
-    public LevelStructure(IMap map)
+    public LevelStructure(IMap map, CombatConfig config)
     {
         Enemies.Clear();
         Map = map;
@@ -221,7 +221,7 @@ public record struct LevelStructure
                         Enemy enm;
                         if (crew.Count == 0)
                         {
-                            for (var l = 5; l > 0; l--)
+                            for (var l = config.Params.MaxLevel; l >= config.Params.MinLevel; l--)
                             {
                                 if (!Bestiary.Levels.ContainsKey(l)) continue;
                                 enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();

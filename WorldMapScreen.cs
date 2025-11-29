@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SadRex;
+using SINEATER;
 using SINEATER.ImGuiTools;
 using SINEATER.Input;
 using SINEATER.Serialization;
@@ -14,6 +15,42 @@ using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
+
+public class CoBlink(WorldMapScreen level): IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        for (var k = 0; k < 5; k++)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                for (int j = 0; j < 22; j++)
+                {
+                    level.Draw(i, j, " ", Color.Black);
+                }
+            }
+
+            yield return new WaitForSeconds(0.01f * (6 - k));
+            level.DrawWorld();
+            yield return new WaitForSeconds(0.001f);
+        }
+
+        yield return new WaitForSeconds(0.15f);
+    }
+}
+public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc): IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new CoBlink(map);
+        SineaterGame.Instance.ScreenStack.Push(new CombatMapScreen(
+            SineaterGame.Instance, new CombatConfig()
+            {
+                Params = new CombatParameters(enc.ResourceCap, enc.MinEnemyLevel, enc.MaxEnemyLevel, enc.Reward),
+                Terrain = enc.Biome
+            }));
+    }
+}
 
 public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
 {
@@ -64,7 +101,7 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
 
         if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
         {
-            for (var i = 0; i < 8; i++)
+            for (var i = 0; i < 8; i++) 
             {
                 map.DrawWorld(i % 2 == 0);
                 yield return new WaitForSeconds(0.04f);
@@ -72,7 +109,6 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
             yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y).Text);
             map.World.GeneralDescriptions.Visit(x, y);
         }
-        
     }
 }
 
@@ -239,6 +275,14 @@ public class WorldMapScreen : Screen
                 CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
             }
         }
+        else if (opt == "FIGHT")
+        {
+            if (_world.Encounters.Has(x, y))
+            {
+                var enc = _world.Encounters.Get(x, y);
+                CoroutineHandler.Run(new CoStartCombat(this, x, y, enc));
+            }
+        }
         
         _submenuDelta = (0, 0);
     }
@@ -352,6 +396,25 @@ public class WorldMapScreen : Screen
         DrawParty();
         
         _game.Layers["ascii"].Set(20, 0, $"{HourNames[h]} ({TimeOfDay})");
+        
+        var (nx, ny) = (CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
+
+        if (_world.Encounters.Has(nx, ny))
+        {
+            var enc = _world.Encounters.Get(nx, ny);
+            var hard = enc.ResourceCap switch
+            {
+                <= 100 => "Easy",
+                <= 200 => "Average",
+                <= 300 => "Hard",
+                <= 400 => "Severe",
+                <= 500 => "Insane",
+                _ => "Average"
+            };
+            _game.Layers["ascii"].Set(35, 22, $"Environment: {enc.Biome}");
+            _game.Layers["ascii"].Set(35, 23, $"Encounter: {hard}");
+            _game.Layers["ascii"].Set(35, 24, $"Reward: {enc.Reward}");
+        }
     }
     
     private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null)
@@ -446,12 +509,14 @@ public class WorldMapScreen : Screen
             var len = _submenu.Select(s => s.Length).Max() + 2;
             var (x, y) = (15, 19);
             _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
-            _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count), Sides.Ascii, Corners.Ascii);
+            _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
+                Sides.Ascii, Corners.Ascii);
 
             for (var i = 0; i < _submenu.Count; i++)
             {
                 _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {_submenu[i]}");
             }
+
             _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
 
             if (_submenu[_submenuSelection] == "VISIT")
@@ -469,6 +534,7 @@ public class WorldMapScreen : Screen
                     {
                         text += $", +{slowdown.FatigueGained} FATIGUE";
                     }
+
                     _game.Layers["ascii"].Set(x + 4, y + _submenu.Count + 2, text);
                 }
                 else
@@ -478,9 +544,7 @@ public class WorldMapScreen : Screen
             }
         }
     }
-    
-    private bool _inspectMode = false;
-    
+
     private void CheckPlayerInputs()
     {
         var current = _game.Party.Characters[PlayerSelectedIndex];
@@ -540,6 +604,32 @@ public class WorldMapScreen : Screen
                 SelectNextAvailablePartyMember();
             }
             
+            if (InputM.IsActive(EInputAction.ActionsMenu))
+            {
+                _submenuDelta = (0, 0);
+                List<string> submenuOptions = [];
+                var x = CurrentPlayerPosition.X;
+                var y = CurrentPlayerPosition.Y;
+
+                submenuOptions.Add("CYCLE");
+                    
+                if (_world.Encounters.Has(x, y))
+                {
+                    submenuOptions.Add("FIGHT");
+                }
+
+                if (_world.GeneralDescriptions.Has(x, y))
+                {
+                    if (Maps[CurrentMapLayer].Map.IsWalkable(x, y) &&
+                        _world.GeneralDescriptions.IsVisited(x, y)
+                        || !Maps[CurrentMapLayer].Map.IsWalkable(x, y))
+                    {
+                        submenuOptions.Add("INSPECT");
+                    }
+                }
+                StartSubmenu(submenuOptions.ToArray());
+            }
+            
             var up = InputM.IsActive(EInputAction.MoveUp);
             var down = InputM.IsActive(EInputAction.MoveDown);
             var left = InputM.IsActive(EInputAction.MoveLeft);
@@ -569,6 +659,11 @@ public class WorldMapScreen : Screen
                         {
                             List<string> submenuOptions = [];
 
+                            if (dx == 0 && dy == 0 && _world.Encounters.Has(x, y))
+                            {
+                                submenuOptions.Add("FIGHT");
+                            }
+                            
                             if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                             {
                                 submenuOptions.Add("VISIT");

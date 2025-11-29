@@ -21,11 +21,12 @@ public enum ETerrainKind
     Ruin,
 }
 
+public record struct CombatParameters(int Resources, int MinLevel, int MaxLevel, string Reward);
+
 public class CombatConfig
 {
-    public int Phase;
     public ETerrainKind Terrain;
-    public string Reward;
+    public CombatParameters Params;
 }
 
 public class CombatMapScreen : Screen
@@ -124,7 +125,7 @@ public class CombatMapScreen : Screen
         var map = RogueSharp.Map.Create(new FilledMapCreationStrategy<Map>(_fullWidth, _fullHeight));
         map.Copy(inner, 1, 1);
 
-        Structure = new LevelStructure(map);
+        Structure = new LevelStructure(map, _config);
         _fov = new(Map);
         for (var i = 0; i < _fullWidth; i++)
         {

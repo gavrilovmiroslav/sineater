@@ -29,7 +29,7 @@ public readonly record struct SpecificDescription(
     }
 }
 
-public readonly record struct Encounter(int MinEnemyLevel, int MaxEnemyLevel, int ResourceCap, string Reward) : IWorldComponent
+public readonly record struct Encounter(ETerrainKind Biome, int MinEnemyLevel, int MaxEnemyLevel, int ResourceCap, string Reward) : IWorldComponent
 {
     public bool IsOkay()
     {
