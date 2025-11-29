@@ -16,10 +16,16 @@ public interface IComponentStorage
     public bool Has(int x, int y);
 }
 
-public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComponent 
+public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComponent
 {
+    public readonly HashSet<int> Visited = [];
     public readonly Dictionary<int, T> InternalStorage = [];
-
+    
+    public void Visit(int x, int y)
+    {
+        Visited.Add(y * 20 + x);
+    }
+    
     public void Add((int X, int Y) key, T value)
     {
         InternalStorage[key.Y * 20 + key.X] = value;
@@ -49,6 +55,11 @@ public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComp
         return InternalStorage.ContainsKey(index);
     }
 
+    public bool IsVisited(int x, int y)
+    {
+        return Visited.Contains(y * 20 + x);
+    }
+    
     public bool IsOkay(int x, int y)
     {
         if (!Has(x, y)) return false;
@@ -117,6 +128,7 @@ public class World(string path)
         
         const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
         var inspect = res.Get(APPS_ID, $"Inspect!A1:T20").Execute();
+        var slowdown = res.Get(APPS_ID, $"Time!A1:T20").Execute();
         var world = new World(path);
         
         for (var i = 0; i < 20; i++)
@@ -128,33 +140,14 @@ public class World(string path)
                 {
                     world.GeneralDescriptions.Add((i, j), new GeneralDescription(text));
                 }
+
+                if (int.TryParse(slowdown.Values[j][i].ToString() ?? "/", out var time))
+                {
+                    world.SlowDowns.Add((i, j), new SlowDown(time, time > 3 ? time - 3 : 0));
+                }
             }
         }
 
         return world;
-
-        // World? world = null;
-        // try
-        // {
-        //     var wrld = SineaterGame.Instance.Content.Load<string>("world");
-        //     world = DataSerializer.Load<World>(wrld);
-        // }
-        // catch(Exception e)
-        // {
-        //     Console.WriteLine(e);
-        //     world = null;
-        // }
-        //
-        // if (world == null)
-        // {
-        //     world = new World(path);
-        //     world.GeneralDescriptions.Add((2, 2), new GeneralDescription("blabla"));
-        //     DataSerializer.Serialize(world, out var json);
-        //     var writePath =
-        //         System.IO.Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, path);
-        //     
-        //     File.WriteAllText(writePath, json);
-        // }
-        // return world;
     }
 }

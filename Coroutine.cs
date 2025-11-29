@@ -244,9 +244,9 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
-        game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<  OK >");
+        game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "<  OK >");
         yield return new WaitForInput(EInputAction.Confirm);
-        game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "< ... >");
+        game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "< ... >");
     }
 }
 

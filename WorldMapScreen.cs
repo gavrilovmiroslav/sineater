@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SadRex;
 using SINEATER.ImGuiTools;
@@ -14,15 +15,25 @@ using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
 
-public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, int t) : IEnumerable
+public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForKey(
+            new Vector2(map.DrawOffset.X, 3),
+            new Vector2(map.DrawOffset.X * 4 - 5, 10), (game, box) => box.Add(text));
+    }
+}
+    
+public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) : IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
         var chr = SineaterGame.Instance.Party.Characters[map.PlayerSelectedIndex];
         var (u, v) = chr.Job.GetImage();
         var (ox, oy) = map.CurrentPlayerPosition;
-        int frame = 0;
-        for (var i = 0; i < t; i++)
+        var frame = 0;
+        for (var i = 0; i < t.HoursSpent; i++)
         {
             map.HoursOfDay++;
             if (map.HoursOfDay > 5)
@@ -36,15 +47,32 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, int t) : IEnu
             SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
                 new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
             frame++;
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.02f);
             SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
                 new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
             frame++;
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.02f);
         }
 
         map.CurrentPlayerPosition.X = x;
         map.CurrentPlayerPosition.Y = y;
+        
+        if (t.FatigueGained > 0)
+        {
+            SineaterGame.Instance.Party.Characters[0].AP.Add(EStatus.Fatigue, t.FatigueGained);
+        }
+
+        if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
+        {
+            for (var i = 0; i < 8; i++)
+            {
+                map.DrawWorld(i % 2 == 0);
+                yield return new WaitForSeconds(0.04f);
+            }
+            yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y).Text);
+            map.World.GeneralDescriptions.Visit(x, y);
+        }
+        
     }
 }
 
@@ -192,12 +220,24 @@ public class WorldMapScreen : Screen
 
     public override void SubmenuActivate(string opt)
     {
-        if (opt == "VISIT")
+        var (dx, dy) = _submenuDelta;
+        var (x, y) = (CurrentPlayerPosition.X + dx, CurrentPlayerPosition.Y + dy);
+        
+        if (opt == "INSPECT")
         {
-            var (dx, dy) = _submenuDelta;
-            var (x, y) = (CurrentPlayerPosition.X + dx, CurrentPlayerPosition.Y + dy);
-            
-            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, 3));
+            CoroutineHandler.Run(new CoShowInspectText(this, _world.GeneralDescriptions.Get(x, y).Text));
+        }
+        else if (opt == "VISIT")
+        {
+            if (_world.SlowDowns.Has(x, y))
+            {
+                var slowdown = _world.SlowDowns.Get(x, y);
+                CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
+            }
+            else
+            {
+                CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
+            }
         }
         
         _submenuDelta = (0, 0);
@@ -413,6 +453,29 @@ public class WorldMapScreen : Screen
                 _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {_submenu[i]}");
             }
             _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
+
+            if (_submenu[_submenuSelection] == "VISIT")
+            {
+                var (dx, dy) = _submenuDelta;
+                var (nx, ny) = (CurrentPlayerPosition.X + dx, CurrentPlayerPosition.Y + dy);
+                
+                if (_world.SlowDowns.Has(nx, ny))
+                {
+                    var slowdown = _world.SlowDowns.Get(nx, ny);
+                    var plural = slowdown.HoursSpent > 1;
+                    var hours = plural ? "HOURS" : "HOUR";
+                    var text = $"+{slowdown.HoursSpent} {hours}";
+                    if (slowdown.FatigueGained > 0)
+                    {
+                        text += $", +{slowdown.FatigueGained} FATIGUE";
+                    }
+                    _game.Layers["ascii"].Set(x + 4, y + _submenu.Count + 2, text);
+                }
+                else
+                {
+                    _game.Layers["ascii"].Set(x + 4, y + _submenu.Count + 2, $"+1 HOUR");
+                }
+            }
         }
     }
     
@@ -509,6 +572,16 @@ public class WorldMapScreen : Screen
                             if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                             {
                                 submenuOptions.Add("VISIT");
+                            }
+
+                            if (_world.GeneralDescriptions.Has(x, y))
+                            {
+                                if (Maps[CurrentMapLayer].Map.IsWalkable(x, y) &&
+                                    _world.GeneralDescriptions.IsVisited(x, y)
+                                    || !Maps[CurrentMapLayer].Map.IsWalkable(x, y))
+                                {
+                                    submenuOptions.Add("INSPECT");
+                                }
                             }
                             
                             StartSubmenu(submenuOptions.ToArray());

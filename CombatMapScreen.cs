@@ -24,8 +24,8 @@ public enum ETerrainKind
 public class CombatConfig
 {
     public int Phase;
-    public int Sin;
     public ETerrainKind Terrain;
+    public string Reward;
 }
 
 public class CombatMapScreen : Screen
@@ -160,8 +160,6 @@ public class CombatMapScreen : Screen
             _game.Party.Characters[ci].Y = Structure.Starts[ci].Y;
             _game.Party.Characters[ci].SetOrigin();
         }
-        
-        
     }
     
     public override void Update(GameTime gameTime)
