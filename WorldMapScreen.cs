@@ -18,6 +18,10 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, int t) : IEnu
 {
     public IEnumerator GetEnumerator()
     {
+        var chr = SineaterGame.Instance.Party.Characters[map.PlayerSelectedIndex];
+        var (u, v) = chr.Job.GetImage();
+        var (ox, oy) = map.CurrentPlayerPosition;
+        int frame = 0;
         for (var i = 0; i < t; i++)
         {
             map.HoursOfDay++;
@@ -27,8 +31,15 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, int t) : IEnu
                 map.TimeOfDay = (ETimeOfDay)map.AtmosphereIndex;
                 map.HoursOfDay = 0;
             }
-            map.DrawWorld();
-
+            map.DrawWorld(true);
+            
+            SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+                new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            frame++;
+            yield return new WaitForSeconds(0.1f);
+            SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+                new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            frame++;
             yield return new WaitForSeconds(0.1f);
         }
 
@@ -188,6 +199,8 @@ public class WorldMapScreen : Screen
             
             CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, 3));
         }
+        
+        _submenuDelta = (0, 0);
     }
 
     void UpdateExplorationView()
@@ -207,7 +220,7 @@ public class WorldMapScreen : Screen
         }
     }
     
-    internal void DrawWorld(bool onlyNow = false)
+    internal void DrawWorld(bool noPlayer = false)
     {
         if (_shouldUpdateView)
         {
@@ -252,7 +265,22 @@ public class WorldMapScreen : Screen
         
         var chr = _game.Party.Characters[PlayerSelectedIndex];
         var (u, v) = chr.Job.GetImage();
-        _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+        if (!noPlayer)
+        {
+            if (_submenuDelta == (0, 0))
+            {
+                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+            }
+            else
+            {
+                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+                if (tick)
+                {
+                    _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 2,
+                        new Glyph(8, 74 - 16, Color.Black, chr.Tint));
+                }
+            }
+        }
 
         if (_debug)
         {
@@ -488,7 +516,7 @@ public class WorldMapScreen : Screen
                     }
                 }
                 
-                UpdateCombatView();
+                UpdateExplorationView();
             }
         }
     }
