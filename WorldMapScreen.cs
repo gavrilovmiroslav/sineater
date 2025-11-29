@@ -1,10 +1,9 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
 using RogueSharp;
 using SadRex;
 using SINEATER.ImGuiTools;
@@ -14,6 +13,29 @@ using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
+
+public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, int t) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        for (var i = 0; i < t; i++)
+        {
+            map.HoursOfDay++;
+            if (map.HoursOfDay > 5)
+            {
+                map.AtmosphereIndex = (map.AtmosphereIndex + 1) % 4;
+                map.TimeOfDay = (ETimeOfDay)map.AtmosphereIndex;
+                map.HoursOfDay = 0;
+            }
+            map.DrawWorld();
+
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        map.CurrentPlayerPosition.X = x;
+        map.CurrentPlayerPosition.Y = y;
+    }
+}
 
 public class WorldMapScreen : Screen
 {
@@ -61,14 +83,14 @@ public class WorldMapScreen : Screen
     private (int X, int Y) DrawOffset { get; set; } = (8, 1);
     private bool _shouldUpdateView = true;
 
-    private int _atmosphereIndex;
-    private Atmosphere? _atmosphereOverride;
-    private int _playerSelectedIndex = 0;
+    public int AtmosphereIndex;
+    public Atmosphere? AtmosphereOverride;
+    public int PlayerSelectedIndex = 0;
     
     public int CurrentMapLayer = 1;
     public (int X, int Y) CurrentPlayerPosition = (2, 7);
     public ETimeOfDay TimeOfDay = ETimeOfDay.Morning;
-    private int _hoursOfDay = 0;
+    public int HoursOfDay = 0;
 
     private bool _debug = false;
     private (int X, int Y) _lastPosBeforeDebug = (0, 0);
@@ -80,8 +102,8 @@ public class WorldMapScreen : Screen
     
     public WorldMapScreen(SineaterGame game) : base(game)
     {
-        _atmosphereIndex = 0;
-        _atmosphereOverride = null;
+        AtmosphereIndex = 0;
+        AtmosphereOverride = null;
 
         _world = World.LoadOrCreate("Content\\world.json");
         
@@ -150,11 +172,25 @@ public class WorldMapScreen : Screen
                 Tools.DebugScreen = null;
             }
         }
-        
-        CheckPlayerInputs();
+
+        if (!CheckSubmenuInputs())
+        {
+            CheckPlayerInputs();
+        }
     }
-    
-    void UpdateCombatView()
+
+    public override void SubmenuActivate(string opt)
+    {
+        if (opt == "VISIT")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (CurrentPlayerPosition.X + dx, CurrentPlayerPosition.Y + dy);
+            
+            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, 3));
+        }
+    }
+
+    void UpdateExplorationView()
     {
     }
     
@@ -162,8 +198,8 @@ public class WorldMapScreen : Screen
     {
         for (int i = 1; i <= 4; i++)
         {
-            _playerSelectedIndex = (_playerSelectedIndex + 1) % 4;
-            if (!_game.Party.Characters[_playerSelectedIndex].IsDone)
+            PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
+            if (!_game.Party.Characters[PlayerSelectedIndex].IsDone)
             {
                 _shouldUpdateView = true;
                 break;
@@ -175,7 +211,7 @@ public class WorldMapScreen : Screen
     {
         if (_shouldUpdateView)
         {
-            UpdateCombatView();
+            UpdateExplorationView();
             _shouldUpdateView = false;
         }
 
@@ -186,7 +222,7 @@ public class WorldMapScreen : Screen
 
         var (map, fov) = Maps[CurrentMapLayer];
         var (x, y) = CurrentPlayerPosition;
-        var h = ((int)TimeOfDay + 1) % 4 * 6 + _hoursOfDay;
+        var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
         var radius = h switch
         {
             < 6 => 3,
@@ -201,20 +237,20 @@ public class WorldMapScreen : Screen
         var p = Ambient.Atmospheres[(int)TimeOfDay];
         var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
         
-        var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, _hoursOfDay / 6.0f);
-        var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, _hoursOfDay / 6.0f);
-        var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, _hoursOfDay / 6.0f);
-        var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, _hoursOfDay / 6.0f);
-        var gr = float.Lerp(p.Grayscale, n.Grayscale, _hoursOfDay / 6.0f);
-        _atmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr), gr);
+        var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, HoursOfDay / 6.0f);
+        var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, HoursOfDay / 6.0f);
+        var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, HoursOfDay / 6.0f);
+        var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, HoursOfDay / 6.0f);
+        var gr = float.Lerp(p.Grayscale, n.Grayscale, HoursOfDay / 6.0f);
+        AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr), gr);
         
-        var atmo = _atmosphereOverride ?? Ambient.Atmospheres[_atmosphereIndex];
+        var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
         _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo);
         _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
         
         var tick = _time is < 400 or > 800 and < 1200;
         
-        var chr = _game.Party.Characters[_playerSelectedIndex];
+        var chr = _game.Party.Characters[PlayerSelectedIndex];
         var (u, v) = chr.Job.GetImage();
         _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
 
@@ -262,7 +298,7 @@ public class WorldMapScreen : Screen
             var (x, y) = _positions[index];
             var (xoff, yoff) = (_xoffsets[index], _offsets[index]);
             var tint = character.Tint;
-            if (character != _game.Party.Characters[_playerSelectedIndex])
+            if (character != _game.Party.Characters[PlayerSelectedIndex])
             {
                 tint = Color.Lerp(tint, Color.Black, 0.75f);
             }
@@ -356,7 +392,7 @@ public class WorldMapScreen : Screen
     
     private void CheckPlayerInputs()
     {
-        var current = _game.Party.Characters[_playerSelectedIndex];
+        var current = _game.Party.Characters[PlayerSelectedIndex];
         if (!_debug && InputM.IsActive(EInputAction.Ability))
         {
             var ability = current.Ability;
@@ -406,7 +442,7 @@ public class WorldMapScreen : Screen
             }
         }
         // MOVE
-        else if (_playerSelectedIndex > -1)
+        else if (PlayerSelectedIndex > -1)
         {
             if (!_debug && InputM.IsActive(EInputAction.SelectNextCharacter))
             {
@@ -437,18 +473,17 @@ public class WorldMapScreen : Screen
                     }
                     else
                     {
-                        if (x >= 0 && y >= 0 && x < 20 && y < 20 && Maps[CurrentMapLayer].Map.IsWalkable(x, y))
+                        _submenuDelta = (dx, dy);
+                        if (x >= 0 && y >= 0 && x < 20 && y < 20)
                         {
-                            CurrentPlayerPosition.X = x;
-                            CurrentPlayerPosition.Y = y;
+                            List<string> submenuOptions = [];
 
-                            _hoursOfDay++;
-                            if (_hoursOfDay > 5)
+                            if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                             {
-                                _atmosphereIndex = (_atmosphereIndex + 1) % 4;
-                                TimeOfDay = (ETimeOfDay)_atmosphereIndex;
-                                _hoursOfDay = 0;
+                                submenuOptions.Add("VISIT");
                             }
+                            
+                            StartSubmenu(submenuOptions.ToArray());
                         }
                     }
                 }

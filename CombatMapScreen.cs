@@ -197,8 +197,11 @@ public class CombatMapScreen : Screen
             _time = 0;
         }
 
-        CheckInputs();
-        CheckPlayerInputs();
+        if (!CheckSubmenuInputs())
+        {
+            CheckInputs();
+            CheckPlayerInputs();
+        }
     }
     
     void UpdateCombatView()
@@ -959,123 +962,6 @@ public class CombatMapScreen : Screen
         {
             CoroutineHandler.Run(Coroutine_EndTurn());
         }
-        
-        if (_submenu.Count > 0)
-        {
-            if (InputM.IsActive(EInputAction.SubmenuUp))
-            {
-                if (_submenuSelection == 0)
-                {
-                    _submenuSelection = _submenu.Count - 1;
-                }
-                else
-                {
-                    _submenuSelection--;
-                }
-            }
-            else if (InputM.IsActive(EInputAction.SubmenuDown))
-            {
-                if (_submenuSelection == _submenu.Count - 1)
-                {
-                    _submenuSelection = 0;
-                }
-                else
-                {
-                    _submenuSelection++;
-                }
-            }
-            else if (InputM.IsActive(EInputAction.SubmenuConfirm))
-            {
-                var opt = _submenu[_submenuSelection];
-                _submenu.Clear();
-                DrawCombat();
-                
-                if (opt == "SWAP")
-                {
-                    var (dx, dy) = _submenuDelta;
-                    var (x, y) = (current.X + dx, current.Y + dy);
-                    if (Positions.IsCharacterAt(this, x, y) is { } c)
-                    {
-                        c.X = current.X;
-                        c.Y = current.Y;
-                        current.X = x;
-                        current.Y = y;
-                        _game.ActionPoints.Spend(1);
-
-                        if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
-                        {
-                            DrawCombat();
-                            CoroutineHandler.Run(Domains.Tiles[((int)current.X, (int)current.Y)]
-                                .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
-                        }
-                    }
-                    else if (Positions.IsEnemyAt(this, x, y) is { } e)
-                    {
-                        e.X = current.X;
-                        e.Y = current.Y;
-                        current.X = x;
-                        current.Y = y;
-                        _game.ActionPoints.Spend(1);
-
-                        if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
-                        {
-                            DrawCombat();
-                            CoroutineHandler.Run(Domains.Tiles[((int)current.X, (int)current.Y)]
-                                .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
-                        }
-                    }
-                }
-                else if (opt == "ATTACK")
-                {
-                    var (dx, dy) = _submenuDelta;
-                    var (x, y) = (current.X + dx, current.Y + dy);
-                    if (Positions.IsCharacterAt(this, x, y) is { } c)
-                    {
-                        CoroutineHandler.Run(Coroutine_Attack(current, c));
-                    }
-                    else if (Positions.IsEnemyAt(this, x, y) is { } e)
-                    {
-                        CoroutineHandler.Run(Coroutine_Attack(current, e));
-                    }
-                }
-                else if (opt == "FORTIFY")
-                {
-                    var (dx, dy) = _submenuDelta;
-                    var (x, y) = (current.X + dx, current.Y + dy);
-                    current.X = x;
-                    current.Y = y;
-                    _game.ActionPoints.Unspend(current.Vig);
-                    current.Temp.Reset();
-                    MarkDone(current);
-                }
-                else if (opt == "PUSH ON")
-                {
-                    var (dx, dy) = _submenuDelta;
-                    var (x, y) = (current.X + dx, current.Y + dy);
-                    current.X = x;
-                    current.Y = y;
-                    _game.ActionPoints.Spend((int)Math.Ceiling(current.Weight));
-                    current.SetOrigin();
-                    CalculateZone(current);
-                }
-                else if (opt == "CYCLE")
-                {
-                    SelectNextAvailablePartyMember();
-                }
-                else if (opt == "CONSUME")
-                {
-                    CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
-                    Muse.SetTravelMood();
-                }
-                else if (opt == "INSPECT")
-                {
-                    _inspectMode = true;
-                }
-                else if (opt == "CANCEL")
-                {
-                }
-            }
-        }
         // MOVE
         else if (PlayerSelectedIndex > -1)
         {
@@ -1293,5 +1179,96 @@ public class CombatMapScreen : Screen
         }
         
         DrawCombat();
+    }
+
+    public override void SubmenuActivate(string opt)
+    {
+        DrawCombat();
+        var current = _game.Party.Characters[PlayerSelectedIndex];
+        
+        if (opt == "SWAP")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (current.X + dx, current.Y + dy);
+            if (Positions.IsCharacterAt(this, x, y) is { } c)
+            {
+                c.X = current.X;
+                c.Y = current.Y;
+                current.X = x;
+                current.Y = y;
+                _game.ActionPoints.Spend(1);
+
+                if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
+                {
+                    DrawCombat();
+                    CoroutineHandler.Run(Domains.Tiles[((int)current.X, (int)current.Y)]
+                        .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
+                }
+            }
+            else if (Positions.IsEnemyAt(this, x, y) is { } e)
+            {
+                e.X = current.X;
+                e.Y = current.Y;
+                current.X = x;
+                current.Y = y;
+                _game.ActionPoints.Spend(1);
+
+                if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
+                {
+                    DrawCombat();
+                    CoroutineHandler.Run(Domains.Tiles[((int)current.X, (int)current.Y)]
+                        .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
+                }
+            }
+        }
+        else if (opt == "ATTACK")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (current.X + dx, current.Y + dy);
+            if (Positions.IsCharacterAt(this, x, y) is { } c)
+            {
+                CoroutineHandler.Run(Coroutine_Attack(current, c));
+            }
+            else if (Positions.IsEnemyAt(this, x, y) is { } e)
+            {
+                CoroutineHandler.Run(Coroutine_Attack(current, e));
+            }
+        }
+        else if (opt == "FORTIFY")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (current.X + dx, current.Y + dy);
+            current.X = x;
+            current.Y = y;
+            _game.ActionPoints.Unspend(current.Vig);
+            current.Temp.Reset();
+            MarkDone(current);
+        }
+        else if (opt == "PUSH ON")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (current.X + dx, current.Y + dy);
+            current.X = x;
+            current.Y = y;
+            _game.ActionPoints.Spend((int)Math.Ceiling(current.Weight));
+            current.SetOrigin();
+            CalculateZone(current);
+        }
+        else if (opt == "CYCLE")
+        {
+            SelectNextAvailablePartyMember();
+        }
+        else if (opt == "CONSUME")
+        {
+            CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            Muse.SetTravelMood();
+        }
+        else if (opt == "INSPECT")
+        {
+            _inspectMode = true;
+        }
+        else if (opt == "CANCEL")
+        {
+        }
     }
 }

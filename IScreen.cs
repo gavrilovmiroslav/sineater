@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using SINEATER.Input;
 
 namespace SINEATER;
 
@@ -81,4 +82,43 @@ public abstract class Screen : IScreen
     public abstract void Initialize(SineaterGame game);
     public abstract void Update(GameTime gameTime);
     public abstract void Draw(GameTime gameTime);
+    public abstract void SubmenuActivate(string action);
+    
+    public bool CheckSubmenuInputs()
+    {
+        var isOpen = _submenu.Count > 0;
+        if (isOpen)
+        {
+            if (InputM.IsActive(EInputAction.SubmenuUp))
+            {
+                if (_submenuSelection == 0)
+                {
+                    _submenuSelection = _submenu.Count - 1;
+                }
+                else
+                {
+                    _submenuSelection--;
+                }
+            }
+            else if (InputM.IsActive(EInputAction.SubmenuDown))
+            {
+                if (_submenuSelection == _submenu.Count - 1)
+                {
+                    _submenuSelection = 0;
+                }
+                else
+                {
+                    _submenuSelection++;
+                }
+            }
+            else if (InputM.IsActive(EInputAction.SubmenuConfirm))
+            {
+                var opt = _submenu[_submenuSelection];
+                _submenu.Clear();
+                SubmenuActivate(opt);
+            }
+        }
+
+        return isOpen;
+    }
 }
