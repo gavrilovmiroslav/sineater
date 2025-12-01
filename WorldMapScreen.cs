@@ -391,7 +391,8 @@ public class WorldMapScreen : Screen
             }
         }
         
-        _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
+        _game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
+        
         
         DrawParty();
         

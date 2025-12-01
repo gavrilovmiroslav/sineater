@@ -439,7 +439,8 @@ public class CombatMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        _game.ActionPoints.Draw(DrawOffset.X * 2 + 1, 26);
+        _game.PartyActionPoints.Draw(DrawOffset.X + 1, 27);
+        Structure.EnemyActionPoints.Draw(DrawOffset.X + 11, 27);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)
@@ -531,7 +532,7 @@ public class CombatMapScreen : Screen
             {
                 iy -= 4;
             }
-            var hasStamina = _game.ActionPoints.Count(EStatus.Stamina) > 0;
+            var hasStamina = _game.PartyActionPoints.Count(EStatus.Stamina) > 0;
             if (chr.IsDone || !hasStamina)
             {
                 Draw(chr.X, chr.Y, new Glyph(ix, iy, Color.Black, Color.DarkGray));
@@ -979,7 +980,7 @@ public class CombatMapScreen : Screen
                 StartSubmenu(["CYCLE", "FORTIFY", "INSPECT"]);
             }
             
-            if (_game.ActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
+            if (_game.PartyActionPoints.Count(EStatus.Stamina) > 0 && !current.IsDone)
             {
                 var up = InputM.IsActive(EInputAction.MoveUp);
                 var down = InputM.IsActive(EInputAction.MoveDown);
@@ -1053,7 +1054,7 @@ public class CombatMapScreen : Screen
                             Structure.Treasure.Remove((tx, ty));
                             Structure.Map.SetCellProperties(tx, ty, true, true);
                             CalculateZone(current);
-                            _game.ActionPoints.Spend(1);
+                            _game.PartyActionPoints.Spend(1);
                             MarkDone(current);
                         }
                         else if (Structure.Goals[0] == (current.X + dx, current.Y + dy))
@@ -1195,7 +1196,7 @@ public class CombatMapScreen : Screen
                 c.Y = current.Y;
                 current.X = x;
                 current.Y = y;
-                _game.ActionPoints.Spend(1);
+                _game.PartyActionPoints.Spend(1);
 
                 if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
                 {
@@ -1210,7 +1211,7 @@ public class CombatMapScreen : Screen
                 e.Y = current.Y;
                 current.X = x;
                 current.Y = y;
-                _game.ActionPoints.Spend(1);
+                _game.PartyActionPoints.Spend(1);
 
                 if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
                 {
@@ -1239,7 +1240,7 @@ public class CombatMapScreen : Screen
             var (x, y) = (current.X + dx, current.Y + dy);
             current.X = x;
             current.Y = y;
-            _game.ActionPoints.Unspend(current.Vig);
+            _game.PartyActionPoints.Unspend(current.Vig);
             current.Temp.Reset();
             MarkDone(current);
         }
@@ -1249,7 +1250,7 @@ public class CombatMapScreen : Screen
             var (x, y) = (current.X + dx, current.Y + dy);
             current.X = x;
             current.Y = y;
-            _game.ActionPoints.Spend((int)Math.Ceiling(current.Weight));
+            _game.PartyActionPoints.Spend(1);
             current.SetOrigin();
             CalculateZone(current);
         }

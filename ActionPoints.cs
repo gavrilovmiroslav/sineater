@@ -26,51 +26,36 @@ public static class EStatusExtensions
 {
     public static Glyph GetGlyph(this EStatus status, int index, int total)
     {
-        var glyph = new Glyph(15, 63, Color.Green, Color.Green);
+        var glyph = new Glyph(0, 0, Color.Black, Color.White);
 
         switch (status)
         {
-            case EStatus.Stamina:
-                break;
             case EStatus.Void:
-                glyph.Bg = Color.Black;
-                glyph.Fg = Color.White;
-                glyph.U = 4;
-                glyph.V = 6;
+                glyph.U = 1;
+                break;
+            case EStatus.Stamina:
+                glyph.U = 2;
                 break;
             case EStatus.Wound:
-                glyph.Bg = glyph.Fg = Color.Red;
-                break;
-            case EStatus.Fire:
-                glyph.Bg = glyph.Fg = Color.Orange;
-                break;
-            case EStatus.Fatigue:
-                glyph.Bg = glyph.Fg = Color.Pink;
+                glyph.U = 3;
                 break;
             case EStatus.Insanity:
-                glyph.Bg = glyph.Fg = Color.Yellow;
-                break;
-            case EStatus.Poison:
-                glyph.Bg = glyph.Fg = Color.Purple;
-                break;
-            case EStatus.Sin:
-                glyph.Bg = glyph.Fg = Color.White;
-                break;
-            case EStatus.Death:
-                glyph.Bg = Color.Gray;
-                glyph.Fg = Color.Pink;
-                glyph.U = 1;
-                glyph.V = 0;
+                glyph.U = 4;
                 break;
             case EStatus.Frozen:
-                glyph.Bg = glyph.Fg = Color.CadetBlue;
+                glyph.U = 5;
                 break;
-            case EStatus.Luck:
-                glyph.Bg = glyph.Fg = Color.YellowGreen;
+            case EStatus.Poison:
+                glyph.U = 6;
+                break;
+            case EStatus.Sin:
+                glyph.U = 7;
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(status), status, null);
+                glyph.U = 0;
+                break;
         }
+        
         return glyph;
     }
 }

@@ -24,6 +24,7 @@ public class SineaterGame : Game
     private Texture2D _ibm;
     private Texture2D _largeNums;
     private Texture2D _portraits;
+    private Texture2D _statuses;
     private Texture2D[] _room = new Texture2D[24];
     private float _dHour;
     private Texture2D _monitor;
@@ -44,7 +45,7 @@ public class SineaterGame : Game
     public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
-    public AP ActionPoints { get; set; }
+    public AP PartyActionPoints { get; set; }
     
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
@@ -101,6 +102,7 @@ public class SineaterGame : Game
         _ibm = Content.Load<Texture2D>("Codepage");
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
+        _statuses = Content.Load<Texture2D>("statuses");
         
         for (int i = 0; i < 24; i++)
         {
@@ -117,6 +119,10 @@ public class SineaterGame : Game
         
         var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 32), new Vector2(0, 0));
         Layers.Add("portrait2", portrait2Layer);
+
+        var statusLayer = new TextLayer(_statuses, new Vector2(Width / 16, Height / 16), new Vector2(16, 16),
+            new Vector2(16, 16), Vector2.Zero, 2, Vector2.Zero, new Vector2(16, 16));
+        Layers.Add("statuses", statusLayer);
         
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
         mrmoLayer.Map(" ", 0, 0);
@@ -187,9 +193,9 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        ActionPoints = new AP(40, ibmLayer);
+        PartyActionPoints = new AP(10, statusLayer);
         
-        Party = new Party(ActionPoints);
+        Party = new Party(PartyActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));
         
         SinMod.System.LoadBank(@"audio/Desktop/Master");
@@ -255,8 +261,8 @@ public class SineaterGame : Game
         {
             screen.Update(gameTime);
         }
-        ActionPoints.Update(gameTime);
-
+        
+        PartyActionPoints.Update(gameTime);
         //_focus.Update();
 
         base.Update(gameTime);
@@ -324,7 +330,7 @@ public class SineaterGame : Game
     }
     
     public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums" ];
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses" ];
 
     private void SetupCrt(int w, int h)
     {

@@ -90,9 +90,11 @@ public record struct LevelStructure
     public readonly List<Enemy> Enemies = [];
     public readonly List<(int X, int Y)> Treasure = [];
     public readonly HeatMap Heat;
+    public AP EnemyActionPoints;
     
     public LevelStructure(IMap map, CombatConfig config)
     {
+        EnemyActionPoints = new AP(10, SineaterGame.Instance.Layers["statuses"]);
         Enemies.Clear();
         Map = map;
                 
@@ -243,6 +245,7 @@ public record struct LevelStructure
                                 enm.Y = y;
                                 if (Rnd.Instance.D100 > 30)
                                 {
+                                    enm.AP = EnemyActionPoints;
                                     Enemies.Add(enm);
                                     spawned++;
                                     if (enm.CrewChoice != ECrewChoice.None)
@@ -289,6 +292,7 @@ public record struct LevelStructure
                                                 enm.Y = y;
                                                 if (Rnd.Instance.D100 > 30)
                                                 {
+                                                    enm.AP = EnemyActionPoints;
                                                     Enemies.Add(enm);
                                                     spawned++;
                                                     if (enm.CrewChoice != ECrewChoice.None)
@@ -322,6 +326,7 @@ public record struct LevelStructure
                                             enm.Y = y;
                                             if (Rnd.Instance.D100 > 30)
                                             {
+                                                enm.AP = EnemyActionPoints;
                                                 Enemies.Add(enm);
                                                 spawned++;
                                                 if (enm.CrewChoice != ECrewChoice.None)

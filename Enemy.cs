@@ -89,6 +89,6 @@ public class Enemy : Character
 
     public void Init()
     {
-        AP = new AP(15, SineaterGame.Instance.Layers["ascii"], 15 - Stamina);
+        //AP = new AP(15, SineaterGame.Instance.Layers["ascii"], 15 - Stamina);
     }
 }
