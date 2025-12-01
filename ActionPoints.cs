@@ -24,14 +24,18 @@ public enum EStatus
 
 public static class EStatusExtensions
 {
-    public static Glyph GetGlyph(this EStatus status, int index, int total)
+    private static int[] _frames = [0, 1, 0, 1, 2, 1, 0, 0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 4, 4, 3, 2, 1, 0];
+    private static int[] _voids = [0, 0, 0, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0];
+    
+    public static Glyph GetGlyph(this EStatus status, int index, int time)
     {
-        var glyph = new Glyph(0, 0, Color.Black, Color.White);
-
+        var glyph = new Glyph(0, _frames[(index + time) % _frames.Length], Color.Black, Color.White);
+        
         switch (status)
         {
             case EStatus.Void:
                 glyph.U = 1;
+                glyph.V = _voids[(index + time) % _voids.Length];
                 break;
             case EStatus.Stamina:
                 glyph.U = 2;
@@ -89,6 +93,23 @@ public class AP
             _statuses.Add(status);
         }
     }
+
+    public AP(AP left, AP right)
+    {
+        Width = left.Width + right.Width;
+        Layer = left.Layer;
+        Empty = left.Empty;
+        
+        for (var i = 0; i < left.Width; i++)
+        {
+            _statuses.Add(left.GetAt(i));
+        }
+        
+        for (var i = 0; i < right.Width; i++)
+        {
+            _statuses.Add(right.GetAt(i));
+        }
+    }
     
     public AP(int width, TextLayer layer, int empty = 0)
     {
@@ -108,9 +129,12 @@ public class AP
     {
         
     }
-    
+
+    private float t = 0;
     public void Draw(int x, int y, ICharacter? showDetails = null)
     {
+        t += 0.05f;
+        
         if (showDetails != null)
         {
             var name = showDetails.GetName();
@@ -121,7 +145,7 @@ public class AP
         }
         for (int i = 0; i < Width; i++)
         {
-            Layer.Set(x + i, y, View[i].GetGlyph(i, Width));
+            Layer.Set(x + i, y, View[i].GetGlyph((int)(i * i * 2.9f), (int)t));
         }
     }
 

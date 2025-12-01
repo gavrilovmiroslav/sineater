@@ -35,6 +35,7 @@ public class CombatMapScreen : Screen
     
     private ETerrainKind _kind;
     public LevelStructure Structure;
+    public AP TotalAP;
     private bool _rendered = false;
     private bool _detailedView = false;
     public int PlayerSelectedIndex = 0;
@@ -72,6 +73,17 @@ public class CombatMapScreen : Screen
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
         Regenerate(_width == -1 || _height == -1);
+
+        TotalAP = new AP(game.Party.Characters[0].AP, Structure.EnemyActionPoints);
+        foreach (var player in game.Party.Characters)
+        {
+            player.AP = TotalAP;
+        }
+
+        foreach (var enemy in Structure.Enemies)
+        {
+            enemy.AP = TotalAP;
+        }
     }
 
     public override void Initialize(SineaterGame game)
@@ -439,8 +451,7 @@ public class CombatMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        _game.PartyActionPoints.Draw(DrawOffset.X + 1, 27);
-        Structure.EnemyActionPoints.Draw(DrawOffset.X + 11, 27);
+        TotalAP.Draw(DrawOffset.X + 1, 27);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)

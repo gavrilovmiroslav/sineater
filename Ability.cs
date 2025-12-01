@@ -23,7 +23,7 @@ public class DomainExpansion : Ability
     {
         var sin = character.GetAP().Count(EStatus.Sin);
         
-        var kind = character.GetAP().GetAt(x * 2 + 1);
+        var kind = character.GetAP().GetAt(x);
         switch (kind)
         {
             case EStatus.Stamina:
@@ -45,7 +45,7 @@ public class DomainExpansion : Ability
 
     public override IEnumerable Use(IScreen level, ICharacter character, int x, int y)
     {
-        var kind = character.GetAP().GetAt(x * 2 + 1);
+        var kind = character.GetAP().GetAt(x);
         var domains = (level as CombatMapScreen).Domains;
         switch (kind)
         {
