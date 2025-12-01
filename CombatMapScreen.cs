@@ -1271,6 +1271,11 @@ public class CombatMapScreen : Screen
         }
         else if (opt == "CONSUME")
         {
+            var playerAP = new AP(TotalAP, 10);
+            foreach (var player in SineaterGame.Instance.Party.Characters)
+            {
+                player.AP = playerAP;
+            }
             CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
             Muse.SetTravelMood();
         }

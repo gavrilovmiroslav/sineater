@@ -99,7 +99,8 @@ public class AP
         Width = left.Width + right.Width;
         Layer = left.Layer;
         Empty = left.Empty;
-        
+
+        _start = 0;
         for (var i = 0; i < left.Width; i++)
         {
             _statuses.Add(left.GetAt(i));
@@ -108,6 +109,19 @@ public class AP
         for (var i = 0; i < right.Width; i++)
         {
             _statuses.Add(right.GetAt(i));
+        }
+    }
+
+    public AP(AP other, int width)
+    {
+        Width = Math.Min(width, other.Width);
+        Layer = other.Layer;
+        Empty = other.Empty;
+
+        _start = 0;
+        for (var i = 0; i < Width; i++)
+        {
+            _statuses.Add(other.GetAt(i));
         }
     }
     
