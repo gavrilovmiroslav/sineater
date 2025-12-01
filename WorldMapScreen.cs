@@ -677,33 +677,14 @@ public class WorldMapScreen : Screen
                     }
                     else
                     {
-                        _submenuDelta = (dx, dy);
-                        if (x >= 0 && y >= 0 && x < 20 && y < 20)
+                        if (_world.SlowDowns.Has(x, y))
                         {
-                            List<string> submenuOptions = [];
-
-                            if (dx == 0 && dy == 0 && _world.Encounters.Has(x, y))
-                            {
-                                submenuOptions.Add("FIGHT");
-                            }
-                            
-                            if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
-                            {
-                                submenuOptions.Add("VISIT");
-                                submenuOptions.Add("CAMP");
-                            }
-
-                            if (_world.GeneralDescriptions.Has(x, y))
-                            {
-                                if (Maps[CurrentMapLayer].Map.IsWalkable(x, y) &&
-                                    _world.GeneralDescriptions.IsVisited(x, y)
-                                    || !Maps[CurrentMapLayer].Map.IsWalkable(x, y))
-                                {
-                                    submenuOptions.Add("INSPECT");
-                                }
-                            }
-                            
-                            StartSubmenu(submenuOptions.ToArray());
+                            var slowdown = _world.SlowDowns.Get(x, y);
+                            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
+                        }
+                        else
+                        {
+                            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
                         }
                     }
                 }
