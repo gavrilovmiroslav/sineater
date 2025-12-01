@@ -217,9 +217,12 @@ public record struct LevelStructure
 
                     var spawned = 0;
                     HashSet<(int, int)> usedEnemySpots = [];
-                    
-                    while (res > 0)
+
+                    var tryTime = 0;
+
+                    while (res > 0 && tryTime < 100)
                     {
+                        tryTime++;
                         Enemy enm;
                         if (crew.Count == 0)
                         {

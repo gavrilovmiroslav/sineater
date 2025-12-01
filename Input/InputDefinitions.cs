@@ -77,7 +77,7 @@ internal class InputAction
         }
         else
         {
-            IsActive = !previous.IsButtonDown(Gamepad) && current.IsButtonDown(Gamepad);
+            IsActive = (!previous.IsButtonDown(Gamepad) || InputType == EInputTrigger.Down) && current.IsButtonDown(Gamepad);
         }
     }
 }
