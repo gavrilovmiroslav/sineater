@@ -95,7 +95,7 @@ public static class Combat
             weaponAttack = rhWeapon.Attack * rhWeapon.Base;
             weaponAttack += lhWeapon.Attack * 0.2f * lhWeapon.Base;
             
-            weaponDefense = rhWeapon.Defense * rhWeapon.Base;
+            weaponDefense = rhWeapon.Defense * 0.2f * rhWeapon.Base;
             weaponDefense += lhWeapon.Defense * 0.2f * lhWeapon.Base;
         }
         else
@@ -103,8 +103,15 @@ public static class Combat
             weaponAttack = lhWeapon.Attack * lhWeapon.Base;
             weaponAttack += rhWeapon.Attack * 0.2f * rhWeapon.Base;
             
-            weaponDefense = lhWeapon.Defense * lhWeapon.Base;
+            weaponDefense = lhWeapon.Defense * 0.2f * lhWeapon.Base;
             weaponDefense += rhWeapon.Defense * 0.2f * rhWeapon.Base;
+        }
+
+        if (chr.GetItem() is Weapon { } i)
+        {
+            weaponAttack += i.Attack * i.Base;
+
+            weaponDefense += i.Defense * i.Base;
         }
 
         calculus.WeaponAttack = weaponAttack;

@@ -275,6 +275,10 @@ public class WorldMapScreen : Screen
                 CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
             }
         }
+        else if (opt == "CAMP")
+        {
+            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(12, 0)));
+        }
         else if (opt == "FIGHT")
         {
             if (_world.Encounters.Has(x, y))
@@ -303,7 +307,9 @@ public class WorldMapScreen : Screen
             }
         }
     }
-    
+
+    HashSet<(int,int)> visited = [];
+
     internal void DrawWorld(bool noPlayer = false)
     {
         if (_shouldUpdateView)
@@ -330,6 +336,11 @@ public class WorldMapScreen : Screen
             _ => 2
         };
         var light = fov.ComputeFov(x, y, radius, true);
+
+        foreach (var l in light)
+        {
+            visited.Add((l.X, l.Y));
+        }
         
         var p = Ambient.Atmospheres[(int)TimeOfDay];
         var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
@@ -342,9 +353,20 @@ public class WorldMapScreen : Screen
         AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr), gr);
         
         var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
-        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo);
+        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
         _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
-        
+
+        //for (var i = 0; i < 20; i++)
+        //{
+        //    for (var j = 0; j < 20; j++)
+        //    {
+        //        if (!fov.IsInFov(i, j) && !visited.Contains((i, j)))
+        //        {
+        //            _game.Layers["mrmo"].Set(i + 8, j + 2, " ", Color.Black, Color.Black);
+        //        }
+        //    }
+        //}
+
         var tick = _time is < 400 or > 800 and < 1200;
         
         var chr = _game.Party.Characters[PlayerSelectedIndex];
@@ -667,6 +689,7 @@ public class WorldMapScreen : Screen
                             if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                             {
                                 submenuOptions.Add("VISIT");
+                                submenuOptions.Add("CAMP");
                             }
 
                             if (_world.GeneralDescriptions.Has(x, y))

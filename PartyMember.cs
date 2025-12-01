@@ -571,9 +571,9 @@ public record struct Party
             ECharacterClass.Witch,
             ECharacterClass.Knight,
             ECharacterClass.Monk,
-            ECharacterClass.Sage,
-            ECharacterClass.Priest,
-            ECharacterClass.Thief,
+            //ECharacterClass.Sage,
+            //ECharacterClass.Priest,
+            //ECharacterClass.Thief,
         };
         jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);

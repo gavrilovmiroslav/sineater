@@ -137,17 +137,17 @@ public static class ItemLibrary
         return dummy;
     }
 
-    public static Item? GetItem(string name)
+    public static Weapon? GetItem(string name)
     {
-        if (Library.Items.Find(x => x.Name == name) is {} result)
+        if (Library.Weapons.Find(x => x.Name == name) is {} result)
         {
-            var item = (Item)result.Clone();
-            InstancedItems.Add(result.GetName(), item);
+            var item = (Weapon)result.Clone();
+            InstancedWeapons.Add(result.GetName(), item);
             return item;
         }
 
-        var dummy = Item.Dummy(name);
-        InstancedItems.Add(name, dummy);
+        var dummy = Weapon.Dummy(name);
+        InstancedWeapons.Add(name, dummy);
         return dummy;
     }
 }
