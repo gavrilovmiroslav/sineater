@@ -7,45 +7,8 @@ using System.Runtime.Serialization;
 
 namespace SINEATER;
 
-public interface IItem : IAbilitySource
-{
-    public (int, int) Picture { get; }
-    public string Name { get; }
-    public Glyph Glyph { get; }
-    public EWeightClass Weight { get; }
-    public EElement Element { get; }
-    public List<ITrait> Traits { get; set; }
-
-    public IEnumerable ApplyItemEquipped(ICharacter character);
-    public IEnumerable ApplyItemUnequipped(ICharacter character);
-
-    public virtual void AffectOffense(ref Damage dmg)
-    {
-        foreach (var trait in Traits)
-            trait.AffectOffense(ref dmg);
-    }
-
-    public virtual void AffectDefense(ref Damage dmg)
-    {
-        foreach (var trait in Traits)
-            trait.AffectDefense(ref dmg);
-    }
-
-    public virtual void AffectDamage(ref Damage dmg)
-    {
-        foreach (var trait in Traits)
-            trait.AffectDamage(ref dmg);
-    }
-
-    public virtual void AffectStatuses(ref Damage dmg)
-    {
-        foreach (var trait in Traits)
-            trait.AffectStatuses(ref dmg);
-    }
-}
-
 [JsonObject(MemberSerialization.OptIn)]
-public class Item(string name, (int U, int V) uv, EElement element = EElement.None, EWeightClass weight = EWeightClass.Medium) : ICloneable, IItem
+public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightClass.Medium, List<string>? tags = null) : ICloneable
 {
     public void Copy(Item original)
     {
@@ -74,39 +37,12 @@ public class Item(string name, (int U, int V) uv, EElement element = EElement.No
     public virtual (int, int) Picture { get; set; } = (uv.U, uv.V);
     [JsonProperty]
     public virtual EWeightClass Weight { get; set; } = weight;
-    [JsonProperty]
-    public virtual EElement Element { get; set; } = element;
 
-    public List<ITrait> Traits { get; set; } = [];
+    [JsonProperty] public List<string>? Tags { get; set; } = tags; 
 
     #endregion // Serialization
 
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
-
-    public virtual bool CanBeUsed()
-    {
-        return true;
-    }
-
-    public virtual bool CanBeShattered()
-    {
-        return false;
-    }
-
-    public virtual IEnumerable ApplyItemUsed(ICharacter character)
-    {
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemEquipped(ICharacter character)
-    {
-        yield break;
-    }
-    
-    public virtual IEnumerable ApplyItemUnequipped(ICharacter character)
-    {
-        yield break;
-    }
     
     public virtual string GetName()
     {

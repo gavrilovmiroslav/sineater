@@ -225,7 +225,7 @@ public class CombatMapScreen : Screen
             var w = _game.Party.Characters[i];
 
             w.Fov = selfFov.
-                ComputeFov(w.X, w.Y, 2 * w.Cla, true).
+                ComputeFov(w.X, w.Y, w.Cla, true).
                 Select(Predicate.CellToPosition).ToHashSet();
             
             foreach (var (x, y) in w.Fov)
@@ -235,11 +235,11 @@ public class CombatMapScreen : Screen
             
             if (i == 0)
             {
-                _fov.ComputeFov(w.X, w.Y, 2 * w.Cla, true);
+                _fov.ComputeFov(w.X, w.Y, w.Cla, true);
             }
             else
             {
-                _fov.AppendFov(w.X, w.Y, 2 * w.Cla, true);
+                _fov.AppendFov(w.X, w.Y, w.Cla, true);
             }
 
             if (i == PlayerSelectedIndex)
@@ -726,197 +726,11 @@ public class CombatMapScreen : Screen
 
         if (defender is { } d)
         {
-            var damage = Combat.Attack(attacker, defender);
-            
-            DrawSubmenuAttackEnemy(defender, damage);
+            // TODO
+            //DrawSubmenuAttackEnemy(defender, damage);
         }
     }
-
-    private void DrawSubmenuAttackEnemy(Character enemy, Damage? dmg = null)
-    {
-        var nextAP = enemy.AP.Copy();
-        nextAP.Add(EStatus.Wound, dmg?.Wounds ?? 0);
-        nextAP.Add(EStatus.Fatigue, dmg?.StatusFatigue ?? 0);
-        nextAP.Add(EStatus.Fire, dmg?.StatusFire ?? 0);
-        nextAP.Add(EStatus.Frozen, dmg?.StatusFrost ?? 0);
-        nextAP.Add(EStatus.Insanity, dmg?.StatusInsanity ?? 0);
-        nextAP.Add(EStatus.Poison, dmg?.StatusPoison ?? 0);
-        nextAP.Add(EStatus.Death, dmg?.StatusDeath ?? 0);
-
-        if (dmg?.SelfDamage > 0 && _time < 800 && dmg?.Attacker is PartyMember pm)
-        {
-            var nextSelfAP = pm.AP.Copy();
-            nextSelfAP.Add(EStatus.Wound, dmg?.SelfWound ?? 0);
-            nextSelfAP.Add(EStatus.Fatigue, dmg?.SelfFatigue ?? 0);
-            nextSelfAP.Add(EStatus.Fire, dmg?.SelfFire ?? 0);
-            nextSelfAP.Add(EStatus.Frozen, dmg?.SelfFrost ?? 0);
-            nextSelfAP.Add(EStatus.Insanity, dmg?.SelfInsanity ?? 0);
-            nextSelfAP.Add(EStatus.Poison, dmg?.SelfPoison ?? 0);
-            nextSelfAP.Add(EStatus.Death, dmg?.SelfDeath ?? 0);
-            nextSelfAP.Draw(DrawOffset.X * 2 + 1, 26);
-        }
-        
-        var (u, v) = enemy.GetPortait();
-        
-        _game.Layers["ascii"].SetRect(new Vector2(38, 3), new Vector2(54, 23), ' ');
-        _game.Layers["ascii"].SetBox(new Vector2(37, 4), new Vector2(55, 24), Sides.Ascii, Corners.Ascii);
-
-        if (dmg?.HP == 0 || _time < 800)
-        {
-            var hp = $"{enemy.HP}";
-            _game.Layers["ascii"].Set(39, 5, $"HP{hp} {enemy.GetName()}", enemy.Tint);
-            _game.Layers["ascii"].Set(41, 5, hp, Color.White);
-        }
-        else
-        {
-            var hp = $"{Math.Max(0, enemy.HP - dmg?.HP ?? 0)}";
-            _game.Layers["ascii"].Set(39, 5, $"HP{hp} {enemy.GetName()}", enemy.Tint);
-            _game.Layers["ascii"].Set(41, 5, hp, Color.Red);
-        }
-
-        _game.Layers["ascii"].SetRect(new Vector2(38, 6), new Vector2(54, 6), Glyph.Bw(13, 6));
-        _game.Layers["ascii"].Set(37, 6, Glyph.Bw(12, 6));
-        _game.Layers["ascii"].Set(55, 6, Glyph.Bw(14, 6));
-        
-        if (enemy is Enemy en)
-        {
-            if (!_detailedView)
-            {
-                _game.Layers["mini"].Set(81, 15, $"Destiny", Color.White);
-            }
-
-            if (_time < 800)
-            {
-                en.AP.Draw(39, 8);
-            }
-            else
-            {
-                nextAP.Draw(39, 8);
-            }
-        }
-        else
-        {
-            if (_time >= 800)
-            {
-                nextAP.Draw(DrawOffset.X * 2 + 1, 26);
-            }
-        }
-
-        _game.Layers["ascii"].Set(42, 15, $"WIL  CLA", enemy.Tint);
-        _game.Layers["ascii"].Set(45, 15, $"{enemy.Wil}", Color.White);
-        _game.Layers["ascii"].Set(50, 15, $"{enemy.Cla}", Color.White);
-        _game.Layers["ascii"].Set(42, 16, $"VIG  POI ", enemy.Tint);
-        _game.Layers["ascii"].Set(45, 16, $"{enemy.Vig}", Color.White);
-        if (dmg?.Poise == 0 || _time < 800)
-        {
-            _game.Layers["ascii"].Set(50, 16, $"{enemy.Poi}", Color.White);
-        }
-        else
-        {
-            _game.Layers["ascii"].Set(50, 16, $"{Math.Max(0, enemy.Poi - dmg?.Poise ?? 0)}", Color.White);
-        }
-
-        if (enemy.GetLeftWeapon() is {} lw)
-            _game.Layers["ascii"].Set(39, 18, $"{lw.Name}", enemy.Tint);
-        else
-            _game.Layers["ascii"].Set(39, 18, "[LEFT ARM]", Color.Gray);
-        
-        if (enemy.GetRightWeapon() is {} rw)
-            _game.Layers["ascii"].Set(39, 19, $"{rw.Name}", enemy.Tint);
-        else
-            _game.Layers["ascii"].Set(39, 19, "[RIGHT ARM]", Color.Gray);
-        
-        if (enemy.GetItem() is {} it)
-            _game.Layers["ascii"].Set(39, 20, $"{it.Name}", enemy.Tint);
-        else
-            _game.Layers["ascii"].Set(39, 20, "[EQUIPMENT]", Color.Gray);
-
-        _detailedView = InputM.IsActive(EInputAction.DetailedView);
-        if (!_detailedView)
-        {
-            _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-            _game.Layers["portrait2"].Set(4, 2, new Glyph(u, v, Color.Black, enemy.Tint));
-            _game.Layers["ascii"].Set(35, 23, "<ALT");
-        }
-        else
-        {
-            var x = 18;
-            var w = 17;
-            _game.Layers["ascii"].SetRect(new Vector2(x, 5), new Vector2(x + w, 23), ' ');
-            _game.Layers["ascii"].SetBox(new Vector2(x - 1, 4), new Vector2(x + w + 1, 24), Sides.Ascii, Corners.Ascii);
-
-            {
-                int n = 5;
-                var write = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.LightGray);
-                var writeb = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.White);
-                var writes = (string s) => _game.Layers["mini"].Set((x + 1) * 2, 1 + 2 * n++, s);
-                if (dmg is { } d)
-                {
-                    write("ATTACKER");
-                    write($"  BODY:   {Math.Round(d.OffenseCalc.PhysicalAttack), 6:0.0}");
-                    write($"  MIND:   {Math.Round(d.OffenseCalc.MentalAttack), 6:0.0}");
-                    write($"  ATTACK: {Math.Round(d.OffenseCalc.WeaponAttack), 6:0.0}");
-                    writes("     (BODY + MIND) x ATTACK =");
-                    write($"  BASE:   {Math.Round(d.OffenseCalc.BaseAttack), 6:0.0}");
-                    write($"  STAT:   {Math.Round(d.OffenseCalc.StatAlign), 6:0.0}");
-                    write($"  SCALE:  {Math.Round(d.OffenseCalc.StatusAlign), 6:0.0}");
-                    writes("     BASE + STAT + SCALE =");
-                    var str = d.OffenseCalc.BaseAttack + d.OffenseCalc.StatAlign + d.OffenseCalc.StatusAlign;
-                    write($"  SCALE:  {Math.Round(str), 6:0.0}");
-                    var wndPercent = 1.5f - d.Attacker.AP.Count(EStatus.Wound) / (float)d.Attacker.AP.Width;
-                    write($"  WND%:   {wndPercent, 6:0.0}");
-                    writes("     STR x WND% =");
-                    write($"OFFENSE:  {(str * wndPercent), 6:0.0}");
-                    writes("     + STRENGTH MODIFIERS");
-                    writeb($"TOTAL ATK:{d.Offense.ToString().PadLeft(3, '0'), 6}");
-                    writeb($"         -{d.Defense.ToString().PadLeft(3, '0'), 6} <----");
-                    writeb($"FLAT DMG: {d.Flat.ToString().PadLeft(3, '0'), 6}");
-                    writes("     + DAMAGE MODIFIERS");
-                    writeb($"TOTAL DMG:{d.Flat.ToString().PadLeft(3, '0'), 6}");
-                }
-            }
-
-            x = x + w + 3;
-            _game.Layers["ascii"].SetRect(new Vector2(x, 5), new Vector2(x + w, 23), ' ');
-            _game.Layers["ascii"].SetBox(new Vector2(x - 1, 4), new Vector2(x + w + 1, 24), Sides.Ascii, Corners.Ascii);
-
-            {
-                int n = 5;
-                var write = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.LightGray);
-                var writeb = (string s) => _game.Layers["ascii"].Set(x + 1, n++, s, Color.White);
-                var writes = (string s) => _game.Layers["mini"].Set((x + 1) * 2, 1 + 2 * n++, s);
-
-                if (dmg is { } d)
-                {
-                    write("DEFENDER");
-                    write($"  BODY:   {Math.Round(d.DefenseCalc.PhysicalDefense), 6:0.0}");
-                    write($"  MIND:   {Math.Round(d.DefenseCalc.MentalDefense), 6:0.0}");
-                    write($"  GUARD:  {Math.Round(d.DefenseCalc.WeaponDefense), 6:0.0}");
-                    writes("     (BODY + MIND) x GUARD =");
-                    write($"  BASE:   {Math.Round(d.DefenseCalc.BaseDefense), 6:0.0}");
-                    write($"  STAT:   {Math.Round(d.DefenseCalc.StatAlign), 6:0.0}");
-                    write($"  SCALE:  {Math.Round(d.DefenseCalc.StatusAlign), 6:0.0}");
-                    writes("     BASE + STAT + SCALE =");
-                    var str = d.DefenseCalc.BaseDefense + d.DefenseCalc.StatAlign + d.DefenseCalc.StatusAlign;
-                    write($"  SCALE:  {Math.Round(str), 6:0.0}");
-                    var wndPercent = 1.2f - d.Defender.AP.Count(EStatus.Wound) / (float)d.Defender.AP.Width;
-                    write($"  WND%:   {wndPercent, 6:0.0}");
-                    writes("     STR x WND% =");
-                    write($"DEFENSE:  {(str * wndPercent), 6:0.0}");
-                    writes("");
-                    writes("     AFTER GEAR MODIFIERS");
-                    writeb($"TOTAL DEF:{d.Defense.ToString().PadLeft(3, '0'), 6}");
-                }
-            }
-            _game.Layers["ascii"].Set(36, 20, "<<");
-        }
-        
-        _game.Layers["largenums"].Set(11, 11, $"{dmg?.Flat.ToString().PadLeft(3, '0')}");
-        _game.Layers["largenums"].Set(13, 12, Glyph.Bw(0, 1));
-        _game.Layers["largenums"].Set(12, 12, Glyph.Bw(1, 1));
-        _game.Layers["largenums"].Set(11, 12, Glyph.Bw(2, 1));
-    }
-
+    
     private bool showMap = false;
     private void CheckInputs()
     {
@@ -1111,31 +925,31 @@ public class CombatMapScreen : Screen
         yield return new WaitForSeconds(0.1f);
         Draw(defender.X, defender.Y, new Glyph(guv.Item1, guv.Item2, Color.Black, defender.Tint));
         
-        var damage = Combat.Attack(attacker, defender);
-
-        defender.AP.Add(EStatus.Wound, damage.Wounds);
-        defender.AP.Add(EStatus.Fatigue, damage.StatusFatigue);
-        defender.AP.Add(EStatus.Fire, damage.StatusFire);
-        defender.AP.Add(EStatus.Frozen, damage.StatusFrost);
-        defender.AP.Add(EStatus.Poison, damage.StatusPoison);
-        defender.AP.Add(EStatus.Insanity, damage.StatusInsanity);
-        defender.AP.Add(EStatus.Death, damage.StatusDeath);
-        
-        attacker.AP.Add(EStatus.Wound, damage.SelfWound);
-        attacker.AP.Add(EStatus.Fatigue, damage.SelfFatigue);
-        attacker.AP.Add(EStatus.Fire, damage.SelfFire);
-        attacker.AP.Add(EStatus.Frozen, damage.SelfFrost);
-        attacker.AP.Add(EStatus.Insanity, damage.SelfInsanity);
-        attacker.AP.Add(EStatus.Poison, damage.SelfPoison);
-        attacker.AP.Add(EStatus.Death, damage.SelfDeath);
-        
-        defender.HP -= damage.HP;
-        defender.Temp.Poise -= damage.Poise;
-
-        if (defender is Enemy { Active: false } dfn)
-        {
-            dfn.Active = true;
-        }
+        // var damage = Combat.Attack(attacker, defender);
+        //
+        // defender.AP.Add(EStatus.Wound, damage.Wounds);
+        // defender.AP.Add(EStatus.Fatigue, damage.StatusFatigue);
+        // defender.AP.Add(EStatus.Fire, damage.StatusFire);
+        // defender.AP.Add(EStatus.Frozen, damage.StatusFrost);
+        // defender.AP.Add(EStatus.Poison, damage.StatusPoison);
+        // defender.AP.Add(EStatus.Insanity, damage.StatusInsanity);
+        // defender.AP.Add(EStatus.Death, damage.StatusDeath);
+        //
+        // attacker.AP.Add(EStatus.Wound, damage.SelfWound);
+        // attacker.AP.Add(EStatus.Fatigue, damage.SelfFatigue);
+        // attacker.AP.Add(EStatus.Fire, damage.SelfFire);
+        // attacker.AP.Add(EStatus.Frozen, damage.SelfFrost);
+        // attacker.AP.Add(EStatus.Insanity, damage.SelfInsanity);
+        // attacker.AP.Add(EStatus.Poison, damage.SelfPoison);
+        // attacker.AP.Add(EStatus.Death, damage.SelfDeath);
+        //
+        // defender.HP -= damage.HP;
+        // defender.Temp.Poise -= damage.Poise;
+        //
+        // if (defender is Enemy { Active: false } dfn)
+        // {
+        //     dfn.Active = true;
+        // }
         
         if (defender.HP <= 0) defender.Die();
         

@@ -46,6 +46,7 @@ public class SineaterGame : Game
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public AP PartyActionPoints { get; set; }
+    public Moves Moves = new();
     
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;

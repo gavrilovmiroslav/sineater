@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using static SINEATER.Extensions;
 
@@ -196,7 +194,7 @@ public interface ICharacter
     public void EquipRightWeapon(Weapon? weapon);
     public Weapon? GetRightWeapon();
     public void EquipItem(Item? item);
-    public IItem? GetItem();
+    public Item? GetItem();
     public AP GetAP();
     
     public string GetName();
@@ -242,7 +240,7 @@ public class Dummy : ICharacter
     {
     }
 
-    public IItem? GetItem()
+    public Item? GetItem()
     {
         return null;
     }
@@ -284,7 +282,7 @@ public abstract class Character : ICharacter
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
 
-    public IEnumerable<IItem> GetGear()
+    public IEnumerable<Item> GetGear()
     {
         if (GetItem() is { } item)
             yield return item;
@@ -332,55 +330,7 @@ public abstract class Character : ICharacter
     
     public float WeightFactor => (Cla + Poi) / Math.Max(0.1f, Weight);
     
-    public float CountPhysical
-    {
-        get
-        {
-            var count = 0;
-            if (GetLeftWeapon() is { Element: EElement.Physical } lw)
-            {
-                count += lw.Level;
-            }
-            
-            if (GetRightWeapon() is { Element: EElement.Physical } rw)
-            {
-                count += rw.Level;
-            }
-            
-            if (GetItem() is { Element: EElement.Physical } it)
-            {
-                count++;
-            }
-
-            return count;
-        }
-    }
-    
-    public float CountMental
-    {
-        get
-        {
-            var count = 0;
-            if (GetLeftWeapon() is { Element: EElement.Mental } lw)
-            {
-                count += lw.Level;
-            }
-            
-            if (GetRightWeapon() is { Element: EElement.Mental } rw)
-            {
-                count += rw.Level;
-            }
-            
-            if (GetItem() is { Element: EElement.Mental } it)
-            {
-                count++;
-            }
-
-            return count;
-        }
-    }
-    
-    public IItem? GetItem()
+    public Item? GetItem()
     {
         return Item;
     }
@@ -403,8 +353,7 @@ public abstract class Character : ICharacter
     public ECharacterClass Job;
     public Weapon? LeftWeapon = null;
     public Weapon? RightWeapon = null;
-    public IItem? Item = null;
-    public readonly List<Trait> Traits = [];
+    public Item? Item = null;
     public Ability? Ability = null;
     public AP AP;
     
@@ -455,51 +404,14 @@ public abstract class Character : ICharacter
 
     public void EquipLeftWeapon(Weapon? weapon)
     {
-        if (LeftWeapon != null)
-        {
-            foreach (var e in LeftWeapon.ApplyItemUnequipped(this))
-            { }
-        }
         LeftWeapon = weapon;
-        if (weapon != null)
-        {
-            foreach (var e in weapon.ApplyItemEquipped(this))
-            { }
-        }
     }
     
     public void EquipRightWeapon(Weapon? weapon)
     {
-        if (RightWeapon != null)
-        {
-            foreach (var e in RightWeapon.ApplyItemUnequipped(this))
-            { }
-        }
-        
         RightWeapon = weapon;
-        if (weapon != null)
-        {
-            foreach (var e in weapon.ApplyItemEquipped(this))
-            { }
-        }
     }
     
-    public void EquipItem(IItem? item)
-    {
-        if (Item != null)
-        {
-            foreach (var e in Item.ApplyItemUnequipped(this))
-            { }
-        }
-
-        Item = item;
-        if (item != null)
-        {
-            foreach (var e in item.ApplyItemEquipped(this))
-            { }
-        }
-    }
-
     public virtual void Done()
     {
         IsDone = true;

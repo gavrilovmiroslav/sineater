@@ -2,10 +2,10 @@ namespace SINEATER;
 
 public class Inventory
 {
-    private IItem?[] _items = [ null, null, null, null, null, null, null, null, null, null, null, null ];
-    public IItem?[] Items => _items;
+    private Item?[] _items = [ null, null, null, null, null, null, null, null, null, null, null, null ];
+    public Item?[] Items => _items;
 
-    public (bool, int) Put(IItem source)
+    public (bool, int) Put(Item source)
     {
         for (int i = 0; i < _items.Length; i++)
         {

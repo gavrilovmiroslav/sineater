@@ -1,16 +1,8 @@
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SINEATER;
-
-public interface IAbilitySource
-{
-    public string GetName();
-    public Glyph GetIcon();
-}
 
 public interface IEquippable {}
 
@@ -69,19 +61,10 @@ public record struct StatusScaling(
 
 public interface IWeaponUpgrade;
 
-public enum EElement
-{
-    None = 0,
-    Physical = 1,
-    Mental = 2,
-    Both = 3,
-}
-
 [JsonObject(MemberSerialization.OptIn)]
 public class Weapon(string name, EWeightClass weight,
-    int attack, int defense,
+    int attack, int guard,
     int quality, (int, int) inventoryPicture,
-    EElement element = EElement.None,
     // STAT SCALING
     EScalingFactor wilScaling = EScalingFactor.F, 
     EScalingFactor claScaling = EScalingFactor.F,
@@ -106,7 +89,8 @@ public class Weapon(string name, EWeightClass weight,
     EScalingFactor theirDeathScaling = EScalingFactor.F,
     EScalingFactor theirVoidScaling = EScalingFactor.F,
     // SCALING CURVE VALUES
-    float scalingBase = 14.0f, float scalingCurve = 1.5f) : ICloneable, IEquippable, IItem
+    float scalingBase = 14.0f, float scalingCurve = 1.5f, 
+    List<string>? tags = null) : Item(name, inventoryPicture, weight, tags), ICloneable, IEquippable
 {
     ~Weapon()
     {
@@ -126,11 +110,9 @@ public class Weapon(string name, EWeightClass weight,
     [JsonProperty]
     public int Attack { get; set; } = attack;
     [JsonProperty]
-    public int Defense { get; set; } = defense;
+    public int Guard { get; set; } = guard;
     [JsonProperty]
-    public EElement Element { get; set; } = element;
-    [JsonProperty]
-    public List<ITrait> Traits { get; set; } = [];
+    public List<string>? Tags { get; set; } = tags;
 
     [JsonProperty]
     public (int, int) Picture { get; set; } = inventoryPicture;
@@ -194,21 +176,6 @@ public class Weapon(string name, EWeightClass weight,
     public Glyph Glyph => Glyph.Bw(14, 67);
 
     public float Base => Level * (int)Weight;
-
-    public IEnumerable ApplyItemUsed(ICharacter character)
-    {
-        yield break;
-    }
-
-    public virtual IEnumerable ApplyItemEquipped(ICharacter character)
-    {
-        yield break;
-    }
-    
-    public virtual IEnumerable ApplyItemUnequipped(ICharacter character)
-    {
-        yield break;
-    }
     
     public override string ToString()
     {

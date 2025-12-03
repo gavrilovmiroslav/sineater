@@ -1,0 +1,45 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+
+namespace SINEATER;
+
+[AttributeUsage(AttributeTargets.Class)]
+public class MoveAttribute : Attribute {}
+
+public enum MoveCost
+{
+    Stamina,
+    Fatigue,
+    Fire,
+    Ice,
+    Wound,
+    Death,
+    Sin
+}
+
+public abstract class Move
+{
+    public abstract string Name { get; }
+    public abstract string Description { get; }
+    public abstract MoveCost[] Costs { get; }
+    public abstract IEnumerable PerformMove();
+}
+
+public class Moves
+{
+    public Dictionary<string, Move> Library = [];
+    
+    public Moves()
+    {
+        foreach (var mv in AppDomain.CurrentDomain.GetAssemblies()
+                     .SelectMany(t => t.GetTypes())
+                     .Where(t => t.IsClass && t.BaseType == typeof(Move)))
+        {
+            var instance = mv.Assembly.CreateInstance(mv.FullName) as Move;
+            Library.Add(instance.Name, instance);
+        }
+    }
+}
