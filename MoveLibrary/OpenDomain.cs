@@ -3,15 +3,14 @@ using System.Collections;
 namespace SINEATER.MoveLibrary;
 
 [Move]
-public class Walk : Move
+public class OpenDomain : Move
 {
-    public override string Name { get; } = "Walk";
+    public override string Name { get; } = "Open Domain";
     public override string Description { get; } = "";
-    public override MoveCost[] Costs { get; } = [];
+    public override MoveCost[] Costs { get; } = [ MoveCost.Sin ];
 
     public override IEnumerable PerformMove(Character character)
     {
-        character.MovesLeft = character.Stats.Initiative;
         yield break;
     }
 }

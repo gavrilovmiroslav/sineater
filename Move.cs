@@ -25,7 +25,8 @@ public abstract class Move
     public abstract string Name { get; }
     public abstract string Description { get; }
     public abstract MoveCost[] Costs { get; }
-    public abstract IEnumerable PerformMove();
+    
+    public abstract IEnumerable PerformMove(Character character);
 }
 
 public class Moves

@@ -634,8 +634,6 @@ public class WorldMapScreen : Screen
                 var x = CurrentPlayerPosition.X;
                 var y = CurrentPlayerPosition.Y;
 
-                submenuOptions.Add("CYCLE");
-                    
                 if (_world.Encounters.Has(x, y))
                 {
                     submenuOptions.Add("FIGHT");

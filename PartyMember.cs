@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using SINEATER.MoveLibrary;
 using static SINEATER.Extensions;
 
 namespace SINEATER;
@@ -279,9 +280,57 @@ public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
+    public string? SelectedMove = null;
+    public int AttacksLeft { get; set; } = 0;
+    public int MovesLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
+    
+    public List<Move> Moves = [];
+    
+    public bool CanPay(MoveCost[] costs)
+    {
+        var stamina = AP.Count(EStatus.Stamina);
+        var fatigue = AP.Count(EStatus.Fatigue);
+        var fire = AP.Count(EStatus.Fire);
+        var ice = AP.Count(EStatus.Frozen);
+        var wound = AP.Count(EStatus.Death);
+        var death = AP.Count(EStatus.Death);
+        var sin  = AP.Count(EStatus.Sin);
 
+        foreach (var part in costs)
+        {
+            switch (part)
+            {
+                case MoveCost.Stamina:
+                    stamina--;
+                    break;
+                case MoveCost.Fatigue:
+                    fatigue--;
+                    break;
+                case MoveCost.Fire:
+                    fire--;
+                    break;
+                case MoveCost.Ice:
+                    ice--;
+                    break;
+                case MoveCost.Wound:
+                    wound--;
+                    break;
+                case MoveCost.Death:
+                    death--;
+                    break;
+                case MoveCost.Sin:
+                    sin--;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return !(stamina < 0 || fatigue < 0 || fire < 0 || ice < 0 || wound < 0 || death < 0 || sin < 0);
+    }
+    
     public IEnumerable<Item> GetGear()
     {
         if (GetItem() is { } item)
@@ -428,8 +477,6 @@ public class PartyMember : Character
     public HashSet<(int X, int Y)> Zone = [];
     public HashSet<(int X, int Y)> Fov = [];
     public (int X, int Y) Origin = (0, 0);
-    public int Steps = 0;
-    public bool NoMove = false;
     
     public PartyMember(ECharacterClass? job = null)
     {
@@ -455,7 +502,7 @@ public class PartyMember : Character
     
     public override void Done()
     {
-        NoMove = true;
+        
     }
 
     public void SetOrigin()
@@ -467,6 +514,7 @@ public class PartyMember : Character
     {
         
     }
+
 }
 
 public record struct Party
@@ -483,9 +531,9 @@ public record struct Party
             ECharacterClass.Witch,
             ECharacterClass.Knight,
             ECharacterClass.Monk,
-            //ECharacterClass.Sage,
-            //ECharacterClass.Priest,
-            //ECharacterClass.Thief,
+            ECharacterClass.Sage,
+            ECharacterClass.Priest,
+            ECharacterClass.Thief,
         };
         jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
@@ -497,6 +545,9 @@ public record struct Party
                 Tint = Colors[i],
                 AP = actionPoints,
             };
+            
+            Characters[i].Moves.Add(new Walk());
+            Characters[i].Moves.Add(new Strike());
             
             switch (Characters[i].Job)
             {
@@ -517,7 +568,7 @@ public record struct Party
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
                     Characters[i].Stats.Vigor = 3;
-                    Characters[i].Ability = new DomainExpansion();
+                    Characters[i].Moves.Add(new OpenDomain());
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Red Sign"));
@@ -527,6 +578,9 @@ public record struct Party
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
+                    Characters[i].Moves.RemoveAt(1);
+                    Characters[i].Moves.Add(new Chop());
+                    Characters[i].Moves.Add(new Bash());
                     break;
                 case ECharacterClass.Monk:
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolm Staff"));
@@ -557,6 +611,7 @@ public record struct Party
                     Characters[i].Stats.Clarity = 6;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 2;
+                    Characters[i].Moves.Add(new Steal());
                     break;
             }
         }

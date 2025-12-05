@@ -9,7 +9,7 @@ public class Strike : Move
     public override string Description { get; } = "";
     public override MoveCost[] Costs { get; } = [];
 
-    public override IEnumerable PerformMove()
+    public override IEnumerable PerformMove(Character character)
     {
         yield break;
     }
