@@ -49,6 +49,12 @@ public enum EScalingFactor
 
 public record struct Unlockable<T>(T Thing, int MinLevel);
 
+public record struct StatsScaling(
+    EScalingFactor vigorScaling = EScalingFactor.F,
+    EScalingFactor willScaling = EScalingFactor.F,
+    EScalingFactor poiseScaling = EScalingFactor.F,
+    EScalingFactor clarityScaling = EScalingFactor.F);
+
 public record struct StatusScaling(
     EScalingFactor fatigueScaling = EScalingFactor.F,
     EScalingFactor frostScaling = EScalingFactor.F,

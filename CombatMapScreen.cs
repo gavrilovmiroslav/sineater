@@ -426,11 +426,11 @@ public class CombatMapScreen : Screen
         yield break;
     }
     
-    private void CalculateZone(PartyMember w)
+    public void CalculateZone(PartyMember w)
     {
         w.Zone.Clear();
         var dis = new DistanceMap(Structure, false, [w.Origin], Predicate.Walkable);
-        var walkRadius = (int)Math.Max(1, w.Vig + w.Poi + w.Wil - w.Weight);
+        var walkRadius = w.MovesLeft;
         w.Zone = dis.GetAllBeneath(walkRadius + 1).ToHashSet();
         w.Zone.IntersectWith(Structure.Map.
             GetCellsInCircle(w.Origin.X, w.Origin.Y, walkRadius).
@@ -832,10 +832,10 @@ public class CombatMapScreen : Screen
                 }
 
                 opts.Add("END TURN");
-                StartSubmenu(opts.ToArray(), false);
+                StartSubmenu(opts.ToArray());
             }
             
-            if (current is { SelectedMove: not null, MovesLeft: > 0, IsDone: false })
+            if (current is { SelectedMove: not null, IsDone: false })
             {
                 var up = InputM.IsActive(EInputAction.MoveUp);
                 var down = InputM.IsActive(EInputAction.MoveDown);
@@ -855,8 +855,8 @@ public class CombatMapScreen : Screen
                         {
                             c.X = current.X;
                             c.Y = current.Y;
-                            current.X = x;
-                            current.Y = y;
+                            current.X = x + dx;
+                            current.Y = y + dy;
                             _game.PartyActionPoints.Spend(1);
                             
                             if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
@@ -868,21 +868,32 @@ public class CombatMapScreen : Screen
                         }
                         else if (Positions.IsEnemyAt(this, x + dx, y + dy) is { } e)
                         {
-                            // ENEMY
-                            _submenuDelta = (dx, dy);
-                            List<string> opts = [];
-                            if (current.Vig > 0)
+                            if (current.Attacks.Count > 0)
                             {
-                                opts.Add("ATTACK");
+                                // ENEMY
+                                _submenuDelta = (dx, dy);
+                                List<string> opts = [];
+                                if (current.Vig > 0)
+                                {
+                                    opts.Add("ATTACK");
+                                }
+
+                                if (current.CanSwapEnemies)
+                                {
+                                    opts.Add("SWAP");
+                                }
+
+                                if (opts.Count == 1)
+                                {
+                                    SubmenuActivate(opts.First());
+                                }
+                                else
+                                {
+                                    StartSubmenu(opts.ToArray());
+                                }
                             }
-                            
-                            if (e.Poi < current.Poi)
-                            {
-                                opts.Add("SWAP");
-                            }
-                            StartSubmenu(opts.ToArray());
                         }
-                        else if (Structure.Map.IsWalkable(x + dx, y + dy))
+                        else if (current.MovesLeft > 0 && Structure.Map.IsWalkable(x + dx, y + dy))
                         {
                             var nx = x + dx;
                             var ny = y + dy;
@@ -891,15 +902,33 @@ public class CombatMapScreen : Screen
                             {
                                 current.X = nx;
                                 current.Y = ny;
+
+                                current.MovesLeft--;
+                                current.SetOrigin();
+                                CalculateZone(current);
+                                if (current.MovesLeft == 0)
+                                {
+                                    current.SelectedMove = null;
+                                }
+                                
                                 DrawCombat();
                                 CoroutineHandler.Run(Domains.Tiles[(nx, ny)]
                                     .ApplyOnDomainStepped(this, current, nx, ny, x, y));
                             }
-
-                            if (current.Zone.Contains((nx, ny)))
+                            else if (current.Zone.Contains((nx, ny)))
                             {
                                 current.X += dx;
                                 current.Y += dy;
+                                
+                                current.MovesLeft--;
+                                current.SetOrigin();
+                                CalculateZone(current);
+                                DrawCombat();
+                                if (current.MovesLeft == 0)
+                                {
+                                    current.SelectedMove = null;
+                                }
+
                                 UpdateEnemyActivation();
                             }
                         }
@@ -1042,7 +1071,7 @@ public class CombatMapScreen : Screen
     {
         DrawCombat();
         var current = _game.Party.Characters[PlayerSelectedIndex];
-        
+        /*
         // if (opt == "SWAP")
         // {
         //     var (dx, dy) = _submenuDelta;
@@ -1078,25 +1107,26 @@ public class CombatMapScreen : Screen
         //         }
         //     }
         // }
-        // else if (opt == "ATTACK")
-        // {
-        //     var (dx, dy) = _submenuDelta;
-        //     var (x, y) = (current.X + dx, current.Y + dy);
-        //     if (Positions.IsCharacterAt(this, x, y) is { } c)
-        //     {
-        //         CoroutineHandler.Run(Coroutine_Attack(current, c));
-        //     }
-        //     else if (Positions.IsEnemyAt(this, x, y) is { } e)
-        //     {
-        //         CoroutineHandler.Run(Coroutine_Attack(current, e));
-        //     }
-        // }
-        if (opt == "HALT")
-        {
+        */
+        if (opt == "HALT HERE")
+        { 
             current.MovesLeft = 0;
             current.SelectedMove = null;
             current.SetOrigin();
             CalculateZone(current);
+        }
+        else if (opt == "ATTACK")
+        {
+            var (dx, dy) = _submenuDelta;
+            var (x, y) = (current.X + dx, current.Y + dy);
+            if (Positions.IsCharacterAt(this, x, y) is { } c)
+            {
+                CoroutineHandler.Run(Coroutine_Attack(current, c));
+            }
+            else if (Positions.IsEnemyAt(this, x, y) is { } e)
+            {
+                CoroutineHandler.Run(Coroutine_Attack(current, e));
+            }
         }
         else if (opt == "CYCLE")
         {
@@ -1121,8 +1151,19 @@ public class CombatMapScreen : Screen
             if (index != -1)
             {
                 current.SelectedMove = current.Moves[index].Name;
-                CoroutineHandler.Run(current.Moves[index].PerformMove(current));
+                CoroutineHandler.Run(current.Moves[index].PerformMove(current, this));
+                CoroutineHandler.Run(new CoUpdateScreen(current, this));
             }
         }
+    }
+}
+
+public class CoUpdateScreen(PartyMember c, CombatMapScreen s) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        s.CalculateZone(c);
+        s.DrawCombat();
+        yield break;
     }
 }

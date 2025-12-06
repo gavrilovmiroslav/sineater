@@ -9,7 +9,7 @@ public class Steal : Move
     public override string Description { get; } = "";
     public override MoveCost[] Costs { get; } = [];
 
-    public override IEnumerable PerformMove(Character character)
+    public override IEnumerable PerformMove(Character character, CombatMapScreen screen)
     {
         yield break;
     }

@@ -26,7 +26,7 @@ public abstract class Move
     public abstract string Description { get; }
     public abstract MoveCost[] Costs { get; }
     
-    public abstract IEnumerable PerformMove(Character character);
+    public abstract IEnumerable PerformMove(Character character, CombatMapScreen screen);
 }
 
 public class Moves

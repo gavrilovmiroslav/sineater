@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using SINEATER.MoveLibrary;
@@ -276,12 +277,25 @@ public class Dummy : ICharacter
     }
 }
 
+public record struct Attack(List<Weapon> Weapons, StatsScaling StatScaling, StatusScaling StatusScaling, Action<Character, Attack, CombatMapScreen>? AttackProc = null);
+
+public interface IStatus
+{
+    public IEnumerable OnActivated(Character c, CombatMapScreen w);
+    public IEnumerable OnMove(Character c, CombatMapScreen w);
+    public IEnumerable OnAttack(Character c, Character o, CombatMapScreen w);
+    public IEnumerable OnDamage(Character c, CombatMapScreen w);
+    public IEnumerable OnDeactivated(Character c, CombatMapScreen w);
+}
+
 public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public string? SelectedMove = null;
-    public int AttacksLeft { get; set; } = 0;
+    public bool CanSwapEnemies { get; set; } = false;
+    public List<Attack> Attacks { get; set; } = [];
+    public List<IStatus> Statuses { get; set; } = [];
     public int MovesLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
