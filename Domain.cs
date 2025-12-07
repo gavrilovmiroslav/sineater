@@ -322,6 +322,11 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             }
         }
 
+        if (character is Character c)
+        {
+            c.MovementLeft++;
+        }
+
         yield break;
     }
 
@@ -438,19 +443,20 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
             {
                 var (u, v) = chr.Job.GetImage();
                 var color = level.GetFg(cx, cy + 1);
-                level.Draw(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
+                level.Draw(cx, cy + 1, new Glyph(u, v + 5, Color.Black, color));
             }
         }
-        // foreach (var chr in level.Enemies)
-        // {
-        //     var (cx, cy) = (chr.X, chr.Y);
-        //     if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
-        //     {
-        //         var (u, v) = chr.Icon;
-        //         var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
-        //         SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 3, new Glyph(u, v + 5, Color.Black, color));
-        //     }
-        // }
+        
+        foreach (var chr in level.Structure.Enemies)
+        {
+            var (cx, cy) = (chr.X, chr.Y);
+            if (xys.Contains((cx, cy)) && xys.Contains((cx, cy + 1)))
+            {
+                var (u, v) = chr.Icon;
+                var color = SineaterGame.Instance.Layers["mrmo"].GetFg(cx, cy + 3);
+                SineaterGame.Instance.Layers["mrmo"].Set(cx, cy + 1, new Glyph(u, v + 5, Color.Black, color));
+            }
+        }
         
         _waveRadius += 0.1f;
     }

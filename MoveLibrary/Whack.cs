@@ -3,9 +3,9 @@ using System.Collections;
 namespace SINEATER.MoveLibrary;
 
 [Move]
-public class Strike : Move
+public class Whack : Move
 {
-    public override string Name { get; } = "Strike";
+    public override string Name { get; } = "Whack";
     public override string Description { get; } = "";
     public override MoveCost[] Costs { get; } = [];
 
@@ -14,7 +14,7 @@ public class Strike : Move
         var dom = (character.IsRightHanded ? character.GetRightWeapon() : character.GetLeftWeapon());
         if (dom is {} wpn)
         {
-            character.Attacks.Add(new Attack([wpn], []));
+            character.Attacks.Add(new Attack([wpn], [EStatus.Fatigue], new StatsScaling(), null));
         }
         yield break;
     }

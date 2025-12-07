@@ -1,14 +1,14 @@
 using System;
 using Newtonsoft.Json;
-using SINEATER.Serialization;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace SINEATER;
 
+public record struct UnlockableMove(EStat? RequiredMaxStat, string Move);
+public record struct Upgrade(int Level, List<UnlockableMove> Moves);
+
 [JsonObject(MemberSerialization.OptIn)]
-public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightClass.Medium, List<string>? tags = null) : ICloneable
+public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightClass.Medium, List<string>? upgrades = null) : ICloneable
 {
     public void Copy(Item original)
     {
@@ -37,11 +37,10 @@ public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightC
     public virtual (int, int) Picture { get; set; } = (uv.U, uv.V);
     [JsonProperty]
     public virtual EWeightClass Weight { get; set; } = weight;
+#endregion // Serialization
 
-    [JsonProperty] public List<string>? Tags { get; set; } = tags; 
-
-    #endregion // Serialization
-
+    public List<Move> AvailableMoves = [];
+    
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
     
     public virtual string GetName()
@@ -53,7 +52,7 @@ public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightC
     {
         return Glyph;
     }
-
+    
     public object Clone()
     {
         return this.MemberwiseClone();

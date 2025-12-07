@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using SINEATER.MoveLibrary;
 using static SINEATER.Extensions;
@@ -179,6 +180,13 @@ public class Stats
         Poise = 0;
         Vigor = 0;
     }
+
+    public EStat Highest()
+    {
+        List<(EStat stat, int val)> stats = [(EStat.Will, Will), (EStat.Clarity, Clarity), (EStat.Poise, Poise), (EStat.Vigor, Vigor)];
+        var max = stats.MaxBy((w) => w.val);
+        return max.stat;
+    }
 }
 
 public interface ICharacter
@@ -277,7 +285,8 @@ public class Dummy : ICharacter
     }
 }
 
-public record struct Attack(List<Weapon> Weapons, StatsScaling StatScaling, StatusScaling StatusScaling, Action<Character, Attack, CombatMapScreen>? AttackProc = null);
+public record struct Attack(List<Weapon> Weapons, EStatus[] Mods, StatsScaling StatScaling = default, 
+    Func<Character, Attack, Character, CombatMapScreen, IEnumerable>? AttackProc = null);
 
 public interface IStatus
 {
@@ -292,15 +301,64 @@ public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
-    public string? SelectedMove = null;
+    public bool IsMovementFree { get; set; } = false;
+    
+    private string? m_SelectedMove = null;
+    public string? SelectedMove { get => m_SelectedMove;
+        set
+        {
+            m_SelectedMove = value;
+            if (m_SelectedMove == null)
+            {
+                ActionsPerTurn--;
+                if (ActionsPerTurn <= 0)
+                    Done();
+            }
+        } 
+    }
+    
+    public void ForceRestart()
+    {
+        MovementLeft = 0;
+        Attacks.Clear();
+        m_SelectedMove = null;
+        IsDone = false;
+        ActionsPerTurn = 2;
+    }
+    
     public bool CanSwapEnemies { get; set; } = false;
+    public int ActionsPerTurn { get; set; } = 2;
     public List<Attack> Attacks { get; set; } = [];
     public List<IStatus> Statuses { get; set; } = [];
-    public int MovesLeft { get; set; } = 0;
+    public int MovementLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
     
     public List<Move> Moves = [];
+
+    public List<Move> CurrentMoves => AvailableMoves.ToList();
+    
+    public IEnumerable<Move> AvailableMoves {
+        get
+        {
+            foreach (var move in Moves)
+            {
+                yield return move;
+            }
+            foreach (var move in LeftWeapon?.AvailableMoves ?? [])
+            {
+                yield return move;
+            }
+            foreach (var move in RightWeapon?.AvailableMoves ?? [])
+            {
+                yield return move;
+            }
+            foreach (var move in Item?.AvailableMoves ?? [])
+            {
+                yield return move;
+            }
+        }
+    }
     
     public bool CanPay(MoveCost[] costs)
     {
@@ -528,7 +586,6 @@ public class PartyMember : Character
     {
         
     }
-
 }
 
 public record struct Party
@@ -545,9 +602,9 @@ public record struct Party
             ECharacterClass.Witch,
             ECharacterClass.Knight,
             ECharacterClass.Monk,
-            ECharacterClass.Sage,
-            ECharacterClass.Priest,
-            ECharacterClass.Thief,
+            // ECharacterClass.Sage,
+            // ECharacterClass.Priest,
+            // ECharacterClass.Thief,
         };
         jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
@@ -561,7 +618,6 @@ public record struct Party
             };
             
             Characters[i].Moves.Add(new Walk());
-            Characters[i].Moves.Add(new Strike());
             
             switch (Characters[i].Job)
             {
@@ -573,6 +629,7 @@ public record struct Party
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 3;
+                    Characters[i].Moves.Add(new Pray());
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
@@ -592,7 +649,6 @@ public record struct Party
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
-                    Characters[i].Moves.RemoveAt(1);
                     Characters[i].Moves.Add(new Chop());
                     Characters[i].Moves.Add(new Bash());
                     break;

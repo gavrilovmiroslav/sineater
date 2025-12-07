@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using SINEATER.MoveLibrary;
 using Wintellect.PowerCollections;
 
 namespace SINEATER;
@@ -30,14 +31,14 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (5, 1),
             Sin = 1,
-            HP = 3,
+            HP = 1,
             Tint = Color.Red,
             Stats = new Stats(2, 2, 1, 2),
             Stamina = 1,
         };
 
-        bat.LeftWeapon = ItemLibrary.GetWeapon("Fang");
-        bat.RightWeapon = ItemLibrary.GetWeapon("Fang");
+        bat.Moves.Add(new Walk());
+        bat.Moves.Add(new Strike());
         bat.Init();
         return bat;
     }
@@ -54,7 +55,7 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (0, 2),
             Sin = Rnd.Instance.D4,
-            HP = 6,
+            HP = 1,
             Tint = Color.LightGreen,
             Stats = new Stats(2, 2, 2, 2),
             Stamina = 2,
@@ -78,7 +79,7 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (1, 2),
             Sin = 3,
-            HP = 10,
+            HP = 3,
             Tint = Color.Red,
             Stats = new Stats(4, 2, 2, 4),
             Stamina = 3,
@@ -102,7 +103,7 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (2, 2),
             Sin = 3 + Rnd.Instance.D2,
-            HP = 5,
+            HP = 3,
             Tint = Color.Red,
             Stats = new Stats(3, 4, 1, 4),
             Stamina = 4,
@@ -126,7 +127,7 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (4, 2),
             Sin = 3 + Rnd.Instance.D2,
-            HP = 7,
+            HP = 4,
             Tint = Color.Red,
             Stats = new Stats(3, 5, 2, 3),
             Stamina = 5,
@@ -150,14 +151,14 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (4, 3),
             Sin = 5 + Rnd.Instance.D2,
-            HP = 10,
+            HP = 5,
             Tint = Color.Green,
             Stats = new Stats(4, 3, 6, 2),
             Stamina = 6,
         };
 
-        snek.LeftWeapon = ItemLibrary.GetWeapon("Fang");
-        snek.RightWeapon = ItemLibrary.GetWeapon("Fang");
+        snek.Moves.Add(new Walk());
+        
         snek.Init();
         return snek;
     }

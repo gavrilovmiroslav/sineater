@@ -11,6 +11,11 @@ public class Chop : Move
 
     public override IEnumerable PerformMove(Character character, CombatMapScreen screen)
     {
+        var dom = (character.IsRightHanded ? character.GetRightWeapon() : character.GetLeftWeapon());
+        if (dom is {} wpn)
+        {
+            character.Attacks.Add(new Attack([wpn], [EStatus.Wound]));
+        }
         yield break;
     }
 }

@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SINEATER;
 
@@ -55,20 +56,8 @@ public record struct StatsScaling(
     EScalingFactor poiseScaling = EScalingFactor.F,
     EScalingFactor clarityScaling = EScalingFactor.F);
 
-public record struct StatusScaling(
-    EScalingFactor fatigueScaling = EScalingFactor.F,
-    EScalingFactor frostScaling = EScalingFactor.F,
-    EScalingFactor fireScaling = EScalingFactor.F,
-    EScalingFactor poisonScaling = EScalingFactor.F,
-    EScalingFactor woundScaling = EScalingFactor.F,
-    EScalingFactor insanityScaling = EScalingFactor.F,
-    EScalingFactor deathScaling = EScalingFactor.F,
-    EScalingFactor voidScaling = EScalingFactor.F);
-
-public interface IWeaponUpgrade;
-
 [JsonObject(MemberSerialization.OptIn)]
-public class Weapon(string name, EWeightClass weight,
+public class Weapon(string name, EWeightClass weight, string mainStat,
     int attack, int guard,
     int quality, (int, int) inventoryPicture,
     // STAT SCALING
@@ -76,27 +65,9 @@ public class Weapon(string name, EWeightClass weight,
     EScalingFactor claScaling = EScalingFactor.F,
     EScalingFactor poiScaling = EScalingFactor.F, 
     EScalingFactor vigScaling = EScalingFactor.F,
-    // STATUS SCALING (MINE)
-    EScalingFactor myFatigueScaling = EScalingFactor.F,
-    EScalingFactor myFrostScaling = EScalingFactor.F,
-    EScalingFactor myFireScaling = EScalingFactor.F,
-    EScalingFactor myPoisonScaling = EScalingFactor.F,
-    EScalingFactor myWoundScaling = EScalingFactor.F,
-    EScalingFactor myInsanityScaling = EScalingFactor.F,
-    EScalingFactor myDeathScaling = EScalingFactor.F,
-    EScalingFactor myVoidScaling = EScalingFactor.F,
-    // STATUS SCALING (ENEMY)
-    EScalingFactor theirFatigueScaling = EScalingFactor.F,
-    EScalingFactor theirFrostScaling = EScalingFactor.F,
-    EScalingFactor theirFireScaling = EScalingFactor.F,
-    EScalingFactor theirPoisonScaling = EScalingFactor.F,
-    EScalingFactor theirWoundScaling = EScalingFactor.F,
-    EScalingFactor theirInsanityScaling = EScalingFactor.F,
-    EScalingFactor theirDeathScaling = EScalingFactor.F,
-    EScalingFactor theirVoidScaling = EScalingFactor.F,
     // SCALING CURVE VALUES
     float scalingBase = 14.0f, float scalingCurve = 1.5f, 
-    List<string>? tags = null) : Item(name, inventoryPicture, weight, tags), ICloneable, IEquippable
+    List<string>? upgrades = null) : Item(name, inventoryPicture, weight), ICloneable, IEquippable
 {
     ~Weapon()
     {
@@ -111,14 +82,14 @@ public class Weapon(string name, EWeightClass weight,
     public string Name { get; set; } = name;
     [JsonProperty]
     public EWeightClass Weight { get; set; } = weight;
+    [JsonProperty] 
+    public string MainStat { get; set; } = mainStat;
     [JsonProperty]
     public int Quality { get; set; } = quality;
     [JsonProperty]
     public int Attack { get; set; } = attack;
     [JsonProperty]
     public int Guard { get; set; } = guard;
-    [JsonProperty]
-    public List<string>? Tags { get; set; } = tags;
 
     [JsonProperty]
     public (int, int) Picture { get; set; } = inventoryPicture;
@@ -130,53 +101,20 @@ public class Weapon(string name, EWeightClass weight,
     public EScalingFactor PoiScaling { get; set; } = poiScaling;
     [JsonProperty]
     public EScalingFactor VigScaling { get; set; } = vigScaling;
-    
-    [JsonProperty]
-    public EScalingFactor MyFatigueScaling { get; set; } = myFatigueScaling;
-    [JsonProperty]
-    public EScalingFactor MyFrostScaling { get; set; } = myFrostScaling;
-    [JsonProperty]
-    public EScalingFactor MyFireScaling { get; set; } = myFireScaling;
-    [JsonProperty]
-    public EScalingFactor MyPoisonScaling { get; set; } = myPoisonScaling;
-    [JsonProperty]
-    public EScalingFactor MyWoundScaling { get; set; } = myWoundScaling;
-    [JsonProperty]
-    public EScalingFactor MyInsanityScaling { get; set; } = myInsanityScaling;
-    [JsonProperty]
-    public EScalingFactor MyDeathScaling { get; set; } = myDeathScaling;
-    [JsonProperty]
-    public EScalingFactor MyVoidScaling { get; set; } = myVoidScaling;
-    
-    [JsonProperty]
-    public EScalingFactor TheirFatigueScaling { get; set; } = theirFatigueScaling;
-    [JsonProperty]
-    public EScalingFactor TheirFrostScaling { get; set; } = theirFrostScaling;
-    [JsonProperty]
-    public EScalingFactor TheirFireScaling { get; set; } = theirFireScaling;
-    [JsonProperty]
-    public EScalingFactor TheirPoisonScaling { get; set; } = theirPoisonScaling;
-    [JsonProperty]
-    public EScalingFactor TheirWoundScaling { get; set; } = theirWoundScaling;
-    [JsonProperty]
-    public EScalingFactor TheirInsanityScaling { get; set; } = theirInsanityScaling;
-    [JsonProperty]
-    public EScalingFactor TheirDeathScaling { get; set; } = theirDeathScaling;
-    [JsonProperty]
-    public EScalingFactor TheirVoidScaling { get; set; } = theirVoidScaling;
-
     [JsonProperty] 
     public float ScalingBase { get; set; } = scalingBase;
     [JsonProperty] 
     public float ScalingCurve { get; set; } = scalingCurve;
-    
-    #endregion // Serialization
-
+    private readonly Dictionary<int, Upgrade> _availableUpgrades = [];
+    [JsonProperty] 
+    public List<string>? Upgrades { get; set; } = upgrades; 
+    [JsonProperty]
     public int Level { get; set; } = 1;
+    #endregion // Serialization
 
     //            base   level scaling   quality^2            level
     // =Floor((Pow($B$24 * A3, $B$25 - $B$26 * $B$26 * 0.01 / A3)))
-    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(ScalingBase * Level, ScalingCurve - Quality * Quality * 0.01f / Level));
+    public int ExperienceNeeded => (int)Math.Floor(Math.Pow(ScalingBase * Level, ScalingCurve - (11 - Quality) * (11 - Quality) * 0.01f / Level));
     public int ExperienceNow { get; set; } = 0;
     
     public Glyph Glyph => Glyph.Bw(14, 67);
@@ -190,7 +128,44 @@ public class Weapon(string name, EWeightClass weight,
 
     public object Clone()
     {
-        return this.MemberwiseClone();
+        var clone = this.MemberwiseClone();
+        if (clone is Weapon w)
+        {
+            foreach (var upgrade in w.Upgrades ?? [])
+            {
+                var pts = upgrade.Split(":");
+                var level = int.Parse(pts[0]);
+                _availableUpgrades[level] = new Upgrade(level, []);
+            
+                var upgds = pts[1].Split("|");
+                foreach (var up in upgds)
+                {
+                    EStat? stat = null;
+                    var name = up.Trim();
+                    if (up.Contains("]"))
+                    {
+                        var upg = up.Split("]");
+                        name = upg[1].Trim();
+                        stat = upg[0].Replace("[", "").Trim() switch
+                        {
+                            "W" => EStat.Will,
+                            "C" => EStat.Clarity,
+                            "V" => EStat.Vigor,
+                            "P" => EStat.Poise,
+                            _ => null
+                        };
+                    }
+
+                    _availableUpgrades[level].Moves.Add(new UnlockableMove(stat, name));
+                    if (level is 0 or 1)
+                    {
+                        AvailableMoves.Add(SineaterGame.Instance.Moves.Get(name));
+                    }
+                }
+            }
+        }
+
+        return clone;
     }
 
     public virtual string ToLongString()
@@ -227,6 +202,48 @@ public class Weapon(string name, EWeightClass weight,
     public static Weapon Dummy(string name)
     {
         Console.WriteLine($"DUMMY REQUIRED FOR WEAPON {name}");
-        return new Weapon($"!{name}", EWeightClass.Medium, 1, 1, 0, (0, 0));
+        return new Weapon($"!{name}", EWeightClass.Medium, "WIL",  1, 1, 0, (0, 0));
+    }
+
+    public void UpdateMoves(Character character)
+    {
+        if (_availableUpgrades.TryGetValue(Level, out var upgrade))
+        {
+            var highestStat = character.Stats.Highest();
+                
+            foreach (var move in upgrade.Moves)
+            {
+                if (AvailableMoves.Any(m => m.Name == move.Move)) continue;
+                
+                if (move.RequiredMaxStat != null)
+                {
+                    if (highestStat == move.RequiredMaxStat)
+                    {
+                        AvailableMoves.Add(SineaterGame.Instance.Moves.Get(move.Move));
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    AvailableMoves.Add(SineaterGame.Instance.Moves.Get(move.Move));
+                    break;
+                }
+            }
+        }
+    }
+    
+    public void GainExp(Character c, int exp)
+    {
+        ExperienceNow += exp;
+        if (ExperienceNow >= ExperienceNeeded)
+        {
+            Level++;
+            ExperienceNow = 0;
+            UpdateMoves(c);
+        }
     }
 }

@@ -32,6 +32,19 @@ public abstract class Move
 public class Moves
 {
     public Dictionary<string, Move> Library = [];
+
+    public Move Get(string name)
+    {
+        if (Library.TryGetValue(name, out Move move))
+        {
+            return move;
+        }
+        else
+        {
+            Console.WriteLine($"!!!! MOVE {name} MISSING!");
+            return Library["Whack"];
+        }
+    }
     
     public Moves()
     {
