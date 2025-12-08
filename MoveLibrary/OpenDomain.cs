@@ -7,9 +7,9 @@ public class OpenDomain : Move
 {
     public override string Name { get; } = "Open Domain";
     public override string Description { get; } = "";
-    public override MoveCost[] Costs { get; } = [ MoveCost.Sin ];
+    public override EMoveCost[] Costs { get; } = [ EMoveCost.Sin ];
 
-    public override IEnumerable PerformMove(Character c, CombatMapScreen screen)
+    protected override IEnumerable MoveAction(Character c, CombatMapScreen screen)
     {
         yield return new DomainExpansion().Use(screen, c, c.X, c.Y);
     }

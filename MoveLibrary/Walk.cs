@@ -7,9 +7,9 @@ public class Walk : Move
 {
     public override string Name { get; } = "Walk";
     public override string Description { get; } = "";
-    public override MoveCost[] Costs { get; } = [];
+    public override EMoveCost[] Costs { get; } = [];
 
-    public override IEnumerable PerformMove(Character character, CombatMapScreen screen)
+    protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
         character.MovementLeft = character.Stats.Initiative;
         yield break;

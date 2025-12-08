@@ -37,8 +37,8 @@ public static class Bestiary
             Stamina = 1,
         };
 
-        bat.Moves.Add(new Walk());
-        bat.Moves.Add(new Strike());
+        bat.Moves.Add(new Fly());
+        bat.Moves.Add(new Bite());
         bat.Init();
         return bat;
     }
@@ -61,7 +61,7 @@ public static class Bestiary
             Stamina = 2,
         };
         
-        gob.LeftWeapon = ItemLibrary.GetWeapon("Claw");
+        gob.Moves.Add(new Bite());
         gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
         gob.Init();
         return gob;

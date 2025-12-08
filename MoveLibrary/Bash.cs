@@ -7,10 +7,11 @@ public class Bash : Move
 {
     public override string Name { get; } = "Bash";
     public override string Description { get; } = "";
-    public override MoveCost[] Costs { get; } = [];
+    public override EMoveCost[] Costs { get; } = [];
 
-    public override IEnumerable PerformMove(Character character, CombatMapScreen screen)
+    protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
+        character.MovementLeft = character.Vig;
         var nondom = (character.IsRightHanded ? character.GetLeftWeapon() : character.GetRightWeapon());
         if (nondom is {} wpn)
         {

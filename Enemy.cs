@@ -91,4 +91,23 @@ public class Enemy : Character
     {
         //AP = new AP(15, SineaterGame.Instance.Layers["ascii"], 15 - Stamina);
     }
+
+    public Enemy Copy()
+    {
+        var enemy = new Enemy();
+        enemy.AP = new AP(AP, AP.Width);
+        enemy.X = X;
+        enemy.Y = Y;
+        enemy.Stats.Clarity = this.Stats.Clarity;
+        enemy.Stats.Will = this.Stats.Will;
+        enemy.Stats.Poise = this.Stats.Poise;
+        enemy.Stats.Vigor = this.Stats.Vigor;
+        foreach (var atk in Attacks) enemy.Attacks.Add(atk);
+        foreach (var mov in Moves) enemy.Moves.Add(mov);
+        enemy.Item = Item;
+        enemy.LeftWeapon = LeftWeapon;
+        enemy.RightWeapon = RightWeapon;
+
+        return enemy;
+    }
 }

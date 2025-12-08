@@ -9,7 +9,7 @@ namespace SINEATER;
 [AttributeUsage(AttributeTargets.Class)]
 public class MoveAttribute : Attribute {}
 
-public enum MoveCost
+public enum EMoveCost
 {
     Stamina,
     Fatigue,
@@ -24,9 +24,24 @@ public abstract class Move
 {
     public abstract string Name { get; }
     public abstract string Description { get; }
-    public abstract MoveCost[] Costs { get; }
+    public abstract EMoveCost[] Costs { get; }
+
+    public bool CanPerform(Character character, CombatMapScreen screen)
+    {
+        return character.CanPay(Costs);
+    }
+
+    public IEnumerable<IEnumerable> Perform(Character character, CombatMapScreen screen)
+    {
+        if (CanPerform(character, screen))
+        {
+            yield return MoveAction(character, screen);            
+        }
+
+        yield break;
+    }
     
-    public abstract IEnumerable PerformMove(Character character, CombatMapScreen screen);
+    protected abstract IEnumerable MoveAction(Character character, CombatMapScreen screen);
 }
 
 public class Moves

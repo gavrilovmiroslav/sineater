@@ -303,40 +303,28 @@ public abstract class Character : ICharacter
     public List<string> Tags { get; set; } = [];
     public bool IsMovementFree { get; set; } = false;
     
-    private string? m_SelectedMove = null;
-    public string? SelectedMove { get => m_SelectedMove;
-        set
-        {
-            m_SelectedMove = value;
-            if (m_SelectedMove == null)
-            {
-                ActionsPerTurn--;
-                if (ActionsPerTurn <= 0)
-                    Done();
-            }
-        } 
-    }
+    public string? SelectedMove { get; set; } = null;
     
     public void ForceRestart()
     {
         MovementLeft = 0;
         Attacks.Clear();
-        m_SelectedMove = null;
+        SelectedMove = null;
         IsDone = false;
-        ActionsPerTurn = 2;
     }
     
     public bool CanSwapEnemies { get; set; } = false;
-    public int ActionsPerTurn { get; set; } = 2;
     public List<Attack> Attacks { get; set; } = [];
     public List<IStatus> Statuses { get; set; } = [];
+
+    public Move? Initial { get; set; } = null;
     public int MovementLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
     
     public List<Move> Moves = [];
 
-    public List<Move> CurrentMoves => AvailableMoves.ToList();
+    public List<Move> CurrentMoves => AvailableMoves.Distinct().ToList();
     
     public IEnumerable<Move> AvailableMoves {
         get
@@ -360,7 +348,7 @@ public abstract class Character : ICharacter
         }
     }
     
-    public bool CanPay(MoveCost[] costs)
+    public bool CanPay(EMoveCost[] costs)
     {
         var stamina = AP.Count(EStatus.Stamina);
         var fatigue = AP.Count(EStatus.Fatigue);
@@ -374,25 +362,25 @@ public abstract class Character : ICharacter
         {
             switch (part)
             {
-                case MoveCost.Stamina:
+                case EMoveCost.Stamina:
                     stamina--;
                     break;
-                case MoveCost.Fatigue:
+                case EMoveCost.Fatigue:
                     fatigue--;
                     break;
-                case MoveCost.Fire:
+                case EMoveCost.Fire:
                     fire--;
                     break;
-                case MoveCost.Ice:
+                case EMoveCost.Ice:
                     ice--;
                     break;
-                case MoveCost.Wound:
+                case EMoveCost.Wound:
                     wound--;
                     break;
-                case MoveCost.Death:
+                case EMoveCost.Death:
                     death--;
                     break;
-                case MoveCost.Sin:
+                case EMoveCost.Sin:
                     sin--;
                     break;
                 default:
@@ -574,7 +562,7 @@ public class PartyMember : Character
     
     public override void Done()
     {
-        
+        IsDone = true;
     }
 
     public void SetOrigin()
@@ -622,9 +610,7 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Ash Branch"));
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Fire Scroll"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Flame Band"));
+                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Ash Branch"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -649,7 +635,6 @@ public record struct Party
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
-                    Characters[i].Moves.Add(new Chop());
                     Characters[i].Moves.Add(new Bash());
                     break;
                 case ECharacterClass.Monk:

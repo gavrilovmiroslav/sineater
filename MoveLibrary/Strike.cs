@@ -7,10 +7,11 @@ public class Strike : Move
 {
     public override string Name { get; } = "Strike";
     public override string Description { get; } = "";
-    public override MoveCost[] Costs { get; } = [];
+    public override EMoveCost[] Costs { get; } = [];
 
-    public override IEnumerable PerformMove(Character character, CombatMapScreen screen)
+    protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
+        character.MovementLeft = 2;
         var dom = (character.IsRightHanded ? character.GetRightWeapon() : character.GetLeftWeapon());
         if (dom is {} wpn)
         {
