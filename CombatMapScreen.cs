@@ -381,9 +381,10 @@ public class CombatMapScreen : Screen
                 Environment.Exit(0);
             }
         }
+        UpdateCombatView();
     }
 
-    void UpdateCombatView()
+    public void UpdateCombatView()
     {
         var selfFov = new FieldOfView(Map);
         _fgs.Clear();
@@ -409,11 +410,11 @@ public class CombatMapScreen : Screen
             {
                 _fov.AppendFov(w.X, w.Y, 4 * w.Cla, true);
             }
-
-            if (InitiativeCurrent is PartyMember current && _game.Party.Characters[i] == current)
-            {
-                CalculateZone(w);
-            }
+        }
+        
+        if (InitiativeCurrent is PartyMember current)
+        {
+            CalculateZone(current);
         }
     }
 
@@ -429,35 +430,6 @@ public class CombatMapScreen : Screen
                 {
                     enemy.Active = true;
                     continue;
-                }
-
-                if (enemy.SleepyTime < 0)
-                {
-                    enemy.SleepyTime = enemy.Level * 4;
-                }
-                else
-                {
-                    enemy.SleepyTime--;
-                    if (enemy.SleepyTime <= 0)
-                    {
-                        var fov = enemyFov.ComputeFov(enemy.X, enemy.Y, enemy.Cla, false);
-                        if (enemyFov.IsInFov(player.X, player.Y))
-                        {
-                            var dist = new DistanceMap(Structure, true, enemy.X, enemy.Y, Predicate.Walkable);
-                            var d = dist.Get(player.X, player.Y);
-
-                            if (d > 2)
-                            {
-                                var roll = Rnd.Instance.Next(0, d);
-                                enemy.Active = roll <= enemy.Cla;
-                            }
-                            else
-                            {
-                                enemy.ShouldWakeUp = true;
-                                Console.WriteLine("WILL WAKE UP!");
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -734,6 +706,7 @@ public class CombatMapScreen : Screen
     }
     
     public bool SkipGUI { get; set; } = false;
+    public bool ShouldHardUpdate { get; set; } = true;
 
     private int _offset = 96;
     
@@ -747,6 +720,12 @@ public class CombatMapScreen : Screen
         _game.Layers["portrait"].Clear();
         _game.Layers["porsmol"].Clear();
 
+        if (ShouldHardUpdate)
+        {
+            UpdateCombatView();
+            ShouldHardUpdate = false;
+        }
+        
         DrawCombat();
         DrawSubmenu();
     }
@@ -832,7 +811,8 @@ public class CombatMapScreen : Screen
         _submenuDelta = (0, 0);
                     
         StartSubmenu([
-            ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*"))
+            ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*")),
+            "END TURN"
         ]);
     }
     
@@ -1212,9 +1192,7 @@ public class CoUpdateScreen(PartyMember c, CombatMapScreen s) : IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
-        s.CalculateZone(c);
-        s.DrawCombat();
-        
+        s.ShouldHardUpdate = true;
         yield break;
     }
 }

@@ -607,8 +607,6 @@ public record struct Party
                 AP = actionPoints,
             };
             
-            Characters[i].Moves.Add(new Walk());
-            
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
