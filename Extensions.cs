@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -8,6 +9,11 @@ namespace SINEATER;
 
 internal static class Extensions
 {
+    public static void Consume(this IEnumerable<IEnumerable> ee)
+    {
+        foreach (var p in ee) { foreach (var _ in p) {} }
+    }
+    
     public static float Lerp(float a, float b, float t)
     {
         return a + (b - a) * t;

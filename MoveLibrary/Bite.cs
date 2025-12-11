@@ -22,8 +22,8 @@ public class Bite : Move
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = 1;
-        character.Attacks.Add(new Attack([], [], new StatsScaling(), Attack));
+        character.MovementLeft = 5;
+        character.Attacks.Add(new Attack([], [], new StatsScaling()));
         yield break;
     }
 }

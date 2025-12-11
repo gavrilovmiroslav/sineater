@@ -42,10 +42,7 @@ public static class ItemLibrary
     private const string APPS_ID = "1kzTUrcQpxx3vMJMXeVwM_ElqcgJGzOqexxmldqwrszk";
 
     private const string APPS_SCRIPT =
-        "https://script.google.com/macros/s/AKfycbw9ZP-pMTRMjq7VVfsnyzTm1s607h6rHKatEtP86qb7SKj-AcMi6rRyMTY3ZXXyu5w-4Q/exec";
-        //"https://script.google.com/macros/s/AKfycbxsZlQRKKybKQD2AKtVNBICpGSp7NsiDMe9oGCBpOxFWSBNy1G8BAoZSac3wEFnJR7ziQ/exec";
-        //"https://script.google.com/macros/s/AKfycbxh2XSFncBDejfH6s3AD3Z2QnyFNnMAiqc8Fna1bqzvhnW1RD3F0WKk-YXMBGMcEyDn6g/exec";
-        //"https://script.google.com/macros/s/AKfycbwKD94byVxp8bRPhXwLRsFjgdwHaBc8lnfZ13vaIbURiGzLRZmTvW_JDsoNp4-z1QTA4g/exec"
+        "https://script.google.com/macros/s/AKfycbw6WgnV0V68COh2LKJV1SQp2lTHAtvDdOMNX0gjLRig4sck0qqXM67HKEBwFtGg9TMIsQ/exec";
 
     public static void LoadItems(ContentManager content)
     {

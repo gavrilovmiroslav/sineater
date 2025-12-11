@@ -197,8 +197,6 @@ public class CombatMapScreen : Screen
         {
             _time = 0;
         }
-
-        Console.WriteLine(string.Join(", ", InitiativeOrder.Select(e => e.GetName())));
         
         if (InitiativeCurrent is PartyMember player)
         {
@@ -217,15 +215,15 @@ public class CombatMapScreen : Screen
             {
                 var f = new FieldOfView(Map);
                 Dictionary<Move, int> good = [];
+                var playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
+                
                 foreach (var move in enemy.AvailableMoves)
                 {
                     good[move] = 0;
                     var dup = enemy.Copy();
-                    foreach (var p in move.Perform(dup, this)) { foreach (var _ in p) {} }
+                    move.Perform(dup, this).Consume();
                     
-                    var enemyDist = new DistanceMap(Structure, false, [(dup.X, dup.Y)], Predicate.Walkable);
                     f.ComputeFov(dup.X, dup.Y, dup.Cla, false);
-                    var playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
                     var dist = playerDist.Get(dup.X, dup.Y);
                     if (dup.Attacks.Count == 0)
                     {
@@ -254,10 +252,13 @@ public class CombatMapScreen : Screen
                 {
                     var (best, quality) = good.OrderByDescending(a => a.Value).First();
                     Console.WriteLine($"BEST MOVE: {best.Name} {quality}");
-                    if (InputManager.Instance.IsActionActive(EInputAction.Confirm))
-                    {
-                        InitiativeNext();
-                    }
+                    
+                    CoroutineHandler.Run(DoEnemyMove(enemy, best));
+                    
+                    // if (InputManager.Instance.IsActionActive(EInputAction.Confirm))
+                    // {
+                    //     InitiativeNext();
+                    // }
                 }
             }
             else
@@ -268,9 +269,83 @@ public class CombatMapScreen : Screen
         }
     }
 
+    IEnumerable DoEnemyMove(Enemy enemy, Move best)
+    {
+        var playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
+        best.Perform(enemy, this).Consume();
+
+        if (enemy.MovementLeft > 0)
+        {
+            var originalDist = playerDist.Get(enemy.X, enemy.Y);
+            var dist = originalDist;
+            //if (enemy.Attacks.Count > 0)
+            {
+                // move all the way to player
+                for (var i = 0; i < Math.Min(dist, enemy.MovementLeft); i++)
+                {
+                    var (x, y, newDist) = playerDist
+                        .GetAllAdjacent(enemy.X, enemy.Y).FirstOrDefault(xyd
+                            => !(_game.Party.Characters.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2))
+                               && (!Structure.Enemies.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2) &&
+                                   xyd.Item3 < dist));
+                    if (newDist > 0)
+                    {
+                        dist = newDist;
+                        enemy.X = x;
+                        enemy.Y = y;
+                    }
+
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.05f);
+                    playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))],
+                        Predicate.Walkable);
+                }
+            
+                dist = playerDist.Get(enemy.X, enemy.Y);
+                if (dist == 1) // todo: dist >= attack.range
+                {
+                    foreach (var atk in enemy.Attacks)
+                    {
+                        var (px, py, pd) = playerDist
+                            .GetAllAdjacent(enemy.X, enemy.Y).FirstOrDefault(xyd
+                                => _game.Party.Characters.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2));
+                        var player = _game.Party.Characters.First(e => e.X == px && e.Y == py);
+                        yield return DoAttack(enemy, player);
+                    }
+                }
+
+                yield return new WaitForSeconds(0.1f);
+                enemy.MovementLeft -= originalDist;
+                
+                for (var i = 0; i < enemy.MovementLeft; i++)
+                {
+                    var (x, y, newDist) = playerDist
+                        .GetAllAdjacent(enemy.X, enemy.Y).FirstOrDefault(xyd
+                            => !(_game.Party.Characters.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2))
+                               && (!Structure.Enemies.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2) &&
+                                   xyd.Item3 > dist));
+                    if (newDist > 0)
+                    {
+                        dist = newDist;
+                        enemy.X = x;
+                        enemy.Y = y;
+                    }
+
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.05f);
+                    playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))],
+                        Predicate.Walkable);
+                }
+            }
+        }
+
+        enemy.Attacks.Clear();
+        InitiativeNext();
+    }
+
     private void InitiativeNext()
     {
-        int loop = 0;
+        var loop = 0;
         while (true)
         {
             loop++;
@@ -318,7 +393,7 @@ public class CombatMapScreen : Screen
             var w = _game.Party.Characters[i];
 
             w.Fov = selfFov.
-                ComputeFov(w.X, w.Y, w.Cla, true).
+                ComputeFov(w.X, w.Y, 4 * w.Cla, true).
                 Select(Predicate.CellToPosition).ToHashSet();
             
             foreach (var (x, y) in w.Fov)
@@ -328,11 +403,11 @@ public class CombatMapScreen : Screen
             
             if (i == 0)
             {
-                _fov.ComputeFov(w.X, w.Y, w.Cla, true);
+                _fov.ComputeFov(w.X, w.Y, 4 * w.Cla, true);
             }
             else
             {
-                _fov.AppendFov(w.X, w.Y, w.Cla, true);
+                _fov.AppendFov(w.X, w.Y, 4 * w.Cla, true);
             }
 
             if (InitiativeCurrent is PartyMember current && _game.Party.Characters[i] == current)
@@ -350,7 +425,7 @@ public class CombatMapScreen : Screen
             //                                                          not active and player sees them
             foreach (var enemy in Structure.Enemies.Where(e => !e.Active && _fov.IsInFov(e.X, e.Y)))
             {
-                if (enemy.ShouldWakeUp)
+                //if (enemy.ShouldWakeUp)
                 {
                     enemy.Active = true;
                     continue;
@@ -751,6 +826,15 @@ public class CombatMapScreen : Screen
     }
 
     private bool _inspectMode = false;
+
+    private void StartActionSubmenu(Character current)
+    {
+        _submenuDelta = (0, 0);
+                    
+        StartSubmenu([
+            ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*"))
+        ]);
+    }
     
     private void CheckPlayerInputs()
     {
@@ -771,13 +855,12 @@ public class CombatMapScreen : Screen
                 return;
             }
             // MOVE
-            if (current.SelectedMove == null)
+            if (current.SelectedMove == null && current.HasTurn)
             {
-                _submenuDelta = (0, 0);
-
-                StartSubmenu([
-                    ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*"))
-                ]);
+                if (current.MovementLeft == 0 || InputM.IsActive(EInputAction.ActionsMenu))
+                {
+                    StartActionSubmenu(current);
+                }
             }
             else if (InputM.IsActive(EInputAction.ActionsMenu))
             {
@@ -788,7 +871,7 @@ public class CombatMapScreen : Screen
                 StartSubmenu(opts.ToArray());
             }
 
-            if (current is { SelectedMove: not null, IsDone: false })
+            if (current is { MovementLeft: > 0 })
             {
                 var up = InputM.IsActive(EInputAction.MoveUp);
                 var down = InputM.IsActive(EInputAction.MoveDown);
@@ -821,7 +904,11 @@ public class CombatMapScreen : Screen
                         }
                         else if (Positions.IsEnemyAt(this, x + dx, y + dy) is { } e)
                         {
-                            if (current.Attacks.Count > 0)
+                            if (current is { HasTurn: true, Attacks.Count: 0 })
+                            {
+                                StartActionSubmenu(current);
+                            }
+                            else if (current.Attacks.Count > 0)
                             {
                                 // ENEMY
                                 _submenuDelta = (dx, dy);
@@ -859,7 +946,7 @@ public class CombatMapScreen : Screen
                                 current.MovementLeft--;
                                 current.SetOrigin();
                                 CalculateZone(current);
-                                if (current is { MovementLeft: 0, Attacks.Count: 0 })
+                                if (current is { MovementLeft: 0, Attacks.Count: 0, HasTurn: false })
                                 {
                                     current.Done();
                                 }
@@ -877,7 +964,7 @@ public class CombatMapScreen : Screen
                                 current.SetOrigin();
                                 CalculateZone(current);
                                 DrawCombat();
-                                if (current is { MovementLeft: 0, Attacks.Count: 0 })
+                                if (current is { MovementLeft: 0, Attacks.Count: 0, HasTurn: false })
                                 {
                                     current.Done();
                                 }
@@ -918,14 +1005,14 @@ public class CombatMapScreen : Screen
         if (cancel)
             _submenu.Add("CANCEL");
     }
-    
-    IEnumerable CoAttack(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
+
+    IEnumerable CoStartAttack(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
     {
         var guv = (0, 0);
         if (defender is PartyMember pm) guv = pm.Job.GetImage();
         else if (defender is Enemy en) guv = en.Icon;
         
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var (gu, gv) = guv;
             Draw(defender.X, defender.Y, new Glyph(gu, gv, Color.Black, defender.Tint));
@@ -938,10 +1025,32 @@ public class CombatMapScreen : Screen
         Draw(defender.X, defender.Y, new Glyph(5, 30, Color.Black, Color.Red));
         yield return new WaitForSeconds(0.1f);
         Draw(defender.X, defender.Y, new Glyph(guv.Item1, guv.Item2, Color.Black, defender.Tint));
+    }
+    
+    void CoDamageDealing(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
+    {
+        var dmg = Math.Max(1, attack.Weapons.Sum(w => w.Attack));
+        if (defender.Guard > 0)
+        {
+            defender.Guard -= dmg;
+            if (defender.Guard < 0)
+            {
+                defender.HP += defender.Guard;
+            }
+        }
+        else
+        {
+            defender.HP -= dmg;
+        }
 
-        defender.HP -= attack.Weapons.Sum(w => w.Attack);
         if (defender.HP <= 0) defender.Die();
-        
+    }
+
+    IEnumerable CoAfterDamage(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
+    {
+        var guv = (0, 0);
+        if (defender is PartyMember pm) guv = pm.Job.GetImage();
+        else if (defender is Enemy en) guv = en.Icon;
         yield return new WaitForSeconds(0.5f);
         if (defender is Enemy { IsDead: true } e)
         {
@@ -990,20 +1099,30 @@ public class CombatMapScreen : Screen
         }
         
         attacker.Done();
+    }
+    
+    IEnumerable CoAttack(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
+    {
+        yield return CoStartAttack(attacker, attack, defender, screen);
+
+        CoDamageDealing(attacker, attack, defender, screen);
+
+        yield return CoAfterDamage(attacker, attack, defender, screen);
+        
         DrawCombat();
     }
 
-    private void DoAttack(Character a, Character b)
+    private IEnumerable DoAttack(Character a, Character b)
     {
         var att = a.Attacks.First();
         a.Attacks = a.Attacks[1..];
         if (att.AttackProc != null)
         {
-            CoroutineHandler.Run(att.AttackProc(a, att, b, this));
+            yield return att.AttackProc(a, att, b, this);
         }
         else
         {
-            CoroutineHandler.Run(CoAttack(a, att, b, this));
+            yield return CoAttack(a, att, b, this);
         }
     }
 
@@ -1018,24 +1137,10 @@ public class CombatMapScreen : Screen
                 {
                     var (dx, dy) = _submenuDelta;
                     var (x, y) = (current.X + dx, current.Y + dy);
-                    if (Positions.IsCharacterAt(this, x, y) is { } c)
+                    if (Positions.IsAnyCharacterAt(this, x, y) is { } c)
                     {
                         c.X = current.X;
                         c.Y = current.Y;
-                        current.X = x;
-                        current.Y = y;
-
-                        if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
-                        {
-                            DrawCombat();
-                            CoroutineHandler.Run(Domains.Tiles[((int)current.X, (int)current.Y)]
-                                .ApplyOnDomainStepped(this, current, current.X, current.Y, x, y));
-                        }
-                    }
-                    else if (Positions.IsEnemyAt(this, x, y) is { } e)
-                    {
-                        e.X = current.X;
-                        e.Y = current.Y;
                         current.X = x;
                         current.Y = y;
 
@@ -1062,11 +1167,11 @@ public class CombatMapScreen : Screen
                     var (x, y) = (current.X + dx, current.Y + dy);
                     if (Positions.IsCharacterAt(this, x, y) is { } c)
                     {
-                        DoAttack(current, c);
+                        CoroutineHandler.Run(DoAttack(current, c));
                     }
                     else if (Positions.IsEnemyAt(this, x, y) is { } e)
                     {
-                        DoAttack(current, e);
+                        CoroutineHandler.Run(DoAttack(current, e));
                     }
 
                     break;

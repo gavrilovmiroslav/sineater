@@ -302,12 +302,13 @@ public abstract class Character : ICharacter
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public bool IsMovementFree { get; set; } = false;
-    
+    public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
     
     public void ForceRestart()
     {
-        MovementLeft = 0;
+        MovementLeft = Stats.Initiative;
+        HasTurn = true;
         Attacks.Clear();
         SelectedMove = null;
         IsDone = false;
@@ -474,6 +475,7 @@ public abstract class Character : ICharacter
     public virtual int X { get; set; }
     public virtual int Y { get; set; }
     public int HP { get; set; }
+    public int Guard { get; set; }
     public bool Render { get; set; } = true;
     
     public Stats Stats { get; set; } = new();

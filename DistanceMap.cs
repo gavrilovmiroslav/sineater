@@ -103,6 +103,39 @@ public class DistanceMap
         return _distances.GetValueOrDefault((x, y), -1);
     }
 
+    public IEnumerable<(int, int, int)> GetAllAdjacent(int x, int y)
+    {
+        IEnumerable<(int, int, int)> GetOne(int i, int j)
+        {
+            var val = Get(x + i, y + j);
+            if (val >= 0)
+            {
+                yield return (x + i, y + j, val);
+            }
+        }
+
+        foreach (var e in GetOne(-1, 0).Concat(GetOne(1, 0)).Concat(GetOne(0,-1)).Concat(GetOne(0, 1)))
+        {
+            yield return e;
+        }
+    }
+    
+    public IEnumerable<(int, int, int)> GetAllNeighbors(int x, int y)
+    {
+        for (int i = -1; i < 2; i++)
+        {
+            for (int j = -1; j < 2; j++)
+            {
+                if (i == 0 && j == 0) continue;
+                var val = Get(x + i, y + j);
+                if (val >= 0)
+                {
+                    yield return (x + i, y + j, val);
+                }
+            }
+        }
+    }
+
     public IEnumerable<(int, int)> GetAllAt(int distance)
     {
         if (_buckets.TryGetValue(distance, out var value))

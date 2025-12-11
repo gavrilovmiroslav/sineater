@@ -33,7 +33,7 @@ public static class Bestiary
             Sin = 1,
             HP = 1,
             Tint = Color.Red,
-            Stats = new Stats(2, 2, 1, 2),
+            Stats = new Stats(2, 2, 1, 4),
             Stamina = 1,
         };
 
@@ -57,10 +57,11 @@ public static class Bestiary
             Sin = Rnd.Instance.D4,
             HP = 1,
             Tint = Color.LightGreen,
-            Stats = new Stats(2, 2, 2, 2),
+            Stats = new Stats(4, 3, 2, 4),
             Stamina = 2,
         };
         
+        gob.Moves.Add(new Walk());
         gob.Moves.Add(new Bite());
         gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
         gob.Init();
@@ -81,12 +82,13 @@ public static class Bestiary
             Sin = 3,
             HP = 3,
             Tint = Color.Red,
-            Stats = new Stats(4, 2, 2, 4),
+            Stats = new Stats(5, 2, 3, 5),
             Stamina = 3,
         };
 
         gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
         gob.RightWeapon = ItemLibrary.GetWeapon("Wood Shield");
+        gob.Moves.Add(new Walk());
         gob.Init();
         return gob;
     }
@@ -105,7 +107,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 3,
             Tint = Color.Red,
-            Stats = new Stats(3, 4, 1, 4),
+            Stats = new Stats(5, 4, 1, 6),
             Stamina = 4,
         };
         
@@ -129,7 +131,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             HP = 4,
             Tint = Color.Red,
-            Stats = new Stats(3, 5, 2, 3),
+            Stats = new Stats(3, 5, 6, 6),
             Stamina = 5,
         };
 
@@ -153,11 +155,11 @@ public static class Bestiary
             Sin = 5 + Rnd.Instance.D2,
             HP = 5,
             Tint = Color.Green,
-            Stats = new Stats(4, 3, 6, 2),
+            Stats = new Stats(6, 6, 6, 6),
             Stamina = 6,
         };
 
-        snek.Moves.Add(new Walk());
+        snek.Moves.Add(new Slither());
         
         snek.Init();
         return snek;

@@ -24,6 +24,21 @@ public static class Positions
 
         return null;
     }
+    
+    public static Character? IsAnyCharacterAt(CombatMapScreen screen, int x, int y)
+    {
+        foreach (var chr in SineaterGame.Instance.Party.Characters)
+        {
+            if (chr.X == x && chr.Y == y) return chr as Character;
+        }
+
+        foreach (var enemy in screen.Structure.Enemies)
+        {
+            if (enemy.X == x && enemy.Y == y) return enemy as Character;
+        }
+
+        return null;
+    }
 
     public static Enemy? IsEnemyAt(CombatMapScreen screen, (int, int) xy) => IsEnemyAt(screen, xy.Item1, xy.Item2);
     public static PartyMember? IsCharacterAt(CombatMapScreen screen, (int, int) xy) => IsCharacterAt(screen, xy.Item1, xy.Item2);

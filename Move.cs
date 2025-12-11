@@ -15,6 +15,7 @@ public enum EMoveCost
     Fatigue,
     Fire,
     Ice,
+    Insanity,
     Wound,
     Death,
     Sin
