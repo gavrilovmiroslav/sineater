@@ -56,26 +56,50 @@ public class CoroutineHandler
         _coroutines.Add(cor);
     }
 
+    public void RunNext(Coroutine cor)
+    {
+        if (_coroutines.Count > 0)
+        {
+            cor._waitingOn = _coroutines.First();
+        }
+
+        _coroutines.Add(cor);
+    }
+    
+    public void RunNext(IEnumerable core)
+    {
+        var cor = new Coroutine(core);
+        if (_coroutines.Count > 0)
+        {
+            cor._waitingOn = _coroutines.First();
+        }
+
+        _coroutines.Add(cor);
+    }
+    
     public void Update()
     {
-        List<Coroutine> toAdd = [];
         List<Coroutine> toDelete = [];
 
         var updating = _coroutines.Where(cor => cor._waitingOn == null).ToList();
-        foreach (var cor in updating)
+        while (updating.Count > 0)
         {
+            var cor = updating[0];
+            updating = updating[1..];
+            
             if (cor._enumerator.MoveNext())
             {
                 var val = cor._enumerator.Current;
                 if (val is Coroutine dep)
                 {
                     cor._waitingOn = dep;
-                    toAdd.Add(dep);
+                    _coroutines.Insert(1, dep);
                 }
                 else if (val is IEnumerable enm)
-                {
-                    cor._waitingOn = new Coroutine(enm);
-                    toAdd.Add(cor._waitingOn);
+                { 
+                    var corr = new Coroutine(enm);
+                    _coroutines.Insert(1, corr);
+                    cor._waitingOn = corr;
                 }
             }
             else
@@ -94,11 +118,6 @@ public class CoroutineHandler
                     next._waitingOn = null;
                 }
             }
-        }
-
-        foreach (var cor in toAdd)
-        {
-            _coroutines.Add(cor);
         }
     }
 

@@ -805,7 +805,8 @@ public class CombatMapScreen : Screen
     }
 
     private bool _inspectMode = false;
-
+    public Character? AttackTarget = null;
+    
     private void StartActionSubmenu(Character current)
     {
         _submenuDelta = (0, 0);
@@ -886,6 +887,7 @@ public class CombatMapScreen : Screen
                         {
                             if (current is { HasTurn: true, Attacks.Count: 0 })
                             {
+                                AttackTarget = e;
                                 StartActionSubmenu(current);
                             }
                             else if (current.Attacks.Count > 0)
@@ -1094,15 +1096,18 @@ public class CombatMapScreen : Screen
 
     private IEnumerable DoAttack(Character a, Character b)
     {
-        var att = a.Attacks.First();
-        a.Attacks = a.Attacks[1..];
-        if (att.AttackProc != null)
+        if (a.Attacks.Count > 0)
         {
-            yield return att.AttackProc(a, att, b, this);
-        }
-        else
-        {
-            yield return CoAttack(a, att, b, this);
+            var att = a.Attacks.First();
+            a.Attacks = a.Attacks[1..];
+            if (att.AttackProc != null)
+            {
+                yield return att.AttackProc(a, att, b, this);
+            }
+            else
+            {
+                yield return CoAttack(a, att, b, this);
+            }
         }
     }
 
@@ -1178,7 +1183,12 @@ public class CombatMapScreen : Screen
                     {
                         current.SelectedMove = moves[index].Name;
                         CoroutineHandler.Run(moves[index].Perform(current, this));
-                        CoroutineHandler.Run(new CoUpdateScreen(current, this));
+                        CoroutineHandler.RunNext(new CoUpdateScreen(current, this));
+                        if (AttackTarget != null)
+                        {
+                            CoroutineHandler.RunNext(DoAttack(current, AttackTarget));
+                            AttackTarget = null;
+                        }
                     }
 
                     break;
