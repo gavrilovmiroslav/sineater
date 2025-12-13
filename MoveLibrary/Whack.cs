@@ -11,7 +11,7 @@ public class Whack : Move
     
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = 2;
+        character.MovementLeft += 2;
         var dom = (character.IsRightHanded ? character.GetRightWeapon() : character.GetLeftWeapon());
         if (dom is {} wpn)
         {

@@ -1086,9 +1086,7 @@ public class CombatMapScreen : Screen
     IEnumerable CoAttack(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
     {
         yield return CoStartAttack(attacker, attack, defender, screen);
-
         CoDamageDealing(attacker, attack, defender, screen);
-
         yield return CoAfterDamage(attacker, attack, defender, screen);
         
         DrawCombat();
@@ -1183,7 +1181,7 @@ public class CombatMapScreen : Screen
                     {
                         current.SelectedMove = moves[index].Name;
                         CoroutineHandler.Run(moves[index].Perform(current, this));
-                        CoroutineHandler.RunNext(new CoUpdateScreen(current, this));
+                        CoroutineHandler.Run(new CoUpdateScreen(current, this));
                         if (AttackTarget != null)
                         {
                             CoroutineHandler.RunNext(DoAttack(current, AttackTarget));

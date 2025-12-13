@@ -11,7 +11,7 @@ public class Chop : Move
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = character.Vig;
+        character.MovementLeft += character.Vig;
         var dom = (character.IsRightHanded ? character.GetRightWeapon() : character.GetLeftWeapon());
         if (dom is {} wpn)
         {

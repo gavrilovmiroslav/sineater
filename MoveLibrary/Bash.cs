@@ -11,7 +11,7 @@ public class Bash : Move
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = character.Vig;
+        character.MovementLeft += character.Vig;
         var nondom = (character.IsRightHanded ? character.GetLeftWeapon() : character.GetRightWeapon());
         if (nondom is {} wpn)
         {

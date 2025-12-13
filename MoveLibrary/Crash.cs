@@ -13,7 +13,7 @@ public class Crash : Move
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = 2 * character.Vig;
+        character.MovementLeft += character.Vig;
         List<Weapon> wpns = [];
         if (character.GetLeftWeapon() is {} wl) wpns.Add(wl);
         if (character.GetRightWeapon() is {} wr) wpns.Add(wr);

@@ -48,11 +48,21 @@ public class CoroutineHandler
 
     public void Run(IEnumerable cor)
     {
-        _coroutines.Add(new Coroutine(cor));
+        var c = new Coroutine(cor);
+        if (_coroutines.Count > 0)
+        {
+            _coroutines.Last()._waitingOn = c;
+        }
+        
+        _coroutines.Add(c);
     }
     
     public void Run(Coroutine cor)
     {
+        if (_coroutines.Count > 0)
+        {
+            _coroutines.Last()._waitingOn = cor;
+        }
         _coroutines.Add(cor);
     }
 
