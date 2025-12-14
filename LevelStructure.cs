@@ -89,6 +89,7 @@ public record struct LevelStructure
     public readonly List<(int X, int Y)> Goals = [];
     public readonly List<Enemy> Enemies = [];
     public readonly List<(int X, int Y)> Treasure = [];
+    public readonly List<(int X, int Y)> SpentTreasure = [];
     public readonly HeatMap Heat;
     public AP EnemyActionPoints;
     

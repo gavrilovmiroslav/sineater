@@ -194,7 +194,7 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        PartyActionPoints = new AP(10, statusLayer);
+        PartyActionPoints = new AP(20, statusLayer);
         
         Party = new Party(PartyActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));

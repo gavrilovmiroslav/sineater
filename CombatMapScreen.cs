@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Apis.Http;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSharp;
@@ -35,7 +36,7 @@ public class CombatMapScreen : Screen
     
     private ETerrainKind _kind;
     public LevelStructure Structure;
-    public AP TotalAP;
+    
     private bool _rendered = false;
     private bool _detailedView = false;
     private Glyph[,] _groundGlyphs;
@@ -74,17 +75,6 @@ public class CombatMapScreen : Screen
         _game = game;
         _groundGlyphs = new Glyph[_fullWidth, _fullHeight];
         Regenerate(_width == -1 || _height == -1);
-
-        TotalAP = new AP(game.Party.Characters[0].AP, Structure.EnemyActionPoints);
-        foreach (var player in game.Party.Characters)
-        {
-            player.AP = TotalAP;
-        }
-
-        foreach (var enemy in Structure.Enemies)
-        {
-            enemy.AP = TotalAP;
-        }
     }
 
     public override void Initialize(SineaterGame game)
@@ -485,7 +475,7 @@ public class CombatMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        TotalAP.Draw(DrawOffset.X + 1, 27);
+        _game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)
@@ -508,66 +498,64 @@ public class CombatMapScreen : Screen
 
         if (InitiativeCurrent is {} selected)
         {
-            if (selected is PartyMember pm)
+            for (var i = 0; i < _fullWidth; i++)
             {
-                for (var i = 0; i < _fullWidth; i++)
+                for (var j = 0; j < _fullHeight; j++)
                 {
-                    for (var j = 0; j < _fullHeight; j++)
+                    var fg = Color.Black;
+                    var bg = Color.Black;
+                    foreach (var f in _fgs[(i, j)])
                     {
-                        var fg = Color.Black;
-                        var bg = Color.Black;
-                        foreach (var f in _fgs[(i, j)])
+                        fg = Color.Lerp(fg, f, 0.75f);
+                    }
+
+                    fg = Color.Lerp(fg, Color.White, _fgs[(i, j)].Count / 4.0f);
+
+                    if (Structure.Map.IsWalkable(i, j))
+                    {
+                        var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
+                        g.Fg = showMap ? Color.White : Color.Lerp(fg, Color.White, 0.5f);
+                        bg = (i % 2 == j % 2) ? new Color(0, 0, 0, 1) : new Color(20, 0, 10, 1);
+
+                        if (selected is PartyMember pm1 && pm1.Zone.Contains((i, j)))
                         {
-                            fg = Color.Lerp(fg, f, 0.75f);
-                        }
-
-                        fg = Color.Lerp(fg, Color.White, _fgs[(i, j)].Count / 4.0f);
-
-                        if (Structure.Map.IsWalkable(i, j))
-                        {
-                            var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
-                            g.Fg = showMap ? Color.White : Color.Lerp(fg, Color.White, 0.5f);
-                            bg = (i % 2 == j % 2) ? new Color(0, 0, 0, 1) : new Color(20, 0, 10, 1);
-                            if (pm.Zone.Contains((i, j)))
+                            bg = (i % 2 == j % 2)
+                                ? Party.Zones[selected.Index]
+                                : Color.Lerp(Party.Zones[selected.Index], Color.Black, 0.5f);
+                            if (!pm1.Fov.Contains((i, j)))
                             {
-                                bg = (i % 2 == j % 2)
-                                    ? Party.Zones[selected.Index]
-                                    : Color.Lerp(Party.Zones[selected.Index], Color.Black, 0.5f);
-                                if (!pm.Fov.Contains((i, j)))
-                                {
-                                    bg = Color.Lerp(bg, Color.Black, 0.5f);
-                                }
+                                bg = Color.Lerp(bg, Color.Black, 0.5f);
                             }
-                            else
-                            {
-                                if (!pm.Fov.Contains((i, j)))
-                                {
-                                    bg = Color.Black;
-                                    g.Fg = Color.Black;
-                                }
-                                else
-                                {
-                                    // -1..1
-                                    // *0.5 = -0.5..0.5
-                                    // +0.5 = 0..1
-                                    g.Fg = Color.Lerp(g.Fg, Color.Black,
-                                        (MathF.Sin((i % 2 == j % 2 ? Single.Pi : 0) + _time * 0.001f) * 0.5f + 0.5f));
-                                }
-                            }
-
-                            g.Bg = bg;
-
-                            Draw(i, j, g);
                         }
                         else
                         {
-                            var g = _groundGlyphs[i, j];
-                            Draw(i, j, new Glyph(g.U, g.V, Color.Black, showMap ? Color.White : fg));
+                            if (selected is PartyMember pm2 && !pm2.Fov.Contains((i, j)))
+                            {
+                                bg = Color.Black;
+                                g.Fg = Color.Black;
+                            }
+                            else
+                            {
+                                // -1..1
+                                // *0.5 = -0.5..0.5
+                                // +0.5 = 0..1
+                                g.Fg = Color.Lerp(g.Fg, Color.Black,
+                                    (MathF.Sin((i % 2 == j % 2 ? Single.Pi : 0) + _time * 0.001f) * 0.5f + 0.5f));
+                            }
                         }
+
+                        g.Bg = bg;
+
+                        Draw(i, j, g);
+                    }
+                    else
+                    {
+                        var g = _groundGlyphs[i, j];
+                        Draw(i, j, new Glyph(g.U, g.V, Color.Black, showMap ? Color.White : fg));
                     }
                 }
             }
-
+            
             foreach (var domain in Domains._domains)
             {
                 domain.Draw(this);
@@ -598,17 +586,22 @@ public class CombatMapScreen : Screen
             var (gx, gy) = Structure.Goals[0];
             Draw(gx, gy, new Glyph(13, 60, Color.Black, Color.Lerp(Color.Red, Color.Yellow, Rnd.Instance.Next01())));
 
-            var colors = new List<Color>() { Color.Yellow, Color.OrangeRed, Color.Red, Color.Purple };
+            var colors = new List<Color>() { Color.Red, Color.OrangeRed, Color.Orange, Color.YellowGreen, Color.Green };
 
             foreach (var chr in Structure.Enemies.Where(chr => showMap || _fov.IsInFov(chr.X, chr.Y)))
             {
                 var (cu, cv) = chr.Icon;
-                Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Active ? colors[chr.Level - 1] : Color.Gray));
+                Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Active ? colors[Math.Clamp(chr.HP - 1, 1, 5)] : Color.Gray));
             }
 
-            foreach (var chr in Structure.Treasure.Where(chr => showMap || _fov.IsInFov(chr.X, chr.Y)))
+            foreach (var chr in Structure.Treasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (showMap || _fov.IsInFov(chr.X, chr.Y))))
             {
-                Draw(chr.X, chr.Y, "?", Color.White);
+                Draw(chr.X, chr.Y, new Glyph(5, 66, Color.Black, Color.Gold));
+            }
+            
+            foreach (var chr in Structure.SpentTreasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (showMap || _fov.IsInFov(chr.X, chr.Y))))
+            {
+                Draw(chr.X, chr.Y, new Glyph(6, 66, Color.Black, Color.Gold));
             }
 
             DrawParty();
@@ -634,71 +627,88 @@ public class CombatMapScreen : Screen
         "WIL", "CLA", "POI", "VIG"
     ];
     
-    private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null)
+    private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null)
     {
+        var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
         var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
         var h = 19;
         var index = 0;
+        
         foreach (var character in _game.Party.Characters)
         {
-            var (m, r) = character.Job.GetImage();
-            var (u, v) = character.GetPortait();
-            var (x, y) = _positions[index];
-            var (xoff, yoff) = (_xoffsets[index], _offsets[index]);
-            var tint = character.Tint;
-            if (character != InitiativeCurrent)
+            if (drawSet.Contains(character))
             {
-                tint = Color.Lerp(tint, Color.Black, 0.75f);
-            }
-            
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y - 1 + yoff, $"{character.Job.GetShortName()}", tint);
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y + yoff, $"{_positionStats[index]}", tint);
-            var hp = $"HP{character.HP}";
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, hp, Color.White);
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, $"HP", tint);
-            
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA  ", tint);
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI  ", tint);
-            
-            if (character == cha)
-            {
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{cwil ?? character.Wil}", cwil == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{ccla ?? character.Cla}", ccla == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{cvig ?? character.Vig}", cvig == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{cpoi ?? character.Poi}", cpoi == null ? Color.White : Color.Yellow);
-            }
-            else
-            {
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{character.Wil}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{character.Cla}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{character.Vig}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
-            }
+                var (m, r) = character.Job.GetImage();
+                var (u, v) = character.GetPortait();
+                var (x, y) = _positions[index];
+                var (xoff, yoff) = (_xoffsets[index], _offsets[index]);
+                var tint = character.Tint;
+                if (character != InitiativeCurrent)
+                {
+                    tint = Color.Lerp(tint, Color.Black, 0.75f);
+                }
 
-            if (character.GetLeftWeapon() is {} lw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
-            
-            if (character.GetRightWeapon() is {} rw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
-            
-            if (character.GetItem() is {} it)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
-            
-            if (index < 2)
-            {
-                _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
-            }
-            else
-            {
-                _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                _game.Layers["portrait"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
+                if (colorOverride is { } color)
+                {
+                    tint = color;
+                }
+
+                _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y - 1 + yoff,
+                    $"{character.Job.GetShortName()}", tint);
+                _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y + yoff, $"{_positionStats[index]}",
+                    tint);
+                var hp = $"HP{character.HP}";
+                _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, hp,
+                    Color.White);
+                _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, $"HP", tint);
+
+                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA  ", tint);
+                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI  ", tint);
+
+                if (character == cha)
+                {
+                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{cwil ?? character.Wil}",
+                        cwil == null ? Color.White : Color.Yellow);
+                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{ccla ?? character.Cla}",
+                        ccla == null ? Color.White : Color.Yellow);
+                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{cvig ?? character.Vig}",
+                        cvig == null ? Color.White : Color.Yellow);
+                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{cpoi ?? character.Poi}",
+                        cpoi == null ? Color.White : Color.Yellow);
+                }
+                else
+                {
+                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{character.Wil}", Color.White);
+                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{character.Cla}", Color.White);
+                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{character.Vig}", Color.White);
+                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
+                }
+
+                if (character.GetLeftWeapon() is { } lw)
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", tint);
+                else
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
+
+                if (character.GetRightWeapon() is { } rw)
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", tint);
+                else
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
+
+                if (character.GetItem() is { } it)
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", tint);
+                else
+                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
+
+                if (index < 2)
+                {
+                    _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                    _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
+                }
+                else
+                {
+                    _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                    _game.Layers["portrait"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
+                }
             }
 
             index++;
@@ -835,6 +845,7 @@ public class CombatMapScreen : Screen
                 CoroutineHandler.Run(Coroutine_EndTurn());
                 return;
             }
+            
             // MOVE
             if (current.SelectedMove == null && current.HasTurn)
             {
@@ -874,7 +885,6 @@ public class CombatMapScreen : Screen
                             c.Y = current.Y;
                             current.X = x + dx;
                             current.Y = y + dy;
-                            _game.PartyActionPoints.Spend(1);
 
                             if (Domains.Tiles.ContainsKey(((int)current.X, (int)current.Y)))
                             {
@@ -958,9 +968,18 @@ public class CombatMapScreen : Screen
                         {
                             var (tx, ty) = (current.X + dx, current.Y + dy);
                             Structure.Treasure.Remove((tx, ty));
-                            Structure.Map.SetCellProperties(tx, ty, true, true);
-                            CalculateZone(current);
-                            _game.PartyActionPoints.Spend(1);
+                            Structure.SpentTreasure.Add((tx, ty));
+                            var ap = _game.Party.Characters[0].AP;
+                            ap.Add(EStatus.Sin, 1);
+                            current.Done();
+                        }
+                        else if (Structure.SpentTreasure.Contains((current.X + dx, current.Y + dy)))
+                        {
+                            var (tx, ty) = (current.X + dx, current.Y + dy);
+                            Structure.SpentTreasure.Remove((tx, ty));
+                            var ap = _game.Party.Characters[0].AP;
+                            ap.Add(EStatus.Fatigue, 1);
+                            Map?.SetCellProperties(tx, ty, true, true);
                             current.Done();
                         }
                         else if (Structure.Goals[0] == (current.X + dx, current.Y + dy))
@@ -991,7 +1010,11 @@ public class CombatMapScreen : Screen
     IEnumerable CoStartAttack(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
     {
         var guv = (0, 0);
-        if (defender is PartyMember pm) guv = pm.Job.GetImage();
+        if (defender is PartyMember pm)
+        {
+            guv = pm.Job.GetImage();
+            DrawParty(toDraw: [pm], colorOverride: Color.Red);
+        }
         else if (defender is Enemy en) guv = en.Icon;
         
         for (var i = 0; i < 5; i++)
@@ -1044,9 +1067,6 @@ public class CombatMapScreen : Screen
                 Draw(defender.X, defender.Y, " ");
                 yield return new WaitForSeconds(0.02f);
             }
-
-            var ap = _game.Party.Characters[0].AP;
-            ap.Add(EStatus.Sin, e.Level);
 
             Structure.Enemies.Remove(e);
             InitiativeOrder.Remove(e);
@@ -1161,12 +1181,6 @@ public class CombatMapScreen : Screen
                 }
                 case "CONSUME":
                 {
-                    var playerAP = new AP(TotalAP, 10);
-                    foreach (var player in SineaterGame.Instance.Party.Characters)
-                    {
-                        player.AP = playerAP;
-                    }
-
                     CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
                     Muse.SetTravelMood();
                     break;
