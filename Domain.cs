@@ -312,8 +312,6 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        character.GetAP().Add(EStatus.Stamina, 1);
-        
         if (!_steps.ContainsKey((oldX, oldY)))
         {
             if (!(oldY == y + 1 && oldX == x))
@@ -382,6 +380,8 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
         }
 
         yield return Blink(level);
+        
+        character.GetAP().Add(EStatus.Stamina, 1);
     }
 
     public override void Draw(CombatMapScreen level)

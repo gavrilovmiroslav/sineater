@@ -6,8 +6,8 @@ namespace SINEATER.MoveLibrary;
 public class OpenDomain : Move
 {
     public override string Name { get; } = "Open Domain";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [ EMoveCost.Sin ];
+    public override string Description { get; } = "Requires 1 Sin.\nAttempts to open a destined astral domain.";
+    public override EStatus[] Costs { get; } = [ EStatus.Sin ];
 
     protected override IEnumerable MoveAction(Character c, CombatMapScreen screen)
     {

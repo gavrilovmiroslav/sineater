@@ -40,6 +40,9 @@ public static class EStatusExtensions
             case EStatus.Stamina:
                 glyph.U = 2;
                 break;
+            case EStatus.Fatigue:
+                glyph.U = 7;
+                break;
             case EStatus.Wound:
                 glyph.U = 3;
                 break;
@@ -53,7 +56,7 @@ public static class EStatusExtensions
                 glyph.U = 6;
                 break;
             case EStatus.Sin:
-                glyph.U = 7;
+                glyph.U = 9;
                 break;
             default:
                 glyph.U = 0;
@@ -133,18 +136,14 @@ public class AP
         
         for (var i = 0; i < Width; i++)
         {
-            _statuses.Add(EStatus.Stamina);
+            _statuses.Add(EStatus.Void);
         }
         
         Add(EStatus.Void, empty);
     }
-    
-    public void Update(GameTime time)
-    {
-        
-    }
 
     private float t = 0;
+    
     public void Draw(int x, int y, ICharacter? showDetails = null)
     {
         t += 0.05f;

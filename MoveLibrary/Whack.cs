@@ -6,8 +6,8 @@ namespace SINEATER.MoveLibrary;
 public class Whack : Move
 {
     public override string Name { get; } = "Whack";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+2 movement.\n+1 dominant hand attack.\nGives 1 Fatigue.";
+    public override EStatus[] Costs { get; } = [];
     
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

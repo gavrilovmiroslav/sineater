@@ -6,8 +6,8 @@ namespace SINEATER.MoveLibrary;
 public class Walk : Move
 {
     public override string Name { get; } = "Walk";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+INIT + 2 movement.";
+    public override EStatus[] Costs { get; } = [];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

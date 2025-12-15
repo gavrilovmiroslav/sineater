@@ -6,12 +6,12 @@ namespace SINEATER.MoveLibrary;
 public class Steal : Move
 {
     public override string Name { get; } = "Steal";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+WIL movement.";
+    public override EStatus[] Costs { get; } = [];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft = character.Wil;
+        character.MovementLeft += character.Wil;
         yield break;
     }
 }

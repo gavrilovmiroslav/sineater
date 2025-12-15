@@ -297,6 +297,14 @@ public interface IStatus
     public IEnumerable OnDeactivated(Character c, CombatMapScreen w);
 }
 
+public enum ELoudness
+{
+    Silent = 0,
+    Quiet = 2,
+    Moderate = 5,
+    Loud = 8
+}
+
 public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
@@ -318,7 +326,6 @@ public abstract class Character : ICharacter
     public List<Attack> Attacks { get; set; } = [];
     public List<IStatus> Statuses { get; set; } = [];
 
-    public Move? Initial { get; set; } = null;
     public int MovementLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
@@ -349,7 +356,7 @@ public abstract class Character : ICharacter
         }
     }
     
-    public bool CanPay(EMoveCost[] costs)
+    public bool CanPay(EStatus[] costs)
     {
         var stamina = AP.Count(EStatus.Stamina);
         var fatigue = AP.Count(EStatus.Fatigue);
@@ -358,38 +365,42 @@ public abstract class Character : ICharacter
         var wound = AP.Count(EStatus.Death);
         var death = AP.Count(EStatus.Death);
         var sin  = AP.Count(EStatus.Sin);
-
+        var insanity  = AP.Count(EStatus.Insanity);
+        
         foreach (var part in costs)
         {
             switch (part)
             {
-                case EMoveCost.Stamina:
+                case EStatus.Stamina:
                     stamina--;
                     break;
-                case EMoveCost.Fatigue:
+                case EStatus.Fatigue:
                     fatigue--;
                     break;
-                case EMoveCost.Fire:
+                case EStatus.Fire:
                     fire--;
                     break;
-                case EMoveCost.Ice:
+                case EStatus.Frozen:
                     ice--;
                     break;
-                case EMoveCost.Wound:
+                case EStatus.Wound:
                     wound--;
                     break;
-                case EMoveCost.Death:
+                case EStatus.Death:
                     death--;
                     break;
-                case EMoveCost.Sin:
+                case EStatus.Sin:
                     sin--;
+                    break;
+                case EStatus.Insanity:
+                    insanity--;
                     break;
                 default:
                     break;
             }
         }
 
-        return !(stamina < 0 || fatigue < 0 || fire < 0 || ice < 0 || wound < 0 || death < 0 || sin < 0);
+        return !(stamina < 0 || fatigue < 0 || fire < 0 || ice < 0 || wound < 0 || death < 0 || sin < 0 || insanity < 0);
     }
     
     public IEnumerable<Item> GetGear()
@@ -532,6 +543,18 @@ public abstract class Character : ICharacter
     {
         this.EquipItem(null);
     }
+
+    public IEnumerable Pay(EStatus[] costs)
+    {
+        foreach (var cost in costs)
+        {
+            var place = AP.View.FindIndex(c => c == cost);
+            AP.View[place] = EStatus.Void;
+            yield return new WaitForSeconds(0.01f);
+        }
+
+        yield break;
+    }
 }
 
 public class PartyMember : Character
@@ -555,7 +578,9 @@ public class PartyMember : Character
 
         HP = Math.Min(Stats.Poise + Rnd.Instance.D2, 9);
     }
-    
+
+    public ELoudness Loudness { get; set; } = ELoudness.Moderate;
+
     public string GetRandomBark()
     {
         var barks = Barks.Instance[this.Job];
@@ -611,6 +636,7 @@ public record struct Party
             {
                 case ECharacterClass.Wizard:
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Ash Branch"));
+                    Characters[i].Loudness = ELoudness.Loud;
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -619,6 +645,7 @@ public record struct Party
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
+                    Characters[i].Loudness = ELoudness.Quiet;
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Kris"));
                     Characters[i].EquipItem(ItemLibrary.GetItem("Old Bell"));
                     Characters[i].Stats.Will = 4;
@@ -628,6 +655,7 @@ public record struct Party
                     Characters[i].Moves.Add(new OpenDomain());
                     break;
                 case ECharacterClass.Knight:
+                    Characters[i].Loudness = ELoudness.Loud;
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Red Sign"));
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
                     Characters[i].EquipItem(ItemLibrary.GetItem("Ruby Plate"));
@@ -646,6 +674,7 @@ public record struct Party
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
+                    Characters[i].Loudness = ELoudness.Quiet;
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Misericorde"));
                     Characters[i].EquipItem(ItemLibrary.GetItem("Sash"));
                     Characters[i].Stats.Will = 2;
@@ -661,6 +690,7 @@ public record struct Party
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Thief:
+                    Characters[i].Loudness = ELoudness.Silent;
                     Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
                     Characters[i].Stats.Will = 6;
                     Characters[i].Stats.Clarity = 6;

@@ -6,8 +6,8 @@ namespace SINEATER.MoveLibrary;
 public class Chop : Move
 {
     public override string Name { get; } = "Chop";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+VIG movement.\n+1 dominant hand attack.\nGives 1 Wound.";
+    public override EStatus[] Costs { get; } = [];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

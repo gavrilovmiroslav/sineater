@@ -7,8 +7,8 @@ namespace SINEATER.MoveLibrary;
 public class Protect : Move
 {
     public override string Name { get; } = "Protect";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = []; //[ EMoveCost.Fatigue, EMoveCost.Insanity ]; // FI
+    public override string Description { get; } = "Requires 1 Fatigue and 1 Insanity.\nGain GUARD from all equipped weapons.";
+    public override EStatus[] Costs { get; } = [ EStatus.Fatigue, EStatus.Insanity ]; // FI
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

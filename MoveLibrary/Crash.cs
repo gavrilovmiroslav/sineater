@@ -8,8 +8,8 @@ public class Crash : Move
 {
     //You get 1 attack with both weapons and greatly raised VIG scaling. Create 3 INSANITY.
     public override string Name { get; } = "Crash";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];//[ EMoveCost.Fatigue, EMoveCost.Insanity ]; // FI
+    public override string Description { get; } = "Requires 1 Fatigue and 1 Insanity.\n+VIG movement.\n+1 attack with both hands.\nLarge weapons count as two.\nGives 3 Insanity.";
+    public override EStatus[] Costs { get; } = [ EStatus.Fatigue, EStatus.Insanity ]; // FI
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

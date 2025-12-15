@@ -211,24 +211,27 @@ public class CombatMapScreen : Screen
                 {
                     good[move] = 0;
                     var dup = enemy.Copy();
-                    move.Perform(dup, this).Consume();
-                    
-                    f.ComputeFov(dup.X, dup.Y, dup.Cla, false);
-                    var dist = playerDist.Get(dup.X, dup.Y);
-                    if (dup.Attacks.Count == 0)
+                    if (move.CanPerform(dup, this))
                     {
-                        // move closer
-                        good[move] += Math.Max(1, dist - dup.MovementLeft);
-                    }
-                    else
-                    {
-                        if (dist < dup.MovementLeft)
+                        move.Perform(dup, this, false).Consume();
+
+                        f.ComputeFov(dup.X, dup.Y, dup.Cla, false);
+                        var dist = playerDist.Get(dup.X, dup.Y);
+                        if (dup.Attacks.Count == 0)
                         {
-                            good[move] += 5 * dup.Attacks.Count + dist;
+                            // move closer
+                            good[move] += Math.Max(1, dist - dup.MovementLeft) + move.Costs.Length;
                         }
                         else
                         {
-                            good[move] += dist;
+                            if (dist < dup.MovementLeft)
+                            {
+                                good[move] += 5 * dup.Attacks.Count + dist + move.Costs.Length;
+                            }
+                            else
+                            {
+                                good[move] += dist + move.Costs.Length;
+                            }
                         }
                     }
                 }
@@ -241,14 +244,7 @@ public class CombatMapScreen : Screen
                 else
                 {
                     var (best, quality) = good.OrderByDescending(a => a.Value).First();
-                    Console.WriteLine($"BEST MOVE: {best.Name} {quality}");
-                    
                     CoroutineHandler.Run(DoEnemyMove(enemy, best));
-                    
-                    // if (InputManager.Instance.IsActionActive(EInputAction.Confirm))
-                    // {
-                    //     InitiativeNext();
-                    // }
                 }
             }
             else
@@ -354,6 +350,8 @@ public class CombatMapScreen : Screen
                 {
                     dom.Update(this);
                 }
+                
+                UpdateEnemyActivation();
             }
             
             if (InitiativeCurrent is Enemy { Active: true })
@@ -412,14 +410,20 @@ public class CombatMapScreen : Screen
     {
         if (InitiativeCurrent is PartyMember player)
         {
+            var dist = new DistanceMap(Structure, false, [(player.X, player.Y)], Predicate.Walkable);
             var enemyFov = new FieldOfView(Structure.Map);
             //                                                          not active and player sees them
             foreach (var enemy in Structure.Enemies.Where(e => !e.Active && _fov.IsInFov(e.X, e.Y)))
             {
-                //if (enemy.ShouldWakeUp)
+                var d = dist.Get(enemy.X, enemy.Y);
+                enemyFov.ComputeFov(enemy.X, enemy.Y, 2 * enemy.Stats.Clarity, false);
+                if (enemyFov.IsInFov(player.X, player.Y))
                 {
-                    enemy.Active = true;
-                    continue;
+                    if (Rnd.Instance.Next(1, d) < (int)player.Loudness)
+                    {
+                        enemy.Active = true;
+                        CoroutineHandler.Run(new CoWakeUpEnemy(enemy, this));
+                    }
                 }
             }
         }
@@ -715,7 +719,6 @@ public class CombatMapScreen : Screen
         }
     }
     
-    public bool SkipGUI { get; set; } = false;
     public bool ShouldHardUpdate { get; set; } = true;
 
     private int _offset = 96;
@@ -759,6 +762,21 @@ public class CombatMapScreen : Screen
                 else
                 {
                     _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {name}");
+                }
+                
+                if (InitiativeCurrent is PartyMember pm)
+                {
+                    if (i == _submenuSelection && pm.AvailableMoves.FirstOrDefault(m => m.Name.ToUpper() == name.Replace("*", "")) is { } move)
+                    {
+                        _game.Layers["mini"].SetRect(new Vector2(62, 40), new Vector2(120, 65), ' ');
+                        
+                        int li = 0;
+                        foreach (var line in move.Description.Split("\n"))
+                        {
+                            _game.Layers["mini"].Set(45 + 2 * len, 42 + li, line);
+                            li++;
+                        }
+                    }
                 }
             }
 
@@ -960,8 +978,6 @@ public class CombatMapScreen : Screen
                                 {
                                     current.Done();
                                 }
-
-                                UpdateEnemyActivation();
                             }
                         }
                         else if (Structure.Treasure.Contains((current.X + dx, current.Y + dy)))
@@ -1031,7 +1047,7 @@ public class CombatMapScreen : Screen
         yield return new WaitForSeconds(0.1f);
         Draw(defender.X, defender.Y, new Glyph(guv.Item1, guv.Item2, Color.Black, defender.Tint));
     }
-    
+
     void CoDamageDealing(Character attacker, Attack attack, Character defender, CombatMapScreen screen)
     {
         var dmg = Math.Max(1, attack.Weapons.Sum(w => w.Attack));
@@ -1045,7 +1061,14 @@ public class CombatMapScreen : Screen
         }
         else
         {
-            defender.HP -= dmg;
+            if (defender is Enemy { Active: false })
+            {
+                defender.HP = 0;
+            }
+            else
+            {
+                defender.HP -= dmg;
+            }
         }
 
         if (defender.HP <= 0) defender.Die();
@@ -1100,6 +1123,10 @@ public class CombatMapScreen : Screen
             yield return new WaitForSeconds(0.01f);
         }
         
+        foreach (var mod in attack.Mods)
+        {
+            attacker.AP.Add(mod, 1);
+        }
         attacker.Done();
     }
     

@@ -6,12 +6,12 @@ namespace SINEATER.MoveLibrary;
 public class Bash : Move
 {
     public override string Name { get; } = "Bash";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+1 movement.\n+1 non-dominant hand attack.";
+    public override EStatus[] Costs { get; } = [];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
-        character.MovementLeft += character.Vig;
+        character.MovementLeft += 1;
         var nondom = (character.IsRightHanded ? character.GetLeftWeapon() : character.GetRightWeapon());
         if (nondom is {} wpn)
         {

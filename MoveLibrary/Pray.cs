@@ -7,8 +7,8 @@ namespace SINEATER.MoveLibrary;
 public class Pray : Move
 {
     public override string Name { get; } = "Pray";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [ EMoveCost.Fatigue ];
+    public override string Description { get; } = "Requires 1 Fatigue.\nDouble CLA for one turn.";
+    public override EStatus[] Costs { get; } = [ EStatus.Fatigue ];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {

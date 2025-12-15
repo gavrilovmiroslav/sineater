@@ -263,7 +263,6 @@ public class SineaterGame : Game
             screen.Update(gameTime);
         }
         
-        PartyActionPoints.Update(gameTime);
         //_focus.Update();
 
         base.Update(gameTime);

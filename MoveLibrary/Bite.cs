@@ -17,8 +17,8 @@ public class Bite : Move
     }
     
     public override string Name { get; } = "Bite";
-    public override string Description { get; } = "";
-    public override EMoveCost[] Costs { get; } = [];
+    public override string Description { get; } = "+5 movement.\nAttack for one damage ignoring guard.";
+    public override EStatus[] Costs { get; } = [];
 
     protected override IEnumerable MoveAction(Character character, CombatMapScreen screen)
     {
