@@ -193,7 +193,8 @@ public interface ICharacter
 {
     public int X { get; set; }
     public int Y { get; set; }
-    public int HP { get; set; }
+    public Track Hits { get; set; }
+    public Track Guard { get; set; }    
     public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Stats Bonus { get; set; }
@@ -217,7 +218,8 @@ public class Dummy : ICharacter
 {
     public int X { get; set; }
     public int Y { get; set; }
-    public int HP { get; set; }
+    public Track Hits { get; set; }
+    public Track Guard { get; set; }
     public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Stats Bonus { get; set; } = new(0, 0, 0, 0);
@@ -313,13 +315,21 @@ public abstract class Character : ICharacter
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
     
-    public void ForceRestart()
+    public void ForceRestart(CombatMapScreen screen)
     {
         MovementLeft = Stats.Initiative;
         HasTurn = true;
         Attacks.Clear();
         SelectedMove = null;
         IsDone = false;
+        
+        if (Item is { } item)
+        {
+            foreach (var mov in item.AvailableMoves)
+            {
+                screen.CoroutineHandler.Run(mov.Perform(this, screen, false));
+            }
+        }
     }
     
     public bool CanSwapEnemies { get; set; } = false;
@@ -341,15 +351,13 @@ public abstract class Character : ICharacter
             {
                 yield return move;
             }
+            
             foreach (var move in LeftWeapon?.AvailableMoves ?? [])
             {
                 yield return move;
             }
+            
             foreach (var move in RightWeapon?.AvailableMoves ?? [])
-            {
-                yield return move;
-            }
-            foreach (var move in Item?.AvailableMoves ?? [])
             {
                 yield return move;
             }
@@ -485,8 +493,8 @@ public abstract class Character : ICharacter
 
     public virtual int X { get; set; }
     public virtual int Y { get; set; }
-    public int HP { get; set; }
-    public int Guard { get; set; }
+    public Track Hits { get; set; }
+    public Track Guard { get; set; }
     public bool Render { get; set; } = true;
     
     public Stats Stats { get; set; } = new();
@@ -576,7 +584,8 @@ public class PartyMember : Character
             Console.WriteLine($"Created character with {Stats} and class: {Job}");
         }
 
-        HP = Math.Min(Stats.Poise + Rnd.Instance.D2, 9);
+        Hits = Math.Min(Stats.Poise + Rnd.Instance.D2, 9);
+        Guard = 0;
     }
 
     public ELoudness Loudness { get; set; } = ELoudness.Moderate;
@@ -667,7 +676,7 @@ public record struct Party
                     break;
                 case ECharacterClass.Monk:
                     Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolm Staff"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Tunic"));
+                    Characters[i].EquipItem(ItemLibrary.GetItem("Soft Tunic"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -701,14 +710,14 @@ public record struct Party
             }
         }
 
-        Characters[0].Stats.Will = 7;
-        Characters[1].Stats.Clarity = 7;
-        Characters[2].Stats.Poise = 7;
-        Characters[3].Stats.Vigor = 7;
+        Characters[0].Stats.Will = 6;
+        Characters[1].Stats.Clarity = 6;
+        Characters[2].Stats.Poise = 6;
+        Characters[3].Stats.Vigor = 6;
 
         for (var i = 0; i < 4; i++)
         {
-            Characters[i].HP = Math.Min(9, Characters[i].Poi + Characters[i].Cla);
+            Characters[i].Hits = Math.Min(9, Characters[i].Poi + Characters[i].Cla);
         }
     }
         

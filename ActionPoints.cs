@@ -153,7 +153,7 @@ public class AP
             var name = showDetails.GetName();
             Layer.SetRect(new Vector2(x, y), new Vector2(x + name.Length + 1, y + 1), ' ');
             Layer.Set(x, y, name);
-            Layer.Set(x, y + 1, $"HP {showDetails.HP}");
+            Layer.Set(x, y + 1, $"HP {showDetails.Hits}");
             x += name.Length + 1;
         }
         for (int i = 0; i < Width; i++)

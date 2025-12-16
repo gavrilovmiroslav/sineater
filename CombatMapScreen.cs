@@ -257,6 +257,20 @@ public class CombatMapScreen : Screen
 
     IEnumerable DoEnemyMove(Enemy enemy, Move best)
     {
+        var (u, v) = enemy.Icon;
+        for (var id = 0; id < 5; id++)
+        {
+            Draw(enemy.X, enemy.Y, new Glyph(u, v, Color.Black, Color.White));
+            yield return new WaitForSeconds(0.02f);
+            Draw(enemy.X, enemy.Y, new Glyph(u, v, Color.Black, Color.Red));
+            yield return new WaitForSeconds(0.02f);
+        }
+
+        var (ox, oy) = DrawOffset;
+        _game.Layers["ascii"].Set(ox + enemy.X + 2, oy + enemy.Y, $"{enemy.Name} performs {best.Name}.");
+        yield return new WaitForInput(EInputAction.Confirm);
+        
+        Draw(enemy.X, enemy.Y, new Glyph(u, v, Color.Black, enemy.Tint));
         var playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))], Predicate.Walkable);
         best.Perform(enemy, this).Consume();
 
@@ -343,7 +357,7 @@ public class CombatMapScreen : Screen
             {
                 foreach (var ch in SineaterGame.Instance.Party.Characters)
                 {
-                    ch.ForceRestart();
+                    ch.ForceRestart(this);
                 }
         
                 foreach (var dom in Domains._domains)
@@ -415,7 +429,7 @@ public class CombatMapScreen : Screen
             //                                                          not active and player sees them
             foreach (var enemy in Structure.Enemies.Where(e => !e.Active && _fov.IsInFov(e.X, e.Y)))
             {
-                var d = dist.Get(enemy.X, enemy.Y);
+                var d = Math.Min(9, dist.Get(enemy.X, enemy.Y));
                 enemyFov.ComputeFov(enemy.X, enemy.Y, 2 * enemy.Stats.Clarity, false);
                 if (enemyFov.IsInFov(player.X, player.Y))
                 {
@@ -434,7 +448,7 @@ public class CombatMapScreen : Screen
     {
         foreach (var ch in SineaterGame.Instance.Party.Characters)
         {
-            ch.ForceRestart();
+            ch.ForceRestart(this);
         }
         
         foreach (var dom in Domains._domains)
@@ -518,7 +532,7 @@ public class CombatMapScreen : Screen
                     if (Structure.Map.IsWalkable(i, j))
                     {
                         var g = Glyph.Bw(_groundGlyphs[i, j].U, _groundGlyphs[i, j].V);
-                        g.Fg = showMap ? Color.White : Color.Lerp(fg, Color.White, 0.5f);
+                        g.Fg = _showMap ? Color.White : Color.Lerp(fg, Color.White, 0.5f);
                         bg = (i % 2 == j % 2) ? new Color(0, 0, 0, 1) : new Color(20, 0, 10, 1);
 
                         if (selected is PartyMember pm1 && pm1.Zone.Contains((i, j)))
@@ -555,7 +569,7 @@ public class CombatMapScreen : Screen
                     else
                     {
                         var g = _groundGlyphs[i, j];
-                        Draw(i, j, new Glyph(g.U, g.V, Color.Black, showMap ? Color.White : fg));
+                        Draw(i, j, new Glyph(g.U, g.V, Color.Black, _showMap ? Color.White : fg));
                     }
                 }
             }
@@ -567,7 +581,7 @@ public class CombatMapScreen : Screen
 
             foreach (var chr in _game.Party.Characters)
             {
-                if (!showMap && !_fov.IsInFov(chr.X, chr.Y))
+                if (!_showMap && !_fov.IsInFov(chr.X, chr.Y))
                     continue;
 
                 var (ix, iy) = chr.Job.GetImage();
@@ -592,18 +606,18 @@ public class CombatMapScreen : Screen
 
             var colors = new List<Color>() { Color.Red, Color.OrangeRed, Color.Orange, Color.YellowGreen, Color.Green };
 
-            foreach (var chr in Structure.Enemies.Where(chr => showMap || _fov.IsInFov(chr.X, chr.Y)))
+            foreach (var chr in Structure.Enemies.Where(chr => _showMap || _fov.IsInFov(chr.X, chr.Y)))
             {
                 var (cu, cv) = chr.Icon;
-                Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Active ? colors[Math.Clamp(chr.HP - 1, 1, 5)] : Color.Gray));
+                Draw(chr.X, chr.Y, new Glyph(cu, cv, Color.Black, chr.Active ? colors[Math.Clamp(chr.Hits - 1, 1, 5)] : Color.Gray));
             }
 
-            foreach (var chr in Structure.Treasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (showMap || _fov.IsInFov(chr.X, chr.Y))))
+            foreach (var chr in Structure.Treasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (_showMap || _fov.IsInFov(chr.X, chr.Y))))
             {
                 Draw(chr.X, chr.Y, new Glyph(5, 66, Color.Black, Color.Gold));
             }
             
-            foreach (var chr in Structure.SpentTreasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (showMap || _fov.IsInFov(chr.X, chr.Y))))
+            foreach (var chr in Structure.SpentTreasure.Where(chr => !Domains.IsInDomain(chr.X, chr.Y) && (_showMap || _fov.IsInFov(chr.X, chr.Y))))
             {
                 Draw(chr.X, chr.Y, new Glyph(6, 66, Color.Black, Color.Gold));
             }
@@ -631,7 +645,7 @@ public class CombatMapScreen : Screen
         "WIL", "CLA", "POI", "VIG"
     ];
     
-    private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null)
+    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null)
     {
         var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
         var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
@@ -661,7 +675,7 @@ public class CombatMapScreen : Screen
                     $"{character.Job.GetShortName()}", tint);
                 _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y + yoff, $"{_positionStats[index]}",
                     tint);
-                var hp = $"HP{character.HP}";
+                var hp = $"HP{character.Hits}";
                 _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, hp,
                     Color.White);
                 _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, $"HP", tint);
@@ -721,7 +735,7 @@ public class CombatMapScreen : Screen
     
     public bool ShouldHardUpdate { get; set; } = true;
 
-    private int _offset = 96;
+    private readonly int _offset = 96;
     
     public override void Draw(GameTime gameTime)
     {
@@ -824,7 +838,7 @@ public class CombatMapScreen : Screen
         }
     }
     
-    private bool showMap = false;
+    private bool _showMap = false;
     
     private IEnumerable Coroutine_EndTurn()
     {
@@ -1053,25 +1067,25 @@ public class CombatMapScreen : Screen
         var dmg = Math.Max(1, attack.Weapons.Sum(w => w.Attack));
         if (defender.Guard > 0)
         {
-            defender.Guard -= dmg;
-            if (defender.Guard < 0)
+            defender.Guard.Down(dmg, out var forced);
+            if (forced < 0)
             {
-                defender.HP += defender.Guard;
+                defender.Hits.Up(forced);
             }
         }
         else
         {
             if (defender is Enemy { Active: false })
             {
-                defender.HP = 0;
+                defender.Hits = 0;
             }
             else
             {
-                defender.HP -= dmg;
+                defender.Hits.Down(dmg);
             }
         }
 
-        if (defender.HP <= 0) defender.Die();
+        if (defender.Hits <= 0) defender.Die();
     }
 
     IEnumerable CoAfterDamage(Character attacker, Attack attack, Character defender, CombatMapScreen screen)

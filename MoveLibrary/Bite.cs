@@ -7,8 +7,8 @@ public class Bite : Move
 {
     IEnumerable Attack(Character atk, Attack attack, Character def, CombatMapScreen screen)
     {
-        def.HP -= 1;
-        if (def.HP <= 0)
+        def.Hits -= 1;
+        if (def.Hits <= 0)
         {
             def.Die();
         }
