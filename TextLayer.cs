@@ -574,7 +574,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         }
     }
     
-    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, float grayscale = 0.0f, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null)
+    public void SetRexFg(int sx, int sy, Image rex, int layerIndex, bool dim = false, float grayscale = 0.0f, Atmosphere? atmo = null, IEnumerable<(int, int)>? selected = null, float mod = 1.0f)
     {
         var layer = rex.Layers[layerIndex];
         var sels = selected?.ToHashSet() ?? [];
@@ -592,6 +592,7 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
                 var fg = dim ? Color.Lerp(f, Color.Black, grayscale * 0.75f) : f;
                 
                 var g = (fg.R + fg.G + fg.B) / 3;
+                g = (int)(g * mod);
                 var gr = new Color(g, g, g);
 
                 fg = Color.Lerp(fg, gr, grayscale);

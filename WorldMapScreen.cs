@@ -350,12 +350,8 @@ public class WorldMapScreen : Screen
             < 22 => 3,
             _ => 2
         };
+        
         var light = fov.ComputeFov(x, y, radius, true);
-
-        foreach (var l in light)
-        {
-            visited.Add((l.X, l.Y));
-        }
         
         var p = Ambient.Atmospheres[(int)TimeOfDay];
         var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
@@ -365,23 +361,19 @@ public class WorldMapScreen : Screen
         var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, HoursOfDay / 6.0f);
         var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, HoursOfDay / 6.0f);
         var gr = float.Lerp(p.Grayscale, n.Grayscale, HoursOfDay / 6.0f);
-        AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr), gr);
+        AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr),  gr);
         
         var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
+        for (var l = 2; l > 0; l--)
+        {
+            var dimLight = fov.ComputeFov(x, y, radius + l, true);
+            _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
+                selected: dimLight.Select(Predicate.CellToPosition));
+        }
+
         _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
         _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
-
-        //for (var i = 0; i < 20; i++)
-        //{
-        //    for (var j = 0; j < 20; j++)
-        //    {
-        //        if (!fov.IsInFov(i, j) && !visited.Contains((i, j)))
-        //        {
-        //            _game.Layers["mrmo"].Set(i + 8, j + 2, " ", Color.Black, Color.Black);
-        //        }
-        //    }
-        //}
-
+        
         var tick = _time is < 400 or > 800 and < 1200;
         
         var chr = _game.Party.Characters[PlayerSelectedIndex];
@@ -429,7 +421,6 @@ public class WorldMapScreen : Screen
         }
         
         _game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
-        
         
         DrawParty();
         

@@ -278,7 +278,7 @@ public class CombatMapScreen : Screen
         {
             var originalDist = playerDist.Get(enemy.X, enemy.Y);
             var dist = originalDist;
-            //if (enemy.Attacks.Count > 0)
+            if (enemy.Attacks.Count > 0)
             {
                 // move all the way to player
                 for (var i = 0; i < Math.Min(dist, enemy.MovementLeft); i++)
@@ -324,6 +324,29 @@ public class CombatMapScreen : Screen
                             => !(_game.Party.Characters.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2))
                                && (!Structure.Enemies.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2) &&
                                    xyd.Item3 > dist));
+                    if (newDist > 0)
+                    {
+                        dist = newDist;
+                        enemy.X = x;
+                        enemy.Y = y;
+                    }
+
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.05f);
+                    playerDist = new DistanceMap(Structure, false, [.._game.Party.Characters.Select(p => (p.X, p.Y))],
+                        Predicate.Walkable);
+                }
+            }
+            else
+            {
+                // move all the way to player
+                for (var i = 0; i < Math.Min(dist, enemy.MovementLeft + 1); i++)
+                {
+                    var (x, y, newDist) = playerDist
+                        .GetAllAdjacent(enemy.X, enemy.Y).FirstOrDefault(xyd
+                            => !(_game.Party.Characters.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2))
+                               && (!Structure.Enemies.Any(e => e.X == xyd.Item1 && e.Y == xyd.Item2) &&
+                                   xyd.Item3 < dist));
                     if (newDist > 0)
                     {
                         dist = newDist;
