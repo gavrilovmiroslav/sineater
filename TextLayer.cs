@@ -456,6 +456,14 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
         SetCorners(start, end, corners);
     }
 
+    public Color GetBg(int x, int y)
+    {
+        var p = ToPosition(x, y);
+        if (!_glyphs.ContainsKey(p))
+            return Color.Transparent;
+        return _glyphs[p].Bg;
+    }
+    
     public Color GetFg(int x, int y)
     {
         var p = ToPosition(x, y);

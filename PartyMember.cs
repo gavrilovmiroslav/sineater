@@ -193,7 +193,6 @@ public interface ICharacter
 {
     public int X { get; set; }
     public int Y { get; set; }
-    public Track Hits { get; set; }
     public Track Guard { get; set; }    
     public bool Render { get; set; }
     public Stats Stats { get; set; }
@@ -315,21 +314,13 @@ public abstract class Character : ICharacter
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
     
-    public void ForceRestart(CombatMapScreen screen)
+    public void ForceRestart(Screen screen)
     {
         MovementLeft = Stats.Initiative;
         HasTurn = true;
         Attacks.Clear();
         SelectedMove = null;
         IsDone = false;
-        
-        if (Item is { } item)
-        {
-            foreach (var mov in item.AvailableMoves)
-            {
-                screen.CoroutineHandler.Run(mov.Perform(this, screen, false));
-            }
-        }
     }
     
     public bool CanSwapEnemies { get; set; } = false;
@@ -440,12 +431,12 @@ public abstract class Character : ICharacter
             var weight = 0.0f;
             if (GetLeftWeapon() is { } lw)
             {
-                weight += (int)lw.Weight / (float)lw.Level;
+                weight += (int)lw.Weight;
             }
             
             if (GetRightWeapon() is { } rw)
             {
-                weight += (int)rw.Weight / (float)rw.Level;
+                weight += (int)rw.Weight;
             }
             
             if (GetItem() is { } it)
@@ -453,7 +444,7 @@ public abstract class Character : ICharacter
                 weight += (int)it.Weight;
             }
 
-            return Math.Max(3.0f, weight);
+            return weight;
         }
     }
     
@@ -493,7 +484,6 @@ public abstract class Character : ICharacter
 
     public virtual int X { get; set; }
     public virtual int Y { get; set; }
-    public Track Hits { get; set; }
     public Track Guard { get; set; }
     public bool Render { get; set; } = true;
     
@@ -583,8 +573,7 @@ public class PartyMember : Character
             Job = job.Value;
             Console.WriteLine($"Created character with {Stats} and class: {Job}");
         }
-
-        Hits = Math.Min(Stats.Poise + Rnd.Instance.D2, 9);
+        
         Guard = 0;
     }
 
@@ -714,11 +703,6 @@ public record struct Party
         Characters[1].Stats.Clarity = 6;
         Characters[2].Stats.Poise = 6;
         Characters[3].Stats.Vigor = 6;
-
-        for (var i = 0; i < 4; i++)
-        {
-            Characters[i].Hits = Math.Min(9, Characters[i].Poi + Characters[i].Cla);
-        }
     }
         
     public int WorldSight {

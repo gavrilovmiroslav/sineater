@@ -1,28 +1,28 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SINEATER.Input;
 
 namespace SINEATER;
 
-public class CharacterSheetScreen : IScreen
+public class CharacterSheetScreen : Screen
 {
     private SineaterGame _game;
     private int _time = 0;
     private CoroutineHandler _coroutineHandler = new();
     private int _charIndex = 0;
     
-    public CharacterSheetScreen(SineaterGame game)
+    public CharacterSheetScreen(SineaterGame game) : base(game)
     {
-        _game = game;
     }
 
-    public void Initialize(SineaterGame game)
+    public override void Initialize(SineaterGame game)
     {
         _charIndex = _game.Party.Selected;
         if (_charIndex < 0) _charIndex = 0;
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         _time += gameTime.ElapsedGameTime.Milliseconds;
         if (_time > 1600)
@@ -40,7 +40,7 @@ public class CharacterSheetScreen : IScreen
         {
             _game.ScreenStack.Pop();
             _game.Layers["mrmo"].Clear();
-            _game.ScreenStack.Peek().Draw(gameTime);
+            //_game.ScreenStack.Peek().Draw(gameTime);
         }
 
         if (InputM.IsActive(EInputAction.ChacterSheetCycle))
@@ -49,10 +49,10 @@ public class CharacterSheetScreen : IScreen
         }
     }
 
-    public void Draw(GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime)
     {       
         var stack = _game.ScreenStack.ToArray();
-        stack[1].Draw(gameTime);
+        stack[1].Draw(batch, gameTime);
         
         var start = new Vector2(2, 3);
         var end = new Vector2(33, 16);

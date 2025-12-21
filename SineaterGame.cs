@@ -5,6 +5,7 @@ using SINEATER.Input;
 using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework.Input;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.steam;
 using SINEATER.ImGuiTools;
@@ -118,7 +119,7 @@ public class SineaterGame : Game
         var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0), new Vector2(0, 0));
         Layers.Add("portrait", portraitLayer);
         
-        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 32), new Vector2(0, 0));
+        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 60), new Vector2(0, 0));
         Layers.Add("portrait2", portrait2Layer);
 
         var statusLayer = new TextLayer(_statuses, new Vector2(Width / 16, Height / 16), new Vector2(16, 16),
@@ -268,20 +269,39 @@ public class SineaterGame : Game
         base.Update(gameTime);
     }
 
+    private int _x = 35, _y = 27, _w = -71, _h = -271;
     protected override void Draw(GameTime gameTime)
     {
         if (ScreenStack?.Peek() is { } screen)
         {
-            screen.Draw(gameTime);
+            screen.Draw(_spriteBatch, gameTime);
         }
         
         var focus = _focus.Get();
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
+
+        Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
+        RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
+        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h);
+        _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
+        
+        if (ScreenStack?.Peek() is { } scrn1)
+        {
+            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
+            scrn1.PreDraw(_spriteBatch, gameTime);
+            _spriteBatch.End();
+        }
         foreach (var layer in LayerNames)
         {
             Layers[layer].Draw(_spriteBatch);
+        }
+        if (ScreenStack?.Peek() is { } scrn2)
+        {
+            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
+            scrn2.PostDraw(_spriteBatch, gameTime);
+            _spriteBatch.End();
         }
         GraphicsDevice.SetRenderTarget(null);
         

@@ -5,17 +5,6 @@ namespace SINEATER.MoveLibrary;
 [Move]
 public class Bite : Move
 {
-    IEnumerable Attack(Character atk, Attack attack, Character def, CombatMapScreen screen)
-    {
-        def.Hits -= 1;
-        if (def.Hits <= 0)
-        {
-            def.Die();
-        }
-
-        yield return new WaitForSeconds(0.5f);
-    }
-    
     public override string Name { get; } = "Bite";
     public override string Description { get; } = "+5 movement.\nAttack for one damage ignoring guard.";
     public override EStatus[] Costs { get; } = [];

@@ -231,7 +231,7 @@ public record struct LevelStructure
                             {
                                 if (!Bestiary.Levels.ContainsKey(l)) continue;
                                 enm = Bestiary.Levels[l].ToList()[Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
-                                var cost = (enm.Stats.Score + enm.Hits) * enm.Sin;
+                                var cost = enm.Stats.Score * enm.Sin;
                                 if (res < cost)
                                 {
                                     res -= 10;
@@ -281,7 +281,7 @@ public record struct LevelStructure
                                                 Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
 
                                             //cost = (1 + enm.Crew) * l * 10;
-                                            cost = (enm.Stats.Score + enm.Hits) * enm.Sin;
+                                            cost = enm.Stats.Score * enm.Sin;
                                             if (res > cost)
                                             {
                                                 res -= cost;
@@ -316,7 +316,7 @@ public record struct LevelStructure
                                         enm = Bestiary.Levels[l].ToList()[
                                             Rnd.Instance.Next(0, Bestiary.Levels[l].Count)]();
                                         //cost = (1 + enm.Crew) * 10;
-                                        cost = (enm.Stats.Score + enm.Hits) * enm.Sin;
+                                        cost = enm.Stats.Score * enm.Sin;
                                         if (res > cost)
                                         {
                                             res -= cost;

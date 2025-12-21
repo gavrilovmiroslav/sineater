@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Input;
 
 namespace SINEATER;
@@ -8,7 +9,9 @@ public interface IScreen
 {
     public void Initialize(SineaterGame game);
     public void Update(GameTime gameTime);
-    public void Draw(GameTime gameTime);
+    public void PreDraw(SpriteBatch batch, GameTime gameTime);
+    public void Draw(SpriteBatch batch, GameTime gameTime);
+    public void PostDraw(SpriteBatch batch, GameTime gameTime);
 }
 
 public abstract class Screen : IScreen
@@ -81,9 +84,19 @@ public abstract class Screen : IScreen
 
     public abstract void Initialize(SineaterGame game);
     public abstract void Update(GameTime gameTime);
-    public abstract void Draw(GameTime gameTime);
-    public abstract void SubmenuActivate(string action);
-    
+
+    public virtual void PreDraw(SpriteBatch batch, GameTime gameTime)
+    {}
+
+    public abstract void Draw(SpriteBatch batch, GameTime gameTime);
+
+    public virtual void PostDraw(SpriteBatch batch, GameTime gameTime)
+    {}
+
+    public virtual void SubmenuActivate(string action)
+    {
+    }
+
     public bool CheckSubmenuInputs()
     {
         var isOpen = _submenu.Count > 0;

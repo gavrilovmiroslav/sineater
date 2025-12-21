@@ -205,7 +205,7 @@ public class FadeOutAndLeaveScreen(float seconds) : IEnumerable
         SineaterGame.Instance.ScreenStack.TryPop(out var _);
         if (SineaterGame.Instance.ScreenStack.TryPeek(out var screen))
         {
-            screen.Draw(new GameTime());
+            //screen.Draw(new GameTime());
         }
     }
 }

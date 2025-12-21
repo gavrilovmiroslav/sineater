@@ -43,12 +43,7 @@ public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc): IEn
     public IEnumerator GetEnumerator()
     {
         yield return new CoBlink(map);
-        SineaterGame.Instance.ScreenStack.Push(new CombatMapScreen(
-            SineaterGame.Instance, new CombatConfig()
-            {
-                Params = new CombatParameters(enc.ResourceCap, enc.MinEnemyLevel, enc.MaxEnemyLevel, enc.Reward),
-                Terrain = enc.Biome
-            }));
+        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance));
     }
 }
 
@@ -269,6 +264,10 @@ public class WorldMapScreen : Screen
         }
     }
 
+    public override void PostDraw(SpriteBatch batch, GameTime gameTime)
+    {
+    }
+
     public override void SubmenuActivate(string opt)
     {
         var (dx, dy) = _submenuDelta;
@@ -380,17 +379,18 @@ public class WorldMapScreen : Screen
         var (u, v) = chr.Job.GetImage();
         if (!noPlayer)
         {
+            var bgc = _game.Layers["map"].GetBg(x + 8, y + 2);
             if (_submenuDelta == (0, 0))
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
             }
             else
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
                 if (tick)
                 {
                     _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 2,
-                        new Glyph(8, 74 - 16, Color.Black, chr.Tint));
+                        new Glyph(8, 74 - 16, bgc, chr.Tint));
                 }
             }
         }
@@ -465,9 +465,6 @@ public class WorldMapScreen : Screen
             
             _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y - 1 + yoff, $"{character.Job.GetShortName()}", tint);
             _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y + yoff, $"{_positionStats[index]}", tint);
-            var hp = $"HP{character.Hits}";
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, hp, Color.White);
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -11 - hp.Length : 0), 5 * y + yoff + 1, $"HP", tint);
             
             _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA  ", tint);
             _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI  ", tint);
@@ -517,7 +514,7 @@ public class WorldMapScreen : Screen
         }
     }
     
-    public override void Draw(GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
         if (CoroutineHandler.IsActive())
         {
