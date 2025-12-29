@@ -760,20 +760,6 @@ public class CombatMapScreen : Screen
                     _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
                 }
 
-                if (character.GetLeftWeapon() is { } lw)
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
-
-                if (character.GetRightWeapon() is { } rw)
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
-
-                if (character.GetItem() is { } it)
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
 
                 if (index < 2)
                 {
@@ -860,16 +846,6 @@ public class CombatMapScreen : Screen
 
     private bool _inspectMode = false;
     public Character? AttackTarget = null;
-    
-    private void StartActionSubmenu(Character current)
-    {
-        _submenuDelta = (0, 0);
-                    
-        StartSubmenu([
-            ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*")),
-            "END TURN"
-        ]);
-    }
     
     private void CheckPlayerInputs()
     {

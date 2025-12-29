@@ -65,34 +65,5 @@ public class CharacterSheetScreen : Screen
         var prt = chr.GetPortait();
         _game.Layers["portrait"].Set(1, 1, new Glyph(prt.Item1, prt.Item2, Color.Black, chr.Tint));
 
-        var (u, v) = ItemLibrary.EmptyUv;
-        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: --");
-        if (chr.LeftWeapon is { } lw)
-        {
-            (u, v) = lw.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 3, $"LEFT HAND: {lw.GetName()}");
-        }
-        _game.Layers["porsmol"].Set(1, 2, new Glyph(u, v, Color.Black, chr.Tint));
-        
-        (u, v) = ItemLibrary.EmptyUv;
-        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 5, $"ARMOR: --");
-        
-        (u, v) = ItemLibrary.EmptyUv;
-        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: --");
-        if (chr.Item is { } item)
-        {
-            (u, v) = item.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 6, $"ITEM: {item.Name}");
-        }
-        _game.Layers["porsmol"].Set(3, 4, new Glyph(u, v, Color.Black, chr.Tint));
-
-        (u, v) = ItemLibrary.EmptyUv;
-        _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: --");
-        if (chr.RightWeapon is { } rw)
-        {
-            (u, v) = rw.Picture;
-            _game.Layers["ascii"].Set((int)start.X * 2 + 25, (int)start.Y + 4, $"RIGHT HAND: {rw.GetName()}");
-        }
-        _game.Layers["porsmol"].Set(4, 2, new Glyph(u, v, Color.Black, chr.Tint));
     }
 }

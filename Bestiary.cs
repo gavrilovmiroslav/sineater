@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using SINEATER.MoveLibrary;
 using Wintellect.PowerCollections;
 
 namespace SINEATER;
@@ -24,9 +23,6 @@ public static class Bestiary
         var bat = new Enemy
         {
             Name = "Bat",
-            Level = 1,
-            Crew = 0,
-            CrewChoice = ECrewChoice.None,
             Icon = (7, 65),
             DeadIcon = (8, 65),
             Portrait = (5, 1),
@@ -34,11 +30,8 @@ public static class Bestiary
             Guard = 0,
             Tint = Color.Red,
             Stats = new Stats(2, 2, 1, 4),
-            Stamina = 1,
         };
 
-        bat.Moves.Add(new Fly());
-        bat.Moves.Add(new Bite());
         bat.Init();
         return bat;
     }
@@ -48,9 +41,6 @@ public static class Bestiary
         var gob = new Enemy
         {
             Name = "Goblin",
-            Level = 2,
-            Crew = 2 + Rnd.Instance.D4,
-            CrewChoice = ECrewChoice.Companion,
             Icon = (5, 64),
             DeadIcon = (8, 65),
             Portrait = (0, 2),
@@ -58,12 +48,9 @@ public static class Bestiary
             Guard = 0,
             Tint = Color.LightGreen,
             Stats = new Stats(4, 3, 2, 4),
-            Stamina = 2,
         };
         
-        gob.Moves.Add(new Walk());
-        gob.Moves.Add(new Bite());
-        gob.RightWeapon = ItemLibrary.GetWeapon("Dagger");
+        gob.Equip(ItemLibrary.GetWeapon("Dagger"));
         gob.Init();
         return gob;
     }
@@ -73,9 +60,6 @@ public static class Bestiary
         var gob = new Enemy
         {
             Name = "Hobgob",
-            Level = 3,
-            Crew = 3 + Rnd.Instance.D4,
-            CrewChoice = ECrewChoice.Minions,
             Icon = (6, 64),
             DeadIcon = (8, 65),
             Portrait = (1, 2),
@@ -83,12 +67,10 @@ public static class Bestiary
             Guard = 0,
             Tint = Color.Red,
             Stats = new Stats(5, 2, 3, 5),
-            Stamina = 3,
         };
 
-        gob.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
-        gob.RightWeapon = ItemLibrary.GetWeapon("Wood Shield");
-        gob.Moves.Add(new Walk());
+        gob.Equip(ItemLibrary.GetWeapon("Dagger"));
+        gob.Equip(ItemLibrary.GetWeapon("Wood Shield"));
         gob.Init();
         return gob;
     }
@@ -98,9 +80,6 @@ public static class Bestiary
         var skel = new Enemy
         {
             Name = "Skel",
-            Level = 2,
-            Crew = 2 + Rnd.Instance.D4,
-            CrewChoice = ECrewChoice.Minions,
             Icon = (3, 64),
             DeadIcon = (9, 65),
             Portrait = (2, 2),
@@ -108,11 +87,10 @@ public static class Bestiary
             Guard = 0,
             Tint = Color.Red,
             Stats = new Stats(5, 4, 1, 6),
-            Stamina = 4,
         };
         
-        skel.LeftWeapon = ItemLibrary.GetWeapon("Dagger");
-        skel.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
+        skel.Equip(ItemLibrary.GetWeapon("Dagger"));
+        skel.Equip(ItemLibrary.GetWeapon("Round Shield"));
         skel.Init();
         return skel;
     }
@@ -122,9 +100,6 @@ public static class Bestiary
         var skul = new Enemy
         {
             Name = "Skul",
-            Level = 3,
-            Crew = 3 + Rnd.Instance.D4,
-            CrewChoice = ECrewChoice.Minions,
             Icon = (4, 64),
             DeadIcon = (9, 65),
             Portrait = (4, 2),
@@ -132,11 +107,10 @@ public static class Bestiary
             Guard = 0,
             Tint = Color.Red,
             Stats = new Stats(3, 5, 6, 6),
-            Stamina = 5,
         };
 
-        skul.LeftWeapon = ItemLibrary.GetWeapon("Claymore");
-        skul.RightWeapon = ItemLibrary.GetWeapon("Round Shield");
+        skul.Equip(ItemLibrary.GetWeapon("Claymore"));
+        skul.Equip(ItemLibrary.GetWeapon("Round Shield"));
         skul.Init();
         return skul;
     }
@@ -146,9 +120,6 @@ public static class Bestiary
         var snek = new Enemy
         {
             Name = "Snek",
-            Level = 3,
-            Crew = Rnd.Instance.D2 - 1,
-            CrewChoice = ECrewChoice.Companion,
             Icon = (2, 64),
             DeadIcon = (9, 65),
             Portrait = (4, 3),
@@ -156,10 +127,7 @@ public static class Bestiary
             Guard = 1,
             Tint = Color.Green,
             Stats = new Stats(6, 6, 6, 6),
-            Stamina = 6,
         };
-
-        snek.Moves.Add(new Slither());
         
         snek.Init();
         return snek;

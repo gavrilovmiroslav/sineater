@@ -27,7 +27,7 @@ namespace SINEATER.Serialization
                 TypeNameHandling = TypeNameHandling.Objects,
             });
 
-            result =  deserializedObject;
+            result = deserializedObject;
         }
         public static void Serialize<T>(T target, JsonSerializerSettings settings)
         {

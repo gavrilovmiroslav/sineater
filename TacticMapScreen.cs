@@ -322,20 +322,17 @@ public class TacticMapScreen : Screen
                     _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
                 }
 
-                if (character.GetLeftWeapon() is { } lw)
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3, $"{lw.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3, "[WEAPON]", Color.Gray);
-                
-                if (character.GetRightWeapon() is { } rw)
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4, $"{rw.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4, "[FOCUS]", Color.Gray);
-                
-                if (character.GetItem() is { } it)
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5, $"{it.Name}", tint);
-                else
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5, "[TRINKET]", Color.Gray);
+                for (int ix = 0; ix < 4; ix++)
+                {
+                    if (character.GetItem((EStat)ix) is { } item)
+                    {
+                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"{item.Name}", tint);    
+                    }
+                    else
+                    {
+                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                    }
+                }
 
                 if (index < 2)
                 {
@@ -431,16 +428,6 @@ public class TacticMapScreen : Screen
 
     private bool _inspectMode = false;
     public Character? AttackTarget = null;
-    
-    private void StartActionSubmenu(Character current)
-    {
-        _submenuDelta = (0, 0);
-                    
-        StartSubmenu([
-            ..current.CurrentMoves.Select(n => n.Name.ToUpper() + (current.CanPay(n.Costs) ? "" : "*")),
-            "END TURN"
-        ]);
-    }
     
     private void CheckPlayerInputs()
     {

@@ -8,7 +8,7 @@ public record struct UnlockableMove(EStat? RequiredMaxStat, string Move);
 public record struct Upgrade(int Level, List<UnlockableMove> Moves);
 
 [JsonObject(MemberSerialization.OptIn)]
-public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightClass.Medium, List<string>? upgrades = null) : ICloneable
+public class Item(string name, (int U, int V) uv, EStat stat, int weight = 3) : ICloneable
 {
     public void Copy(Item original)
     {
@@ -19,7 +19,7 @@ public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightC
     public static Item Dummy(string name)
     {
         Console.WriteLine($"DUMMY REQUIRED FOR ITEM {name}");
-        return new Item($"!{name}", (0, 0));
+        return new Item($"!{name}", (0, 0), EStat.Clarity);
     }
     
     ~Item()
@@ -36,11 +36,11 @@ public class Item(string name, (int U, int V) uv, EWeightClass weight = EWeightC
     [JsonProperty]
     public virtual (int, int) Picture { get; set; } = (uv.U, uv.V);
     [JsonProperty]
-    public virtual EWeightClass Weight { get; set; } = weight;
+    public virtual int Weight { get; set; } = weight;
+    [JsonProperty]
+    public virtual EStat Stat { get; set; } = stat;
 #endregion // Serialization
 
-    public List<Move> AvailableMoves = [];
-    
     public virtual Glyph Glyph => Glyph.Bw(0, 0);
     
     public virtual string GetName()

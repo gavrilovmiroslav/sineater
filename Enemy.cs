@@ -13,14 +13,6 @@ public enum ECrewChoice
 
 public class Enemy : Character
 {
-    public bool NoMove = false;
-    public bool Active = false;
-    public bool ShouldWakeUp = false;
-    public int SleepyTime = -1;
-    public int Stamina = 0;
-    public int Level = 0;
-    public int Crew = 1;
-    public ECrewChoice CrewChoice = ECrewChoice.None;
     public int Wait = 3;
     public string Name;
     public ICharacter? LastHit = null;
@@ -34,11 +26,6 @@ public class Enemy : Character
     {
         var (x, y) = Icon;
         return (x, y + (selected ? -4 : 0));
-    }
-
-    public override void Done()
-    {
-        NoMove = true;
     }
 
     public override Color GetTint()
@@ -67,25 +54,6 @@ public class Enemy : Character
     {
         return Portrait;
     }
-    
-    public IEnumerable MoveTo(CombatMapScreen level, int x, int y, int? oldX = null, int? oldY = null)
-    {
-        var ox = X;
-        var oy = Y;
-        X = x;
-        Y = y;
-        
-        if (level.Domains.Tiles.ContainsKey(((int)X, (int)Y)))
-        {
-            level.DrawCombat();
-            yield return level.Domains.Tiles[((int)X, (int)Y)]
-                .ApplyOnDomainStepped(level, this, X, Y, oldX ?? ox, oldY ?? oy);
-        }
-    }
-
-    public Enemy()
-    {
-    }
 
     public void Init()
     {
@@ -95,18 +63,15 @@ public class Enemy : Character
     public Enemy Copy()
     {
         var enemy = new Enemy();
-        enemy.AP = new AP(AP, AP.Width);
         enemy.X = X;
         enemy.Y = Y;
         enemy.Stats.Clarity = this.Stats.Clarity;
         enemy.Stats.Will = this.Stats.Will;
         enemy.Stats.Poise = this.Stats.Poise;
         enemy.Stats.Vigor = this.Stats.Vigor;
-        foreach (var atk in Attacks) enemy.Attacks.Add(atk);
-        foreach (var mov in Moves) enemy.Moves.Add(mov);
-        enemy.Item = Item;
-        enemy.LeftWeapon = LeftWeapon;
-        enemy.RightWeapon = RightWeapon;
+        
+        for (var i = 0; i < 4; i++)
+            enemy.Items[i] = Items[i];
 
         return enemy;
     }

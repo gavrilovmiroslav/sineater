@@ -42,7 +42,7 @@ public static class ItemLibrary
     private const string APPS_ID = "1kzTUrcQpxx3vMJMXeVwM_ElqcgJGzOqexxmldqwrszk";
 
     private const string APPS_SCRIPT =
-        "https://script.google.com/macros/s/AKfycbw6WgnV0V68COh2LKJV1SQp2lTHAtvDdOMNX0gjLRig4sck0qqXM67HKEBwFtGg9TMIsQ/exec";
+        "https://script.google.com/macros/s/AKfycbwaExz_SGABNLoOF9lXIa8B4JFh52iFnLbZcAh9ZF7WSKD-c3YQI50L_2i_UjfC2NBj/exec";
 
     public static void LoadItems(ContentManager content)
     {
@@ -56,9 +56,9 @@ public static class ItemLibrary
         
         var res = new SpreadsheetsResource.ValuesResource(service);
         var key = Environment.UserName.ToUpper()[0];
-        var v = res.Get(APPS_ID, $"GENERIC!{key}40").Execute();
+        var v = res.Get(APPS_ID, $"GENERIC!R3").Execute();
         if (v.Values != null) {
-            Console.WriteLine("LOADING NEW CONTENT FROM ONLINE: " + $"GENERIC!{key}40");
+            Console.WriteLine("LOADING NEW CONTENT FROM ONLINE: " + $"GENERIC!R3");
             var t = Task.Run(async () =>
             {
                 var json = await Get(APPS_SCRIPT);
@@ -81,7 +81,7 @@ public static class ItemLibrary
             
             t.Wait();
             Console.WriteLine("NEW JSON LOADED FROM ONLINE");
-            res.Clear(new ClearValuesRequest(), APPS_ID, $"GENERIC!{key}40").Execute();
+            res.Clear(new ClearValuesRequest(), APPS_ID, $"GENERIC!R3").Execute();
         }
         else
         {

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using SINEATER.MoveLibrary;
 using static SINEATER.Extensions;
 
 namespace SINEATER;
@@ -199,12 +198,9 @@ public interface ICharacter
     public Stats Bonus { get; set; }
     public List<string> Tags { get; set; }
     public Color GetTint();
-    public void EquipLeftWeapon(Weapon? weapon);
-    public Weapon? GetLeftWeapon();
-    public void EquipRightWeapon(Weapon? weapon);
-    public Weapon? GetRightWeapon();
-    public void EquipItem(Item? item);
-    public Item? GetItem();
+    public void Equip(EStat stat, Item? item);
+    public void Equip(Item item);
+    public Item? GetItem(EStat stat);
     public AP GetAP();
     
     public string GetName();
@@ -227,6 +223,19 @@ public class Dummy : ICharacter
     public Color GetTint()
     {
         return Color.White;
+    }
+
+    public void Equip(EStat stat, Item? item)
+    {
+    }
+
+    public void Equip(Item item)
+    {
+    }
+
+    public Item? GetItem(EStat stat)
+    {
+        return null;
     }
 
     public void EquipLeftWeapon(Weapon? weapon)
@@ -331,30 +340,6 @@ public abstract class Character : ICharacter
     public bool IsDone { get; set; } = false;
     public bool IsRightHanded { get; set; } = true;
     
-    public List<Move> Moves = [];
-
-    public List<Move> CurrentMoves => AvailableMoves.Distinct().ToList();
-    
-    public IEnumerable<Move> AvailableMoves {
-        get
-        {
-            foreach (var move in Moves)
-            {
-                yield return move;
-            }
-            
-            foreach (var move in LeftWeapon?.AvailableMoves ?? [])
-            {
-                yield return move;
-            }
-            
-            foreach (var move in RightWeapon?.AvailableMoves ?? [])
-            {
-                yield return move;
-            }
-        }
-    }
-    
     public bool CanPay(EStatus[] costs)
     {
         var stamina = AP.Count(EStatus.Stamina);
@@ -402,46 +387,18 @@ public abstract class Character : ICharacter
         return !(stamina < 0 || fatigue < 0 || fire < 0 || ice < 0 || wound < 0 || death < 0 || sin < 0 || insanity < 0);
     }
     
-    public IEnumerable<Item> GetGear()
-    {
-        if (GetItem() is { } item)
-            yield return item;
-
-        if (!IsRightHanded)
-        {
-            if (GetLeftWeapon() is { } lhs)
-                yield return lhs;
-            if (GetRightWeapon() is { } rhs)
-                yield return rhs;
-        }
-        else
-        {
-            if (GetRightWeapon() is { } rhs)
-                yield return rhs;
-            if (GetLeftWeapon() is { } lhs)
-                yield return lhs;
-        }
-    }
-    
     public float Weight
     {
-        // =MAX(3,IFERROR(I8/ATK_LH_LEVEL,0)+IFERROR(I9/ATK_RH_LEVEL,0)+I10)
         get
         {
             var weight = 0.0f;
-            if (GetLeftWeapon() is { } lw)
+
+            foreach (var item in Items)
             {
-                weight += (int)lw.Weight;
-            }
-            
-            if (GetRightWeapon() is { } rw)
-            {
-                weight += (int)rw.Weight;
-            }
-            
-            if (GetItem() is { } it)
-            {
-                weight += (int)it.Weight;
+                if (item != null)
+                {
+                    weight += (int)item.Weight;
+                }
             }
 
             return weight;
@@ -449,10 +406,16 @@ public abstract class Character : ICharacter
     }
     
     public float WeightFactor => (Cla + Poi) / Math.Max(0.1f, Weight);
-    
-    public Item? GetItem()
+
+    public void Equip(Item? item)
     {
-        return Item;
+        if (item != null)
+            Equip(item.Stat, item);
+    }
+
+    public Item? GetItem(EStat stat)
+    {
+        return Items[(int)stat];
     }
 
     public AP GetAP()
@@ -471,15 +434,18 @@ public abstract class Character : ICharacter
     public int Index;
     public Color Tint;
     public ECharacterClass Job;
-    public Weapon? LeftWeapon = null;
-    public Weapon? RightWeapon = null;
-    public Item? Item = null;
+    public Item?[] Items = new Item?[4];
     public Ability? Ability = null;
     public AP AP;
     
     public virtual Color GetTint()
     {
         return Tint;
+    }
+
+    public void Equip(EStat stat, Item? item)
+    {
+        Items[(int)stat] = item;
     }
 
     public virtual int X { get; set; }
@@ -489,26 +455,6 @@ public abstract class Character : ICharacter
     
     public Stats Stats { get; set; } = new();
     
-    public Weapon? GetLeftWeapon()
-    {
-        return LeftWeapon;
-    }
-
-    public Weapon? GetRightWeapon()
-    {
-        return RightWeapon;
-    }
-
-    public void EquipItem(Item? item)
-    {
-        Item = item;
-    }
-    
-    public bool IsStunned()
-    {
-        return false;
-    }
-
     public virtual string GetName()
     {
         return Job.ToString();
@@ -521,27 +467,12 @@ public abstract class Character : ICharacter
 
     public virtual void Die()
     {}
-
-    public void EquipLeftWeapon(Weapon? weapon)
-    {
-        LeftWeapon = weapon;
-    }
-    
-    public void EquipRightWeapon(Weapon? weapon)
-    {
-        RightWeapon = weapon;
-    }
     
     public virtual void Done()
     {
         IsDone = true;
     }
-
-    public void RemoveItem()
-    {
-        this.EquipItem(null);
-    }
-
+    
     public IEnumerable Pay(EStatus[] costs)
     {
         foreach (var cost in costs)
@@ -633,68 +564,59 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Ash Branch"));
-                    Characters[i].Loudness = ELoudness.Loud;
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Ash Branch"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 3;
-                    Characters[i].Moves.Add(new Pray());
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
-                    Characters[i].Loudness = ELoudness.Quiet;
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Kris"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Old Bell"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Kris"));
+                    Characters[i].Equip(ItemLibrary.GetItem("Old Bell"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
                     Characters[i].Stats.Vigor = 3;
-                    Characters[i].Moves.Add(new OpenDomain());
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].Loudness = ELoudness.Loud;
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Red Sign"));
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Claymore"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Ruby Plate"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Red Sign"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Claymore"));
+                    Characters[i].Equip(ItemLibrary.GetItem("Ruby Plate"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
-                    Characters[i].Moves.Add(new Bash());
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].EquipRightWeapon(ItemLibrary.GetWeapon("Skolm Staff"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Soft Tunic"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Skolm Staff"));
+                    Characters[i].Equip(ItemLibrary.GetItem("Soft Tunic"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].Loudness = ELoudness.Quiet;
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Misericorde"));
-                    Characters[i].EquipItem(ItemLibrary.GetItem("Sash"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Misericorde"));
+                    Characters[i].Equip(ItemLibrary.GetItem("Sash"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 3;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Thorn Whip"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 4;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].Loudness = ELoudness.Silent;
-                    Characters[i].EquipLeftWeapon(ItemLibrary.GetWeapon("Dagger"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Dagger"));
                     Characters[i].Stats.Will = 6;
                     Characters[i].Stats.Clarity = 6;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 2;
-                    Characters[i].Moves.Add(new Steal());
                     break;
             }
         }

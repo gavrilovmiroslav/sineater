@@ -484,21 +484,18 @@ public class WorldMapScreen : Screen
                 _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
             }
 
-            if (character.GetLeftWeapon() is {} lw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, $"{lw.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 7 + yoff, "[LEFT ARM]", Color.Gray);
-            
-            if (character.GetRightWeapon() is {} rw)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, $"{rw.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 8 + yoff, "[RIGHT ARM]", Color.Gray);
-            
-            if (character.GetItem() is {} it)
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, $"{it.Name}", tint);
-            else
-                _game.Layers["ascii"].Set(20 * x + 2 + xoff, 5 * y + 9 + yoff, "[EQUIPMENT]", Color.Gray);
-            
+            for (int ix = 0; ix < 4; ix++)
+            {
+                if (character.GetItem((EStat)ix) is { } item)
+                {
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"{item.Name}", tint);    
+                }
+                else
+                {
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                }
+            }
+
             if (index < 2)
             {
                 _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
