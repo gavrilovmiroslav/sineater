@@ -32,6 +32,10 @@ public static class Bestiary
             Stats = new Stats(2, 2, 1, 4),
         };
 
+        bat.Equip(EStat.Poise, ItemLibrary.GetWeapon("Fang"));
+        bat.Equip(EStat.Clarity, ItemLibrary.GetWeapon("Fang"));
+        bat.Equip(EStat.Vigor, ItemLibrary.GetWeapon("Fang"));
+        bat.Equip(EStat.Will, ItemLibrary.GetWeapon("Fang"));
         bat.Init();
         return bat;
     }
@@ -64,13 +68,13 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (1, 2),
             Sin = 3,
-            Guard = 0,
+            Guard = 3,
             Tint = Color.Red,
             Stats = new Stats(5, 2, 3, 5),
         };
 
-        gob.Equip(ItemLibrary.GetWeapon("Dagger"));
-        gob.Equip(ItemLibrary.GetWeapon("Wood Shield"));
+        gob.Equip(ItemLibrary.GetWeapon("Claymore"));
+        gob.Equip(ItemLibrary.GetWeapon("Red Sign"));
         gob.Init();
         return gob;
     }
@@ -124,11 +128,13 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (4, 3),
             Sin = 5 + Rnd.Instance.D2,
-            Guard = 1,
+            Guard = 5,
             Tint = Color.Green,
             Stats = new Stats(6, 6, 6, 6),
         };
         
+        snek.Equip(ItemLibrary.GetWeapon("Claymore"));
+        snek.Equip(ItemLibrary.GetWeapon("Thorn Whip"));
         snek.Init();
         return snek;
     }

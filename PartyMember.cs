@@ -93,6 +93,7 @@ public static class ECharacterClassExtensions
 
 public enum EStat
 {
+    None = 0,
     Will = 1,
     Clarity = 2,
     Poise = 3,
@@ -415,7 +416,7 @@ public abstract class Character : ICharacter
 
     public Item? GetItem(EStat stat)
     {
-        return Items[(int)stat];
+        return Items[(int)stat - 1];
     }
 
     public AP GetAP()
@@ -435,7 +436,6 @@ public abstract class Character : ICharacter
     public Color Tint;
     public ECharacterClass Job;
     public Item?[] Items = new Item?[4];
-    public Ability? Ability = null;
     public AP AP;
     
     public virtual Color GetTint()
@@ -445,7 +445,8 @@ public abstract class Character : ICharacter
 
     public void Equip(EStat stat, Item? item)
     {
-        Items[(int)stat] = item;
+        if (stat == EStat.None) return;
+        Items[(int)stat - 1] = item;
     }
 
     public virtual int X { get; set; }

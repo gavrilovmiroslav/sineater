@@ -1,9 +1,9 @@
 namespace SINEATER;
 
-public class Track(int current)
+public class Track(int current, int max = 9)
 {
     private int _current = current;
-    private int _max = current;
+    private int _max = max;
 
     public static implicit operator Track(int n)
     {

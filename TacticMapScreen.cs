@@ -15,19 +15,6 @@ namespace SINEATER;
 public class TacticMapScreen : Screen
 {
     private static readonly (int X, int Y)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
-
-    private static readonly (EOrder Side, EAction Action)[] TurnOrder = [
-        (EOrder.Player, EAction.Move),
-        (EOrder.Player, EAction.Special),
-        (EOrder.Player, EAction.Attack),
-        (EOrder.Player, EAction.Rest),
-        (EOrder.CPU, EAction.Move),
-        (EOrder.CPU, EAction.Special),
-        (EOrder.CPU, EAction.Attack),
-        (EOrder.CPU, EAction.Rest),
-    ];
-
-    public int TurnOrderIndex = 0;
     
     private ETerrainKind _kind;
     public LevelStructure Structure;
@@ -43,27 +30,25 @@ public class TacticMapScreen : Screen
 
     public Domains Domains;
     public IMap? Map => Structure.Map;
-    //public List<Character> InitiativeOrder = [];
-    //public Character? InitiativeCurrent => InitiativeOrder.First();
 
     private List<Texture2D> _city = [];
     private Texture2D _pixel;
 
     private float[] _times = [ 50, 50, 50, 50, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
-    private Enemy[] _enemies = [Bestiary.Bat(), Bestiary.Bat(), Bestiary.Bat(), Bestiary.Bat()];
+    private Enemy[] _enemies = [Bestiary.Bat(), Bestiary.Hobgoblin(), Bestiary.Snek(), Bestiary.Snek()];
     private Queue<Character> _turn = [];
-    private Character? _currentTurn = null;
-
-    private void Regenerate(bool resize) {
-        if (resize)
-        {
-            this._width = _fullWidth - 2;
-            this._height = _fullHeight - 2;
-        }
-    }
 
     public TacticMapScreen(SineaterGame game) : base(game)
     {
+        foreach (var p in _game.Party.Characters)
+        {
+            p.Guard = 1;
+        }
+
+        foreach (var e in _enemies)
+        {
+            e.Guard = 1;
+        }
     }
 
     public override void Initialize(SineaterGame game)
@@ -102,15 +87,90 @@ public class TacticMapScreen : Screen
         if (_turn.Count > 0)
         {
             var first = _turn.Peek();
-            if (first is PartyMember pm && _currentTurn == null)
+
+            Character[] friends = [];
+            Character[] enemies = [];
+            
+            if (first is PartyMember pm)
             {
-                _currentTurn = first;
-                StartSubmenu([ "DEFEND" ]);
+                friends = _game.Party.Characters;
+                enemies = _enemies;
             }
             else if (first is Enemy enm)
             {
-                Next();
+                friends = _enemies;
+                enemies = _game.Party.Characters;
             }
+            
+            for (var i = 0; i < 4; i++)
+            {
+                if (first == friends[i])
+                {
+                    var stat = (EStat)(i + 1);
+                    for (var w = 0; w < 4; w++)
+                    {
+                        if (first.GetItem((EStat)(w + 1)) is Weapon weapon)
+                        {
+                            if (weapon.From[w] != '-')
+                            {
+                                Console.WriteLine($"{first.GetName()} uses ${weapon.Name}");
+                                var atk = weapon.Attack;
+                                var grd = weapon.Guard;
+
+                                if (i == w)
+                                {
+                                    Console.WriteLine($"It is super-effective on {stat}!");
+                                    atk += (int)Math.Min(1, MathF.Ceiling(atk * (float)weapon.Quality / 10.0f));
+                                    grd += (int)Math.Min(1, MathF.Ceiling(grd * (float)weapon.Quality / 10.0f));
+                                }
+
+                                Console.WriteLine($"Guard up for {first.GetName()} by {grd}");
+                                first.Guard.Up(grd);
+                                
+                                var indices = new List<int>();
+                                var all = false;
+                                for (var e = 0; e < 4; e++)
+                                {
+                                    if (weapon.ToEnemy[e] == 'x' || weapon.ToEnemy[e] == 'X')
+                                    {
+                                        all |= weapon.ToEnemy[e] == 'X';
+                                        indices.Add(e);
+                                    }
+                                }
+
+                                if (!all)
+                                {
+                                    if (indices.Count > 0)
+                                    {
+                                        indices = [indices[Rnd.Instance.Next(0, indices.Count)]];
+                                    }
+                                }
+
+                                foreach (var idx in indices)
+                                {
+                                    if (enemies[idx].Guard == 0)
+                                    {
+                                        foreach (var e in enemies)
+                                        {
+                                            if (e.Guard > 0)
+                                            {
+                                                e.Guard.Down(1);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        enemies[idx].Guard.Down(atk);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Next();
         }
     }
     
@@ -121,10 +181,6 @@ public class TacticMapScreen : Screen
             ch.ForceRestart(this);
         }
         
-        // foreach (var dom in Domains._domains)
-        // {
-        //     dom.Update(this);
-        // }
         yield break;
     }
 
@@ -134,58 +190,8 @@ public class TacticMapScreen : Screen
         {
             pm.SetOrigin();
             pm.IsDone = false;
-            CalculateZone(pm);
         }
         yield break;
-    }
-    
-    public void CalculateZone(PartyMember w)
-    {
-        w.Zone.Clear();
-        var dis = new DistanceMap(Structure, false, [w.Origin], Predicate.Walkable);
-        var walkRadius = w.MovementLeft;
-        w.Zone = dis.GetAllBeneath(walkRadius + 1).ToHashSet();
-        w.Zone.IntersectWith(Structure.Map.
-            GetCellsInCircle(w.Origin.X, w.Origin.Y, walkRadius).
-            Select(Predicate.CellToPosition).ToHashSet());
-    }
-
-    public bool CheckSubmenuInputs()
-    {
-        var isOpen = _submenu.Count > 0;
-        if (isOpen)
-        {
-            if (InputM.IsActive(EInputAction.SubmenuUp))
-            {
-                if (_submenuSelection == 0)
-                {
-                    _submenuSelection = _submenu.Count - 1;
-                }
-                else
-                {
-                    _submenuSelection--;
-                }
-            }
-            else if (InputM.IsActive(EInputAction.SubmenuDown))
-            {
-                if (_submenuSelection == _submenu.Count - 1)
-                {
-                    _submenuSelection = 0;
-                }
-                else
-                {
-                    _submenuSelection++;
-                }
-            }
-            else if (InputM.IsActive(EInputAction.SubmenuConfirm))
-            {
-                var opt = _submenu[_submenuSelection];
-                _submenu.Clear();
-                SubmenuActivate(opt);
-            }
-        }
-
-        return isOpen;
     }
     
     internal void DrawCombat(bool onlyNow = false)
@@ -206,14 +212,16 @@ public class TacticMapScreen : Screen
         foreach (var p in SineaterGame.Instance.Party.Characters)
         {
             var (u, v) = p.Job.GetImage();
-            Draw(6 - i * 2 - 4, 12, new Glyph(u, v, Color.Transparent, p.Tint)); ;
+            Draw(6 + i * 2 - 10, 12, new Glyph(u, v, Color.Transparent, p.Tint));
+            Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
             i++;
         }
         
         foreach (var p in _enemies)
         {
             var (u, v) = p.GetIcon();
-            Draw(5 + i * 2 + 4, 12, new Glyph(u, v, Color.Transparent, p.Tint));
+            Draw(5 + (4 - i) * 2 + 18, 12, new Glyph(u, v, Color.Transparent, p.Tint));
+            Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
             i++;
         }
     }
@@ -243,7 +251,7 @@ public class TacticMapScreen : Screen
     }
     
     private readonly List<(int, int)> _positions = [
-        (1, 3), (2, 3), (0, 3), (3, 3)
+        (0, 3), (1, 3), (2, 3), (3, 3)
     ];
     
     private void DrawSubmenu()
@@ -286,67 +294,71 @@ public class TacticMapScreen : Screen
         var h = 19;
         var index = 0;
         
-        foreach (var character in _game.Party.Characters)
+        for (var c = 0; c < 4; c++)
         {
-            if (drawSet.Contains(character))
+            if (_game.Party.Characters[c] is { } character)
             {
-                var (m, r) = character.Job.GetImage();
-                var (u, v) = character.GetPortait();
-                var (x, y) = _positions[index];
-                var tint = character.Tint;
-
-                if (colorOverride is { } color)
+                if (drawSet.Contains(character))
                 {
-                    tint = color;
-                }
+                    var (m, r) = character.Job.GetImage();
+                    var (u, v) = character.GetPortait();
+                    var (x, y) = _positions[index];
+                    var tint = character.Tint;
 
-                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
-                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
-
-                if (character == cha)
-                {
-                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
-                        cwil == null ? Color.White : Color.Yellow);
-                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
-                        ccla == null ? Color.White : Color.Yellow);
-                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
-                        cvig == null ? Color.White : Color.Yellow);
-                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
-                        cpoi == null ? Color.White : Color.Yellow);
-                }
-                else
-                {
-                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
-                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
-                    _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
-                    _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
-                }
-
-                for (int ix = 0; ix < 4; ix++)
-                {
-                    if (character.GetItem((EStat)ix) is { } item)
+                    if (colorOverride is { } color)
                     {
-                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"{item.Name}", tint);    
+                        tint = color;
+                    }
+
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
+
+                    if (character == cha)
+                    {
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
+                            cwil == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
+                            ccla == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
+                            cvig == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
+                            cpoi == null ? Color.White : Color.Yellow);
                     }
                     else
                     {
-                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
+                    }
+
+                    for (int ix = 1; ix <= 4; ix++)
+                    {
+                        if (character.GetItem((EStat)ix) is { } item)
+                        {
+                            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
+                        }
+                        else
+                        {
+                            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
+                                $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                        }
+                    }
+
+                    if (index < 2)
+                    {
+                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
+                    }
+                    else
+                    {
+                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
                     }
                 }
 
-                if (index < 2)
-                {
-                    _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                    _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                }
-                else
-                {
-                    _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                    _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                }
+                index++;
             }
-
-            index++;
         }
     }
     
@@ -373,7 +385,7 @@ public class TacticMapScreen : Screen
     
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
     {
-        var slowdown = _turn.Count > 0 ? 0.25f : 1.0f;
+        var slowdown = 1.0f;
         var i = 0;
         foreach (var img in _city)
         {
@@ -391,12 +403,21 @@ public class TacticMapScreen : Screen
             var p = _game.Party.Characters[n];
             var speed = p.Vig + p.Wil + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
             var t = _times[n];
-            _times[n] = Math.Clamp(_times[n] + slowdown * speed * ((float)gameTime.ElapsedGameTime.Milliseconds / 1000.0f), 0, 100);
+
+            if (p.Guard <= 0)
+            {
+                slowdown = 0.25f;
+            }
+            
+            _times[n] = Math.Clamp(
+                _times[n] + slowdown * speed * ((float)gameTime.ElapsedGameTime.Milliseconds / 1000.0f), 0, 100);
+        
             if (t <= 100 && _times[n] >= 100)
             {
                 Console.WriteLine(p.Job.GetShortName());
                 _turn.Enqueue(p);
                 _times[n] = 0;
+                if (p.Guard <= 0) p.Guard.Up(1);
             }
         }
         
@@ -451,15 +472,5 @@ public class TacticMapScreen : Screen
         
         if (cancel)
             _submenu.Add("CANCEL");
-    }
-
-    public override void SubmenuActivate(string opt)
-    {
-        if (opt == "DEFEND")
-        {
-            _currentTurn = null;
-            Next();
-        }
-        DrawCombat();
     }
 }

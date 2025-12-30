@@ -486,7 +486,7 @@ public class WorldMapScreen : Screen
 
             for (int ix = 0; ix < 4; ix++)
             {
-                if (character.GetItem((EStat)ix) is { } item)
+                if (character.GetItem((EStat)(ix + 1)) is { } item)
                 {
                     _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"{item.Name}", tint);    
                 }
@@ -571,29 +571,7 @@ public class WorldMapScreen : Screen
     private void CheckPlayerInputs()
     {
         var current = _game.Party.Characters[PlayerSelectedIndex];
-        if (!_debug && InputM.IsActive(EInputAction.Ability))
-        {
-            var ability = current.Ability;
-            if (ability != null)
-            {
-                if (ability.CanBeUsed(current, current.X, current.Y) && current.AP.Count(EStatus.Stamina) > 0)
-                {
-                    CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
-                    {
-                        layer.Add("The witch burns sin to open a domain!");
-                    }, true));
-                    CoroutineHandler.Run(ability.Use(this, current, current.X, current.Y));
-                }
-                else
-                {
-                    CoroutineHandler.Run(new ShowPopupWindowAndWaitForKey((game, layer) =>
-                    {
-                        layer.Add("Not enough sin to open this domain...");
-                    }, true));
-                }
-            }
-        }
-        
+
         if (_submenu.Count > 0)
         {
             if (InputM.IsActive(EInputAction.SubmenuUp))
