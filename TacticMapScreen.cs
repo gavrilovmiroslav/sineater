@@ -132,7 +132,7 @@ public class TacticMapScreen : Screen
                     {
                         if (weapon.From[fi] != '-')
                         {
-                            _game.Layers["ascii"].Set(2, 0, $"[{stat}] {first.GetName()} uses {weapon.Name}.");
+                            _game.Layers["ascii"].Set(2, 0, $"[{stat}] {first.GetName()} uses {weapon.Name} {weapon.Profile}.");
                             yield return new WaitForSeconds(1f);
                             var atk = weapon.Attack;
                             var grd = weapon.Guard;

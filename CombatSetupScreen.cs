@@ -196,7 +196,7 @@ namespace SINEATER
             {
                 _game.ScreenStack.Pop();
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
-                CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
+                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
             else if (action == "CANCEL")
             {

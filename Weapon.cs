@@ -68,6 +68,25 @@ public class Weapon(string name, string from, string toParty, string toEnemy, in
 
     public Glyph Glyph => Glyph.Bw(14, 67);
 
+    public string Profile
+    {
+        get
+        {
+            if (ToParty.All(c => c == '-'))
+            {
+                var from = string.Join("", From.Select(c => c == '-' ? '.' : 'o'));
+                var into = string.Join("", ToEnemy.Select(c => c == '-' ? '.' : 'v'));
+                return $"FROM [{from}] -ATK{Attack}-> [{into}]";
+            }
+            else
+            {
+                var from = string.Join("", From.Select(c => c == '-' ? '.' : 'o'));
+                var into = string.Join("", ToParty.Select(c => c == '-' ? '.' : 'v'));
+                return $"FROM [{from}] -GRD +{Guard}-> [{into}]";
+            }
+        }
+    }
+
     public override string ToString()
     {
         return $"{Name}";
