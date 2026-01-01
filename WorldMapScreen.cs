@@ -282,8 +282,7 @@ public class WorldMapScreen : Screen
         {
             if (_world.Encounters.Has(x, y))
             {
-                var enc = _world.Encounters.Get(x, y);
-                CoroutineHandler.Run(new CoStartCombat(this, x, y, enc));
+                _game.ScreenStack.Push(new CombatSetupScreen(_game, x, y, this, _world.Encounters.Get(x,y)));
             }
         }
         
