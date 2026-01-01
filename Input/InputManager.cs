@@ -166,6 +166,8 @@ namespace SINEATER.Input
                     MakeAction(EInputAction.SelectNextCharacter, Keys.Tab, Buttons.RightTrigger),
                     MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
                     MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.Y, eInput: EInputTrigger.Down),
+                    MakeAction(EInputAction.StartFight, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.CancelFight, Keys.Escape, Buttons.B),
                 }
             });
         }

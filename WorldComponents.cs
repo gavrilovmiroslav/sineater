@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SINEATER;
 
@@ -29,11 +30,11 @@ public readonly record struct SpecificDescription(
     }
 }
 
-public readonly record struct Encounter(ETerrainKind Biome, int MinEnemyLevel, int MaxEnemyLevel, int ResourceCap, string Reward) : IWorldComponent
+public readonly record struct Encounter(List<Enemy> Enemies) : IWorldComponent
 {
     public bool IsOkay()
     {
-        return MaxEnemyLevel >= MinEnemyLevel && MinEnemyLevel > 0 && ResourceCap > 0;
+        return true;
     }
 }
 

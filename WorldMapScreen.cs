@@ -43,7 +43,7 @@ public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc): IEn
     public IEnumerator GetEnumerator()
     {
         yield return new CoBlink(map);
-        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance));
+        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, enc));
     }
 }
 
@@ -416,18 +416,16 @@ public class WorldMapScreen : Screen
         if (_world.Encounters.Has(nx, ny))
         {
             var enc = _world.Encounters.Get(nx, ny);
-            var hard = enc.ResourceCap switch
+
+           _game.Layers["ascii"].Set(35, 23, $"Encounter: ");
+
+            int i = 0;
+            foreach (var en in enc.Enemies)
             {
-                <= 100 => "Easy",
-                <= 200 => "Average",
-                <= 300 => "Hard",
-                <= 400 => "Severe",
-                <= 500 => "Insane",
-                _ => "Average"
-            };
-            _game.Layers["ascii"].Set(35, 22, $"Environment: {enc.Biome}");
-            _game.Layers["ascii"].Set(35, 23, $"Encounter: {hard}");
-            _game.Layers["ascii"].Set(35, 24, $"Reward: {enc.Reward}");
+                var (uu, vv) = en.GetIcon();
+                Draw(15 + i, 22, new Glyph(uu, vv, Color.Transparent, en.Tint));
+                i++;
+            }
         }
     }
     

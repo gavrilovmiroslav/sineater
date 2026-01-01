@@ -148,16 +148,38 @@ public class World(string path)
                     world.SlowDowns.Add((i, j), new SlowDown(time, time > 3 ? time - 3 : 0));
                 }
 
-                foreach (Match match in Regex.Matches(combats.Values[j][i].ToString() ?? "/", 
-                             @"(\w+), (\d+), (\d+), (\d+), (\w+)"))
+                var matches = Regex.Matches(combats.Values[j][i].ToString() ?? "/",
+                             @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
+
+                if (matches.Count > 0)
                 {
-                    var m = match.Groups;
-                    world.Encounters.Add((i, j), new Encounter(
-                        (ETerrainKind) Enum.Parse(typeof(ETerrainKind), m[1].ToString()),
-                        int.Parse(m[3].ToString()), 
-                        int.Parse(m[4].ToString()), 
-                        int.Parse(m[2].ToString()), m[5].ToString()));
+                    List<Enemy> enemies = new List<Enemy>();
+                    foreach (Match match in Regex.Matches(combats.Values[j][i].ToString() ?? "/",
+                                 @"((\w+)\[([a-zA-Z,]*)\]\s*)+"))
+                    {
+                        var enemyType = match.Groups[2].ToString();
+                        var enemy = Bestiary.Make(enemyType);
+
+                        foreach (var weapon in match.Groups[3].ToString().Split(','))
+                        {
+                            if (weapon.Trim() == "")
+                                continue;
+
+                            var w = ItemLibrary.GetWeapon(weapon.Trim());
+                            if (w != null)
+                            {
+                                enemy.Equip(w);
+                            }
+                        }
+                        enemies.Add(enemy);
+                    }
+
+                    if (enemies.Count > 0)
+                    {
+                        world.Encounters.Add((i, j), new Encounter(enemies));
+                    }
                 }
+
             }
         }
 
