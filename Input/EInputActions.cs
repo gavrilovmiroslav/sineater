@@ -49,4 +49,6 @@ public enum EInputAction
     SelectPreviousCharacter,
 
     DetailedView,
+    StartFight,
+    CancelFight,
 }
