@@ -297,7 +297,8 @@ public class WorldMapScreen : Screen
         {
             if (_world.Encounters.Has(x, y))
             {
-                SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, _world.Encounters.Get(x, y)));
+                var enc = _world.Encounters.Get(x, y);
+                CoroutineHandler.Run(new CoStartCombat(this, x, y, enc));
             }
         }
         
