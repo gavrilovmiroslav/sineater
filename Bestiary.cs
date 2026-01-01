@@ -27,7 +27,7 @@ public static class Bestiary
             Sin = 1,
             Guard = 0,
             Tint = Color.Red,
-            Stats = new Stats(2, 2, 1, 4),
+            Stats = new Stats(1, 1, 1, 2),
         };
 
         bat.Init();
@@ -45,7 +45,7 @@ public static class Bestiary
             Sin = Rnd.Instance.D4,
             Guard = 0,
             Tint = Color.LightGreen,
-            Stats = new Stats(4, 3, 2, 4),
+            Stats = new Stats(2, 1, 1, 2),
         };
         
         gob.Init();
@@ -63,7 +63,7 @@ public static class Bestiary
             Sin = 3,
             Guard = 3,
             Tint = Color.Red,
-            Stats = new Stats(5, 2, 3, 5),
+            Stats = new Stats(3, 2, 2, 3),
         };
 
         gob.Init();
@@ -81,7 +81,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             Guard = 0,
             Tint = Color.Red,
-            Stats = new Stats(5, 4, 1, 6),
+            Stats = new Stats(1, 4, 1, 1),
         };
         
         skel.Init();
@@ -99,7 +99,7 @@ public static class Bestiary
             Sin = 3 + Rnd.Instance.D2,
             Guard = 0,
             Tint = Color.Red,
-            Stats = new Stats(3, 5, 6, 6),
+            Stats = new Stats(1, 5, 2, 2),
         };
 
         skul.Init();
@@ -117,7 +117,7 @@ public static class Bestiary
             Sin = 5 + Rnd.Instance.D2,
             Guard = 5,
             Tint = Color.Green,
-            Stats = new Stats(6, 6, 6, 6),
+            Stats = new Stats(2, 2, 2, 2),
         };
         
         snek.Init();

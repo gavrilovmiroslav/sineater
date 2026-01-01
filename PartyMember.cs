@@ -94,10 +94,10 @@ public static class ECharacterClassExtensions
 public enum EStat
 {
     None = 0,
-    Will = 1,
-    Clarity = 2,
-    Poise = 3,
-    Vigor = 4
+    Vigor = 1,
+    Will = 2,
+    Clarity = 3,
+    Poise = 4
 }
 
 public class Stats
@@ -545,13 +545,13 @@ public record struct Party
         {
             ECharacterClass.Wizard,
             ECharacterClass.Witch,
-            ECharacterClass.Knight,
             ECharacterClass.Monk,
+            ECharacterClass.Knight,
             // ECharacterClass.Sage,
             // ECharacterClass.Priest,
             // ECharacterClass.Thief,
         };
-        jobs.Shuffle();
+        //jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {
@@ -573,7 +573,7 @@ public record struct Party
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Kris"));
+                    Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Kris"));
                     Characters[i].Equip(ItemLibrary.GetItem("Old Bell"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
@@ -582,7 +582,7 @@ public record struct Party
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].Equip(ItemLibrary.GetWeapon("Red Sign"));
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Claymore"));
+                    Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Claymore"));
                     Characters[i].Equip(ItemLibrary.GetItem("Ruby Plate"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
@@ -598,7 +598,8 @@ public record struct Party
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Misericorde"));
+                    Characters[i].Equip(ItemLibrary.GetWeapon("Thorn Whip"));
+                    //Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Misericorde"));
                     Characters[i].Equip(ItemLibrary.GetItem("Sash"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
