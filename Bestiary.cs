@@ -32,10 +32,10 @@ public static class Bestiary
             Stats = new Stats(2, 2, 1, 4),
         };
 
-        bat.Equip(EStat.Poise, ItemLibrary.GetWeapon("Fang"));
-        bat.Equip(EStat.Clarity, ItemLibrary.GetWeapon("Fang"));
-        bat.Equip(EStat.Vigor, ItemLibrary.GetWeapon("Fang"));
-        bat.Equip(EStat.Will, ItemLibrary.GetWeapon("Fang"));
+        bat.Equip(EStat.Poise, ItemLibrary.GetWeapon("Fangs"));
+        bat.Equip(EStat.Clarity, ItemLibrary.GetWeapon("Fangs"));
+        bat.Equip(EStat.Vigor, ItemLibrary.GetWeapon("Fangs"));
+        bat.Equip(EStat.Will, ItemLibrary.GetWeapon("Fangs"));
         bat.Init();
         return bat;
     }

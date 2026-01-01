@@ -57,21 +57,6 @@ public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
     }
 }
 
-public class CoWakeUpEnemy(Enemy enemy, CombatMapScreen screen) : IEnumerable
-{
-    public IEnumerator GetEnumerator()
-    {
-        for (int i = 0; i < 5; i++)
-        {
-            var (gu, gv) = enemy.Icon;
-            screen.Draw(enemy.X, enemy.Y, new Glyph(gu, gv, Color.Black, enemy.Tint));
-            yield return new WaitForSeconds(0.02f);
-            screen.Draw(enemy.X, enemy.Y, " ");
-            yield return new WaitForSeconds(0.02f);
-        }
-    }
-}
-
 public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) : IEnumerable
 {
     public IEnumerator GetEnumerator()

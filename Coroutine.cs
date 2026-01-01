@@ -316,3 +316,26 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
         yield return new WaitForInput(EInputAction.Confirm);
     }
 }
+
+public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            var (gu, gv) = (0, 0);
+            if (chr is Enemy e)
+            {
+                (gu, gv) = e.GetIcon();
+            }
+            else if (chr is PartyMember p)
+            {
+                (gu, gv) = p.Job.GetImage();
+            }
+            screen.Draw(chr.X, chr.Y, new Glyph(gu, gv, back ?? Color.Transparent, chr.Tint));
+            yield return new WaitForSeconds(0.02f);
+            screen.Draw(chr.X, chr.Y, " ");
+            yield return new WaitForSeconds(0.02f);
+        }
+    }
+}
