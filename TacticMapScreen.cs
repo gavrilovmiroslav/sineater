@@ -35,11 +35,12 @@ public class TacticMapScreen : Screen
     private Texture2D _pixel;
 
     private float[] _times = [ 50, 50, 50, 50, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
-    private Enemy[] _enemies = [Bestiary.Bat(), Bestiary.Hobgoblin(), Bestiary.Snek(), Bestiary.Snek()];
+    private Enemy[] _enemies = [];
     private Queue<Character> _turn = [];
 
-    public TacticMapScreen(SineaterGame game) : base(game)
+    public TacticMapScreen(SineaterGame game, Encounter encounter) : base(game)
     {
+        _enemies = encounter.Enemies.ToArray();
         foreach (var p in _game.Party.Characters)
         {
             p.Guard = 1;
