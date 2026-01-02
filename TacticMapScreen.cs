@@ -444,6 +444,10 @@ public class TacticMapScreen : Screen
         {
             _game.Layers["ascii"].Set(31, 1, "TACTICS MODE");
         }
+        
+        _game.Layers["ascii"].SetRect(new Vector2(30, 2), new Vector2(43, 3), ' ');
+        _game.Layers["mini"].Set(70, 7, " TURNS LEFT: ", Color.White, Color.Black);
+        _game.Layers["largenums"].Set(9, 2, "03", Color.White, Color.Transparent);
     }
 
     private void DrawAP()

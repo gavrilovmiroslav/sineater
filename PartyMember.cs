@@ -339,6 +339,7 @@ public abstract class Character : ICharacter
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
     public bool Broken { get; set; } = false;
+    public bool Acted { get; set; } = false;
 
     public bool CheckBroken()
     {
