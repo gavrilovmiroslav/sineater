@@ -123,10 +123,8 @@ namespace SINEATER
             }
             else if (InputM.IsActive(EInputAction.StartFight))
             {
-                _game.ScreenStack.Pop();
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
-                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
-
+                CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
             else if (InputM.IsActive(EInputAction.Equipment))
             {

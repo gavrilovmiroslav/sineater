@@ -336,7 +336,6 @@ public abstract class Character : ICharacter
 {
     public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
-    public bool IsMovementFree { get; set; } = false;
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
     public bool Broken { get; set; } = false;
@@ -361,9 +360,7 @@ public abstract class Character : ICharacter
         IsDone = false;
     }
     
-    public bool CanSwapEnemies { get; set; } = false;
     public List<Attack> Attacks { get; set; } = [];
-    public List<IStatus> Statuses { get; set; } = [];
 
     public int MovementLeft { get; set; } = 0;
     public bool IsDone { get; set; } = false;
@@ -407,8 +404,6 @@ public abstract class Character : ICharacter
                     break;
                 case EStatus.Insanity:
                     insanity--;
-                    break;
-                default:
                     break;
             }
         }
