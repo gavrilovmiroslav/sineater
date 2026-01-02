@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Input;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Reflection;
 
@@ -179,6 +180,19 @@ namespace SINEATER
                     return Color.White;
             }
         }
+
+        private bool IsEquipped(Weapon w)
+        {
+            foreach(var c in _game.Party.Characters)
+            {
+                if (c.Items.Any(x => x is not null && x.Name == w.Name))
+                    return true;
+            }
+
+            return false;
+        }
+
+
         private void DrawItems()
         {
             if (_submenu.Count > 0)
@@ -195,7 +209,7 @@ namespace SINEATER
 
                     var stat = item.Attack > 0 ? -item.Attack : item.Guard;
 
-                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, " ", Color.White, GetColorForStat(item.Stat));
+                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White, GetColorForStat(item.Stat));
                     _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
                     _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}", stat < 0 ? Color.Red : Color.Green);
                 }
@@ -246,9 +260,17 @@ namespace SINEATER
                 var equipped = c.Items[(int)(item.Stat - 1)];
                 if (equipped != null)
                 {
-                    isSwap = equipped.Name != item.Name;
-                    c.Equip(item.Stat, null);
-                    break;
+                    if(i == _selectedIndex)
+                    {
+                        isSwap = equipped.Name != item.Name;
+                        c.Equip(item.Stat, null);
+                    }
+                    else if (equipped.Name == item.Name)
+                    {
+                        c.Equip(item.Stat, null);
+                        break;
+                    }
+
                 }
             }
 
