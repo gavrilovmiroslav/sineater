@@ -34,7 +34,7 @@ public class TacticMapScreen : Screen
     private List<Texture2D> _city = [];
     private Texture2D _pixel;
 
-    private float[] _times = [ 50, 50, 50, 50, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
+    private float[] _times = [ 20, 20, 20, 20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
     private Enemy[] _enemies = [];
     private Queue<Character> _turn = [];
     private bool _timeFlow = true;
@@ -396,7 +396,7 @@ public class TacticMapScreen : Screen
         {
             ShouldUpdateView = false;
         }
-
+        
         foreach (var layer in SineaterGame.LayerNames)
         {
             _game.Layers[layer].Clear();
@@ -413,9 +413,12 @@ public class TacticMapScreen : Screen
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
             Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
 
-            if (_selectedIndex == i && _timeFlow)
+            if (_selectedIndex == i)
             {
-                Draw(p.X, p.Y - 3, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
+                if (_paused)
+                {
+                    Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
+                }
             }
 
             i++;
@@ -429,6 +432,17 @@ public class TacticMapScreen : Screen
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
             Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
             i++;
+        }
+        
+        _game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
+        if (!_paused)
+        {
+            _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
+            _game.Layers["ascii"].Set(36, 1, "PAUSE");
+        }
+        else
+        {
+            _game.Layers["ascii"].Set(31, 1, "TACTICS MODE");
         }
     }
 
@@ -701,9 +715,15 @@ public class TacticMapScreen : Screen
     private int _selectedIndex = 0;
     private int? _focus = null;
     private float _currentFocus = 0.0f;
-
+    
     private void CheckPlayerInputs()
     {
+        if (InputM.IsActive(EInputAction.Confirm))
+        {
+            _paused = !_paused;
+            _timeFlow = !_timeFlow;
+        }
+        
         if (InputM.IsActive(EInputAction.MoveRight))
         {
             _selectedIndex += 1;
