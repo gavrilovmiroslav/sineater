@@ -296,7 +296,7 @@ namespace SINEATER
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
                 _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
-
+            
             if (InputM.IsActive(EInputAction.MoveRight))
             {
                 _selectedIndex += 1;
