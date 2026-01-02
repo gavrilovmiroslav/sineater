@@ -24,6 +24,11 @@ namespace SINEATER
         private EScreenStage _stage = EScreenStage.Main;
 
         private int _selectedIndex = 0;
+
+        private int _pageSize = 10;
+        private int _pageIndex = 0;
+        private int _pageCount => _game.Party.Inventory.Items.Count / _pageSize + 1;
+
         public CombatSetupScreen(SineaterGame game, int x, int y, WorldMapScreen worldScreen, Encounter encounter) : base(game)
         {
             _combatPositionX = x;
@@ -80,10 +85,9 @@ namespace SINEATER
             DrawParty();
             DrawControls();
 
-            if (_stage == EScreenStage.Inventory)
+            //if (_stage == EScreenStage.Inventory)
             {
                 DrawItems();
-                CheckSubmenuInputs();
                 DrawPreview();
             }
         }
@@ -156,9 +160,14 @@ namespace SINEATER
             _submenuSelection = 0;
             _submenu.Clear();
 
-            foreach( var w in _game.Party.Inventory.Items)
+            var items = _game.Party.Inventory.Items;
+
+            for (int i = _pageIndex * _pageSize; i < _pageIndex * _pageSize + _pageSize; i++)
             {
-                _submenu.Add(w.Name);
+                if (items.Count <= i)
+                    break;
+
+                _submenu.Add(items[i].Name);
             }
         }
 
@@ -205,16 +214,19 @@ namespace SINEATER
         {
             var left = 6;
             var top = 13;
-            _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.SwapLeft));
-            _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.SwapRight));
-            _game.Layers["ascii"].Set(left * 2, top - 1, "Swap Left/Right");
+            _game.Layers["input"].Set(left - 1, top-1, InputM.GetGlyph(EInputAction.SwapLeft));
+            _game.Layers["input"].Set(left, top -1, InputM.GetGlyph(EInputAction.SwapRight));
+            _game.Layers["ascii"].Set(left * 2, top - 2, "Swap Left/Right");
 
-            _game.Layers["input"].Set(left - 1, top + 1, InputM.GetGlyph(EInputAction.MoveLeft));
-            _game.Layers["input"].Set(left, top + 1, InputM.GetGlyph(EInputAction.MoveRight));
-            _game.Layers["ascii"].Set(left * 2, top, "Select");
+            _game.Layers["input"].Set(left - 1, top , InputM.GetGlyph(EInputAction.MoveLeft));
+            _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
+            _game.Layers["ascii"].Set(left * 2, top -1, "Select");
 
-            _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.Equipment));
-            _game.Layers["ascii"].Set(left * 2, top + 1, "Equipment");
+            _game.Layers["input"].Set(left, top + 1, InputM.GetGlyph(EInputAction.Equip));
+            _game.Layers["ascii"].Set(left * 2, top, "Equip/Unequip");
+
+            _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.ChangePage));
+            _game.Layers["ascii"].Set(left * 2, top + 1, "Cycle Item List", _pageCount == 1 ? Color.Gray : Color.White);
 
             _game.Layers["input"].Set(left, top + 3, InputM.GetGlyph(EInputAction.StartFight));
             _game.Layers["ascii"].Set(left * 2, top + 2, "Ready");
@@ -267,10 +279,18 @@ namespace SINEATER
             _game.Layers["ascii"].Clear();
             _game.Layers["mrmo"].Clear();
 
-        }
+            SetupItems();
 
+        }
+        static int delay = 0;
         public override void Update(GameTime gameTime)
         {
+            if (delay < 10)
+            {
+                delay++;
+                return;
+            }
+
             if (InputM.IsActive(EInputAction.CancelFight))
             {
                 _game.ScreenStack.Pop();
@@ -280,11 +300,6 @@ namespace SINEATER
                 _game.ScreenStack.Pop();
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
                 _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
-            }
-            else if (InputM.IsActive(EInputAction.Equipment))
-            {
-                _stage = EScreenStage.Inventory;
-                SetupItems();
             }
 
             if (InputM.IsActive(EInputAction.MoveRight))
@@ -310,6 +325,16 @@ namespace SINEATER
                 _selectedIndex += 1;
                 if (_selectedIndex > 3) _selectedIndex = 0;
             }
+            else if (InputM.IsActive(EInputAction.ChangePage))
+            {
+                if (_pageCount != 1)
+                {
+                    _pageIndex = _pageIndex + 1 < _pageCount ? _pageIndex + 1 : 0;
+                    SetupItems();
+                }
+            }
+
+            CheckSubmenuInputs(false);
         }
         
         private void Swap(int leftIndex, int rightIndex)
