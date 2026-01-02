@@ -73,6 +73,25 @@ public class TacticMapScreen : Screen
     
     public override void Update(GameTime gameTime)
     {
+        var f = 0;
+        if (_focus != null)
+        {
+            //  0  1  2  3   4 5 6 7
+            // -4 -3 -2 -1 0 1 2 3 4
+            if (_focus.Value < 4)
+            {
+                f = -4 + _focus.Value;
+            }
+            else
+            {
+                f = _focus.Value - 3;
+            }
+        }
+
+        Console.WriteLine($"{f}");
+        _currentFocus = float.Lerp(_currentFocus, f, 0.1f);
+        
+
         if (CoroutineHandler.IsActive())
         {
             CoroutineHandler.Update();
@@ -394,9 +413,9 @@ public class TacticMapScreen : Screen
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
             Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
 
-            if (_selectedIndex == i)
+            if (_selectedIndex == i && _timeFlow)
             {
-                Draw(p.X, p.Y - 3, new Glyph(8, 74 - 16, Color.Transparent, p.Tint));
+                Draw(p.X, p.Y - 3, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
             }
 
             i++;
@@ -573,12 +592,11 @@ public class TacticMapScreen : Screen
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
     {
         var slowdown = 1.0f;
-        var i = 0;
-        foreach (var img in _city)
+
+        for (int i = 0; i < _city.Count; i++)
         {
-            batch.Draw(img, new Vector2(20, -180), null, Color.Lerp(Color.White, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.0f, 4.0f),
+            batch.Draw(_city[i], new Vector2(-100 + -30 * _currentFocus * (float)i / _city.Count, -180), null, Color.Lerp(Color.White, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.0f, 4.0f),
                 SpriteEffects.None, 0.0f);
-            i++;
         }
         
         for (var n = 0; n < 4; n++)
@@ -621,6 +639,7 @@ public class TacticMapScreen : Screen
                 }
                 else
                 {
+                    _focus = n;
                     _turn.Enqueue(p);
                 }
             }
@@ -664,6 +683,7 @@ public class TacticMapScreen : Screen
                 }
                 else
                 {
+                    _focus = n;
                     _turn.Enqueue(p);
                 }
             }
@@ -679,7 +699,9 @@ public class TacticMapScreen : Screen
     private bool _inspectMode = false;
     public Character? AttackTarget = null;
     private int _selectedIndex = 0;
-    
+    private int? _focus = null;
+    private float _currentFocus = 0.0f;
+
     private void CheckPlayerInputs()
     {
         if (InputM.IsActive(EInputAction.MoveRight))
