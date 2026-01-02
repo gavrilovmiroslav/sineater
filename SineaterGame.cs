@@ -27,6 +27,7 @@ public class SineaterGame : Game
     private Texture2D _portraits;
     private Texture2D _statuses;
     private Texture2D[] _room = new Texture2D[24];
+    private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
     private float _dHour;
     private Texture2D _monitor;
     
@@ -83,6 +84,20 @@ public class SineaterGame : Game
         InputManager.Instance.Initialize("");
         InputManager.Instance.PushContext("Default"); 
         base.Initialize();
+
+        InputManager.Instance.OnInputSourceChanged += OnInputSourceChanged;
+    }
+
+    private void OnInputSourceChanged(object? sender, EventArgs args)
+    {
+        if (InputManager.Instance.InputSource == InputManager.EInputSource.Keyboard)
+        {
+            Layers["input"] = new TextLayer(_inputs[0], new Vector2(74, 28), new Vector2(16, 16), new Vector2(12, 12), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
+        }
+        else
+        {
+            Layers["input"] = new TextLayer(_inputs[1], new Vector2(74, 28), new Vector2(16, 16), new Vector2(5, 6), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
+        }
     }
 
     protected override void LoadContent()
@@ -105,6 +120,9 @@ public class SineaterGame : Game
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
         _statuses = Content.Load<Texture2D>("statuses");
+
+        _inputs[0] = Content.Load<Texture2D>("inputs/KEYBOARD/KEYBOARD");
+        _inputs[1] = Content.Load<Texture2D>("inputs/XBOX/XBOX");
         
         for (int i = 0; i < 24; i++)
         {
@@ -190,6 +208,9 @@ public class SineaterGame : Game
         var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(10, 2), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
         largeNums.Map("1234567890", 0, 0);
         Layers.Add("largenums", largeNums);
+
+        var inputLayer = new TextLayer(_inputs[0], new Vector2(74, 28), new Vector2(16, 16), new Vector2(12, 12), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
+        Layers.Add("input", inputLayer);
 
         _crt = Content.Load<Effect>("crt");
         SetupCrt(Width, Height);
@@ -350,7 +371,7 @@ public class SineaterGame : Game
     }
     
     public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses" ];
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input"];
 
     private void SetupCrt(int w, int h)
     {
