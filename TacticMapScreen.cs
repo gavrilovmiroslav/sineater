@@ -73,6 +73,25 @@ public class TacticMapScreen : Screen
     
     public override void Update(GameTime gameTime)
     {
+        var f = 0;
+        if (_focus != null)
+        {
+            //  0  1  2  3   4 5 6 7
+            // -4 -3 -2 -1 0 1 2 3 4
+            if (_focus.Value < 4)
+            {
+                f = -4 + _focus.Value;
+            }
+            else
+            {
+                f = _focus.Value - 3;
+            }
+        }
+
+        Console.WriteLine($"{f}");
+        _currentFocus = float.Lerp(_currentFocus, f, 0.1f);
+        
+
         if (CoroutineHandler.IsActive())
         {
             CoroutineHandler.Update();
@@ -574,17 +593,9 @@ public class TacticMapScreen : Screen
     {
         var slowdown = 1.0f;
 
-        if (_focus != null)
-        {
-            if (_focus < 4)
-            {
-                var f = _focus - 4;
-            }
-        }
-
         for (int i = 0; i < _city.Count; i++)
         {
-            batch.Draw(_city[i], new Vector2(20, -180), null, Color.Lerp(Color.White, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.0f, 4.0f),
+            batch.Draw(_city[i], new Vector2(-100 + -30 * _currentFocus * (float)i / _city.Count, -180), null, Color.Lerp(Color.White, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.0f, 4.0f),
                 SpriteEffects.None, 0.0f);
         }
         
