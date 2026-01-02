@@ -630,7 +630,7 @@ public class TacticMapScreen : Screen
                 SpriteEffects.None, 0);
             
             if (!_timeFlow) continue;
-            var p = _enemies[j];
+            var p = _enemies[4 - j - 1];
             if (p.Broken)
             {
                 _times[n] = 0;
