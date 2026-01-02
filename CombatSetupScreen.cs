@@ -302,6 +302,12 @@ namespace SINEATER
         static int delay = 0;
         public override void Update(GameTime gameTime)
         {
+            if (CoroutineHandler.IsActive())
+            {
+                CoroutineHandler.Update();
+                return;
+            }
+            
             if (delay < 10)
             {
                 delay++;

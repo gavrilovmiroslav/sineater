@@ -16,7 +16,7 @@ using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER;
 
-public class CoBlink(WorldMapScreen level): IEnumerable
+public class CoBlink(Screen level): IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
@@ -38,6 +38,7 @@ public class CoBlink(WorldMapScreen level): IEnumerable
         yield return new WaitForSeconds(0.15f);
     }
 }
+
 public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc): IEnumerable
 {
     public IEnumerator GetEnumerator()
@@ -113,9 +114,13 @@ public class WorldMapScreen : Screen
     
     private readonly List<int> _offsets = [ 1, 1, 0, 0 ];
     private readonly List<int> _xoffsets = [ 0, 0, 0, 0 ];
-    private readonly List<(int, int)> _positions = [ (0, 0), (3, 0), (0, 3), (3, 3) ];
-    private readonly List<string> _positionStats = [ "WIL", "CLA", "POI", "VIG" ];
+    private readonly List<(int, int)> _positions = [
+        (0, 3), (1, 3), (2, 3), (3, 3)
+    ];
 
+    private readonly List<string> _positionStats = [ "WIL", "CLA", "POI", "VIG" ];
+    private bool _drawEquips = false;
+    
     private static string[] HourNames =
     [
         "Midnight", // 0
@@ -308,7 +313,7 @@ public class WorldMapScreen : Screen
 
     HashSet<(int,int)> visited = [];
 
-    internal void DrawWorld(bool noPlayer = false)
+    public override void DrawWorld(bool noPlayer = false)
     {
         if (_shouldUpdateView)
         {
@@ -404,9 +409,9 @@ public class WorldMapScreen : Screen
             }
         }
         
-        _game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
-        
-        DrawParty();
+        //_game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
+
+        DrawParty(drawEquips: _drawEquips);
         
         _game.Layers["ascii"].Set(20, 0, $"{HourNames[h]} ({TimeOfDay})");
         
@@ -416,80 +421,92 @@ public class WorldMapScreen : Screen
         {
             var enc = _world.Encounters.Get(nx, ny);
 
-           _game.Layers["ascii"].Set(35, 23, $"Encounter: ");
-
-            int i = 0;
-            foreach (var en in enc.Enemies)
+           _game.Layers["ascii"].Set(35, 1, $"Encounter: ");
+           
+            for (var i = 0; i < 4; i++)
             {
+                var en = enc.Enemies[4 - i - 1];
                 var (uu, vv) = en.GetIcon();
-                Draw(15 + i, 22, new Glyph(uu, vv, Color.Transparent, en.Tint));
-                i++;
+                Draw(15 + i, 0, new Glyph(uu, vv, Color.Transparent, en.Tint));
             }
         }
     }
     
-    private void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null)
+    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null, bool drawEquips = false)
     {
+        var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
         var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
         var h = 19;
         var index = 0;
-        foreach (var character in _game.Party.Characters)
+        
+        for (var c = 0; c < 4; c++)
         {
-            var (m, r) = character.Job.GetImage();
-            var (u, v) = character.GetPortait();
-            var (x, y) = _positions[index];
-            var (xoff, yoff) = (_xoffsets[index], _offsets[index]);
-            var tint = character.Tint;
-            if (character != _game.Party.Characters[PlayerSelectedIndex])
+            if (_game.Party.Characters[c] is { } character)
             {
-                tint = Color.Lerp(tint, Color.Black, 0.75f);
-            }
-            
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y - 1 + yoff, $"{character.Job.GetShortName()}", tint);
-            _game.Layers["ascii"].Set(20 * x + 12 + (x > 0 ? -14 : 0), 5 * y + yoff, $"{_positionStats[index]}", tint);
-            
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 4 + yoff, $"WIL  CLA  ", tint);
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 5 + yoff, $"VIG  POI  ", tint);
-            
-            if (character == cha)
-            {
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{cwil ?? character.Wil}", cwil == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{ccla ?? character.Cla}", ccla == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{cvig ?? character.Vig}", cvig == null ? Color.White : Color.Yellow);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{cpoi ?? character.Poi}", cpoi == null ? Color.White : Color.Yellow);
-            }
-            else
-            {
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 4 + yoff, $"{character.Wil}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 4 + yoff, $"{character.Cla}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 5 + yoff, $"{character.Vig}", Color.White);
-                _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 5 + yoff, $"{character.Poi}", Color.White);
-            }
-
-            for (int ix = 0; ix < 4; ix++)
-            {
-                if (character.GetItem((EStat)(ix + 1)) is { } item)
+                if (drawSet.Contains(character))
                 {
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"{item.Name}", tint);    
-                }
-                else
-                {
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 3 + ix, $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
-                }
-            }
+                    var (m, r) = character.Job.GetImage();
+                    var (u, v) = character.GetPortait();
+                    var (x, y) = _positions[index];
+                    var tint = character.Tint;
 
-            if (index < 2)
-            {
-                _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                _game.Layers["portrait2"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
-            }
-            else
-            {
-                _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                _game.Layers["portrait"].Set(x * 2, y, new Glyph(u, v, Color.Black, tint));
-            }
+                    if (colorOverride is { } color)
+                    {
+                        tint = color;
+                    }
 
-            index++;
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
+
+                    if (character == cha)
+                    {
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
+                            cwil == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
+                            ccla == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
+                            cvig == null ? Color.White : Color.Yellow);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
+                            cpoi == null ? Color.White : Color.Yellow);
+                    }
+                    else
+                    {
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
+                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
+                    }
+
+                    if (drawEquips)
+                    {
+                        for (int ix = 1; ix <= 4; ix++)
+                        {
+                            if (character.GetItem((EStat)ix) is { } item)
+                            {
+                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
+                            }
+                            else
+                            {
+                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
+                                    $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                            }
+                        }
+                    }
+
+                    if (index < 2)
+                    {
+                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
+                    }
+                    else
+                    {
+                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
+                    }
+                }
+
+                index++;
+            }
         }
     }
     
@@ -512,7 +529,7 @@ public class WorldMapScreen : Screen
         if (_submenu.Count > 0)
         {
             var len = _submenu.Select(s => s.Length).Max() + 2;
-            var (x, y) = (15, 19);
+            var (x, y) = (15, 13);
             _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
             _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
                 Sides.Ascii, Corners.Ascii);
@@ -554,6 +571,10 @@ public class WorldMapScreen : Screen
     {
         var current = _game.Party.Characters[PlayerSelectedIndex];
 
+        if (InputM.IsActive(EInputAction.OpenInventory))
+        {
+            _drawEquips = !_drawEquips;
+        }
         if (_submenu.Count > 0)
         {
             if (InputM.IsActive(EInputAction.SubmenuUp))

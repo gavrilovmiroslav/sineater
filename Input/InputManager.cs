@@ -158,7 +158,7 @@ namespace SINEATER.Input
                     MakeAction(EInputAction.ChacterSheetCycle, Keys.Space, Buttons.A),
                     MakeAction(EInputAction.ChacterSheetExit, Keys.Escape, Buttons.B),
 
-                    MakeAction(EInputAction.OpenInventory, Keys.I, Buttons.None),
+                    MakeAction(EInputAction.OpenInventory, Keys.Tab, Buttons.Start),
                     MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
 
                     MakeAction(EInputAction.MoveMapLeft, Keys.U, Buttons.None),

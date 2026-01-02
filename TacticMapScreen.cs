@@ -34,18 +34,17 @@ public class TacticMapScreen : Screen
     private List<Texture2D> _city = [];
     private Texture2D _pixel;
 
-    private float[] _times = [ 20, 20, 20, 20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
+    private float[] _times = [ 21, 21, 21, 21, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
     private Enemy[] _enemies = [];
     private Queue<Character> _turn = [];
     private bool _timeFlow = true;
     private HashSet<Character> _selected = [];
-
+    private float _levelTime = 60;
     private bool _paused = false;
     
     public TacticMapScreen(SineaterGame game, Encounter encounter) : base(game)
     {
         _enemies = encounter.Enemies.ToArray();
-        _enemies = _enemies.Reverse().ToArray();
         foreach (var p in _game.Party.Characters)
         {
             p.Guard = 1;
@@ -60,9 +59,9 @@ public class TacticMapScreen : Screen
     public override void Initialize(SineaterGame game)
     {
         _pixel = _game.Content.Load<Texture2D>("pixel");
-        for (int i = 1; i < 5; i++)
+        for (int i = 1; i < 7; i++)
         {
-            _city.Add(_game.Content.Load<Texture2D>($"locations/Spikey Lands/Spikey Lands - {i}"));
+            _city.Add(_game.Content.Load<Texture2D>($"locations/Dusk City/City Dusk - {i}"));
         }
     }
     
@@ -73,6 +72,16 @@ public class TacticMapScreen : Screen
     
     public override void Update(GameTime gameTime)
     {
+        if (!(_paused || !_timeFlow))
+        {
+            var ms = ((float)gameTime.ElapsedGameTime.TotalMilliseconds) / 1000.0f;
+            _levelTime -= ms;
+            if ((int)Math.Round(_levelTime) == 0)
+            {
+                CoroutineHandler.Run(new CoBlink(this));
+            }
+        }
+
         var f = 0;
         if (_focus != null)
         {
@@ -87,17 +96,29 @@ public class TacticMapScreen : Screen
                 f = _focus.Value - 3;
             }
         }
-
-        Console.WriteLine($"{f}");
+        
         _currentFocus = float.Lerp(_currentFocus, f, 0.1f);
         
-
         if (CoroutineHandler.IsActive())
         {
+            DrawTop();
             CoroutineHandler.Update();
             return;
         }
         
+        if (_enemies.All(e => e.Guard == 0))
+        {
+            CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            Console.WriteLine("VICTORY!");
+            return;
+        }
+        else if (_game.Party.Characters.All(e => e.Guard == 0))
+        {
+            CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            Console.WriteLine("LOSS!");
+            return;
+        }
+
         _time += gameTime.ElapsedGameTime.Milliseconds;
         if (_time > 1600)
         {
@@ -198,6 +219,7 @@ public class TacticMapScreen : Screen
 
         _timeFlow = false;
         _selected.Add(c);
+        DrawCombat();
         yield return new CoBlinkCharacter(c, this);
         DrawCombat();
         yield return new WaitForSeconds(0.5f);
@@ -389,6 +411,36 @@ public class TacticMapScreen : Screen
         }
         yield break;
     }
+
+    public override void DrawWorld(bool noPlayer = false)
+    {
+        DrawParty();
+        DrawCombat();
+        DrawTop();
+    }
+
+    public void DrawTop()
+    {
+        if (_timeFlow)
+        {
+            _game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
+            if (!_paused)
+            {
+                _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
+                _game.Layers["ascii"].Set(36, 1, "PAUSE", _timeFlow ? Color.White : Color.Gray);
+            }
+            else
+            {
+                _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
+                _game.Layers["ascii"].Set(36, 1, "FIGHT", !_timeFlow ? Color.White : Color.Gray);
+            }
+
+            _game.Layers["ascii"].SetRect(new Vector2(30, 2), new Vector2(43, 3), ' ');
+            _game.Layers["mini"].Set(70, 7, " TIME LEFT: ", Color.White, Color.Black);
+            _game.Layers["largenums"].Set(9, 2, ((int)MathF.Round(_levelTime)).ToString("00"), Color.White,
+                Color.Transparent);
+        }
+    }
     
     internal void DrawCombat(bool onlyNow = false)
     {
@@ -403,7 +455,7 @@ public class TacticMapScreen : Screen
         }
         
         DrawParty();
-
+        
         int i = 0;
         foreach (var p in SineaterGame.Instance.Party.Characters)
         {
@@ -434,20 +486,7 @@ public class TacticMapScreen : Screen
             i++;
         }
         
-        _game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
-        if (!_paused)
-        {
-            _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
-            _game.Layers["ascii"].Set(36, 1, "PAUSE");
-        }
-        else
-        {
-            _game.Layers["ascii"].Set(31, 1, "TACTICS MODE");
-        }
-        
-        _game.Layers["ascii"].SetRect(new Vector2(30, 2), new Vector2(43, 3), ' ');
-        _game.Layers["mini"].Set(70, 7, " TURNS LEFT: ", Color.White, Color.Black);
-        _game.Layers["largenums"].Set(9, 2, "03", Color.White, Color.Transparent);
+        DrawTop();
     }
 
     private void DrawAP()
@@ -511,7 +550,7 @@ public class TacticMapScreen : Screen
         }
     }
     
-    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null)
+    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null, bool drawEquips = false)
     {
         var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
         var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
@@ -556,16 +595,19 @@ public class TacticMapScreen : Screen
                         _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
                     }
 
-                    for (int ix = 1; ix <= 4; ix++)
+                    if (drawEquips)
                     {
-                        if (character.GetItem((EStat)ix) is { } item)
+                        for (int ix = 1; ix <= 4; ix++)
                         {
-                            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
-                        }
-                        else
-                        {
-                            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
-                                $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                            if (character.GetItem((EStat)ix) is { } item)
+                            {
+                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
+                            }
+                            else
+                            {
+                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
+                                    $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
+                            }
                         }
                     }
 
@@ -610,11 +652,22 @@ public class TacticMapScreen : Screen
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
     {
         var slowdown = 1.0f;
+        var color = Color.White;
+        if (_currentFocus < 0)
+        {
+            color = Color.Green;
+        }
+        else if (_currentFocus > 0)
+        {
+            color = Color.Red;
+        }
 
+        color = Color.Lerp(Color.White, color, MathF.Abs(MathF.Sign(_currentFocus)) / 3.0f);
         for (int i = 0; i < _city.Count; i++)
         {
-            batch.Draw(_city[i], new Vector2(-100 + -30 * _currentFocus * (float)i / _city.Count, -180), null, Color.Lerp(Color.White, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.0f, 4.0f),
-                SpriteEffects.None, 0.0f);
+            batch.Draw(_city[i], new Vector2(-100 + -30 * _currentFocus * (float)i / _city.Count, -300), null, 
+                Color.Lerp(color, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.5f, 4.5f),
+                SpriteEffects.None, 0.0f); 
         }
         
         for (var n = 0; n < 4; n++)

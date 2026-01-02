@@ -568,10 +568,10 @@ public record struct Party
         Inventory = ItemLibrary.CreateDefaultInventory();
         var jobs = new[]
         {
-            ECharacterClass.Wizard,
             ECharacterClass.Witch,
-            ECharacterClass.Monk,
+            ECharacterClass.Wizard,
             ECharacterClass.Knight,
+            ECharacterClass.Monk,
             // ECharacterClass.Sage,
             // ECharacterClass.Priest,
             // ECharacterClass.Thief,

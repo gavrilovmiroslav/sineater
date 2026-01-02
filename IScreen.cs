@@ -145,4 +145,6 @@ public abstract class Screen : IScreen
 
         return isOpen;
     }
+    
+    public virtual void DrawWorld(bool noPlayer = false) {}
 }
