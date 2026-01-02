@@ -396,7 +396,7 @@ public class TacticMapScreen : Screen
         {
             ShouldUpdateView = false;
         }
-
+        
         foreach (var layer in SineaterGame.LayerNames)
         {
             _game.Layers[layer].Clear();
@@ -413,9 +413,12 @@ public class TacticMapScreen : Screen
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
             Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
 
-            if (_selectedIndex == i && _timeFlow)
+            if (_selectedIndex == i)
             {
-                Draw(p.X, p.Y - 3, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
+                if (_paused)
+                {
+                    Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
+                }
             }
 
             i++;
@@ -430,6 +433,9 @@ public class TacticMapScreen : Screen
             Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
             i++;
         }
+        
+        _game.Layers["input"].Set(14, 10, InputM.GetGlyph(EInputAction.Confirm));
+        _game.Layers["ascii"].Set(40, 10, "PAUSE");
     }
 
     private void DrawAP()
@@ -701,9 +707,15 @@ public class TacticMapScreen : Screen
     private int _selectedIndex = 0;
     private int? _focus = null;
     private float _currentFocus = 0.0f;
-
+    
     private void CheckPlayerInputs()
     {
+        if (InputM.IsActive(EInputAction.Confirm))
+        {
+            _paused = !_paused;
+            _timeFlow = !_timeFlow;
+        }
+        
         if (InputM.IsActive(EInputAction.MoveRight))
         {
             _selectedIndex += 1;

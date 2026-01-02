@@ -371,7 +371,7 @@ public class SineaterGame : Game
     }
     
     public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input"];
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input" ];
 
     private void SetupCrt(int w, int h)
     {

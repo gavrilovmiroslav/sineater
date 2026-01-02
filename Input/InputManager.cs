@@ -226,6 +226,7 @@ namespace SINEATER.Input
         private void InitializeGlyphs()
         {
             // Keyboard
+            _keyboardGlyphs.Add(Keys.Space, new Glyph(0, 1, Color.Transparent, Color.Gray));
 
             _keyboardGlyphs.Add(Keys.Q, new Glyph(0, 1, Color.Transparent, Color.Gray));
             _keyboardGlyphs.Add(Keys.W, new Glyph(1, 1, Color.Transparent, Color.Gray));
