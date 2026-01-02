@@ -561,9 +561,10 @@ public record struct Party
     private static readonly Color[] Colors = [Color.ForestGreen, Color.GreenYellow, Color.CornflowerBlue, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
     public static readonly Color[] Zones = [new Color(34, 100, 34), new Color(100, 150, 34), new Color(30, 30, 100), Color.Lerp(Color.Purple, Color.Black, 0.5f)];
     public readonly PartyMember[] Characters = new PartyMember[4];
-    
+    public Inventory Inventory { get; set; }
     public Party(AP actionPoints)
     {
+        Inventory = ItemLibrary.CreateDefaultInventory();
         var jobs = new[]
         {
             ECharacterClass.Wizard,
@@ -588,7 +589,7 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Ash Branch"));
+                    Characters[i].Equip(Inventory.GetItem("Ash Branch"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -596,49 +597,49 @@ public record struct Party
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
-                    Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Kris"));
-                    Characters[i].Equip(ItemLibrary.GetItem("Old Bell"));
+                    Characters[i].Equip(EStat.Will, Inventory.GetItem("Kris"));
+                    Characters[i].Equip(Inventory.GetItem("Old Bell"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Red Sign"));
-                    Characters[i].Equip(EStat.Clarity, ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].Equip(Inventory.GetItem("Red Sign"));
+                    Characters[i].Equip(EStat.Clarity, Inventory.GetItem("Thorn Whip"));
                     //Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Claymore"));
-                    Characters[i].Equip(ItemLibrary.GetItem("Ruby Plate"));
+                    Characters[i].Equip(Inventory.GetItem("Ruby Plate"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Skolm Staff"));
-                    Characters[i].Equip(ItemLibrary.GetItem("Soft Tunic"));
+                    Characters[i].Equip(Inventory.GetItem("Skolm Staff"));
+                    Characters[i].Equip(Inventory.GetItem("Soft Tunic"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].Equip(EStat.Vigor, ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].Equip(EStat.Vigor, Inventory.GetItem("Thorn Whip"));
                     //Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Misericorde"));
-                    Characters[i].Equip(ItemLibrary.GetItem("Sash"));
+                    Characters[i].Equip(Inventory.GetItem("Sash"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 3;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].Equip(Inventory.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 4;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Dagger"));
+                    Characters[i].Equip(Inventory.GetItem("Dagger"));
                     Characters[i].Stats.Will = 6;
                     Characters[i].Stats.Clarity = 6;
                     Characters[i].Stats.Poise = 2;

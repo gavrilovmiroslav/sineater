@@ -54,5 +54,6 @@ public enum EInputAction
     CancelFight,
     SwapLeft,
     SwapRight,
-    Equipment
+    Equip,
+    ChangePage
 }

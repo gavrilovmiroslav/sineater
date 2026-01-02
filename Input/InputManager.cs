@@ -176,9 +176,10 @@ namespace SINEATER.Input
                     
                     MakeAction(EInputAction.StartFight, Keys.Enter, Buttons.X),
                     MakeAction(EInputAction.CancelFight, Keys.Escape, Buttons.B),
-                    MakeAction(EInputAction.Equipment, Keys.I, Buttons.Y),
-                    MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftTrigger),
-                    MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightTrigger),
+                    MakeAction(EInputAction.Equip, Keys.Space, Buttons.A),
+                    MakeAction(EInputAction.ChangePage, Keys.W, Buttons.Y),
+                    MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftShoulder),
+                    MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightShoulder),
                 }
             });
         }
@@ -242,11 +243,12 @@ namespace SINEATER.Input
 
             _keyboardGlyphs.Add(Keys.Left, new Glyph(6, 5, Color.Transparent, Color.Gray));
             _keyboardGlyphs.Add(Keys.Right, new Glyph(8, 5, Color.Transparent, Color.Gray));
+            _keyboardGlyphs.Add(Keys.Space, new Glyph(9, 5, Color.Transparent, Color.Gray));
 
             
             // GamePad
 
-            _gamepadGlyphs.Add(Buttons.A, new Glyph(0, 0, Color.Transparent, Color.Gray));
+            _gamepadGlyphs.Add(Buttons.A, new Glyph(4, 0, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.B, new Glyph(1, 0, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.X, new Glyph(2, 0, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.Y, new Glyph(3, 0, Color.Transparent, Color.Gray));
