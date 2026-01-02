@@ -176,7 +176,7 @@ namespace SINEATER.Input
                     
                     MakeAction(EInputAction.StartFight, Keys.Enter, Buttons.X),
                     MakeAction(EInputAction.CancelFight, Keys.Escape, Buttons.B),
-                    MakeAction(EInputAction.Equip, Keys.I, Buttons.A),
+                    MakeAction(EInputAction.Equip, Keys.Space, Buttons.A),
                     MakeAction(EInputAction.ChangePage, Keys.W, Buttons.Y),
                     MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftShoulder),
                     MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightShoulder),
@@ -242,6 +242,7 @@ namespace SINEATER.Input
 
             _keyboardGlyphs.Add(Keys.Left, new Glyph(6, 5, Color.Transparent, Color.Gray));
             _keyboardGlyphs.Add(Keys.Right, new Glyph(8, 5, Color.Transparent, Color.Gray));
+            _keyboardGlyphs.Add(Keys.Space, new Glyph(9, 5, Color.Transparent, Color.Gray));
 
             
             // GamePad

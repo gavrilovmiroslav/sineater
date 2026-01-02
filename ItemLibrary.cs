@@ -159,6 +159,8 @@ public static class ItemLibrary
             inventory.Items.Add(GetWeapon(weapon.Name));
         }
 
+        inventory.Items.Sort((x, y) => x.Stat.CompareTo(y.Stat));
+
         return inventory;
     }
 }

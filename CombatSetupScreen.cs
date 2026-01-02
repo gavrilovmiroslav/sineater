@@ -10,18 +10,12 @@ namespace SINEATER
 {
     public class CombatSetupScreen : Screen
     {
-        public enum EScreenStage
-        {
-            Main,
-            Inventory
-        }
 
         private World _world => _worldScreen.World;
         private int _combatPositionX;
         private int _combatPositionY;
         private Encounter _encounter;
         private WorldMapScreen _worldScreen;
-        private EScreenStage _stage = EScreenStage.Main;
 
         private int _selectedIndex = 0;
 
@@ -56,10 +50,10 @@ namespace SINEATER
             foreach (var p in SineaterGame.Instance.Party.Characters)
             {
                 var (u, v) = p.Job.GetImage();
-                p.X = i * 2 - 1;
+                p.X = i * 2 - 4;
                 p.Y = 3;
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Black, p.Tint));
-                _game.Layers["ascii"].Set(p.X + 14 + 2* (i + 1), p.Y + 2, fieldsAffinity[i], affinityColors[i]);
+                _game.Layers["ascii"].Set(p.X + 11 + 2* (i + 1), p.Y + 2, fieldsAffinity[i], affinityColors[i]);
 
                 if (_selectedIndex == i)
                 {
@@ -74,10 +68,10 @@ namespace SINEATER
             foreach (var p in _encounter.Enemies)
             {
                 var (u, v) = p.GetIcon();
-                p.X = 5 + (4 - i) * 2 + 12;
+                p.X = 5 + (4 - i) * 2 + 9;
                 p.Y = 3;
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
-                _game.Layers["ascii"].Set(39 + j*4, p.Y + 2, fieldsAffinity[3-j], affinityColors[3-j]);
+                _game.Layers["ascii"].Set(33 + j*4, p.Y + 2, fieldsAffinity[3-j], affinityColors[3-j]);
                 i++;
                 j++;
             }
@@ -85,7 +79,6 @@ namespace SINEATER
             DrawParty();
             DrawControls();
 
-            //if (_stage == EScreenStage.Inventory)
             {
                 DrawItems();
                 DrawPreview();
@@ -107,7 +100,8 @@ namespace SINEATER
                         var c = from[i];
                         if (c == 'x')
                         {
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 14 + 2 * (i + 1), 6, "!");
+                            //_game.Layers["mrmo"].Set(10, 10, new Glyph(12, 25, Color.Transparent, Color.Yellow));
+                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 6, "!");
                         }
                     }
                 }
@@ -120,11 +114,11 @@ namespace SINEATER
                         var c = toEnemy[i];
                         if (c == 'x')
                         {
-                            _game.Layers["ascii"].Set(39 + i * 4, 2 , "O");
+                            _game.Layers["ascii"].Set(33 + i * 4, 2 , "O");
                         }
                         else if(c == 'X')
                         {
-                            _game.Layers["ascii"].Set(39 + i * 4, 2, "@");
+                            _game.Layers["ascii"].Set(33 + i * 4, 2, "@");
                         }
                     }
                 }
@@ -134,7 +128,7 @@ namespace SINEATER
                 {
                     if (toParty == "self")
                     {
-                        _game.Layers["ascii"].Set(_selectedIndex * 2 - 1 + 14 + 2 * (_selectedIndex + 1), 2, "@");
+                        _game.Layers["ascii"].Set(_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1), 2, "@");
                     }
 
                     for (int i = 0; i < 4; i++)
@@ -142,11 +136,11 @@ namespace SINEATER
                         var c = toParty[i];
                         if (c == 'x')
                         {
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 14 + 2 * (i + 1), 2, "O");
+                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "O");
                         }
                         else if (c == 'X')
                         {
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 14 + 2 * (i + 1), 2, "@");
+                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "@");
                         }
                     }
                 }
@@ -191,8 +185,8 @@ namespace SINEATER
         {
             if (_submenu.Count > 0)
             {
-                var len = _submenu.Select(s => s.Length).Max() + 2;
-                var (x, y) = (55, 2);
+                var len = _submenu.Select(s => s.Length).Max() + 2 + 3;
+                var (x, y) = (50, 2);
                 _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
                 _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
                     Sides.Ascii, Corners.Ascii);
@@ -201,8 +195,11 @@ namespace SINEATER
                 {
                     var item = _game.Party.Inventory.Items.Find(x => x.Name == _submenu[i]);
 
+                    var stat = item.Attack > 0 ? -item.Attack : item.Guard;
+
                     _game.Layers["ascii"].Set(x + 3, y + 1 + i, " ", Color.White, GetColorForStat(item.Stat));
                     _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
+                    _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $"  {stat}", stat < 0 ? Color.Red : Color.Green);
                 }
 
                 _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
@@ -261,7 +258,6 @@ namespace SINEATER
                 _game.Party.Characters[_selectedIndex].Equip(_game.Party.Inventory.GetItem(action));
             }
 
-            _stage = EScreenStage.Main;
         }
 
         public override void SubmenuItemSelected(int index)
@@ -302,6 +298,7 @@ namespace SINEATER
                 _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
 
+            if (InputM.IsActive(EInputAction.MoveRight))
             if (InputM.IsActive(EInputAction.MoveRight))
             {
                 _selectedIndex += 1;
