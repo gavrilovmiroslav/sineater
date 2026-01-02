@@ -150,4 +150,15 @@ public static class ItemLibrary
         InstancedWeapons.Add(name, dummy);
         return dummy;
     }
+
+    internal static Inventory CreateDefaultInventory()
+    {
+        var inventory = new Inventory();
+        foreach(var weapon in Library.Weapons)
+        {
+            inventory.Items.Add(GetWeapon(weapon.Name));
+        }
+
+        return inventory;
+    }
 }

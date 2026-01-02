@@ -97,6 +97,10 @@ public abstract class Screen : IScreen
     {
     }
 
+    public virtual void SubmenuItemSelected(int index)
+    { 
+    }
+
     public bool CheckSubmenuInputs()
     {
         var isOpen = _submenu.Count > 0;
@@ -112,6 +116,8 @@ public abstract class Screen : IScreen
                 {
                     _submenuSelection--;
                 }
+
+                SubmenuItemSelected(_submenuSelection);
             }
             else if (InputM.IsActive(EInputAction.SubmenuDown))
             {
@@ -123,6 +129,7 @@ public abstract class Screen : IScreen
                 {
                     _submenuSelection++;
                 }
+                SubmenuItemSelected(_submenuSelection);
             }
             else if (InputM.IsActive(EInputAction.SubmenuConfirm))
             {
