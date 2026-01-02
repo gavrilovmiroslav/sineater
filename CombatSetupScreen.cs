@@ -75,30 +75,24 @@ namespace SINEATER
 
         private void DrawControls()
         {
-
             var left = 6;
+            var top = 13;
+            _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.SwapLeft));
+            _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.SwapRight));
+            _game.Layers["ascii"].Set(left * 2, top - 1, "Swap Left/Right");
 
-            _game.Layers["input"].Set(left - 1, 13, InputM.GetGlyph(EInputAction.SwapLeft));
-            _game.Layers["input"].Set(left, 13, InputM.GetGlyph(EInputAction.SwapRight));
-            _game.Layers["ascii"].Set(left * 2, 12, "Swap Left/Right");
+            _game.Layers["input"].Set(left - 1, top + 1, InputM.GetGlyph(EInputAction.MoveLeft));
+            _game.Layers["input"].Set(left, top + 1, InputM.GetGlyph(EInputAction.MoveRight));
+            _game.Layers["ascii"].Set(left * 2, top, "Select");
 
-            _game.Layers["input"].Set(left -1, 14, InputM.GetGlyph(EInputAction.MoveLeft));
-            _game.Layers["input"].Set(left, 14, InputM.GetGlyph(EInputAction.MoveRight));
-            _game.Layers["ascii"].Set(left*2, 13, "Select");
+            _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.Equipment));
+            _game.Layers["ascii"].Set(left * 2, top + 1, "Equipment");
 
-            _game.Layers["input"].Set(left, 15, InputM.GetGlyph(EInputAction.Equipment));
-            _game.Layers["ascii"].Set(left*2, 14, "Equipment");
+            _game.Layers["input"].Set(left, top + 3, InputM.GetGlyph(EInputAction.StartFight));
+            _game.Layers["ascii"].Set(left * 2, top + 2, "Ready");
 
-            _game.Layers["input"].Set(left, 16, InputM.GetGlyph(EInputAction.StartFight));
-            _game.Layers["ascii"].Set(left*2, 15, "Ready");
-
-            _game.Layers["input"].Set(left, 17, InputM.GetGlyph(EInputAction.CancelFight));
-            _game.Layers["ascii"].Set(left*2, 16, "Back");
-        }
-
-        public override void PostDraw(SpriteBatch batch, GameTime gameTime)
-        {
-            base.PostDraw(batch, gameTime);
+            _game.Layers["input"].Set(left, top + 4, InputM.GetGlyph(EInputAction.CancelFight));
+            _game.Layers["ascii"].Set(left * 2, top + 3, "Back");
         }
 
         public override void Initialize(SineaterGame game)
