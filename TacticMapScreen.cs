@@ -34,7 +34,7 @@ public class TacticMapScreen : Screen
     private List<Texture2D> _city = [];
     private Texture2D _pixel;
 
-    private float[] _times = [ 50, 50, 50, 50, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
+    private float[] _times = [ 20, 20, 20, 20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20, Rnd.Instance.D20 ];
     private Enemy[] _enemies = [];
     private Queue<Character> _turn = [];
     private bool _timeFlow = true;
@@ -434,8 +434,16 @@ public class TacticMapScreen : Screen
             i++;
         }
         
-        _game.Layers["input"].Set(14, 10, InputM.GetGlyph(EInputAction.Confirm));
-        _game.Layers["ascii"].Set(40, 10, "PAUSE");
+        _game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
+        if (!_paused)
+        {
+            _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
+            _game.Layers["ascii"].Set(36, 1, "PAUSE");
+        }
+        else
+        {
+            _game.Layers["ascii"].Set(31, 1, "TACTICS MODE");
+        }
     }
 
     private void DrawAP()
