@@ -279,8 +279,8 @@ public class TacticMapScreen : Screen
                                             if (e.Guard > 0)
                                             {
                                                 _selected.Add(e);
-                                                yield return new WaitForSeconds(0.2f);
                                                 DrawCombat();
+                                                yield return new WaitForSeconds(0.2f);
                                                 break;
                                             }
                                         }
