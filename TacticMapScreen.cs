@@ -393,6 +393,12 @@ public class TacticMapScreen : Screen
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
             Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
+
+            if (_selectedIndex == i)
+            {
+                Draw(p.X, p.Y - 3, new Glyph(8, 74 - 16, Color.Transparent, p.Tint));
+            }
+
             i++;
         }
         
@@ -672,17 +678,38 @@ public class TacticMapScreen : Screen
 
     private bool _inspectMode = false;
     public Character? AttackTarget = null;
+    private int _selectedIndex = 0;
     
     private void CheckPlayerInputs()
     {
-        if (_inspectMode)
+        if (InputM.IsActive(EInputAction.MoveRight))
         {
-            if (InputM.IsActive(EInputAction.ExitInspect))
-            {
-                _inspectMode = false;
-            }
-            return;
+            _selectedIndex += 1;
+            if (_selectedIndex > 3) _selectedIndex = 0;
         }
+        else if (InputM.IsActive(EInputAction.MoveLeft))
+        {
+            _selectedIndex -= 1;
+            if (_selectedIndex < 0) _selectedIndex = 3;
+        }
+        else if (InputM.IsActive(EInputAction.SwapLeft))
+        {
+            Swap(_selectedIndex, _selectedIndex - 1 < 0 ? 3 : _selectedIndex - 1);
+            _selectedIndex -= 1;
+            if (_selectedIndex < 0) _selectedIndex = 3;
+
+        }
+        else if (InputM.IsActive(EInputAction.SwapRight))
+        {
+            Swap(_selectedIndex, _selectedIndex + 1 > 3 ? 0 : _selectedIndex + 1);
+            _selectedIndex += 1;
+            if (_selectedIndex > 3) _selectedIndex = 0;
+        }
+    }
+
+    private void Swap(int leftIndex, int rightIndex)
+    {
+        (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
     }
 
     private void StartSubmenu(string[] opts, bool cancel = true)

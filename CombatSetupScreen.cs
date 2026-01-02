@@ -55,7 +55,6 @@ namespace SINEATER
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Black, p.Tint));
                 _game.Layers["ascii"].Set(p.X + 14 + 2* (i + 1), p.Y + 2, fieldsAffinity[i], affinityColors[i]);
 
-
                 if (_selectedIndex == i)
                 {
                     Draw(p.X, p.Y - 1, new Glyph(8, 74 - 16, Color.Black, p.Tint));
@@ -123,8 +122,9 @@ namespace SINEATER
             }
             else if (InputM.IsActive(EInputAction.StartFight))
             {
+                _game.ScreenStack.Pop();
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
-                CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
+                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
             else if (InputM.IsActive(EInputAction.Equipment))
             {
@@ -155,11 +155,10 @@ namespace SINEATER
                 if (_selectedIndex > 3) _selectedIndex = 0;
             }
         }
+        
         private void Swap(int leftIndex, int rightIndex)
         {
-            var tmp = _game.Party.Characters[leftIndex];
-            _game.Party.Characters[leftIndex] = _game.Party.Characters[rightIndex];
-            _game.Party.Characters[rightIndex] = tmp;
+            (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
         }
 
         private readonly List<(int, int)> _positions = [(0, 3), (1, 3), (2, 3), (3, 3)];
