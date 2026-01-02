@@ -43,13 +43,18 @@ namespace SINEATER
 
             _game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
 
+            string[] fieldsAffinity = ["POI", "CLA", "WIL", "VIG"];
+            Color[] affinityColors = [Color.CornflowerBlue, Color.GreenYellow, Color.ForestGreen, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
+
             int i = 0;
             foreach (var p in SineaterGame.Instance.Party.Characters)
             {
                 var (u, v) = p.Job.GetImage();
-                p.X = i * 2;
+                p.X = i * 2 - 1;
                 p.Y = 3;
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Black, p.Tint));
+                _game.Layers["ascii"].Set(p.X + 14 + 2* (i + 1), p.Y + 2, fieldsAffinity[i], affinityColors[i]);
+
 
                 if (_selectedIndex == i)
                 {
@@ -57,15 +62,19 @@ namespace SINEATER
                 }
 
                 i++;
+
             }
 
+            int j = 0;
             foreach (var p in _encounter.Enemies)
             {
                 var (u, v) = p.GetIcon();
                 p.X = 5 + (4 - i) * 2 + 15;
                 p.Y = 3;
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
+                _game.Layers["ascii"].Set(45 + j*4, p.Y + 2, fieldsAffinity[3-j], affinityColors[3-j]);
                 i++;
+                j++;
             }
 
             DrawParty();
