@@ -19,7 +19,7 @@ namespace SINEATER
 
         private int _selectedIndex = 0;
 
-        private int _pageSize = 10;
+        private int _pageSize = 9;
         private int _pageIndex = 0;
         private int _pageCount => _game.Party.Inventory.Items.Count / _pageSize + 1;
 
@@ -40,7 +40,7 @@ namespace SINEATER
             _game.Layers["mrmo"].Clear();
 
             var start = new Vector2(2, 1);
-            var end = new Vector2(30, 17);
+            var end = new Vector2(30, 15);
 
             SineaterGame.Instance.Layers["mrmo"].SetRect(start, end, ' ');
 
@@ -100,8 +100,8 @@ namespace SINEATER
                         var c = from[i];
                         if (c == 'x')
                         {
-                            
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 6, "!");
+                            // ISPOD IGRACA
+                            _game.Layers["mrmo"].Set((i*2 - 1 + 8 + 2 * (i + 1))/2, 6, new Glyph(12, 25, Color.Transparent, Color.Yellow));
                         }
                     }
                 }
@@ -114,12 +114,11 @@ namespace SINEATER
                         var c = toEnemy[i];
                         if (c == 'x')
                         {
-                            _game.Layers["mrmo"].Set(16 + i * 4, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
-                           //_game.Layers["ascii"].Set(33 + i * 4, 2 , "O");
+                            _game.Layers["mrmo"].Set(16 + i * 2, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
                         }
                         else if(c == 'X')
                         {
-                            _game.Layers["mrmo"].Set(16 + i*4, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
+                            _game.Layers["mrmo"].Set(16 + i*2, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
                         }
                     }
                 }
@@ -129,7 +128,7 @@ namespace SINEATER
                 {
                     if (toParty == "self")
                     {
-                        _game.Layers["ascii"].Set(_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1), 2, "@");
+                        _game.Layers["mrmo"].Set((_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1)) / 2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
                     }
 
                     for (int i = 0; i < 4; i++)
@@ -138,17 +137,13 @@ namespace SINEATER
                         if (c == 'x')
                         {
                             _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1)) / 2, 2, new Glyph(12, 26, Color.Transparent, Color.Green));
-                            //_game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "O");
                         }
                         else if (c == 'X')
                         {
                             _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1))/2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
-                            //_game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "@");
                         }
                     }
                 }
-
-
             }
         }
 
@@ -202,7 +197,7 @@ namespace SINEATER
 
                     _game.Layers["ascii"].Set(x + 3, y + 1 + i, " ", Color.White, GetColorForStat(item.Stat));
                     _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
-                    _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $"  {stat}", stat < 0 ? Color.Red : Color.Green);
+                    _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}", stat < 0 ? Color.Red : Color.Green);
                 }
 
                 _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
@@ -213,6 +208,7 @@ namespace SINEATER
         private void DrawControls()
         {
             var left = 6;
+            var right = 27;
             var top = 13;
             _game.Layers["input"].Set(left - 1, top-1, InputM.GetGlyph(EInputAction.SwapLeft));
             _game.Layers["input"].Set(left, top -1, InputM.GetGlyph(EInputAction.SwapRight));
@@ -228,11 +224,11 @@ namespace SINEATER
             _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.ChangePage));
             _game.Layers["ascii"].Set(left * 2, top + 1, "Cycle Item List", _pageCount == 1 ? Color.Gray : Color.White);
 
-            _game.Layers["input"].Set(left, top + 3, InputM.GetGlyph(EInputAction.StartFight));
-            _game.Layers["ascii"].Set(left * 2, top + 2, "Ready");
+            _game.Layers["input"].Set(right, top + 1, InputM.GetGlyph(EInputAction.StartFight));
+            _game.Layers["ascii"].Set(right * 2, top , "Ready");
 
-            _game.Layers["input"].Set(left, top + 4, InputM.GetGlyph(EInputAction.CancelFight));
-            _game.Layers["ascii"].Set(left * 2, top + 3, "Back");
+            _game.Layers["input"].Set(right, top + 2, InputM.GetGlyph(EInputAction.CancelFight));
+            _game.Layers["ascii"].Set(right * 2, top +1, "Back");
         }
 
         public override void SubmenuActivate(string action)
@@ -301,7 +297,6 @@ namespace SINEATER
                 _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
             }
 
-            if (InputM.IsActive(EInputAction.MoveRight))
             if (InputM.IsActive(EInputAction.MoveRight))
             {
                 _selectedIndex += 1;
