@@ -145,6 +145,22 @@ public class Stats
         Vigor = vig;
     }
 
+    public int this[int n]
+    {
+        get
+        {
+            switch (n)
+            {
+                case 1: return Will;
+                case 2: return Clarity;
+                case 3: return Poise;
+                case 0: return Vigor;
+                default:
+                    return 0;
+            }
+        }
+    }
+    
     public int this[EStat stat]
     {
         get
@@ -323,6 +339,18 @@ public abstract class Character : ICharacter
     public bool IsMovementFree { get; set; } = false;
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;
+    public bool Broken { get; set; } = false;
+
+    public bool CheckBroken()
+    {
+        if (Guard == 0)
+        {
+            Broken = true;
+            return true;
+        }
+
+        return false;
+    }
     
     public void ForceRestart(Screen screen)
     {
@@ -582,7 +610,8 @@ public record struct Party
                     break;
                 case ECharacterClass.Knight:
                     Characters[i].Equip(ItemLibrary.GetWeapon("Red Sign"));
-                    Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Claymore"));
+                    Characters[i].Equip(EStat.Clarity, ItemLibrary.GetWeapon("Thorn Whip"));
+                    //Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Claymore"));
                     Characters[i].Equip(ItemLibrary.GetItem("Ruby Plate"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
@@ -598,7 +627,7 @@ public record struct Party
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].Equip(ItemLibrary.GetWeapon("Thorn Whip"));
+                    Characters[i].Equip(EStat.Vigor, ItemLibrary.GetWeapon("Thorn Whip"));
                     //Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Misericorde"));
                     Characters[i].Equip(ItemLibrary.GetItem("Sash"));
                     Characters[i].Stats.Will = 2;

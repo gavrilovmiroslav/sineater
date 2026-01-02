@@ -45,6 +45,7 @@ public class TacticMapScreen : Screen
     public TacticMapScreen(SineaterGame game, Encounter encounter) : base(game)
     {
         _enemies = encounter.Enemies.ToArray();
+        _enemies = _enemies.Reverse().ToArray();
         foreach (var p in _game.Party.Characters)
         {
             p.Guard = 1;
@@ -95,6 +96,68 @@ public class TacticMapScreen : Screen
         }
     }
 
+    private void FindTargets(Item weapon, string selection, int fi, bool flip, out List<int> targets)
+    {
+        List<int> indices = [];
+        targets = [];
+        var all = false;
+
+        if (selection == "self")
+        {
+            targets.Add(fi);
+        }
+        else
+        {
+            for (var e = 0; e < 4; e++)
+            {
+                var fe = flip ? 4 - e - 1 : e;
+                if (selection[fe] == 'x' || selection[fe] == 'X')
+                {
+                    all |= selection[fe] == 'X';
+                    indices.Add(fe);
+                }
+            }
+
+            if (!all)
+            {
+                if (indices.Count > 0)
+                {
+                    targets = [indices[Rnd.Instance.Next(0, indices.Count)]];
+                }
+            }
+            else
+            {
+                targets = indices;
+            }
+        }
+    }
+
+    private string GetTargetText(Weapon weapon, Func<Weapon, string> prop)
+    {
+        var p = prop(weapon);
+        if (p == "self")
+        {
+            return " to self";
+        }
+        else if (p.Contains('X'))
+        {
+            if (p.All(c => c == 'X'))
+            {
+                return " to all";
+            }
+            else
+            {
+                return " to many";
+            }
+        }
+        else if (p.Contains('x'))
+        {
+            return " to one";
+        }
+
+        return "";
+    }
+    
     private IEnumerable CoAttack(Character c)
     {
         var first = c;
@@ -132,8 +195,7 @@ public class TacticMapScreen : Screen
                     {
                         if (weapon.From[fi] != '-')
                         {
-                            _game.Layers["ascii"].Set(2, 0, $"[{stat}] {first.GetName()} uses {weapon.Name} {weapon.Profile}.");
-                            yield return new WaitForSeconds(1f);
+                            _game.Layers["ascii"].Set(37 - (weapon.Name.Length / 2), 12, $"{weapon.Name}");
                             var atk = weapon.Attack;
                             var grd = weapon.Guard;
 
@@ -142,61 +204,45 @@ public class TacticMapScreen : Screen
                                 atk += (int)Math.Min(1, MathF.Ceiling(atk * (float)weapon.Quality / 10.0f));
                                 grd += (int)Math.Min(1, MathF.Ceiling(grd * (float)weapon.Quality / 10.0f));
                             }
+                            var msg = "";
+                            if (weapon.Attack > 0)
+                            {
+                                msg = $"-{atk} GUARD" + GetTargetText(weapon, w => w.ToEnemy);
+                            }
+                            else
+                            {
+                                msg = $"+{grd} GUARD" + GetTargetText(weapon, w => w.ToParty);
+                            }
                             
-                            var indices = new List<int>();
-                            var all = false;
+                            _game.Layers["ascii"].Set(37 - (msg.Length / 2), 13, msg);
+                            yield return new WaitForSeconds(1f);
 
                             if (!weapon.ToParty.All(c => c == '-'))
                             {
-                                if (weapon.ToParty == "self")
-                                {
-                                    indices.Add(fi);
-                                }
-                                else
-                                {
-                                    for (var e = 0; e < 4; e++)
-                                    {
-                                        var fe = flip ? 4 - e - 1 : e;
-                                        if (weapon.ToParty[fe] == 'x' || weapon.ToParty[fe] == 'X')
-                                        {
-                                            all |= weapon.ToParty[fe] == 'X';
-                                            indices.Add(fe);
-                                        }
-                                    }
+                                FindTargets(weapon, weapon.ToParty, fi, flip, out var targets);
 
-                                    if (!all)
+                                foreach (var idx in targets)
+                                {
+                                    if (friends[idx].Guard == 9)
                                     {
-                                        if (indices.Count > 0)
+                                        foreach (var e in friends)
                                         {
-                                            indices = [indices[Rnd.Instance.Next(0, indices.Count)]];
-                                        }
-                                    }
-
-                                    foreach (var idx in indices)
-                                    {
-                                        if (friends[idx].Guard == 9)
-                                        {
-                                            foreach (var e in friends)
+                                            if (e.Guard < 9)
                                             {
-                                                if (e.Guard < 9)
-                                                {
-                                                    _selected.Add(e);
-                                                    yield return new WaitForSeconds(0.2f);
-                                                    DrawCombat();
-                                                    break;
-                                                }
+                                                _selected.Add(e);
+                                                DrawCombat();
+                                                break;
                                             }
                                         }
-                                        else
-                                        {
-                                            _selected.Add(friends[idx]);
-                                            DrawCombat();
-                                        }
+                                    }
+                                    else
+                                    {
+                                        _selected.Add(friends[idx]);
+                                        DrawCombat();
                                     }
                                 }
-
                                 yield return new WaitForSeconds(0.5f);
-                                foreach (var idx in indices)
+                                foreach (var idx in targets)
                                 {
                                     if (friends[idx].Guard == 0)
                                     {
@@ -221,64 +267,19 @@ public class TacticMapScreen : Screen
                             }
                             else
                             {
-                                if (weapon.ToEnemy == "self")
-                                {
-                                    indices.Add(fi);
-                                }
-                                else
-                                {
-                                    for (var e = 0; e < 4; e++)
-                                    {
-                                        var fe = flip ? 4 - e - 1 : e;
-                                        if (weapon.ToEnemy[fe] == 'x' || weapon.ToEnemy[fe] == 'X')
-                                        {
-                                            all |= weapon.ToEnemy[fe] == 'X';
-                                            indices.Add(fe);
-                                        }
-                                    }
+                                FindTargets(weapon, weapon.ToEnemy, fi, flip, out var targets);
 
-                                    if (!all)
-                                    {
-                                        if (indices.Count > 0)
-                                        {
-                                            indices = [indices[Rnd.Instance.Next(0, indices.Count)]];
-                                        }
-                                    }
-
-                                    foreach (var idx in indices)
-                                    {
-                                        if (enemies[idx].Guard == 0)
-                                        {
-                                            foreach (var e in enemies)
-                                            {
-                                                if (e.Guard > 0)
-                                                {
-                                                    _selected.Add(e);
-                                                    yield return new WaitForSeconds(0.2f);
-                                                    DrawCombat();
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            _selected.Add(enemies[idx]);
-                                            DrawCombat();
-                                        }
-                                    }
-                                }
-
-                                yield return new WaitForSeconds(0.5f);
-                                foreach (var idx in indices)
+                                foreach (var idx in targets)
                                 {
-                                    if (enemies[idx].Guard == 0)
+                                    var ii = flip ? idx : 4 - idx - 1;
+                                    if (enemies[ii].Guard == 0)
                                     {
                                         foreach (var e in enemies)
                                         {
                                             if (e.Guard > 0)
                                             {
-                                                yield return new CoBlinkCharacter(e, this);
-                                                e.Guard.Down(1);
+                                                _selected.Add(e);
+                                                yield return new WaitForSeconds(0.2f);
                                                 DrawCombat();
                                                 break;
                                             }
@@ -286,8 +287,43 @@ public class TacticMapScreen : Screen
                                     }
                                     else
                                     {
-                                        yield return new CoBlinkCharacter(enemies[idx], this);
-                                        enemies[idx].Guard.Down(atk);
+                                        _selected.Add(enemies[ii]);
+                                        DrawCombat();
+                                    }
+                                }
+                                yield return new WaitForSeconds(0.5f);
+                                foreach (var idx in targets)
+                                {
+                                    var ii = flip ? idx : 4 - idx - 1;
+                                    if (enemies[ii].Guard == 0)
+                                    {
+                                        foreach (var e in enemies)
+                                        {
+                                            if (e.Guard > 0)
+                                            {
+                                                yield return new CoBlinkCharacter(e, this);
+                                                DrawCombat();
+                                                e.Guard.Down(1);
+                                                DrawCombat();
+                                                if (e.CheckBroken())
+                                                {
+                                                    yield return new CoBlinkCharacter(e, this, front: Color.Red);
+                                                }
+                                                DrawCombat();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        yield return new CoBlinkCharacter(enemies[ii], this);
+                                        DrawCombat();
+                                        enemies[ii].Guard.Down(1);
+                                        DrawCombat();
+                                        if (enemies[ii].CheckBroken())
+                                        {
+                                            yield return new CoBlinkCharacter(enemies[ii], this, front: Color.Red);
+                                        }
                                         DrawCombat();
                                     }
                                 }
@@ -541,6 +577,7 @@ public class TacticMapScreen : Screen
         
         for (var n = 0; n < 4; n++)
         {
+            slowdown = 1.0f;
             batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), null, Color.White, 0.0f, Vector2.Zero, new Vector2(34.0f, 4.0f),
                 SpriteEffects.None, 0);
             batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), null, Color.Red, 0.0f, Vector2.Zero, new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
@@ -548,13 +585,22 @@ public class TacticMapScreen : Screen
 
             if (!_timeFlow) continue;
             var p = _game.Party.Characters[n];
-            var speed = p.Vig + p.Wil + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
-            
+            if (p.Broken)
+            {
+                _times[n] = 0;
+                p.Broken = false;
+            }
+            var speed = 3.14f * p.Stats[n] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+
             var t = _times[n];
 
             if (p.Guard <= 0)
             {
                 slowdown = 0.25f;
+            }
+            else if (p.Guard >= 9)
+            {
+                slowdown = 1.5f;
             }
             
             _times[n] = Math.Clamp(
@@ -562,15 +608,22 @@ public class TacticMapScreen : Screen
         
             if (t <= 100 && _times[n] >= 100)
             {
-                _turn.Enqueue(p);
                 _times[n] = 0;
-                if (p.Guard <= 0) p.Guard.Up(1);
+                if (p.Guard <= 0)
+                {
+                    p.Guard.Up(1);
+                }
+                else
+                {
+                    _turn.Enqueue(p);
+                }
             }
         }
         
         for (var j = 0; j < 4; j++)
         {
-            var n = 4 + j; //(4 - j - 1);
+            slowdown = 1.0f;
+            var n = 4 + (4 - j - 1);
             batch.Draw(_pixel, new Vector2(864 + 64 * j, 424), null, Color.White, 0.0f, Vector2.Zero, new Vector2(34.0f, 4.0f),
                 SpriteEffects.None, 0);
             batch.Draw(_pixel, new Vector2(864 + 64 * j, 424), null, Color.Red, 0.0f, Vector2.Zero, new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
@@ -578,13 +631,35 @@ public class TacticMapScreen : Screen
             
             if (!_timeFlow) continue;
             var p = _enemies[j];
-            var speed = p.Vig + p.Wil + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+            if (p.Broken)
+            {
+                _times[n] = 0;
+                p.Broken = false;
+            }
+            
+            var speed = 3 * p.Stats[j] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+            if (p.Guard <= 0)
+            {
+                slowdown = 0.25f;
+            }
+            else if (p.Guard >= 9)
+            {
+                slowdown = 1.5f;
+            }
+            
             var t = _times[n];
             _times[n] = Math.Clamp(_times[n] + slowdown * speed * ((float)gameTime.ElapsedGameTime.Milliseconds / 1000.0f), 0, 100);
             if (t <= 100 && _times[n] >= 100)
             {
-                _turn.Enqueue(p);
                 _times[n] = 0;
+                if (p.Guard <= 0)
+                {
+                    p.Guard.Up(1);
+                }
+                else
+                {
+                    _turn.Enqueue(p);
+                }
             }
         }
     }
