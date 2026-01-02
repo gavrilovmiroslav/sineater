@@ -39,7 +39,7 @@ namespace SINEATER
             _game.Layers["ascii"].Clear();
             _game.Layers["mrmo"].Clear();
 
-            var start = new Vector2(2, 2);
+            var start = new Vector2(2, 1);
             var end = new Vector2(30, 17);
 
             SineaterGame.Instance.Layers["mrmo"].SetRect(start, end, ' ');
@@ -100,7 +100,7 @@ namespace SINEATER
                         var c = from[i];
                         if (c == 'x')
                         {
-                            //_game.Layers["mrmo"].Set(10, 10, new Glyph(12, 25, Color.Transparent, Color.Yellow));
+                            
                             _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 6, "!");
                         }
                     }
@@ -114,11 +114,12 @@ namespace SINEATER
                         var c = toEnemy[i];
                         if (c == 'x')
                         {
-                            _game.Layers["ascii"].Set(33 + i * 4, 2 , "O");
+                            _game.Layers["mrmo"].Set(16 + i * 4, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
+                           //_game.Layers["ascii"].Set(33 + i * 4, 2 , "O");
                         }
                         else if(c == 'X')
                         {
-                            _game.Layers["ascii"].Set(33 + i * 4, 2, "@");
+                            _game.Layers["mrmo"].Set(16 + i*4, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
                         }
                     }
                 }
@@ -136,11 +137,13 @@ namespace SINEATER
                         var c = toParty[i];
                         if (c == 'x')
                         {
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "O");
+                            _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1)) / 2, 2, new Glyph(12, 26, Color.Transparent, Color.Green));
+                            //_game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "O");
                         }
                         else if (c == 'X')
                         {
-                            _game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "@");
+                            _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1))/2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
+                            //_game.Layers["ascii"].Set(i * 2 - 1 + 8 + 2 * (i + 1), 2, "@");
                         }
                     }
                 }
