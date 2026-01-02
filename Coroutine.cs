@@ -317,7 +317,7 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
     }
 }
 
-public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null) : IEnumerable
+public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null, Color? front = null) : IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
@@ -332,7 +332,7 @@ public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null) 
             {
                 (gu, gv) = p.Job.GetImage();
             }
-            screen.Draw(chr.X, chr.Y, new Glyph(gu, gv, back ?? Color.Transparent, chr.Tint));
+            screen.Draw(chr.X, chr.Y, new Glyph(gu, gv, back ?? Color.Transparent, front ?? chr.Tint));
             yield return new WaitForSeconds(0.02f);
             screen.Draw(chr.X, chr.Y, " ");
             yield return new WaitForSeconds(0.02f);

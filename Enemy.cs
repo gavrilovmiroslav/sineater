@@ -21,7 +21,7 @@ public class Enemy : Character
     public (int, int) DeadIcon;
     public int Sin;
     public bool IsDead = false;
-    
+
     public (int, int) GetIcon(bool selected = false)
     {
         var (x, y) = Icon;
