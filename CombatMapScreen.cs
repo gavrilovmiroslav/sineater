@@ -555,7 +555,7 @@ public class CombatMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        _game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
+        //_game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)

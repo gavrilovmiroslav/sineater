@@ -181,72 +181,74 @@ public class DomainOfHealing(ICharacter character, int x, int y, int radius) : D
 
     public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
     {
-        if (character.GetAP().Count(EStatus.Wound) > 0)
-        {
-            character.GetAP().Reduce(EStatus.Wound, 1);
-            for (var i = 0; i < 10; i++)
-            {
-                level.Draw(x, y, "+", Color.Lerp(Color.Black, Color.Green, i / 10.0f));
-                yield return new WaitForSeconds(0.001f);
-            }
-        }
-        else
-        {
-            character.GetAP().Add(EStatus.Insanity, 5);
-            for (var i = 0; i < 10; i++)
-            {
-                level.Draw(x, y, "!", Color.Lerp(Color.Yellow, Color.DarkRed, i / 10.0f));
-                yield return new WaitForSeconds(0.0001f);
-            }
-        }
+        // if (character.GetAP().Count(EStatus.Wound) > 0)
+        // {
+        //     character.GetAP().Reduce(EStatus.Wound, 1);
+        //     for (var i = 0; i < 10; i++)
+        //     {
+        //         level.Draw(x, y, "+", Color.Lerp(Color.Black, Color.Green, i / 10.0f));
+        //         yield return new WaitForSeconds(0.001f);
+        //     }
+        // }
+        // else
+        // {
+        //     character.GetAP().Add(EStatus.Insanity, 5);
+        //     for (var i = 0; i < 10; i++)
+        //     {
+        //         level.Draw(x, y, "!", Color.Lerp(Color.Yellow, Color.DarkRed, i / 10.0f));
+        //         yield return new WaitForSeconds(0.0001f);
+        //     }
+        // }
+        yield break;
     }
 
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
     {
-        yield return DefaultDomainOpening(level);
-        
-        var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
-        circle.Shuffle();
-
-        var ew = 0; //level.Enemies[0].GetAP().Count<StatusWounds>();
-        var pw = Caster.GetAP().Count(EStatus.Wound);
-        var wounds = pw + ew / 2;
-
-        var walkable = circle.Where(c => level.Map.IsWalkable(c.X, c.Y)).ToList();
-        foreach (var w in walkable)
-        {
-            level.Domains.Tiles[((int)w.X, (int)w.Y)] = this;
-        }
-        
-        circle.Shuffle();
-        
-        for (int i = 0; i < 10; i++)
-        {
-            int c = 0;
-            foreach (var cell in circle)
-            {
-                if (cell.X == x && cell.Y == y) continue;
-                c++;
-                var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y)) / Radius;
-                level.Draw(
-                    cell.X, cell.Y, 
-                    new Glyph(
-                        (int)(i + cell.Y) % 3, 
-                        57 + (int)(2 * i + cell.X) % 3,
-                        Color.Black, 
-                        Color.Lerp(Color.Black, Color.DarkRed, dist * (float)i / 10)));
-                if (c > 3)
-                {
-                    c = 0;
-                    yield return new WaitForSeconds(0.0001f);
-                }
-            }
-            yield return new WaitForSeconds(0.001f);
-        }
-
-        yield return new WaitForSeconds(0.25f);
-
-        yield return Blink(level);
+        // yield return DefaultDomainOpening(level);
+        //
+        // var circle = level.Map.GetCellsInCircle(x, y, Radius).ToList();
+        // circle.Shuffle();
+        //
+        // var ew = 0; //level.Enemies[0].GetAP().Count<StatusWounds>();
+        // var pw = Caster.GetAP().Count(EStatus.Wound);
+        // var wounds = pw + ew / 2;
+        //
+        // var walkable = circle.Where(c => level.Map.IsWalkable(c.X, c.Y)).ToList();
+        // foreach (var w in walkable)
+        // {
+        //     level.Domains.Tiles[((int)w.X, (int)w.Y)] = this;
+        // }
+        //
+        // circle.Shuffle();
+        //
+        // for (int i = 0; i < 10; i++)
+        // {
+        //     int c = 0;
+        //     foreach (var cell in circle)
+        //     {
+        //         if (cell.X == x && cell.Y == y) continue;
+        //         c++;
+        //         var dist = Vector2.Distance(new Vector2(cell.X, cell.Y), new Vector2(x, y)) / Radius;
+        //         level.Draw(
+        //             cell.X, cell.Y, 
+        //             new Glyph(
+        //                 (int)(i + cell.Y) % 3, 
+        //                 57 + (int)(2 * i + cell.X) % 3,
+        //                 Color.Black, 
+        //                 Color.Lerp(Color.Black, Color.DarkRed, dist * (float)i / 10)));
+        //         if (c > 3)
+        //         {
+        //             c = 0;
+        //             yield return new WaitForSeconds(0.0001f);
+        //         }
+        //     }
+        //     yield return new WaitForSeconds(0.001f);
+        // }
+        //
+        // yield return new WaitForSeconds(0.25f);
+        //
+        // yield return Blink(level);
+        yield break;
     }
 
     public override void Draw(CombatMapScreen level)
@@ -381,7 +383,7 @@ public class DomainOfAction(ICharacter character, int x, int y, int radius) : Do
 
         yield return Blink(level);
         
-        character.GetAP().Add(EStatus.Stamina, 1);
+        //character.GetAP().Add(EStatus.Stamina, 1);
     }
 
     public override void Draw(CombatMapScreen level)
@@ -469,7 +471,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
     private float _t = 0;
     private long _seed;
     private int _shrinking = radius;
-    
+
     private Dictionary<(int, int), Glyph> _glyphs = [];
 
     public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
@@ -477,16 +479,16 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         _seed = Rnd.Instance.Next(0, 10000);
         _dx = Rnd.Instance.Next01() - 0.5f;
         _dy = Rnd.Instance.Next01() - 0.5f;
-        
+
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
 
         level.DrawCombat();
         yield return new WaitForSeconds(0.5f);
-        
+
         HashSet<(int, int)> drawn = [];
         var tR = (Radius + 2) / 10.0f;
         var tA = 0.9f;
-        
+
         for (int i = 1; i <= Radius; i++)
         {
             for (int n = 0; n < 10; n++)
@@ -494,13 +496,14 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                 foreach (var cell in level.Map?.GetBorderCellsInCircle(x, y, i + 1) ?? [])
                 {
                     level.Draw(cell.X, cell.Y, " ", Color.White, new Color(0, 0, (int)(25 * (float)i / Radius)));
-                    level.Draw(cell.X, cell.Y, new Glyph(n % 2 == 0 ? 12 : 13, 8, Color.Black, Color.Lerp(Color.OrangeRed,
+                    level.Draw(cell.X, cell.Y, new Glyph(n % 2 == 0 ? 12 : 13, 8, Color.Black, Color.Lerp(
+                        Color.OrangeRed,
                         Color.Blue, n / 10.0f)));
                 }
 
                 yield return new WaitForSeconds(0.05f);
             }
-            
+
             var bcells = level.Map?.GetCellsInCircle(x, y, i + 1) ?? [];
             foreach (var cell in bcells)
             {
@@ -521,18 +524,22 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                     if (level.Map.IsWalkable(cell.X, cell.Y) && d20 <= 4)
                     {
                         _glyphs[xy] = new Glyph(Rnd.Instance.D4 - 1, 20,
-                            new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
+                            new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)),
+                            Color.Yellow);
                         level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                     else if (level.Map.IsWalkable(cell.X, cell.Y) && d20 == 5)
                     {
                         _glyphs[xy] = new Glyph(13 + Rnd.Instance.D2, 40 + Rnd.Instance.D2,
-                            new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
+                            new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)),
+                            Color.Yellow);
                         level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                     else
                     {
-                        _glyphs[xy] = new Glyph(0, 0, new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)), Color.Yellow);
+                        _glyphs[xy] = new Glyph(0, 0,
+                            new Color((int)(xnoise * 25), (int)(ynoise * 25), (int)(25 * (float)i / Radius)),
+                            Color.Yellow);
                         level.Draw(cell.X, cell.Y, _glyphs[xy]);
                     }
                 }
@@ -542,7 +549,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             tR *= tA;
             tA *= 0.75f;
         }
-        
+
         foreach (var cell in level.Map?.GetCellsInCircle(x, y, Radius) ?? [])
         {
             level.Domains.Tiles[(cell.X, cell.Y)] = this;
@@ -555,7 +562,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         //         enemy.Behaviors.Insert(0, new BehaviorYearnForLight());
         //     }
         // }
-        
+
         yield return new WaitForSeconds(1f);
         yield return Blink(level);
     }
@@ -568,7 +575,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
             ShouldClose = true;
             return;
         }
-        
+
         HashSet<(int, int)> stars = [];
         foreach (var (xy, g) in _glyphs)
         {
@@ -600,7 +607,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                 level.Domains.Tiles.Remove(xy);
             }
         }
-        
+
         // foreach (var enemy in level.Enemies)
         // {
         //     if (level.Domains.Tiles.ContainsKey((enemy.X, enemy.Y)))
@@ -615,14 +622,16 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         _dx += 0.01f;
         _dy += 0.01f;
         _t += 0.001f;
-        
+
         var mrmo = SineaterGame.Instance.Layers["mrmo"];
         foreach (var ((cx, cy), g) in _glyphs)
         {
-            var xnoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Cos(MathF.PI + _t));
-            var ynoise = OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Sin(MathF.PI / 2 + _t));
+            var xnoise =
+                OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Cos(MathF.PI + _t));
+            var ynoise =
+                OpenSimplex2S.Noise3_ImproveXY(_seed, cx * 0.1f + _dx, cy * 0.1f + _dy, MathF.Sin(MathF.PI / 2 + _t));
             var dist = Vector2.Distance(new Vector2(cx, cy), new Vector2(x, y)) / Radius;
-            
+
             var fg = Color.White;
             var color = new Color((int)(xnoise * 15), (int)(ynoise * 15),
                 (int)(35 * dist - xnoise * 10 - ynoise * 10));
@@ -633,6 +642,7 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
                     fg = Color.Lerp(Color.White, Color.Red, MathF.Abs(MathF.Sin(_t * 10)));
                     color = Color.Lerp(color, Color.DarkRed, MathF.Abs(MathF.Cos(_t * 10)));
                 }
+
                 level.Draw(cx, cy, g);
                 level.Draw(cx, cy, fg, color);
             }
@@ -643,341 +653,336 @@ public class DomainOfDarkness(ICharacter character, int x, int y, int radius) : 
         }
     }
 
-    
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
+
+    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y,
+        int oldX, int oldY)
     {
-        var ap = character.GetAP();
-        if (_glyphs[(x, y)].V != 0)
-        {
-            if (ap.Count(EStatus.Frozen) > 0)
-            {
-                ap.Reduce(EStatus.Frozen, 4);
-            }
-            else
-            {
-                ap.Add(EStatus.Fire, 1);
-            }
-        }
-        else
-        {
-            if (ap.Count(EStatus.Fire) > 0)
-            {
-                character.GetAP().Reduce(EStatus.Fire, 1);
-            }
-            else
-            {
-                character.GetAP().Add(EStatus.Frozen, 1);
-            }
-        }
-
-        yield return new WaitForSeconds(0.01f);
-    }
-}
-
-
-public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
-{
-    private int _t = 0;
-    internal List<(int, int, ICharacter)> _totems = [];
-    Dictionary<(int, int), int> _shadows = [];
-    Dictionary<(int, int), Color> _shadowColors = [];
-    Dictionary<ICharacter, int> _moves = [];
-    private int _turns = 3;
-
-    public override IEnumerable ApplyOnDeath(IScreen level, int eX, int eY)
-    {
-        List<(int, int, ICharacter)> toRemove = [];
-        foreach (var (tx, ty, t) in _totems)
-        {
-            if (tx == eX && ty == eY)
-            {
-                toRemove.Add((tx, ty, t));
-            }
-        }
-
-        foreach (var rem in toRemove)
-        {
-            _totems.Remove(rem);
-        }
-
-        (level as CombatMapScreen)?.DrawCombat();
+        //     var ap = character.GetAP();
+        //     if (_glyphs[(x, y)].V != 0)
+        //     {
+        //         if (ap.Count(EStatus.Frozen) > 0)
+        //         {
+        //             ap.Reduce(EStatus.Frozen, 4);
+        //         }
+        //         else
+        //         {
+        //             ap.Add(EStatus.Fire, 1);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (ap.Count(EStatus.Fire) > 0)
+        //         {
+        //             character.GetAP().Reduce(EStatus.Fire, 1);
+        //         }
+        //         else
+        //         {
+        //             character.GetAP().Add(EStatus.Frozen, 1);
+        //         }
+        //     }
+        //
+        //     yield return new WaitForSeconds(0.01f);
+        // }
         yield break;
     }
 
-    public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
+
+    public class DomainOfFatigue(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
     {
-        List<(int, int)> shadows = [];
-        level.DrawCombat();
-        var oldRadius = Radius;
-        Radius = 2;
-        yield return DefaultDomainOpening(level);
-        Radius = oldRadius;
-        
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
+        private int _t = 0;
+        internal List<(int, int, ICharacter)> _totems = [];
+        Dictionary<(int, int), int> _shadows = [];
+        Dictionary<(int, int), Color> _shadowColors = [];
+        Dictionary<ICharacter, int> _moves = [];
+        private int _turns = 3;
 
-        level.DrawCombat();
-
-        var goals = new GoalMap(level.Map, true);
-        shadows.Shuffle();
-         for (int c = 1; c < 4 + character.Stats.Mod(EStat.Clarity); c++)
-         {
-             foreach (var cell in level.Map?.GetBorderCellsInCircle(x, y, c) ?? [])
-             {
-                 if (!cell.IsWalkable)
-                     continue;
-                 goals.ClearGoals();
-                 goals.AddGoal(cell.X, cell.Y, 100);
-                 var path = goals.TryFindPath(x, y);
-                 if (path == null || path.Length > c * 2) continue;
-                 
-                 var sidx = 5 + Rnd.Instance.D4;
-                 Tiles.Add((cell.X, cell.Y));
-                 level.Domains.Tiles[(cell.X, cell.Y)] = this;
-                 _shadows[(cell.X, cell.Y)] = sidx;
-                 _shadowColors[(cell.X, cell.Y)] = Color.LightGray;
-                 level.Draw(cell.X, cell.Y,
-                     new Glyph(sidx, 72, Color.Black, _shadowColors[(cell.X, cell.Y)]));
-                 yield return new WaitForSeconds(0.01f);
-             }
-         }
-
-        yield return new WaitForSeconds(1f);
-        yield return Blink(level);
-    }
-
-    public IEnumerable SkullTotem(DomainOfFatigue domain, CombatMapScreen level, ICharacter c, int x, int y)
-    {
-        c.Render = false;
-        level.Draw(x, y, new Glyph(13, 71, Color.Black, Color.White));
-        yield return new WaitForSeconds(0.5f);
-        
-        for (int i = 0; i < 3; i++)
+        public override IEnumerable ApplyOnDeath(IScreen level, int eX, int eY)
         {
-            level.Draw(x, y - 1, new Glyph(13 + i, 71, Color.Black, Color.White));
-            level.Draw(x, y, new Glyph(13 + i, 72, Color.Black, Color.White));
+            List<(int, int, ICharacter)> toRemove = [];
+            foreach (var (tx, ty, t) in _totems)
+            {
+                if (tx == eX && ty == eY)
+                {
+                    toRemove.Add((tx, ty, t));
+                }
+            }
+
+            foreach (var rem in toRemove)
+            {
+                _totems.Remove(rem);
+            }
+
+            (level as CombatMapScreen)?.DrawCombat();
+            yield break;
+        }
+
+        public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
+        {
+            List<(int, int)> shadows = [];
+            level.DrawCombat();
+            var oldRadius = Radius;
+            Radius = 2;
+            yield return DefaultDomainOpening(level);
+            Radius = oldRadius;
+
+            var mrmo = SineaterGame.Instance.Layers["mrmo"];
+
+            level.DrawCombat();
+
+            var goals = new GoalMap(level.Map, true);
+            shadows.Shuffle();
+            for (int c = 1; c < 4 + character.Stats.Mod(EStat.Clarity); c++)
+            {
+                foreach (var cell in level.Map?.GetBorderCellsInCircle(x, y, c) ?? [])
+                {
+                    if (!cell.IsWalkable)
+                        continue;
+                    goals.ClearGoals();
+                    goals.AddGoal(cell.X, cell.Y, 100);
+                    var path = goals.TryFindPath(x, y);
+                    if (path == null || path.Length > c * 2) continue;
+
+                    var sidx = 5 + Rnd.Instance.D4;
+                    Tiles.Add((cell.X, cell.Y));
+                    level.Domains.Tiles[(cell.X, cell.Y)] = this;
+                    _shadows[(cell.X, cell.Y)] = sidx;
+                    _shadowColors[(cell.X, cell.Y)] = Color.LightGray;
+                    level.Draw(cell.X, cell.Y,
+                        new Glyph(sidx, 72, Color.Black, _shadowColors[(cell.X, cell.Y)]));
+                    yield return new WaitForSeconds(0.01f);
+                }
+            }
+
+            yield return new WaitForSeconds(1f);
+            yield return Blink(level);
+        }
+
+        public IEnumerable SkullTotem(DomainOfFatigue domain, CombatMapScreen level, ICharacter c, int x, int y)
+        {
+            c.Render = false;
+            level.Draw(x, y, new Glyph(13, 71, Color.Black, Color.White));
             yield return new WaitForSeconds(0.5f);
-        }
 
-        yield return new WaitForSeconds(2.0f);
-        domain._totems.Add((x, y, c));
-    }
-
-    public IEnumerable Disappear(CombatMapScreen level)
-    {
-        yield return Blink(level);
-        yield return new WaitForSeconds(0.01f);
-        
-        _totems.Clear();
-
-        foreach (var (tx, ty) in level.Domains.Tiles.Keys.ToList())
-        {
-            if (level.Domains.Tiles[(tx, ty)] == this)
+            for (int i = 0; i < 3; i++)
             {
-                level.Domains.Tiles.Remove((tx, ty));
+                level.Draw(x, y - 1, new Glyph(13 + i, 71, Color.Black, Color.White));
+                level.Draw(x, y, new Glyph(13 + i, 72, Color.Black, Color.White));
+                yield return new WaitForSeconds(0.5f);
             }
-        }
-        
-        _shadows.Clear();
-        _shadowColors.Clear();
-        
-        level.DrawCombat();
-        Close();
-    }
-    
-    public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y, int oldX, int oldY)
-    {
-        if (!_moves.ContainsKey(character))
-        {
-            _moves[character] = 0;
-        }
-        
-        _moves[character]++;
-        
-        var uv = level.GetUV(oldX, oldY);
-        var fg = level.GetFg(oldX, oldY);
-        level.Draw(oldX, oldY, $"{character.Stats.Clarity - _moves[character]}");
-        yield return new WaitForSeconds(0.3f);
-        if (uv.HasValue)
-        {
-            var (u, v) = uv.Value;
-            level.Draw(oldX, oldY, new Glyph(u, v, Color.Black, fg));
+
+            yield return new WaitForSeconds(2.0f);
+            domain._totems.Add((x, y, c));
         }
 
-        if (_moves[character] == character.Stats.Clarity)
+        public IEnumerable Disappear(CombatMapScreen level)
         {
-            yield return SkullTotem(this, level, character, x, y);
-            if (character is PartyMember c)
+            yield return Blink(level);
+            yield return new WaitForSeconds(0.01f);
+
+            _totems.Clear();
+
+            foreach (var (tx, ty) in level.Domains.Tiles.Keys.ToList())
             {
-                //yield return c.AddTrait(new TraitProne(3));
+                if (level.Domains.Tiles[(tx, ty)] == this)
+                {
+                    level.Domains.Tiles.Remove((tx, ty));
+                }
+            }
+
+            _shadows.Clear();
+            _shadowColors.Clear();
+
+            level.DrawCombat();
+            Close();
+        }
+
+        public override IEnumerable ApplyOnDomainStepped(CombatMapScreen level, ICharacter character, int x, int y,
+            int oldX, int oldY)
+        {
+            if (!_moves.ContainsKey(character))
+            {
                 _moves[character] = 0;
             }
-            else if (character is Enemy e)
+
+            _moves[character]++;
+
+            var uv = level.GetUV(oldX, oldY);
+            var fg = level.GetFg(oldX, oldY);
+            level.Draw(oldX, oldY, $"{character.Stats.Clarity - _moves[character]}");
+            yield return new WaitForSeconds(0.3f);
+            if (uv.HasValue)
             {
-                e.IsDone = true;
-                //yield return e.AddTrait(new TraitProne(3));
-                _moves[character] = 0;
+                var (u, v) = uv.Value;
+                level.Draw(oldX, oldY, new Glyph(u, v, Color.Black, fg));
+            }
+
+            if (_moves[character] == character.Stats.Clarity)
+            {
+                yield return SkullTotem(this, level, character, x, y);
+                if (character is PartyMember c)
+                {
+                    //yield return c.AddTrait(new TraitProne(3));
+                    _moves[character] = 0;
+                }
+                else if (character is Enemy e)
+                {
+                    e.IsDone = true;
+                    //yield return e.AddTrait(new TraitProne(3));
+                    _moves[character] = 0;
+                }
+            }
+
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        public override void Update(CombatMapScreen level)
+        {
+            _moves.Clear();
+            _turns--;
+            if (_turns == 0)
+            {
+                level.CoroutineHandler.Run(Disappear(level));
             }
         }
-        
-        yield return new WaitForSeconds(0.1f);
-    }
 
-    public override void Update(CombatMapScreen level)
-    {
-        _moves.Clear();
-        _turns--;
-        if (_turns == 0)
+        public override void Draw(CombatMapScreen level)
         {
-            level.CoroutineHandler.Run(Disappear(level));
-        }
-    }
+            var mrmo = SineaterGame.Instance.Layers["mrmo"];
+            var shadowKeys = _shadows.Keys.ToList();
+            shadowKeys.Sort();
 
-    public override void Draw(CombatMapScreen level)
-    {
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
-        var shadowKeys = _shadows.Keys.ToList();
-        shadowKeys.Sort();
-        
-        for (int j = 0; j < _shadows.Keys.Count; j++)
-        {
-            var (sx, sy) = shadowKeys[j];
-            var s = 6 + (_shadows[(sx, sy)] - 6 + _t) % 6;
-            level.Draw(sx, sy, new Glyph(s, 72, 
-                Color.Black, Color.Lerp(_shadowColors[(sx, sy)], Color.MediumPurple, MathF.Pow(s / 12.0f, 3))));
-        }
-
-        foreach (var (tx, ty, _) in _totems)
-        {
-            level.Draw(tx, ty - 1, new Glyph(15, 71, Color.Black, Color.White));
-            level.Draw(tx, ty, new Glyph(15, 72, Color.Black, Color.White));
-        }
-    }
-}
-
-public class DomainOfFire(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
-{
-    IEnumerable ClearScreen(CombatMapScreen level, IMap map, TextLayer mrmo, int r)
-    {
-        level.DrawCombat();
-        for (int i = 0; i < 24; i++)
-        {
-            for (int j = 0; j < 22; j++)
+            for (int j = 0; j < _shadows.Keys.Count; j++)
             {
-                if (i == x && j == y) continue;
-                var fg = mrmo.GetFg(i, j);
-                level.Draw(i, j, Color.Lerp(fg, Color.Black, 1.0f / 4.0f));
+                var (sx, sy) = shadowKeys[j];
+                var s = 6 + (_shadows[(sx, sy)] - 6 + _t) % 6;
+                level.Draw(sx, sy, new Glyph(s, 72,
+                    Color.Black, Color.Lerp(_shadowColors[(sx, sy)], Color.MediumPurple, MathF.Pow(s / 12.0f, 3))));
+            }
+
+            foreach (var (tx, ty, _) in _totems)
+            {
+                level.Draw(tx, ty - 1, new Glyph(15, 71, Color.Black, Color.White));
+                level.Draw(tx, ty, new Glyph(15, 72, Color.Black, Color.White));
             }
         }
-        
-        foreach (var cell in map.GetCellsInCircle(x, y, r))
-        {
-            if (cell.X == x && cell.Y == y) continue;
-            level.Draw(cell.X, cell.Y, " ", Color.Black);
-        }
-
-        yield return new WaitForSeconds(0.01f);
     }
-    
-    public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
-    {
-        var mrmo = SineaterGame.Instance.Layers["mrmo"];
-        var map = level.Map;
 
-        for (int k = 0; k < 10; k++)
+    public class DomainOfFire(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
+    {
+        IEnumerable ClearScreen(CombatMapScreen level, IMap map, TextLayer mrmo, int r)
         {
+            level.DrawCombat();
             for (int i = 0; i < 24; i++)
             {
                 for (int j = 0; j < 22; j++)
                 {
                     if (i == x && j == y) continue;
                     var fg = mrmo.GetFg(i, j);
-                    level.Draw(i, j, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
+                    level.Draw(i, j, Color.Lerp(fg, Color.Black, 1.0f / 4.0f));
                 }
             }
-            
-            yield return new WaitForSeconds(0.1f);
-        }
-        
-        yield return ClearScreen(level, map, mrmo, Radius);
-        
-        yield return new WaitForSeconds(0.5f);
 
-        for (var r = Radius; r >= 1; r--)
+            foreach (var cell in map.GetCellsInCircle(x, y, r))
+            {
+                if (cell.X == x && cell.Y == y) continue;
+                level.Draw(cell.X, cell.Y, " ", Color.Black);
+            }
+
+            yield return new WaitForSeconds(0.01f);
+        }
+
+        public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
         {
-            yield return ClearScreen(level, map, mrmo, r);
-            var border = map.GetBorderCellsInCircle(x, y, r).ToList();
-            border.Shuffle();
-            var raise = false;
-            for (var i = 0; i < 15; i++)
-            {
-                foreach (var cell in border)
-                {
-                    level.Draw(cell.X, cell.Y,
-                        new Glyph(raise ? 12 : 13, 8, 
-                            Color.Lerp(Color.Black, Color.Red, 1.0f - (float)r / Radius),
-                            Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
-                }
-                yield return new WaitForSeconds(0.01f * r);
-                raise = !raise;
-            }
-        }
+            var mrmo = SineaterGame.Instance.Layers["mrmo"];
+            var map = level.Map;
 
-        Dictionary<(int, int), ICharacter> chars = [];
-        foreach (var ch in SineaterGame.Instance.Party.Characters)
-        {
-            chars[(ch.X, ch.Y)] = ch; 
-        }
-        
-        // foreach (var ch in level.Enemies)
-        // {
-        //     chars[(ch.X, ch.Y)] = ch; 
-        // }
-        
-        var distances = new DistanceMap(level.Structure, false, x, y, (m, mx, my) => m.Map.IsWalkable(mx, my));
-        for (var i = 1; i < distances.MaxDistance(); i++)
-        {
-            level.DrawCombat();
-            foreach (var (rx, ry) in distances.GetAllAt(i - 2))
+            for (int k = 0; k < 10; k++)
             {
-                level.Draw(rx, ry, ".", Color.White, Color.Black);
-            }
-
-            for (var n = 0; n < 3; n++)
-            {
-                foreach (var (rx, ry) in distances.GetAllAt(i - 1))
+                for (int i = 0; i < 24; i++)
                 {
-                    level.Draw(rx, ry, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
+                    for (int j = 0; j < 22; j++)
+                    {
+                        if (i == x && j == y) continue;
+                        var fg = mrmo.GetFg(i, j);
+                        level.Draw(i, j, Color.Lerp(fg, Color.Black, (float)k / 40.0f));
+                    }
                 }
 
-                yield return new WaitForSeconds(0.001f);
+                yield return new WaitForSeconds(0.1f);
             }
 
-            foreach (var (rx, ry) in distances.GetAllAt(i))
-            {
-                level.Draw(rx, ry, new Glyph(12, 8, Color.OrangeRed, Color.White));
+            yield return ClearScreen(level, map, mrmo, Radius);
 
-                if (chars.ContainsKey((rx, ry)))
+            yield return new WaitForSeconds(0.5f);
+
+            for (var r = Radius; r >= 1; r--)
+            {
+                yield return ClearScreen(level, map, mrmo, r);
+                var border = map.GetBorderCellsInCircle(x, y, r).ToList();
+                border.Shuffle();
+                var raise = false;
+                for (var i = 0; i < 15; i++)
                 {
-                    //yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
+                    foreach (var cell in border)
+                    {
+                        level.Draw(cell.X, cell.Y,
+                            new Glyph(raise ? 12 : 13, 8,
+                                Color.Lerp(Color.Black, Color.Red, 1.0f - (float)r / Radius),
+                                Color.Lerp(Color.OrangeRed, Color.White, Rnd.Instance.D10 / 10.0f)));
+                    }
+
+                    yield return new WaitForSeconds(0.01f * r);
+                    raise = !raise;
                 }
             }
-            
-            foreach (var (rx, ry) in distances.GetAllAt(i + 1))
+
+            Dictionary<(int, int), ICharacter> chars = [];
+            foreach (var ch in SineaterGame.Instance.Party.Characters)
             {
-                level.Draw(rx, ry, ".", Color.Yellow, Color.Black);
+                chars[(ch.X, ch.Y)] = ch;
             }
 
-            yield return new WaitForSeconds(0.005f);
-        }
-    }
-}
+            // foreach (var ch in level.Enemies)
+            // {
+            //     chars[(ch.X, ch.Y)] = ch; 
+            // }
 
-public class DomainOfControl(ICharacter character, int x, int y, int radius) : Domain(character, x, y, radius)
-{
-    public override IEnumerable ApplyOnDomainExpanded(CombatMapScreen level)
-    {
-        yield return DefaultDomainOpening(level);
-        yield return new WaitForSeconds(1f);
-        yield return Blink(level);
+            var distances = new DistanceMap(level.Structure, false, x, y, (m, mx, my) => m.Map.IsWalkable(mx, my));
+            for (var i = 1; i < distances.MaxDistance(); i++)
+            {
+                level.DrawCombat();
+                foreach (var (rx, ry) in distances.GetAllAt(i - 2))
+                {
+                    level.Draw(rx, ry, ".", Color.White, Color.Black);
+                }
+
+                for (var n = 0; n < 3; n++)
+                {
+                    foreach (var (rx, ry) in distances.GetAllAt(i - 1))
+                    {
+                        level.Draw(rx, ry, "^", Color.Yellow, Color.Lerp(Color.Red, Color.Black, n / 3.0f));
+                    }
+
+                    yield return new WaitForSeconds(0.001f);
+                }
+
+                foreach (var (rx, ry) in distances.GetAllAt(i))
+                {
+                    level.Draw(rx, ry, new Glyph(12, 8, Color.OrangeRed, Color.White));
+
+                    if (chars.ContainsKey((rx, ry)))
+                    {
+                        //yield return chars[(rx, ry)].AddTrait(new TraitCritical(3));
+                    }
+                }
+
+                foreach (var (rx, ry) in distances.GetAllAt(i + 1))
+                {
+                    level.Draw(rx, ry, ".", Color.Yellow, Color.Black);
+                }
+
+                yield return new WaitForSeconds(0.005f);
+            }
+        }
     }
 }

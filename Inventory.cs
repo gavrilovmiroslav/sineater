@@ -4,7 +4,7 @@ namespace SINEATER;
 
 public class Inventory
 {
-    public List<Weapon> Items = new();
+    public List<Item> Items = new();
 
     public Item? GetItem(string name)
     {

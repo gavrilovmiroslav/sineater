@@ -42,8 +42,10 @@ public class TacticMapScreen : Screen
     private float _levelTime = 60;
     private bool _paused = false;
     
-    public TacticMapScreen(SineaterGame game, Encounter encounter) : base(game)
+    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward) : base(game)
     {
+        _xy = xy;
+        _reward = reward.Rewards.ToArray();
         _enemies = encounter.Enemies.ToArray();
         foreach (var p in _game.Party.Characters)
         {
@@ -108,6 +110,18 @@ public class TacticMapScreen : Screen
         
         if (_enemies.All(e => e.Guard == 0))
         {
+            foreach (var (time, rews) in _reward)
+            {
+                if (_levelTime > time)
+                {
+                    foreach (var rew in rews)
+                    {
+                        SineaterGame.Instance.Party.Inventory.Items.Add(rew);
+                        SineaterGame.Instance.World.Encounters.Remove(_xy.X, _xy.Y);
+                    }
+                    break;
+                }
+            }
             CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
             Console.WriteLine("VICTORY!");
             return;
@@ -372,8 +386,16 @@ public class TacticMapScreen : Screen
                         }
                         else
                         {
-                            _game.Layers["ascii"].Set(2, 0, $"[{stat}] {first.GetName()} can't use {weapon.Name} from here.", Color.Gray);
-                            yield return new WaitForSeconds(2f);
+                            var msg = $"{weapon.Name} is useless from here!";
+                            for (int ix = 0; ix < 5; ix++)
+                            {
+                                _game.Layers["ascii"].Set(37 - (msg.Length / 2), 9, msg, Color.Red);
+                                yield return new WaitForSeconds(0.1f);
+                                _game.Layers["ascii"].Set(37 - (msg.Length / 2), 9, msg, Color.Transparent, Color.Transparent);
+                                yield return new WaitForSeconds(0.1f);
+                            }
+
+                            yield return new WaitForSeconds(1f);
                             DrawCombat();
                         }
                         
@@ -414,7 +436,7 @@ public class TacticMapScreen : Screen
 
     public override void DrawWorld(bool noPlayer = false)
     {
-        DrawParty();
+        DrawParty(drawEquips: true);
         DrawCombat();
         DrawTop();
     }
@@ -439,6 +461,15 @@ public class TacticMapScreen : Screen
             _game.Layers["mini"].Set(70, 7, " TIME LEFT: ", Color.White, Color.Black);
             _game.Layers["largenums"].Set(9, 2, ((int)MathF.Round(_levelTime)).ToString("00"), Color.White,
                 Color.Transparent);
+
+            foreach (var (time, rews) in _reward)
+            {
+                if (_levelTime > time)
+                {
+                    _game.Layers["ascii"].Set(0, 0, $"Reward (>{time}s): {string.Join(", ", rews.Select(r => r.Name))}");
+                    break;
+                }
+            }
         }
     }
     
@@ -454,7 +485,7 @@ public class TacticMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        DrawParty();
+        DrawParty(drawEquips: true);
         
         int i = 0;
         foreach (var p in SineaterGame.Instance.Party.Characters)
@@ -491,7 +522,7 @@ public class TacticMapScreen : Screen
 
     private void DrawAP()
     {
-        _game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
+        //_game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
 
         MultiDictionary<int, PartyMember> xs = new(false);
         foreach (var w in _game.Party.Characters)
@@ -566,7 +597,7 @@ public class TacticMapScreen : Screen
                     var (m, r) = character.Job.GetImage();
                     var (u, v) = character.GetPortait();
                     var (x, y) = _positions[index];
-                    var tint = character.Tint;
+                    var tint = Color.White;
 
                     if (colorOverride is { } color)
                     {
@@ -679,6 +710,8 @@ public class TacticMapScreen : Screen
                 SpriteEffects.None, 0);
 
             if (!_timeFlow) continue;
+            if (_paused) continue;
+            
             var p = _game.Party.Characters[n];
             if (p.Broken)
             {
@@ -726,6 +759,8 @@ public class TacticMapScreen : Screen
                 SpriteEffects.None, 0);
             
             if (!_timeFlow) continue;
+            if (_paused) continue;
+            
             var p = _enemies[4 - j - 1];
             if (p.Broken)
             {
@@ -772,13 +807,14 @@ public class TacticMapScreen : Screen
     private int _selectedIndex = 0;
     private int? _focus = null;
     private float _currentFocus = 0.0f;
-    
+    private readonly (int, List<Item>)[] _reward;
+    private readonly (int X, int Y) _xy;
+
     private void CheckPlayerInputs()
     {
         if (InputM.IsActive(EInputAction.Confirm))
         {
             _paused = !_paused;
-            _timeFlow = !_timeFlow;
         }
         
         if (InputM.IsActive(EInputAction.MoveRight))
@@ -809,6 +845,7 @@ public class TacticMapScreen : Screen
     private void Swap(int leftIndex, int rightIndex)
     {
         (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
+        (_times[leftIndex], _times[rightIndex]) = (_times[rightIndex], _times[leftIndex]);
     }
 
     private void StartSubmenu(string[] opts, bool cancel = true)

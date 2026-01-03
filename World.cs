@@ -86,6 +86,7 @@ public class World(string path)
     public readonly ComponentStorage<GeneralDescription> GeneralDescriptions = new();
     public readonly ComponentStorage<SpecificDescription> SpecificDescriptions = new();
     public readonly ComponentStorage<Encounter> Encounters = new();
+    public readonly ComponentStorage<Reward> Rewards = new();
     public readonly ComponentStorage<SlowDown> SlowDowns = new();
     
     public bool AnythingOn(int x, int y)
@@ -93,6 +94,7 @@ public class World(string path)
         if (GeneralDescriptions.Has(x, y)) return true;
         if (SpecificDescriptions.Has(x, y)) return true;
         if (Encounters.Has(x, y)) return true;
+        if (Rewards.Has(x, y)) return true;
         if (SlowDowns.Has(x, y)) return true;
         return false;
     }
@@ -102,6 +104,7 @@ public class World(string path)
         return !(GeneralDescriptions.IsOkay(x, y) || 
             SpecificDescriptions.IsOkay(x, y) || 
             Encounters.IsOkay(x, y) ||
+            Rewards.IsOkay(x, y) ||
             SlowDowns.IsOkay(x, y));
     }
     
@@ -131,6 +134,7 @@ public class World(string path)
         var inspect = res.Get(APPS_ID, $"Inspect!A1:T20").Execute();
         var slowdown = res.Get(APPS_ID, $"Time!A1:T20").Execute();
         var combats = res.Get(APPS_ID, $"Combat!A1:T20").Execute();
+        var rewards = res.Get(APPS_ID, $"Rewards!A1:T20").Execute();
         var world = new World(path);
         
         for (var i = 0; i < 20; i++)
@@ -148,38 +152,75 @@ public class World(string path)
                     world.SlowDowns.Add((i, j), new SlowDown(time, time > 3 ? time - 3 : 0));
                 }
 
-                var matches = Regex.Matches(combats.Values[j][i].ToString() ?? "/",
-                             @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
-
-                if (matches.Count > 0)
+                // COMBAT
                 {
-                    List<Enemy> enemies = new List<Enemy>();
-                    foreach (Match match in Regex.Matches(combats.Values[j][i].ToString() ?? "/",
-                                 @"((\w+)\[([a-zA-Z,]*)\]\s*)+"))
-                    {
-                        var enemyType = match.Groups[2].ToString();
-                        var enemy = Bestiary.Make(enemyType);
+                    var matches = Regex.Matches(combats.Values[j][i].ToString() ?? "/",
+                        @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
 
-                        foreach (var weapon in match.Groups[3].ToString().Split(','))
+                    if (matches.Count > 0)
+                    {
+                        List<Enemy> enemies = new List<Enemy>();
+                        foreach (Match match in matches)
                         {
-                            if (weapon.Trim() == "")
-                                continue;
+                            var enemyType = match.Groups[2].ToString();
+                            var enemy = Bestiary.Make(enemyType);
 
-                            var w = ItemLibrary.GetWeapon(weapon.Trim());
-                            if (w != null)
+                            foreach (var weapon in match.Groups[3].ToString().Split(','))
                             {
-                                enemy.Equip(w);
-                            }
-                        }
-                        enemies.Add(enemy);
-                    }
+                                if (weapon.Trim() == "")
+                                    continue;
 
-                    if (enemies.Count > 0)
-                    {
-                        world.Encounters.Add((i, j), new Encounter(enemies));
+                                var w = ItemLibrary.GetWeapon(weapon.Trim());
+                                if (w != null)
+                                {
+                                    enemy.Equip(w);
+                                }
+                            }
+
+                            enemies.Add(enemy);
+                        }
+
+                        if (enemies.Count > 0)
+                        {
+                            world.Encounters.Add((i, j), new Encounter(enemies));
+                        }
                     }
                 }
 
+                // REWARDS
+                {
+                    var matches = Regex.Matches(rewards.Values[j][i].ToString() ?? "/",
+                        @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
+
+                    if (matches.Count > 0)
+                    {
+                        var rewardList = new List<(int, List<Item>)>();
+                        foreach (Match match in matches)
+                        {
+                            var timeLimit = int.Parse(match.Groups[2].ToString());
+
+                            var items = new List<Item>();
+                            foreach (var weapon in match.Groups[3].ToString().Split(','))
+                            {
+                                if (weapon.Trim() == "")
+                                    continue;
+
+                                var w = ItemLibrary.GetWeapon(weapon.Trim());
+                                if (w != null)
+                                {
+                                    items.Add(w);
+                                }
+                            }
+
+                            rewardList.Add((timeLimit, items));
+                        }
+
+                        if (rewardList.Count > 0)
+                        {
+                            world.Rewards.Add((i, j), new Reward(rewardList));
+                        }
+                    }
+                }
             }
         }
 

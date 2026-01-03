@@ -39,12 +39,12 @@ public class CoBlink(Screen level): IEnumerable
     }
 }
 
-public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc): IEnumerable
+public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc, Reward rew): IEnumerable
 {
     public IEnumerator GetEnumerator()
     {
         yield return new CoBlink(map);
-        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, enc));
+        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, (x, y), enc, rew));
     }
 }
 
@@ -92,7 +92,7 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
         
         if (t.FatigueGained > 0)
         {
-            SineaterGame.Instance.Party.Characters[0].AP.Add(EStatus.Fatigue, t.FatigueGained);
+            //SineaterGame.Instance.Party.Characters[0].AP.Add(EStatus.Fatigue, t.FatigueGained);
         }
 
         if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
@@ -119,7 +119,7 @@ public class WorldMapScreen : Screen
     ];
 
     private readonly List<string> _positionStats = [ "WIL", "CLA", "POI", "VIG" ];
-    private bool _drawEquips = false;
+    private bool _drawEquips = true;
     
     private static string[] HourNames =
     [
@@ -181,6 +181,7 @@ public class WorldMapScreen : Screen
         AtmosphereOverride = null;
 
         _world = World.LoadOrCreate("Content\\world.json");
+        SineaterGame.Instance.World = _world;
         
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
         using var stream = TitleContainer.OpenStream(filePath);
@@ -355,12 +356,12 @@ public class WorldMapScreen : Screen
         for (var l = 2; l > 0; l--)
         {
             var dimLight = fov.ComputeFov(x, y, radius + l, true);
-            _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
+            _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
                 selected: dimLight.Select(Predicate.CellToPosition));
         }
 
-        _game.Layers["map"].SetRexFg(8, 2, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
-        _game.Layers["map"].SetRex(8, 2, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
+        _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
+        _game.Layers["map"].SetRex(8, 1, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
         
         var tick = _time is < 400 or > 800 and < 1200;
         
@@ -368,17 +369,17 @@ public class WorldMapScreen : Screen
         var (u, v) = chr.Job.GetImage();
         if (!noPlayer)
         {
-            var bgc = _game.Layers["map"].GetBg(x + 8, y + 2);
+            var bgc = _game.Layers["map"].GetBg(x + 8, y + 1);
             if (_submenuDelta == (0, 0))
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
             }
             else
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
                 if (tick)
                 {
-                    _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 2,
+                    _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 1,
                         new Glyph(8, 74 - 16, bgc, chr.Tint));
                 }
             }
@@ -389,7 +390,7 @@ public class WorldMapScreen : Screen
             if (_time % 400 < 200)
             {
                 var (dx, dy) = _lastPosBeforeDebug;
-                _game.Layers["mrmo"].Set(dx + 8, dy + 2, "@", Color.Gray, Color.Black);
+                _game.Layers["mrmo"].Set(dx + 8, dy + 1, "@", Color.Gray, Color.Black);
             }
 
             for (var i = 0; i < 20; i++)
@@ -399,13 +400,13 @@ public class WorldMapScreen : Screen
                     var exists = _world.AnythingOn(i, j);
                     var changed = _world.AnythingChanged(i, j);
                     if (!exists) continue;
-                    _game.Layers["mrmo"].Set(i + 8, j + 2, "*", changed ? Color.Red : Color.Green, Color.Black);
+                    _game.Layers["mrmo"].Set(i + 8, j + 1, "*", changed ? Color.Red : Color.Green, Color.Black);
                 }
             }
 
             if (_time < 800)
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 2, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
             }
         }
         

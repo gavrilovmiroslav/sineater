@@ -89,9 +89,9 @@ namespace SINEATER
         private void DrawPreview()
         {
             var inv = _game.Party.Inventory;
-            var selectedItem = inv.Items[_submenuSelection];
+            var aSelectedItem = inv.Items[_submenuSelection];
 
-            if (selectedItem != null)
+            if (aSelectedItem is Weapon selectedItem)
             {
                 var from = selectedItem.From;
                 if (from.Any(x => x != '-') && from.Length == 4)
@@ -181,7 +181,7 @@ namespace SINEATER
             }
         }
 
-        private bool IsEquipped(Weapon w)
+        private bool IsEquipped(Item w)
         {
             foreach(var c in _game.Party.Characters)
             {
@@ -207,11 +207,16 @@ namespace SINEATER
                 {
                     var item = _game.Party.Inventory.Items.Find(x => x.Name == _submenu[i]);
 
-                    var stat = item.Attack > 0 ? -item.Attack : item.Guard;
+                    if (item is Weapon wpn)
+                    {
+                        var stat = wpn.Attack > 0 ? -wpn.Attack : wpn.Guard;
 
-                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White, GetColorForStat(item.Stat));
-                    _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
-                    _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}", stat < 0 ? Color.Red : Color.Green);
+                        _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White,
+                            GetColorForStat(item.Stat));
+                        _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
+                        _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}",
+                            stat < 0 ? Color.Red : Color.Green);
+                    }
                 }
 
                 _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
@@ -322,7 +327,8 @@ namespace SINEATER
             {
                 _game.ScreenStack.Pop();
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
-                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc));
+                var rew = _world.Rewards.Get(_combatPositionX, _combatPositionY);
+                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc, rew));
             }
             
             if (InputM.IsActive(EInputAction.MoveRight))

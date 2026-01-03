@@ -5,7 +5,6 @@ using SINEATER.Input;
 using SINEATER.SinMod;
 using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework.Input;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.steam;
 using SINEATER.ImGuiTools;
@@ -48,6 +47,8 @@ public class SineaterGame : Game
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public AP PartyActionPoints { get; set; }
+    public World World { get; set; }
+
     public Moves Moves = new();
     
     private IScreen _lastScreen;
@@ -112,7 +113,10 @@ public class SineaterGame : Game
         _renderTargetGame = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         _renderTargetMonitor = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         
+        Party = new Party();
+        
         ItemLibrary.LoadItems(Content);
+        Party.MakeParty();
         
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _mapmotext = Content.Load<Texture2D>("mapmotext");
@@ -205,8 +209,8 @@ public class SineaterGame : Game
         ibmLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("ascii", ibmLayer);
 
-        var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(10, 2), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
-        largeNums.Map("1234567890", 0, 0);
+        var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(20, 20), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
+        largeNums.Map(" 1234567890", 0, 0);
         Layers.Add("largenums", largeNums);
 
         var inputLayer = new TextLayer(_inputs[0], new Vector2(74, 28), new Vector2(16, 16), new Vector2(12, 12), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
@@ -216,9 +220,6 @@ public class SineaterGame : Game
         SetupCrt(Width, Height);
 
         _focus = new Focus(_crt);
-        PartyActionPoints = new AP(20, statusLayer);
-        
-        Party = new Party(PartyActionPoints);
         ScreenStack.Push(new WorldMapScreen(this));
         
         SinMod.System.LoadBank(@"audio/Desktop/Master");

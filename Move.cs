@@ -17,7 +17,7 @@ public abstract class Move
 
     public bool CanPerform(Character character, CombatMapScreen screen)
     {
-        return character.CanPay(Costs);
+        return false;// character.CanPay(Costs);
     }
 
     public IEnumerable<IEnumerable> Perform(Character character, CombatMapScreen screen, bool realResources = true)
@@ -26,7 +26,7 @@ public abstract class Move
         {
             if (realResources)
             {
-                yield return character.Pay(Costs);
+                //yield return character.Pay(Costs);
             }
 
             yield return MoveAction(character, screen);            

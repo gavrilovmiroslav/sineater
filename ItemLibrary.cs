@@ -139,16 +139,7 @@ public static class ItemLibrary
 
     public static Weapon? GetItem(string name)
     {
-        if (Library.Weapons.Find(x => x.Name == name) is {} result)
-        {
-            var item = (Weapon)result.Clone();
-            InstancedWeapons.Add(result.GetName(), item);
-            return item;
-        }
-
-        var dummy = Weapon.Dummy(name);
-        InstancedWeapons.Add(name, dummy);
-        return dummy;
+        return GetWeapon(name);
     }
 
     internal static Inventory CreateDefaultInventory()
@@ -156,7 +147,7 @@ public static class ItemLibrary
         var inventory = new Inventory();
         foreach(var weapon in Library.Weapons)
         {
-            inventory.Items.Add(GetWeapon(weapon.Name));
+            //inventory.Items.Add(GetWeapon(weapon.Name));
         }
 
         inventory.Items.Sort((x, y) => x.Stat.CompareTo(y.Stat));
