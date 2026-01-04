@@ -454,7 +454,7 @@ public class TacticMapScreen : Screen
             else
             {
                 _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
-                _game.Layers["ascii"].Set(36, 1, "FIGHT", !_timeFlow ? Color.White : Color.Gray);
+                _game.Layers["ascii"].Set(36, 1, "FIGHT", Color.White);
             }
 
             _game.Layers["ascii"].SetRect(new Vector2(30, 2), new Vector2(43, 3), ' ');
@@ -678,6 +678,9 @@ public class TacticMapScreen : Screen
         
         DrawCombat();
         DrawSubmenu();
+
+        if (_paused)
+            DrawControls();
     }
     
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
@@ -812,33 +815,37 @@ public class TacticMapScreen : Screen
 
     private void CheckPlayerInputs()
     {
+
+        if (_paused)
+        {
+            if (InputM.IsActive(EInputAction.MoveRight))
+            {
+                _selectedIndex += 1;
+                if (_selectedIndex > 3) _selectedIndex = 0;
+            }
+            else if (InputM.IsActive(EInputAction.MoveLeft))
+            {
+                _selectedIndex -= 1;
+                if (_selectedIndex < 0) _selectedIndex = 3;
+            }
+            else if (InputM.IsActive(EInputAction.SwapLeft))
+            {
+                Swap(_selectedIndex, _selectedIndex - 1 < 0 ? 3 : _selectedIndex - 1);
+                _selectedIndex -= 1;
+                if (_selectedIndex < 0) _selectedIndex = 3;
+
+            }
+            else if (InputM.IsActive(EInputAction.SwapRight))
+            {
+                Swap(_selectedIndex, _selectedIndex + 1 > 3 ? 0 : _selectedIndex + 1);
+                _selectedIndex += 1;
+                if (_selectedIndex > 3) _selectedIndex = 0;
+            }
+        }
+
         if (InputM.IsActive(EInputAction.Confirm))
         {
             _paused = !_paused;
-        }
-        
-        if (InputM.IsActive(EInputAction.MoveRight))
-        {
-            _selectedIndex += 1;
-            if (_selectedIndex > 3) _selectedIndex = 0;
-        }
-        else if (InputM.IsActive(EInputAction.MoveLeft))
-        {
-            _selectedIndex -= 1;
-            if (_selectedIndex < 0) _selectedIndex = 3;
-        }
-        else if (InputM.IsActive(EInputAction.SwapLeft))
-        {
-            Swap(_selectedIndex, _selectedIndex - 1 < 0 ? 3 : _selectedIndex - 1);
-            _selectedIndex -= 1;
-            if (_selectedIndex < 0) _selectedIndex = 3;
-
-        }
-        else if (InputM.IsActive(EInputAction.SwapRight))
-        {
-            Swap(_selectedIndex, _selectedIndex + 1 > 3 ? 0 : _selectedIndex + 1);
-            _selectedIndex += 1;
-            if (_selectedIndex > 3) _selectedIndex = 0;
         }
     }
 
@@ -846,6 +853,19 @@ public class TacticMapScreen : Screen
     {
         (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
         (_times[leftIndex], _times[rightIndex]) = (_times[rightIndex], _times[leftIndex]);
+    }
+
+    private void DrawControls()
+    {
+        var left = 6;
+        var top = 8;
+        _game.Layers["input"].Set(left - 1, top - 1, InputM.GetGlyph(EInputAction.SwapLeft));
+        _game.Layers["input"].Set(left, top - 1, InputM.GetGlyph(EInputAction.SwapRight));
+        _game.Layers["ascii"].Set(left * 2, top - 2, "Swap Left/Right");
+
+        _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
+        _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
+        _game.Layers["ascii"].Set(left * 2, top - 1, "Select");
     }
 
     private void StartSubmenu(string[] opts, bool cancel = true)
