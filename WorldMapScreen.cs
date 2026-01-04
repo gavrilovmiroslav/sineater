@@ -644,6 +644,10 @@ public class WorldMapScreen : Screen
                 var dy = (up ? -1 : 0) + (down ? 1 : 0);
                 if ((dx == 0 || dy == 0) && (dx != 0 || dy != 0))
                 {
+                    if (CurrentPlayerPosition.X + dx < 0 || CurrentPlayerPosition.Y + dy < 0 
+                        || CurrentPlayerPosition.X + dx > 19 || CurrentPlayerPosition.Y + dy > 19)
+                        return;
+
                     var x = CurrentPlayerPosition.X + dx;
                     var y = CurrentPlayerPosition.Y + dy;
                     
