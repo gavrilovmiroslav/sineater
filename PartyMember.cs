@@ -603,7 +603,7 @@ public record struct Party
             // ECharacterClass.Priest,
             // ECharacterClass.Thief,
         };
-        //jobs.Shuffle();
+        jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {

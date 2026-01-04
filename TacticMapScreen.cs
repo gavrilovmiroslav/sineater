@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSharp;
 using SINEATER.Input;
+using SINEATER.SinMod;
 using Wintellect.PowerCollections;
 
 namespace SINEATER;
@@ -41,20 +42,17 @@ public class TacticMapScreen : Screen
     private HashSet<Character> _selected = [];
     private float _levelTime = 60;
     private bool _paused = false;
+    private ETimeOfDay _timeOfDay;
     
-    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward) : base(game)
+    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward, ETimeOfDay time) : base(game)
     {
+        _timeOfDay = time;
         _xy = xy;
         _reward = reward.Rewards.ToArray();
         _enemies = encounter.Enemies.ToArray();
         foreach (var p in _game.Party.Characters)
         {
             p.Guard = 1;
-        }
-
-        foreach (var e in _enemies)
-        {
-            e.Guard = 1;
         }
     }
 
@@ -358,7 +356,7 @@ public class TacticMapScreen : Screen
                                             {
                                                 yield return new CoBlinkCharacter(e, this);
                                                 DrawCombat();
-                                                e.Guard.Down(1);
+                                                e.Guard.Down(atk);
                                                 DrawCombat();
                                                 if (e.CheckBroken())
                                                 {
@@ -373,7 +371,7 @@ public class TacticMapScreen : Screen
                                     {
                                         yield return new CoBlinkCharacter(enemies[ii], this);
                                         DrawCombat();
-                                        enemies[ii].Guard.Down(1);
+                                        enemies[ii].Guard.Down(atk);
                                         DrawCombat();
                                         if (enemies[ii].CheckBroken())
                                         {
@@ -727,11 +725,11 @@ public class TacticMapScreen : Screen
 
             if (p.Guard <= 0)
             {
-                slowdown = 0.25f;
+                slowdown = 1.5f;
             }
             else if (p.Guard >= 9)
             {
-                slowdown = 1.5f;
+                slowdown = 1.25f;
             }
             
             _times[n] = Math.Clamp(
@@ -772,6 +770,8 @@ public class TacticMapScreen : Screen
             }
             
             var speed = 3 * p.Stats[j] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+            if (_timeOfDay == ETimeOfDay.Night) speed += p.NightSpeedup;
+            if (_timeOfDay == ETimeOfDay.Afternoon) speed += p.DaySpeedup;
             if (p.Guard <= 0)
             {
                 slowdown = 0.25f;

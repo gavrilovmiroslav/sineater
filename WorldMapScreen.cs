@@ -11,6 +11,7 @@ using SINEATER;
 using SINEATER.ImGuiTools;
 using SINEATER.Input;
 using SINEATER.Serialization;
+using SINEATER.SinMod;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
@@ -44,7 +45,7 @@ public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc, Rewa
     public IEnumerator GetEnumerator()
     {
         yield return new CoBlink(map);
-        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, (x, y), enc, rew));
+        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, (x, y), enc, rew, map.TimeOfDay));
     }
 }
 
@@ -53,8 +54,8 @@ public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
     public IEnumerator GetEnumerator()
     {
         yield return new ShowPopupAndWaitForKey(
-            new Vector2(map.DrawOffset.X, 3),
-            new Vector2(map.DrawOffset.X * 4 - 5, 10), (game, box) => box.Add(text));
+            new Vector2(map.DrawOffset.X, 3 + 5),
+            new Vector2(map.DrawOffset.X * 4 - 5, 10 + 5), (game, box) => box.Add(text));
     }
 }
 
@@ -97,11 +98,6 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
 
         if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
         {
-            for (var i = 0; i < 8; i++) 
-            {
-                map.DrawWorld(i % 2 == 0);
-                yield return new WaitForSeconds(0.04f);
-            }
             yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y).Text);
             map.World.GeneralDescriptions.Visit(x, y);
         }
@@ -689,14 +685,24 @@ public class WorldMapScreen : Screen
                     }
                     else
                     {
-                        if (_world.SlowDowns.Has(x, y))
+                        if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                         {
-                            var slowdown = _world.SlowDowns.Get(x, y);
-                            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
+                            if (_world.SlowDowns.Has(x, y))
+                            {
+                                var slowdown = _world.SlowDowns.Get(x, y);
+                                CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
+                            }
+                            else
+                            {
+                                CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
+                            }   
                         }
                         else
                         {
-                            CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, new SlowDown(1, 0)));
+                            if (World.GeneralDescriptions.Has(x, y))
+                            {
+                                CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y).Text));
+                            }
                         }
                     }
                 }

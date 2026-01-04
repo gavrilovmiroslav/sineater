@@ -25,7 +25,7 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (5, 1),
             Sin = 1,
-            Guard = 0,
+            Guard = 1,
             Tint = Color.Red,
             Stats = new Stats(1, 1, 1, 2),
         };
@@ -43,9 +43,10 @@ public static class Bestiary
             DeadIcon = (8, 65),
             Portrait = (0, 2),
             Sin = Rnd.Instance.D4,
-            Guard = 0,
+            Guard = 2,
             Tint = Color.LightGreen,
             Stats = new Stats(2, 1, 1, 2),
+            NightSpeedup = 1,
         };
         
         gob.Init();
@@ -64,6 +65,7 @@ public static class Bestiary
             Guard = 3,
             Tint = Color.Red,
             Stats = new Stats(3, 2, 2, 3),
+            NightSpeedup = 2,
         };
 
         gob.Init();
@@ -79,9 +81,10 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (2, 2),
             Sin = 3 + Rnd.Instance.D2,
-            Guard = 0,
+            Guard = 3,
             Tint = Color.Red,
             Stats = new Stats(1, 4, 1, 1),
+            NightSpeedup = 4,
         };
         
         skel.Init();
@@ -97,9 +100,10 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (4, 2),
             Sin = 3 + Rnd.Instance.D2,
-            Guard = 0,
+            Guard = 4,
             Tint = Color.Red,
             Stats = new Stats(1, 5, 2, 2),
+            NightSpeedup = 5,
         };
 
         skul.Init();
@@ -115,9 +119,11 @@ public static class Bestiary
             DeadIcon = (9, 65),
             Portrait = (4, 3),
             Sin = 5 + Rnd.Instance.D2,
-            Guard = 5,
+            Guard = 4,
             Tint = Color.Green,
             Stats = new Stats(2, 2, 2, 2),
+            NightSpeedup = 1,
+            DaySpeedup = -3
         };
         
         snek.Init();
