@@ -10,6 +10,9 @@ public record struct Upgrade(int Level, List<UnlockableMove> Moves);
 [JsonObject(MemberSerialization.OptIn)]
 public class Item(string name, (int U, int V) uv, EStat stat, int weight = 3) : ICloneable
 {
+    static int IDGen = 0;
+
+    public int ID = IDGen++;
     public void Copy(Item original)
     {
         this.Name = original.Name;

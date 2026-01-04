@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using SINEATER.steam;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 using static SINEATER.Extensions;
 
 namespace SINEATER;
@@ -470,12 +471,29 @@ public abstract class Character : ICharacter
     public void Equip(EStat stat, Item? item)
     {
         if (stat == EStat.None) return;
-        if (this is PartyMember pm)
+
+        Items[(int)stat - 1] = item;
+    }
+
+    public void EquipAndAdd(EStat stat, Item? item)
+    {
+        if (stat == EStat.None) return;
+
+        if (this is PartyMember pm && item != null)
         {
             SineaterGame.Instance.Party.Inventory.Items.Add(item);
         }
 
         Items[(int)stat - 1] = item;
+    }
+
+    public void EquipAndAdd(Item? item)
+    {
+        Equip(item);
+        if (this is PartyMember pm && item != null)
+        {
+            SineaterGame.Instance.Party.Inventory.Items.Add(item);
+        }
     }
 
     public virtual int X { get; set; }
@@ -598,8 +616,8 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].Equip(EStat.Poise, ItemLibrary.GetItem("Ash Branch"));
-                    Characters[i].Equip(EStat.Will, ItemLibrary.GetItem("Dagger"));
+                    Characters[i].EquipAndAdd(EStat.Poise, ItemLibrary.GetItem("Ash Branch"));
+                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -607,42 +625,42 @@ public record struct Party
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
-                    Characters[i].Equip(EStat.Will, ItemLibrary.GetItem("Dagger"));
+                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].Equip(EStat.Will, ItemLibrary.GetWeapon("Long Sword"));
+                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetWeapon("Long Sword"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].Equip(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
+                    Characters[i].EquipAndAdd(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].Equip(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
+                    Characters[i].EquipAndAdd(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 3;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Priest:
-                    Characters[i].Equip(ItemLibrary.GetItem("Thorn Whip"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 4;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Thief:
-                    Characters[i].Equip(ItemLibrary.GetItem("Dagger"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 6;
                     Characters[i].Stats.Clarity = 6;
                     Characters[i].Stats.Poise = 2;

@@ -10,4 +10,9 @@ public class Inventory
     {
         return Items.Find(i => i.Name == name);
     }
+
+    public Item? GetItem(int ID)
+    {
+        return Items.Find(i => i.ID == ID);
+    }
 }
