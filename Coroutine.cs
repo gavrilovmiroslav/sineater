@@ -1,13 +1,14 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using SINEATER.Input;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using SINEATER.Input;
+using System.Xml.Linq;
 
 namespace SINEATER;
 
@@ -273,9 +274,11 @@ public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterG
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 4, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["input"].Set((int)(end.X * 2 - (end.X - start.X) / 3) /2 +1 , (int)end.Y + 2, InputM.GetGlyph(EInputAction.Confirm));
         game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "<  OK >");
         yield return new WaitForInput(EInputAction.Confirm);
         game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "< ... >");
+        game.Layers["input"].Clear();
     }
 }
 
@@ -310,6 +313,7 @@ public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Actio
         content(game, game.Layers["ascii"].Bounds(
             new Vector2(start.X * 2 + 15, start.Y + 1), 
             new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["input"].Set(((int)end.X * 2 - 10 - 1)/2, (int)end.Y - 1, InputM.GetGlyph(EInputAction.Confirm));
         game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<OK>");
         game.Layers["portrait"].SetFlip(u, v, flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
         game.Layers["portrait"].Set(1, 2, Glyph.Bw(u, v));

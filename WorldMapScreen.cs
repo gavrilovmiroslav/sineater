@@ -194,7 +194,11 @@ public class WorldMapScreen : Screen
     }
 
     public override void Initialize(SineaterGame game)
-    {}
+    {
+
+
+    
+    }
 
     private void InitializeMapLayers()
     {
@@ -293,6 +297,7 @@ public class WorldMapScreen : Screen
         }
         
         _submenuDelta = (0, 0);
+        _game.Layers["input"].Clear();
     }
 
     void UpdateExplorationView()
@@ -324,6 +329,9 @@ public class WorldMapScreen : Screen
 
         foreach (var layer in SineaterGame.LayerNames)
         {
+            if (layer == "input" || layer == "inputtext")
+                continue;
+
             _game.Layers[layer].Clear();
         }
 
@@ -513,6 +521,9 @@ public class WorldMapScreen : Screen
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
+        _game.Layers["input"].Clear();
+        DrawControls();
+
         if (CoroutineHandler.IsActive())
         {
             return;
@@ -529,7 +540,7 @@ public class WorldMapScreen : Screen
     {
         if (_submenu.Count > 0)
         {
-            var len = _submenu.Select(s => s.Length).Max() + 2;
+            var len = _submenu.Select(s => s.Length).Max() + 4;
             var (x, y) = (15, 13);
             _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
             _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
@@ -537,7 +548,8 @@ public class WorldMapScreen : Screen
 
             for (var i = 0; i < _submenu.Count; i++)
             {
-                _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {_submenu[i]}");
+                _game.Layers["ascii"].Set(x + 4, y + 1 + i, $"  {_submenu[i]}");
+                _game.Layers["input"].Set((x + 3)/2 + 2, y + 2 + i, InputM.GetGlyph(EInputAction.Confirm));
             }
 
             _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
@@ -566,6 +578,22 @@ public class WorldMapScreen : Screen
                 }
             }
         }
+    }
+
+    private void DrawControls()
+    {
+        var left = 2;
+        var top = 5;
+        _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
+        _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
+        _game.Layers["inputtext"].Set(left * 2, top - 1, "Left/Right");
+
+        _game.Layers["input"].Set(left - 1, top +1, InputM.GetGlyph(EInputAction.MoveUp));
+        _game.Layers["input"].Set(left, top+1, InputM.GetGlyph(EInputAction.MoveDown));
+        _game.Layers["inputtext"].Set(left * 2, top, "Up/Down");
+
+        _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.Confirm));
+        _game.Layers["inputtext"].Set(left * 2, top + 1, "Inspect");
     }
 
     private void CheckPlayerInputs()

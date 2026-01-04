@@ -298,6 +298,7 @@ namespace SINEATER
             _game.Layers["map"].Clear();
             _game.Layers["ascii"].Clear();
             _game.Layers["mrmo"].Clear();
+            _game.Layers["inputtext"].Clear();
 
             SetupItems();
 

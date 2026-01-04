@@ -22,6 +22,7 @@ public class SineaterGame : Game
     private Texture2D _mrmo;
     private Texture2D _mapmotext;
     private Texture2D _ibm;
+    private Texture2D _inputText;
     private Texture2D _largeNums;
     private Texture2D _portraits;
     private Texture2D _statuses;
@@ -121,6 +122,7 @@ public class SineaterGame : Game
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _mapmotext = Content.Load<Texture2D>("mapmotext");
         _ibm = Content.Load<Texture2D>("Codepage");
+        _inputText = Content.Load<Texture2D>("Codepage");
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
         _statuses = Content.Load<Texture2D>("statuses");
@@ -208,6 +210,13 @@ public class SineaterGame : Game
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
         ibmLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("ascii", ibmLayer);
+
+        var inputText = new TextLayer(_inputText, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(2, 0), new Vector2(31, 7));
+        inputText.SetOffset(1, 0);
+        inputText.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
+        inputText.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
+        inputText.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
+        Layers.Add("inputtext", inputText);
 
         var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(20, 20), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
         largeNums.Map(" 1234567890", 0, 0);
@@ -372,7 +381,7 @@ public class SineaterGame : Game
     }
     
     public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input" ];
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input", "inputtext"];
 
     private void SetupCrt(int w, int h)
     {

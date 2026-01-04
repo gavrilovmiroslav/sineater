@@ -241,6 +241,10 @@ namespace SINEATER.Input
 
             _keyboardGlyphs.Add(Keys.Left, new Glyph(6, 5, Color.Transparent, Color.Gray));
             _keyboardGlyphs.Add(Keys.Right, new Glyph(8, 5, Color.Transparent, Color.Gray));
+
+            _keyboardGlyphs.Add(Keys.Up, new Glyph(7, 4, Color.Transparent, Color.Gray));
+            _keyboardGlyphs.Add(Keys.Down, new Glyph(7, 5, Color.Transparent, Color.Gray));
+
             _keyboardGlyphs.Add(Keys.Space, new Glyph(9, 5, Color.Transparent, Color.Gray));
 
             
@@ -253,6 +257,8 @@ namespace SINEATER.Input
 
             _gamepadGlyphs.Add(Buttons.DPadLeft, new Glyph(3, 1, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.DPadRight, new Glyph(1, 1, Color.Transparent, Color.Gray));
+            _gamepadGlyphs.Add(Buttons.DPadUp, new Glyph(4, 1, Color.Transparent, Color.Gray));
+            _gamepadGlyphs.Add(Buttons.DPadDown, new Glyph(2, 1, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.LeftShoulder, new Glyph(1, 3, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.RightShoulder, new Glyph(2, 3, Color.Transparent, Color.Gray));
             _gamepadGlyphs.Add(Buttons.LeftTrigger, new Glyph(1, 4, Color.Transparent, Color.Gray));
