@@ -77,12 +77,12 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
             }
             map.DrawWorld(true);
             
-            SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
-                new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
             frame++;
             yield return new WaitForSeconds(0.02f);
-            SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
-                new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
             frame++;
             yield return new WaitForSeconds(0.02f);
         }
