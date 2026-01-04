@@ -582,7 +582,7 @@ public class WorldMapScreen : Screen
 
     private void DrawControls()
     {
-        var left = 2;
+        var left = 3;
         var top = 5;
         _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
         _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
