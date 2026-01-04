@@ -128,6 +128,7 @@ public static class ItemLibrary
         if (Library.Weapons.Find(x => x.Name == name) is {} result)
         {
             var item = (Weapon)result.Clone();
+            item.ID = Item.NextId();
             InstancedWeapons.Add(result.GetName(), item);
             return item;
         }

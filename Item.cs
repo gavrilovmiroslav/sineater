@@ -12,6 +12,12 @@ public class Item(string name, (int U, int V) uv, EStat stat, int weight = 3) : 
 {
     static int IDGen = 0;
 
+    public static int NextId()
+    {
+        IDGen++;
+        return IDGen;
+    }
+
     public int ID = IDGen++;
     public void Copy(Item original)
     {

@@ -616,8 +616,8 @@ public record struct Party
             switch (Characters[i].Job)
             {
                 case ECharacterClass.Wizard:
-                    Characters[i].EquipAndAdd(EStat.Poise, ItemLibrary.GetItem("Ash Branch"));
-                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetItem("Dagger"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Ash Branch"));
+                    Characters[i].EquipAndAdd( ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 5;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
@@ -625,28 +625,28 @@ public record struct Party
                     break;
                 case ECharacterClass.Witch:
                     Characters[i].IsRightHanded = true;
-                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetItem("Dagger"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 1;
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Knight:
-                    Characters[i].EquipAndAdd(EStat.Will, ItemLibrary.GetWeapon("Long Sword"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetWeapon("Long Sword"));
                     Characters[i].Stats.Will = 3;
                     Characters[i].Stats.Clarity = 1;
                     Characters[i].Stats.Poise = 5;
                     Characters[i].Stats.Vigor = 5;
                     break;
                 case ECharacterClass.Monk:
-                    Characters[i].EquipAndAdd(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 2;
                     Characters[i].Stats.Poise = 2;
                     Characters[i].Stats.Vigor = 6;
                     break;
                 case ECharacterClass.Sage:
-                    Characters[i].EquipAndAdd(EStat.Vigor, ItemLibrary.GetItem("Thorn Whip"));
+                    Characters[i].EquipAndAdd(ItemLibrary.GetItem("Thorn Whip"));
                     Characters[i].Stats.Will = 2;
                     Characters[i].Stats.Clarity = 5;
                     Characters[i].Stats.Poise = 3;

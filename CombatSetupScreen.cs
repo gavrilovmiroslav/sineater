@@ -153,6 +153,9 @@ namespace SINEATER
             _submenuSelection = 0;
             _submenu.Clear();
 
+            _game.Party.Inventory.Items.Sort((x, y) => x.Stat.CompareTo(y.Stat));
+            _game.Party.Inventory.Items.Reverse();
+
             var items = _game.Party.Inventory.Items;
 
             for (int i = _pageIndex * _pageSize; i < _pageIndex * _pageSize + _pageSize; i++)
@@ -160,7 +163,7 @@ namespace SINEATER
                 if (items.Count <= i)
                     break;
 
-                _submenu.Add(items[i].Name);
+                _submenu.Add(items[i].ID.ToString());
             }
         }
 
@@ -183,9 +186,12 @@ namespace SINEATER
 
         private bool IsEquipped(Item w)
         {
+            if (w is null)
+                return false;
+
             foreach(var c in _game.Party.Characters)
             {
-                if (c.Items.Any(x => x is not null && x.Name == w.Name))
+                if (c.Items.Any(x => x is not null && x.ID == w.ID))
                     return true;
             }
 
@@ -197,7 +203,7 @@ namespace SINEATER
         {
             if (_submenu.Count > 0)
             {
-                var len = _submenu.Select(s => s.Length).Max() + 2 + 3;
+                var len = _game.Party.Inventory.Items.Select(s => s.Name.Length).Max() + 2 + 3;
                 var (x, y) = (50, 2);
                 _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
                 _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
@@ -205,15 +211,15 @@ namespace SINEATER
 
                 for (var i = 0; i < _submenu.Count; i++)
                 {
-                    var item = _game.Party.Inventory.Items.Find(x => x.Name == _submenu[i]);
+                    var item = _game.Party.Inventory.Items.Find(x => x.ID.ToString() == _submenu[i]);
+
+                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White, GetColorForStat(item.Stat));
+                    _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {item.Name}");
 
                     if (item is Weapon wpn)
                     {
                         var stat = wpn.Attack > 0 ? -wpn.Attack : wpn.Guard;
 
-                        _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White,
-                            GetColorForStat(item.Stat));
-                        _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {_submenu[i]}");
                         _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}",
                             stat < 0 ? Color.Red : Color.Green);
                     }
@@ -252,38 +258,30 @@ namespace SINEATER
 
         public override void SubmenuActivate(string action)
         {
-            var item = _game.Party.Inventory.GetItem(action);
+            var item = _game.Party.Inventory.GetItem(Int32.Parse(action));
             if (item == null)
                 return;
 
-            bool isSwap = false;
+            bool hasItem = _game.Party.Characters[_selectedIndex].Items.FirstOrDefault(x => x is not null && x.ID == item.ID) != null;
 
-            int i = 0;
-            for(; i < 3; i++)
+            if (hasItem)
             {
-                var c = _game.Party.Characters[i];
-                var equipped = c.Items[(int)(item.Stat - 1)];
-                if (equipped != null)
+                _game.Party.Characters[_selectedIndex].Equip(item.Stat, null);
+            }
+            else
+            {
+                for (int i = 0; i < 4; i++)
                 {
-                    if(i == _selectedIndex)
-                    {
-                        isSwap = equipped.Name != item.Name;
-                        c.Equip(item.Stat, null);
-                    }
-                    else if (equipped.Name == item.Name)
+                    var c = _game.Party.Characters[i];
+                    var equipped = c.Items.FirstOrDefault(x => x is not null && x.ID == item.ID);
+                    if (equipped != null)
                     {
                         c.Equip(item.Stat, null);
-                        break;
                     }
-
                 }
-            }
 
-            if (i != _selectedIndex || isSwap)
-            {
-                _game.Party.Characters[_selectedIndex].Equip(_game.Party.Inventory.GetItem(action));
+                _game.Party.Characters[_selectedIndex].Equip(item);
             }
-
         }
 
         public override void SubmenuItemSelected(int index)

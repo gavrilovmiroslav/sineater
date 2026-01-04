@@ -174,9 +174,9 @@ namespace SINEATER.Input
                     MakeAction(EInputAction.SelectPreviousCharacter, Keys.None, Buttons.LeftTrigger),
                     MakeAction(EInputAction.DetailedView, Keys.LeftAlt, Buttons.Y, eInput: EInputTrigger.Down),
                     
-                    MakeAction(EInputAction.StartFight, Keys.Space, Buttons.X),
+                    MakeAction(EInputAction.StartFight, Keys.Enter, Buttons.X),
                     MakeAction(EInputAction.CancelFight, Keys.Escape, Buttons.B),
-                    MakeAction(EInputAction.Equip, Keys.Enter, Buttons.A),
+                    MakeAction(EInputAction.Equip, Keys.Space, Buttons.A),
                     MakeAction(EInputAction.ChangePage, Keys.W, Buttons.Y),
                     MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftShoulder),
                     MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightShoulder),
