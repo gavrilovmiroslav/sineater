@@ -98,7 +98,7 @@ namespace SINEATER.ImGuiTools
             bool changed = false;
             if (ts.Has(x, y))
             {
-                if (MakeEditor<T>(ts.Get(x, y), $"{x}{y}{typeof(T).Name}") is { } e)
+                if (MakeEditor<T>(ts.Get(x, y).Value, $"{x}{y}{typeof(T).Name}") is { } e)
                 {
                     if (e.Deleted)
                     {

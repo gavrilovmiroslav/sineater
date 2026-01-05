@@ -57,4 +57,24 @@ public class Enemy : Character
 
         return enemy;
     }
+
+    public static Enemy MakeFrom(EnemyDefinition def)
+    {
+        var enemy = new Enemy
+        {
+            X = 0,
+            Y = 0,
+            Stats = def.Stats,
+            Icon = def.Icon,
+            Portrait = def.Portrait,
+            DayGuardUp = def.DayGuardUp,
+            DaySpeedUp = def.DaySpeedUp,
+            NightGuardUp = def.NightGuardUp,
+            NightSpeedUp = def.NightSpeedUp, 
+            Name = def.Display,
+            Guard = def.Guard,
+            Tags = def.Tags
+        };
+        return enemy;
+    }
 }

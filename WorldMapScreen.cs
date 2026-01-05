@@ -98,7 +98,7 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
 
         if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
         {
-            yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y).Text);
+            yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>");
             map.World.GeneralDescriptions.Visit(x, y);
         }
     }
@@ -265,13 +265,12 @@ public class WorldMapScreen : Screen
         
         if (opt == "INSPECT")
         {
-            CoroutineHandler.Run(new CoShowInspectText(this, _world.GeneralDescriptions.Get(x, y).Text));
+            CoroutineHandler.Run(new CoShowInspectText(this, _world.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>"));
         }
         else if (opt == "VISIT")
         {
-            if (_world.SlowDowns.Has(x, y))
+            if (_world.SlowDowns.Get(x, y) is {} slowdown)
             {
-                var slowdown = _world.SlowDowns.Get(x, y);
                 CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
             }
             else
@@ -285,9 +284,9 @@ public class WorldMapScreen : Screen
         }
         else if (opt == "FIGHT")
         {
-            if (_world.Encounters.Has(x, y))
+            if (_world.Encounters.Get(x, y) is {} encounter)
             {
-                _game.ScreenStack.Push(new CombatSetupScreen(_game, x, y, this, _world.Encounters.Get(x,y)));
+                _game.ScreenStack.Push(new CombatSetupScreen(_game, x, y, this, encounter));
             }
         }
         
@@ -403,10 +402,8 @@ public class WorldMapScreen : Screen
         
         var (nx, ny) = (CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
 
-        if (_world.Encounters.Has(nx, ny))
+        if (_world.Encounters.Get(nx, ny) is {} enc)
         {
-            var enc = _world.Encounters.Get(nx, ny);
-
            _game.Layers["ascii"].Set(35, 1, $"Encounter: ");
            
             for (var i = 0; i < 4; i++)
@@ -536,9 +533,8 @@ public class WorldMapScreen : Screen
                 var (dx, dy) = _submenuDelta;
                 var (nx, ny) = (CurrentPlayerPosition.X + dx, CurrentPlayerPosition.Y + dy);
                 
-                if (_world.SlowDowns.Has(nx, ny))
+                if (_world.SlowDowns.Get(nx, ny) is {} slowdown)
                 {
-                    var slowdown = _world.SlowDowns.Get(nx, ny);
                     var plural = slowdown.HoursSpent > 1;
                     var hours = plural ? "HOURS" : "HOUR";
                     var text = $"+{slowdown.HoursSpent} {hours}";
@@ -663,9 +659,8 @@ public class WorldMapScreen : Screen
                     {
                         if (Maps[CurrentMapLayer].Map.IsWalkable(x, y))
                         {
-                            if (_world.SlowDowns.Has(x, y))
+                            if (_world.SlowDowns.Get(x, y) is {} slowdown)
                             {
-                                var slowdown = _world.SlowDowns.Get(x, y);
                                 CoroutineHandler.Run(new CoPassTimeAndMoveTo(this, x, y, slowdown));
                             }
                             else
@@ -677,7 +672,7 @@ public class WorldMapScreen : Screen
                         {
                             if (World.GeneralDescriptions.Has(x, y))
                             {
-                                CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y).Text));
+                                CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>"));
                             }
                         }
                     }

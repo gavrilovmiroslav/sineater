@@ -1,22 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SINEATER;
 
+public struct EnemyDefinition
+{
+    [JsonProperty] public string Name;
+    [JsonProperty] public string Display;
+    [JsonProperty] public (int, int) Icon;
+    [JsonProperty] public (int, int) Portrait;
+    [JsonProperty] public Stats Stats;
+    [JsonProperty] public int Guard;
+    [JsonProperty] public int NightSpeedUp;
+    [JsonProperty] public int DaySpeedUp;
+    [JsonProperty] public int NightGuardUp;
+    [JsonProperty] public int DayGuardUp;
+    [JsonProperty] public List<string> Tags;
+}
+
 public static class Enemies
 {
-    public static readonly Dictionary<string, Func<Enemy>> Library = [];
+    public static readonly Dictionary<string, EnemyDefinition> Library = [];
 
     private static string GetLocalBestiary()
     {
-        return string.Join("\n", TitleContainer.OpenStream("Content/items/items.json").ReadLines(Encoding.Default));
+        return string.Join("\n", TitleContainer.OpenStream("Content/enemies.json").ReadLines(Encoding.Default));
     }
 
     private const int NAME = 0;
@@ -67,9 +86,8 @@ public static class Enemies
             var dayGuardUp = enemies.Values[i][DAYGUARDUP].ToString() ?? "0";
             var readTags = enemies.Values[i].Count > 13 ? enemies.Values[i][TAGS].ToString() : "";
             var tags = (readTags == null ? [] : readTags.Split(",").ToList());
-            
-            Library.Remove(name);
-            Library.Add(name, () => new Enemy
+
+            var def = new EnemyDefinition()
             {
                 Tags = tags,
                 Guard = int.Parse(guard),
@@ -81,7 +99,21 @@ public static class Enemies
                 DaySpeedUp = int.Parse(daySpeedUp),
                 NightGuardUp = int.Parse(nightGuardUp),
                 DayGuardUp = int.Parse(dayGuardUp),
-            });
+            };
+            
+            Library.Remove(name);
+            Library.Add(name, def);
         }
+        
+        var lib = new JObject();
+        foreach (var entry in Library)
+        {
+            lib.Add(entry.Key, JsonConvert.SerializeObject(entry.Value));
+        }
+
+        var json = lib.ToString();
+        var dir = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+        File.WriteAllLines($"{dir}/Content/enemies.json", [ json ]);
+        File.WriteAllLines("Content/enemies.json", [ json ]);
     }
 }

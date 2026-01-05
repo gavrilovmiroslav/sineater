@@ -37,7 +37,7 @@ public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComp
         return Get(key.X, key.Y);
     }
     
-    public T Get(int x, int y)
+    public T? Get(int x, int y)
     {
         var index = y * 20 + x;
         if (InternalStorage.ContainsKey(index))
@@ -46,7 +46,7 @@ public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComp
         }
         else
         {
-            throw new Exception("Cannot get value");
+            return null;
         }
     }
 
@@ -64,7 +64,7 @@ public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComp
     public bool IsOkay(int x, int y)
     {
         if (!Has(x, y)) return false;
-        return Get(x, y).IsOkay();
+        return Get(x, y)?.IsOkay() ?? false;
     }
     
     public void Set(int x, int y, T t)
@@ -163,7 +163,7 @@ public class World(string path)
                         foreach (Match match in matches)
                         {
                             var enemyType = match.Groups[2].ToString();
-                            var enemy = Enemies.Library[enemyType]();
+                            var enemy = Enemy.MakeFrom(Enemies.Library[enemyType]);
 
                             foreach (var weapon in match.Groups[3].ToString().Split(','))
                             {
@@ -190,7 +190,7 @@ public class World(string path)
                 // REWARDS
                 {
                     var matches = Regex.Matches(rewards.Values[j][i].ToString() ?? "/",
-                        @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
+                        @"((\w+)\[([a-zA-Z, ]*)\]\s*)+");
 
                     if (matches.Count > 0)
                     {

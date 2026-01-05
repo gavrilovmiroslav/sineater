@@ -324,10 +324,19 @@ namespace SINEATER
             }
             else if (InputM.IsActive(EInputAction.StartFight))
             {
-                _game.ScreenStack.Pop();
+                
                 var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
                 var rew = _world.Rewards.Get(_combatPositionX, _combatPositionY);
-                _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX, _combatPositionY, enc, rew));
+                if (enc is { } encounter && rew is { } reward)
+                {
+                    _game.ScreenStack.Pop();
+                    _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX,
+                        _combatPositionY, encounter, reward));
+                }
+                else
+                {
+                    Console.WriteLine($"??? WEIRD FIGHT BEHAVIOR AT {_combatPositionX}, {_combatPositionY}!!!");
+                }
             }
             
             if (InputM.IsActive(EInputAction.MoveRight))
