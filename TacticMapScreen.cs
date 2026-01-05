@@ -17,21 +17,14 @@ public class TacticMapScreen : Screen
 {
     private static readonly (int X, int Y)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     
-    private ETerrainKind _kind;
-    public LevelStructure Structure;
-    
     private bool _rendered = false;
     private bool _detailedView = false;
     private Glyph[,] _groundGlyphs;
     internal FieldOfView<Cell> _fov;
-    private readonly CombatConfig? _config;
     private MultiDictionary<(int, int), Color> _fgs = new(false);
     
     internal bool ShouldUpdateView = true;
-
-    public Domains Domains;
-    public IMap? Map => Structure.Map;
-
+    
     private List<Texture2D> _city = [];
     private Texture2D _pixel;
 
@@ -427,7 +420,6 @@ public class TacticMapScreen : Screen
         foreach (var pm in _game.Party.Characters)
         {
             pm.SetOrigin();
-            pm.IsDone = false;
         }
         yield break;
     }
@@ -491,7 +483,7 @@ public class TacticMapScreen : Screen
             var (u, v) = p.Job.GetImage();
             p.X = 6 + i * 2 - 10;
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
-            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
+            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
             Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
 
             if (_selectedIndex == i)
@@ -510,7 +502,7 @@ public class TacticMapScreen : Screen
             var (u, v) = p.GetIcon();
             p.X = 5 + (4 - i) * 2 + 18;
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
-            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
+            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
             Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
             i++;
         }
@@ -536,7 +528,7 @@ public class TacticMapScreen : Screen
             foreach (var pm in xs[x].OrderBy(p => p.Y))
             {
                 var (u, v) = pm.Job.GetImage();
-                Draw(x, y + n, new Glyph(u, v, Color.Black, pm.Tint));
+                Draw(x, y + n, new Glyph(u, v, Color.Black, Color.White));
                 n++;
             }
         }
@@ -770,8 +762,8 @@ public class TacticMapScreen : Screen
             }
             
             var speed = 3 * p.Stats[j] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
-            if (_timeOfDay == ETimeOfDay.Night) speed += p.NightSpeedup;
-            if (_timeOfDay == ETimeOfDay.Afternoon) speed += p.DaySpeedup;
+            if (_timeOfDay == ETimeOfDay.Night) speed += p.NightSpeedUp;
+            if (_timeOfDay == ETimeOfDay.Afternoon) speed += p.DaySpeedUp;
             if (p.Guard <= 0)
             {
                 slowdown = 0.25f;

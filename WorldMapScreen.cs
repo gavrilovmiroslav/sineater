@@ -148,7 +148,6 @@ public class WorldMapScreen : Screen
     private readonly Dictionary<int, (Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
     private readonly Image _rex;
     
-    private ETerrainKind _kind;
     private bool _detailedView = false;
 
     private (int X, int Y) DrawOffset { get; set; } = (8, 1);
@@ -295,31 +294,13 @@ public class WorldMapScreen : Screen
         _submenuDelta = (0, 0);
         _game.Layers["input"].Clear();
     }
-
-    void UpdateExplorationView()
-    {
-    }
     
-    private void SelectNextAvailablePartyMember()
-    {
-        for (int i = 1; i <= 4; i++)
-        {
-            PlayerSelectedIndex = (PlayerSelectedIndex + 1) % 4;
-            if (!_game.Party.Characters[PlayerSelectedIndex].IsDone)
-            {
-                _shouldUpdateView = true;
-                break;
-            }
-        }
-    }
-
     HashSet<(int,int)> visited = [];
 
     public override void DrawWorld(bool noPlayer = false)
     {
         if (_shouldUpdateView)
         {
-            UpdateExplorationView();
             _shouldUpdateView = false;
         }
 
@@ -361,11 +342,11 @@ public class WorldMapScreen : Screen
         {
             var dimLight = fov.ComputeFov(x, y, radius + l, true);
             _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
-                selected: dimLight.Select(Predicate.CellToPosition));
+                selected: dimLight.Select(c => (c.X, c.Y)));
         }
 
         _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
-        _game.Layers["map"].SetRex(8, 1, _rex, CurrentMapLayer, selected: light.Select(Predicate.CellToPosition).ToList(), atmo: atmo);
+        _game.Layers["map"].SetRex(8, 1, _rex, CurrentMapLayer, selected: light.Select(c => (c.X, c.Y)).ToList(), atmo: atmo);
         
         var tick = _time is < 400 or > 800 and < 1200;
         
@@ -376,15 +357,15 @@ public class WorldMapScreen : Screen
             var bgc = _game.Layers["map"].GetBg(x + 8, y + 1);
             if (_submenuDelta == (0, 0))
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
             }
             else
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
                 if (tick)
                 {
                     _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 1,
-                        new Glyph(8, 74 - 16, bgc, chr.Tint));
+                        new Glyph(8, 74 - 16, bgc, Color.White));
                 }
             }
         }
@@ -410,7 +391,7 @@ public class WorldMapScreen : Screen
 
             if (_time < 800)
             {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, Color.Black, chr.Tint));
+                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, Color.Black, Color.White));
             }
         }
         
@@ -432,7 +413,7 @@ public class WorldMapScreen : Screen
             {
                 var en = enc.Enemies[4 - i - 1];
                 var (uu, vv) = en.GetIcon();
-                Draw(15 + i, 0, new Glyph(uu, vv, Color.Transparent, en.Tint));
+                Draw(15 + i, 0, new Glyph(uu, vv, Color.Transparent, Color.White));
             }
         }
     }
@@ -453,7 +434,7 @@ public class WorldMapScreen : Screen
                     var (m, r) = character.Job.GetImage();
                     var (u, v) = character.GetPortait();
                     var (x, y) = _positions[index];
-                    var tint = character.Tint;
+                    var tint = Color.White;
 
                     if (colorOverride is { } color)
                     {
@@ -628,11 +609,6 @@ public class WorldMapScreen : Screen
         // MOVE
         else if (PlayerSelectedIndex > -1)
         {
-            if (!_debug && InputM.IsActive(EInputAction.SelectNextCharacter))
-            {
-                SelectNextAvailablePartyMember();
-            }
-            
             if (InputM.IsActive(EInputAction.ActionsMenu))
             {
                 _submenuDelta = (0, 0);
@@ -706,8 +682,6 @@ public class WorldMapScreen : Screen
                         }
                     }
                 }
-                
-                UpdateExplorationView();
             }
         }
     }

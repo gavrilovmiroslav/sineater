@@ -210,12 +210,11 @@ public interface ICharacter
 {
     public int X { get; set; }
     public int Y { get; set; }
-    public Track Guard { get; set; }    
+    public Track Guard { get; set; }
     public bool Render { get; set; }
     public Stats Stats { get; set; }
     public Stats Bonus { get; set; }
     public List<string> Tags { get; set; }
-    public Color GetTint();
     public void Equip(EStat stat, Item? item);
     public void Equip(Item item);
     public Item? GetItem(EStat stat);
@@ -223,8 +222,6 @@ public interface ICharacter
     
     public string GetName();
     (int, int) GetPortait();
-    void Die();
-    public bool IsDone { get; set; }
 }
 
 public class Dummy : ICharacter
@@ -313,18 +310,6 @@ public class Dummy : ICharacter
     }
 }
 
-public record struct Attack(List<Weapon> Weapons, EStatus[] Mods, StatsScaling StatScaling = default, 
-    Func<Character, Attack, Character, CombatMapScreen, IEnumerable>? AttackProc = null);
-
-public interface IStatus
-{
-    public IEnumerable OnActivated(Character c, CombatMapScreen w);
-    public IEnumerable OnMove(Character c, CombatMapScreen w);
-    public IEnumerable OnAttack(Character c, Character o, CombatMapScreen w);
-    public IEnumerable OnDamage(Character c, CombatMapScreen w);
-    public IEnumerable OnDeactivated(Character c, CombatMapScreen w);
-}
-
 public enum ELoudness
 {
     Silent = 0,
@@ -355,63 +340,9 @@ public abstract class Character : ICharacter
     
     public void ForceRestart(Screen screen)
     {
-        MovementLeft = Stats.Initiative;
         HasTurn = true;
-        Attacks.Clear();
         SelectedMove = null;
-        IsDone = false;
     }
-    
-    public List<Attack> Attacks { get; set; } = [];
-
-    public int MovementLeft { get; set; } = 0;
-    public bool IsDone { get; set; } = false;
-    public bool IsRightHanded { get; set; } = true;
-    
-    // public bool CanPay(EStatus[] costs)
-    // {
-    //     var stamina = AP.Count(EStatus.Stamina);
-    //     var fatigue = AP.Count(EStatus.Fatigue);
-    //     var fire = AP.Count(EStatus.Fire);
-    //     var ice = AP.Count(EStatus.Frozen);
-    //     var wound = AP.Count(EStatus.Death);
-    //     var death = AP.Count(EStatus.Death);
-    //     var sin  = AP.Count(EStatus.Sin);
-    //     var insanity  = AP.Count(EStatus.Insanity);
-    //     
-    //     foreach (var part in costs)
-    //     {
-    //         switch (part)
-    //         {
-    //             case EStatus.Stamina:
-    //                 stamina--;
-    //                 break;
-    //             case EStatus.Fatigue:
-    //                 fatigue--;
-    //                 break;
-    //             case EStatus.Fire:
-    //                 fire--;
-    //                 break;
-    //             case EStatus.Frozen:
-    //                 ice--;
-    //                 break;
-    //             case EStatus.Wound:
-    //                 wound--;
-    //                 break;
-    //             case EStatus.Death:
-    //                 death--;
-    //                 break;
-    //             case EStatus.Sin:
-    //                 sin--;
-    //                 break;
-    //             case EStatus.Insanity:
-    //                 insanity--;
-    //                 break;
-    //         }
-    //     }
-    //
-    //     return !(stamina < 0 || fatigue < 0 || fire < 0 || ice < 0 || wound < 0 || death < 0 || sin < 0 || insanity < 0);
-    // }
     
     public float Weight
     {
@@ -431,8 +362,6 @@ public abstract class Character : ICharacter
         }
     }
     
-    public float WeightFactor => (Cla + Poi) / Math.Max(0.1f, Weight);
-
     public void Equip(Item? item)
     {
         if (item != null)
@@ -443,12 +372,7 @@ public abstract class Character : ICharacter
     {
         return Items[(int)stat - 1];
     }
-
-    // public AP GetAP()
-    // {
-    //     return AP;
-    // }
-
+    
     public Stats Bonus { get; set; } = new(0, 0, 0, 0);
     public Stats Temp  { get; set; } = new(0, 0, 0, 0);
     
@@ -457,17 +381,9 @@ public abstract class Character : ICharacter
     public int Poi => Stats.Poise + Bonus.Poise + Temp.Poise;
     public int Vig => Stats.Vigor + Bonus.Vigor + Temp.Vigor;
     
-    public int Index;
-    public Color Tint;
     public ECharacterClass Job;
     public Item?[] Items = new Item?[4];
-    //public AP AP;
     
-    public virtual Color GetTint()
-    {
-        return Tint;
-    }
-
     public void Equip(EStat stat, Item? item)
     {
         if (stat == EStat.None) return;
@@ -512,26 +428,6 @@ public abstract class Character : ICharacter
     {
         return Job.GetPortrait();
     }
-
-    public virtual void Die()
-    {}
-    
-    public virtual void Done()
-    {
-        IsDone = true;
-    }
-    
-    // public IEnumerable Pay(EStatus[] costs)
-    // {
-    //     foreach (var cost in costs)
-    //     {
-    //         var place = AP.View.FindIndex(c => c == cost);
-    //         AP.View[place] = EStatus.Void;
-    //         yield return new WaitForSeconds(0.01f);
-    //     }
-    //
-    //     yield break;
-    // }
 }
 
 public class PartyMember : Character
@@ -563,20 +459,10 @@ public class PartyMember : Character
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
     }
-    
-    public override void Done()
-    {
-        IsDone = true;
-    }
 
     public void SetOrigin()
     {
         Origin = (X, Y);
-    }
-
-    public override void Die()
-    {
-        
     }
 }
 
@@ -607,11 +493,7 @@ public record struct Party
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {
-            Characters[i] = new PartyMember(queue.Dequeue())
-            {
-                Index = i,
-                Tint = Colors[i],
-            };
+            Characters[i] = new PartyMember(queue.Dequeue());
             
             switch (Characters[i].Job)
             {
@@ -624,7 +506,6 @@ public record struct Party
                     Characters[i].Stats.Vigor = 3;
                     break;
                 case ECharacterClass.Witch:
-                    Characters[i].IsRightHanded = true;
                     Characters[i].EquipAndAdd(ItemLibrary.GetItem("Dagger"));
                     Characters[i].Stats.Will = 4;
                     Characters[i].Stats.Clarity = 5;

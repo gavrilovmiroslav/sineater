@@ -50,8 +50,6 @@ public class SineaterGame : Game
     public AP PartyActionPoints { get; set; }
     public World World { get; set; }
 
-    public Moves Moves = new();
-    
     private IScreen _lastScreen;
     public SinEventInstance fmodInstanceMusic;
 
@@ -117,6 +115,8 @@ public class SineaterGame : Game
         Party = new Party();
         
         ItemLibrary.LoadItems(Content);
+        Enemies.LoadBestiary(Content);
+        
         Party.MakeParty();
         
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");

@@ -53,12 +53,12 @@ namespace SINEATER
                 var (u, v) = p.Job.GetImage();
                 p.X = i * 2 - 4;
                 p.Y = 3;
-                Draw(p.X, p.Y, new Glyph(u, v, Color.Black, p.Tint));
+                Draw(p.X, p.Y, new Glyph(u, v, Color.Black, Color.White));
                 _game.Layers["ascii"].Set(p.X + 11 + 2* (i + 1), p.Y + 2, fieldsAffinity[i], affinityColors[i]);
 
                 if (_selectedIndex == i)
                 {
-                    Draw(p.X, p.Y - 1, new Glyph(8, 74 - 16, Color.Black, p.Tint));
+                    Draw(p.X, p.Y - 1, new Glyph(8, 74 - 16, Color.Black, Color.White));
                 }
 
                 i++;
@@ -71,7 +71,7 @@ namespace SINEATER
                 var (u, v) = p.GetIcon();
                 p.X = 5 + (4 - i) * 2 + 9;
                 p.Y = 3;
-                Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, p.Tint));
+                Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
                 _game.Layers["ascii"].Set(33 + j*4, p.Y + 2, fieldsAffinity[3-j], affinityColors[3-j]);
                 i++;
                 j++;
@@ -388,7 +388,7 @@ namespace SINEATER
                         var (m, r) = character.Job.GetImage();
                         var (u, v) = character.GetPortait();
                         var (x, y) = _positions[index];
-                        var tint = character.Tint;
+                        var tint = Color.White;
 
                         if (colorOverride is { } color)
                         {
