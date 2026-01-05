@@ -155,7 +155,7 @@ public class World(string path)
                 // COMBAT
                 {
                     var matches = Regex.Matches(combats.Values[j][i].ToString() ?? "/",
-                        @"((\w+)\[([a-zA-Z,]*)\]\s*)+");
+                        @"((\w+)\[([a-zA-Z, ]*)\]\s*)+");
 
                     if (matches.Count > 0)
                     {
