@@ -1,2 +1,4 @@
-﻿using var game = new SINEATER.SineaterGame();
+﻿using SINEATER.Game;
+
+using var game = new SineaterGame();
 game.Run();

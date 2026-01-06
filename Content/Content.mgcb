@@ -1028,6 +1028,18 @@
 #begin sheets.nosj.txt
 /copy:sheets.nosj.txt
 
+#begin sineater-logo.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sineater-logo.png
+
 #begin stats.json
 /importer:JSONImporter
 /processor:JSONProcessor

@@ -1,0 +1,343 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using SINEATER.Game.CoreUtils.Input;
+using SINEATER.Game.Gameplay;
+using SINEATER.Game.Screens;
+
+namespace SINEATER.Game.CoreUtils;
+
+public class Coroutine
+{
+    internal IEnumerator _enumerator;
+    internal Coroutine? _waitingOn = null;
+
+    public Coroutine(IEnumerable method)
+    {
+        _enumerator = method.GetEnumerator();
+    }
+
+    protected Coroutine()
+    {
+    }
+
+    public static void Consume(IEnumerable en)
+    {
+        foreach (var e in en) {}
+    }
+    
+    public static IEnumerable Iterate(IEnumerator iterator)
+    {
+        while (iterator.MoveNext())
+            yield return iterator.Current;
+    }
+}
+
+public class CoroutineHandler
+{
+    private List<Coroutine> _coroutines = [];
+
+    public bool IsActive()
+    {
+        return _coroutines.Count > 0;
+    }
+
+    public void Run(IEnumerable cor)
+    {
+        var c = new Coroutine(cor);
+        if (_coroutines.Count > 0)
+        {
+            _coroutines.Last()._waitingOn = c;
+        }
+        
+        _coroutines.Add(c);
+    }
+    
+    public void Run(Coroutine cor)
+    {
+        if (_coroutines.Count > 0)
+        {
+            _coroutines.Last()._waitingOn = cor;
+        }
+        _coroutines.Add(cor);
+    }
+
+    public void RunNext(Coroutine cor)
+    {
+        if (_coroutines.Count > 0)
+        {
+            cor._waitingOn = _coroutines.First();
+        }
+
+        _coroutines.Add(cor);
+    }
+    
+    public void RunNext(IEnumerable core)
+    {
+        var cor = new Coroutine(core);
+        if (_coroutines.Count > 0)
+        {
+            cor._waitingOn = _coroutines.First();
+        }
+
+        _coroutines.Add(cor);
+    }
+    
+    public void Update()
+    {
+        List<Coroutine> toDelete = [];
+
+        var updating = _coroutines.Where(cor => cor._waitingOn == null).ToList();
+        while (updating.Count > 0)
+        {
+            var cor = updating[0];
+            updating = updating[1..];
+            
+            if (cor._enumerator.MoveNext())
+            {
+                var val = cor._enumerator.Current;
+                if (val is Coroutine dep)
+                {
+                    cor._waitingOn = dep;
+                    _coroutines.Insert(1, dep);
+                }
+                else if (val is IEnumerable enm)
+                { 
+                    var corr = new Coroutine(enm);
+                    _coroutines.Insert(1, corr);
+                    cor._waitingOn = corr;
+                }
+            }
+            else
+            {
+                toDelete.Add(cor);
+            }
+        }
+
+        foreach (var cor in toDelete)
+        {
+            _coroutines.Remove(cor);
+            foreach (var next in _coroutines)
+            {
+                if (next._waitingOn == cor)
+                {
+                    next._waitingOn = null;
+                }
+            }
+        }
+    }
+
+    public void Clear()
+    {
+        _coroutines.Clear();
+    }
+}
+
+
+public class WaitForSeconds(float seconds) : IEnumerable
+{
+    private int _waitTimeMillis = (int)(seconds * 1000);
+    private int _currentTime = 0;
+    
+    public IEnumerator GetEnumerator()
+    {
+        while (true)
+        {
+            _currentTime += SineaterGame.DeltaTime;
+            if (_currentTime < _waitTimeMillis)
+            {
+                yield return null;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+}
+
+public class WaitForInput(EInputAction action) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        while (true)
+        {
+            if (InputM.IsActive(action))
+            {
+                break;
+            }
+
+            yield return null;
+        }
+    }
+}
+
+public class FadeOutAndLeaveScreen(float seconds) : IEnumerable
+{
+    private int _waitTimeMillis = (int)(seconds * 1000);
+    private int _currentTime = 0;
+    
+    public IEnumerator GetEnumerator()
+    {
+        while (true)
+        {
+            var dt = SineaterGame.DeltaTime;
+            var factor = (float)dt / (float)_waitTimeMillis;
+            _currentTime += dt;
+            if (_currentTime < _waitTimeMillis)
+            {
+                foreach (var (_, layer) in SineaterGame.Instance.Layers)
+                {
+                    layer.Darken(factor);
+                }
+                yield return null;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        SineaterGame.Instance.ScreenStack.TryPop(out var _);
+        if (SineaterGame.Instance.ScreenStack.TryPeek(out var screen))
+        {
+            //screen.Draw(new GameTime());
+        }
+    }
+}
+
+public class FadeOutAndLoadScreen(float seconds, IScreen screen) : IEnumerable
+{
+    private int _waitTimeMillis = (int)(seconds * 1000);
+    private int _currentTime = 0;
+    
+    public IEnumerator GetEnumerator()
+    {
+        screen.Initialize(SineaterGame.Instance);
+        while (true)
+        {
+            var dt = SineaterGame.DeltaTime;
+            var factor = (float)dt / (float)_waitTimeMillis;
+            _currentTime += dt;
+            if (_currentTime < _waitTimeMillis)
+            {
+                foreach (var (_, layer) in SineaterGame.Instance.Layers)
+                {
+                    layer.Darken(factor);
+                }
+                yield return null;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        SineaterGame.Instance.ScreenStack.Push(screen);
+    }
+}
+
+public class ShowPopupWindowAndWaitForKey(Action<SineaterGame, TextLayerBox> content, bool clear = false) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForKey(new Vector2(2, 2), new Vector2(20, 8), content);
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(new Vector2(2, 2), new Vector2(20, 8), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(2, 2), new Vector2(20 * 2, 8), ' ');
+    }
+}
+
+public class ShowPopupWindowAndWaitForSeconds(float seconds, Action<SineaterGame, TextLayerBox> content, bool clear = false) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForSeconds(seconds, new Vector2(2, 2), new Vector2(20, 8), content);
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(new Vector2(2, 2), new Vector2(20, 8), ' ');
+        game.Layers["ascii"].SetRect(new Vector2(2, 2), new Vector2(20 * 2, 8), ' ');
+    }
+}
+
+public class ShowPopupAndWaitForKey(Vector2 start, Vector2 end, Action<SineaterGame, TextLayerBox> content) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["input"].Set((int)(end.X * 2 - (end.X - start.X) / 3) /2 +1 , (int)end.Y + 2, InputM.GetGlyph(EInputAction.Confirm));
+        game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "<  OK >");
+        yield return new WaitForInput(EInputAction.Confirm);
+        game.Layers["ascii"].Set((int)(end.X * 2 - (end.X - start.X) / 3), (int)end.Y + 1, "< ... >");
+        game.Layers["input"].Clear();
+    }
+}
+
+public class ShowPopupAndWaitForSeconds(float time, Vector2 start, Vector2 end, Action<SineaterGame, TextLayerBox> content) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 4, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        yield return new WaitForSeconds(time);
+    }
+}
+
+public class ShowPopupWindowWithPortraitAndWaitForKey((int, int) portrait, Action<SineaterGame, TextLayerBox> content, bool flip = false) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var (u, v) = portrait;
+        var start = new Vector2(2, 2);
+        var end = new Vector2(20, 14);
+            
+        var game = SineaterGame.Instance;
+        game.Layers["mrmo"].SetRect(start, end, ' ');
+        // 10,11 25,26
+        // 10,11 39,40,41
+        game.Layers["mrmo"].SetBox(start, end, Sides.Mrmo, Corners.Mrmo);
+        
+        content(game, game.Layers["ascii"].Bounds(
+            new Vector2(start.X * 2 + 15, start.Y + 1), 
+            new Vector2(end.X * 2 - 1, end.Y - 2)));
+        game.Layers["input"].Set(((int)end.X * 2 - 10 - 1)/2, (int)end.Y - 1, InputM.GetGlyph(EInputAction.Confirm));
+        game.Layers["ascii"].Set((int)end.X * 2 - 10, (int)end.Y - 2, "<OK>");
+        game.Layers["portrait"].SetFlip(u, v, flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+        game.Layers["portrait"].Set(1, 2, Glyph.Bw(u, v));
+        yield return new WaitForInput(EInputAction.Confirm);
+    }
+}
+
+public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null, Color? front = null) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            var (gu, gv) = (0, 0);
+            if (chr is Enemy e)
+            {
+                (gu, gv) = e.GetIcon();
+            }
+            else if (chr is PartyMember p)
+            {
+                (gu, gv) = p.Job.GetImage();
+            }
+            screen.Draw(chr.X, chr.Y, new Glyph(gu, gv, back ?? Color.Transparent, front ?? Color.White));
+            yield return new WaitForSeconds(0.02f);
+            screen.Draw(chr.X, chr.Y, " ");
+            yield return new WaitForSeconds(0.02f);
+        }
+    }
+}
