@@ -58,22 +58,27 @@ public class Enemy : Character
         return enemy;
     }
 
-    public static Enemy MakeFrom(EnemyDefinition def)
+    public static Enemy Make(string name)
+    {
+        return Enemies.Instance.Make(name);
+    }
+
+    public static Enemy MakeFrom(EnemyDefinition? def)
     {
         var enemy = new Enemy
         {
             X = 0,
             Y = 0,
-            Stats = def.Stats,
-            Icon = def.Icon,
-            Portrait = def.Portrait,
-            DayGuardUp = def.DayGuardUp,
-            DaySpeedUp = def.DaySpeedUp,
-            NightGuardUp = def.NightGuardUp,
-            NightSpeedUp = def.NightSpeedUp, 
-            Name = def.Display,
-            Guard = def.Guard,
-            Tags = def.Tags
+            Stats = def?.Stats ?? new Stats(0, 0, 0, 0),
+            Icon = def?.Icon ?? (0, 0),
+            Portrait = def?.Portrait ?? (0, 0),
+            DayGuardUp = def?.DayGuardUp ?? 0,
+            DaySpeedUp = def?.DaySpeedUp ?? 0,
+            NightGuardUp = def?.NightGuardUp ?? 0,
+            NightSpeedUp = def?.NightSpeedUp ?? 0, 
+            Name = def?.Display ?? "Dummy",
+            Guard = def?.Guard ?? 0,
+            Tags = def?.Tags ?? []
         };
         return enemy;
     }

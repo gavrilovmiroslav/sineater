@@ -163,7 +163,7 @@ public class World(string path)
                         foreach (Match match in matches)
                         {
                             var enemyType = match.Groups[2].ToString();
-                            var enemy = Enemy.MakeFrom(Enemies.Library[enemyType]);
+                            var enemy = Enemies.Instance.Make(enemyType);
 
                             foreach (var weapon in match.Groups[3].ToString().Split(','))
                             {

@@ -115,7 +115,7 @@ public class SineaterGame : Game
         Party = new Party();
         
         ItemLibrary.LoadItems(Content);
-        Enemies.LoadBestiary(Content);
+        Enemies.Instance.Load();
         
         Party.MakeParty();
         

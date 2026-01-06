@@ -224,7 +224,7 @@ public interface ICharacter
     (int, int) GetPortait();
 }
 
-public class Dummy : ICharacter
+public class Dummy : Character
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -320,7 +320,7 @@ public enum ELoudness
 
 public abstract class Character : ICharacter
 {
-    public static Dummy Dummy(int x, int y) => new Dummy() { X = x, Y = y };
+    public static Character Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public bool HasTurn { get; set; } = true;
     public string? SelectedMove { get; set; } = null;

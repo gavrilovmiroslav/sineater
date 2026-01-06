@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace SINEATER;
 
-public struct EnemyDefinition
+public class EnemyLibraryDefinition
+{
+    [JsonProperty] public List<(string, EnemyDefinition)> Enemies = [];
+}
+
+public class EnemyDefinition : ILoadableDefinition
 {
     [JsonProperty] public string Name;
     [JsonProperty] public string Display;
@@ -27,17 +23,12 @@ public struct EnemyDefinition
     [JsonProperty] public int NightGuardUp;
     [JsonProperty] public int DayGuardUp;
     [JsonProperty] public List<string> Tags;
+    
+    public string Key => Name;
 }
 
-public static class Enemies
+public class EnemyParser : ILoadableRowParser<EnemyDefinition>
 {
-    public static readonly Dictionary<string, EnemyDefinition> Library = [];
-
-    private static string GetLocalBestiary()
-    {
-        return string.Join("\n", TitleContainer.OpenStream("Content/enemies.json").ReadLines(Encoding.Default));
-    }
-
     private const int NAME = 0;
     private const int DISPLAY = 1;
     private const int ICON = 2;
@@ -53,67 +44,72 @@ public static class Enemies
     private const int DAYGUARDUP = 12;
     private const int TAGS = 13;
     
-    public static void LoadBestiary(ContentManager content)
+    public EnemyDefinition Parse(IList<object> row)
     {
-        var se = string.Concat(string.Join("\n", TitleContainer.OpenStream("Content/sheets.nosj.txt").ReadLines(Encoding.Default)).Reverse());
-        var service = new SheetsService(new BaseClientService.Initializer()
-        {
-            HttpClientInitializer = GoogleCredential
-                .FromJson(se)
-                .CreateScoped(SheetsService.Scope.Spreadsheets)
-        });
-        
-        var res = new SpreadsheetsResource.ValuesResource(service);
-        var key = Environment.UserName.ToUpper()[0];
-        
-        const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
-        var enemies = res.Get(APPS_ID, $"Enemies!A1:T20").Execute();
+        var name = row[NAME].ToString() ?? "";
+        var display = row[DISPLAY].ToString() ?? "";
+        var icon = (row[ICON].ToString() ?? "0, 0").Split(",");
+        var portrait = (row[PORTRAIT].ToString() ?? "0, 0").Split(",");
+        var guard = row[GUARD].ToString() ?? "0";
+        var poise = row[POISE].ToString() ?? "0";
+        var clarity = row[CLARITY].ToString() ?? "0";
+        var will = row[WILL].ToString() ?? "0";
+        var vigor = row[VIGOR].ToString() ?? "0";
+        var nightSpeedUp = row[NIGHTSPEEDUP].ToString() ?? "0";
+        var daySpeedUp = row[DAYSPEEDUP].ToString() ?? "0";
+        var nightGuardUp = row[NIGHTGUARDUP].ToString() ?? "0";
+        var dayGuardUp = row[DAYGUARDUP].ToString() ?? "0";
+        var readTags = row.Count > 13 ? row[TAGS].ToString() : "";
+        var tags = (readTags == null ? [] : readTags.Split(",").ToList());
 
-        for (var i = 1; i < enemies.Values.Count; i++)
+        var def = new EnemyDefinition()
         {
-            var name = enemies.Values[i][NAME].ToString() ?? "";
-            var display = enemies.Values[i][DISPLAY].ToString() ?? "";
-            var icon = (enemies.Values[i][ICON].ToString() ?? "0, 0").Split(",");
-            var portrait = (enemies.Values[i][PORTRAIT].ToString() ?? "0, 0").Split(",");
-            var guard = enemies.Values[i][GUARD].ToString() ?? "0";
-            var poise = enemies.Values[i][POISE].ToString() ?? "0";
-            var clarity = enemies.Values[i][CLARITY].ToString() ?? "0";
-            var will = enemies.Values[i][WILL].ToString() ?? "0";
-            var vigor = enemies.Values[i][VIGOR].ToString() ?? "0";
-            var nightSpeedUp = enemies.Values[i][NIGHTSPEEDUP].ToString() ?? "0";
-            var daySpeedUp = enemies.Values[i][DAYSPEEDUP].ToString() ?? "0";
-            var nightGuardUp = enemies.Values[i][NIGHTGUARDUP].ToString() ?? "0";
-            var dayGuardUp = enemies.Values[i][DAYGUARDUP].ToString() ?? "0";
-            var readTags = enemies.Values[i].Count > 13 ? enemies.Values[i][TAGS].ToString() : "";
-            var tags = (readTags == null ? [] : readTags.Split(",").ToList());
+            Tags = tags,
+            Guard = int.Parse(guard),
+            Stats = new Stats(int.Parse(will), int.Parse(clarity), int.Parse(poise), int.Parse(vigor)),
+            Name = name,
+            Display = display,
+            Icon = (int.Parse(icon[0].Trim()), int.Parse(icon[1].Trim())),
+            Portrait = (int.Parse(portrait[0].Trim()), int.Parse(portrait[1].Trim())),
+            NightSpeedUp = int.Parse(nightSpeedUp),
+            DaySpeedUp = int.Parse(daySpeedUp),
+            NightGuardUp = int.Parse(nightGuardUp),
+            DayGuardUp = int.Parse(dayGuardUp),
+        };
 
-            var def = new EnemyDefinition()
-            {
-                Tags = tags,
-                Guard = int.Parse(guard),
-                Stats = new Stats(int.Parse(will), int.Parse(clarity), int.Parse(poise), int.Parse(vigor)),
-                Name = display,
-                Icon = (int.Parse(icon[0].Trim()), int.Parse(icon[1].Trim())),
-                Portrait = (int.Parse(portrait[0].Trim()), int.Parse(portrait[1].Trim())),
-                NightSpeedUp = int.Parse(nightSpeedUp),
-                DaySpeedUp = int.Parse(daySpeedUp),
-                NightGuardUp = int.Parse(nightGuardUp),
-                DayGuardUp = int.Parse(dayGuardUp),
-            };
-            
-            Library.Remove(name);
-            Library.Add(name, def);
-        }
-        
-        var lib = new JObject();
-        foreach (var entry in Library)
-        {
-            lib.Add(entry.Key, JsonConvert.SerializeObject(entry.Value));
-        }
-
-        var json = lib.ToString();
-        var dir = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
-        File.WriteAllLines($"{dir}/Content/enemies.json", [ json ]);
-        File.WriteAllLines("Content/enemies.json", [ json ]);
+        return def;
     }
+}
+
+public class EnemyInterpreter : ILoadableInterpreter<EnemyDefinition, Enemy>
+{
+    public Enemy MakeFrom(EnemyDefinition? def)
+    {
+        var enemy = new Enemy
+        {
+            X = 0,
+            Y = 0,
+            Stats = def?.Stats ?? new Stats(0, 0, 0, 0),
+            Icon = def?.Icon ?? (0, 0),
+            Portrait = def?.Portrait ?? (0, 0),
+            DayGuardUp = def?.DayGuardUp ?? 0,
+            DaySpeedUp = def?.DaySpeedUp ?? 0,
+            NightGuardUp = def?.NightGuardUp ?? 0,
+            NightSpeedUp = def?.NightSpeedUp ?? 0, 
+            Name = def?.Display ?? "Dummy",
+            Guard = def?.Guard ?? 0,
+            Tags = def?.Tags ?? []
+        };
+        return enemy;
+    }
+}
+
+public class Enemies : LoadableLibrary<EnemyDefinition, EnemyParser, EnemyInterpreter, Enemy>
+{
+    private static readonly Lazy<Enemies> _Instance = new Lazy<Enemies>(() => new Enemies());
+    public static Enemies Instance => _Instance.Value;
+    
+    protected override string Sheet => "Enemies";
+    protected override string DataRange => "A1:N20";
+    protected override string JsonPath => "enemies.json";
 }
