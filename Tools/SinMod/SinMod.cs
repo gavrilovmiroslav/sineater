@@ -101,15 +101,15 @@ public static class System
         return new EventDescription(_event);
     }
 
-    public static SinEventInstance CreateInstance(string description)
+    public static SinEventInstance CreateInstance(string @event)
     {
-        var ev = SinMod.System.GetEvent($"event:/{description}");
+        var ev = SinMod.System.GetEvent($"event:/{@event}");
         return CreateInstance(ev);
     }
 
-    public static SinEventInstance CreateInstance(string description, string label)
+    public static SinEventInstance CreateInstance(string @event, string label)
     {
-        var ev = SinMod.System.GetEvent($"event:/{description}");
+        var ev = SinMod.System.GetEvent($"event:/{@event}");
         var inst = CreateInstance(ev);
         _labels[label] = inst;
         return inst;

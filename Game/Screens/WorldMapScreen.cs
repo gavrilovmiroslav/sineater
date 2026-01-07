@@ -11,6 +11,7 @@ using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.ImGuiTools;
+using SINEATER.Tools.SinMod;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 

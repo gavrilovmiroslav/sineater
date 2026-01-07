@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Loadable;
+using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER.Game.Screens;
@@ -66,6 +67,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             case EMainMenuState.Loading:
                 break;
             case EMainMenuState.Fading:
+                Muse.SetGameState(EMusicState.World);
                 break;
             case EMainMenuState.Done:
                 break;

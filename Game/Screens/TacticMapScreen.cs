@@ -9,6 +9,7 @@ using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
 using SINEATER.Game.LookNFeel;
+using SINEATER.Tools.SinMod;
 using Wintellect.PowerCollections;
 
 namespace SINEATER.Game.Screens;
@@ -51,6 +52,7 @@ public class TacticMapScreen : Screen
 
     public override void Initialize(SineaterGame game)
     {
+        Muse.SetGameState(EMusicState.Combat);
         _pixel = _game.Content.Load<Texture2D>("pixel");
         for (int i = 1; i < 7; i++)
         {
@@ -791,7 +793,6 @@ public class TacticMapScreen : Screen
 
     private void CheckPlayerInputs()
     {
-
         if (_paused)
         {
             if (InputM.IsActive(EInputAction.MoveRight))
@@ -822,6 +823,7 @@ public class TacticMapScreen : Screen
         if (InputM.IsActive(EInputAction.Confirm))
         {
             _paused = !_paused;
+            Muse.SetPaused(_paused);
         }
     }
 

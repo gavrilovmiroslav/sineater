@@ -2,7 +2,7 @@
 <objects serializationModel="Studio.02.02.00">
 	<object class="AudioFile" id="{56fdde3a-9285-4cb8-916d-0c8039456213}">
 		<property name="assetPath">
-			<value>MainMenuMusic/MYSTERIOUS-FOREST-Loop.wav</value>
+			<value>MainMenuMusic/MAIN-MENU-Loop.wav</value>
 		</property>
 		<property name="isStreaming">
 			<value>true</value>

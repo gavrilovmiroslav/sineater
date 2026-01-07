@@ -54,7 +54,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public World World { get; set; }
 
     private IScreen _lastScreen;
-    public SinEventInstance fmodInstanceMusic;
 
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
@@ -234,14 +233,15 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         _focus = new Focus(_crt);
         ScreenStack.Push(new MainMenuScreen(this));
-        
-        Tools.SinMod.System.LoadBank(@"audio/Desktop/Master");
-        fmodInstanceMusic = Tools.SinMod.System.CreateInstance("BGMusic", "bgm");
-        fmodInstanceMusic.Play();
+
+        Muse.Load();
     }
 
     protected override void Update(GameTime gameTime)
     {
+        Tools.SinMod.System.Update(gameTime);
+        Muse.Update(gameTime);
+        
         if (_toPush != null)
         {
             ScreenStack.Push(_toPush);
@@ -249,7 +249,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
             return;
         }
         
-        Tools.SinMod.System.Update(gameTime);
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
@@ -274,22 +273,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         {
             Exit();
         }
-
-        if (InputM.IsActive(EInputAction.VolumeUp))
-        {
-            fmodInstanceMusic.ModVolume(0.1f, true);
-        }
         
-        if (InputM.IsActive(EInputAction.VolumeDown))
-        {
-            fmodInstanceMusic.ModVolume(-0.1f, true);
-        }
-
-        if (InputM.IsActive(EInputAction.Mute))
-        {
-            fmodInstanceMusic.SetVolume(0, true);
-        }
-
         if (InputM.IsActive(EInputAction.RestartExploration))
         {
             ScreenStack.Pop();
