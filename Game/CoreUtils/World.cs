@@ -195,12 +195,12 @@ public class World(string path)
 
                     if (matches.Count > 0)
                     {
-                        var rewardList = new List<(int, List<Item>)>();
+                        var rewardList = new List<(int, List<HItem>)>();
                         foreach (Match match in matches)
                         {
                             var timeLimit = int.Parse(match.Groups[2].ToString());
 
-                            var items = new List<Item>();
+                            var items = new List<HItem>();
                             foreach (var weapon in match.Groups[3].ToString().Split(','))
                             {
                                 if (weapon.Trim() == "")

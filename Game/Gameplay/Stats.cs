@@ -24,7 +24,7 @@ public class Stats
     public int Initiative => Will + Vigor;
     public int Fortitude => Clarity + Poise;
 
-    public Stats(ICharacter chr)
+    public Stats(Character chr)
     {
         Will = chr.Stats.Will;
         Clarity = chr.Stats.Clarity;
@@ -99,21 +99,6 @@ public class Stats
             <= 10 => 4,
             _ => 5
         };
-    }
-
-    public void Reset()
-    {
-        Will = 0;
-        Clarity = 0;
-        Poise = 0;
-        Vigor = 0;
-    }
-
-    public EStat Highest()
-    {
-        List<(EStat stat, int val)> stats = [(EStat.Will, Will), (EStat.Clarity, Clarity), (EStat.Poise, Poise), (EStat.Vigor, Vigor)];
-        var max = stats.MaxBy((w) => w.val);
-        return max.stat;
     }
 }
 

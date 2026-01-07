@@ -184,7 +184,7 @@ namespace SINEATER.Game.Screens
             }
         }
 
-        private bool IsEquipped(Item w)
+        private bool IsEquipped(HItem w)
         {
             if (w is null)
                 return false;

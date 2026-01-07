@@ -95,10 +95,6 @@ public static class ECharacterClassExtensions
 
 public class PartyMember : Character
 {
-    public HashSet<(int X, int Y)> Zone = [];
-    public HashSet<(int X, int Y)> Fov = [];
-    public (int X, int Y) Origin = (0, 0);
-    
     public PartyMember(ECharacterClass? job = null)
     {
         if (job == null)
@@ -119,11 +115,6 @@ public class PartyMember : Character
     {
         var barks = Barks.Instance[this.Job];
         return barks[Rnd.Instance.Next(0, barks.Length)];
-    }
-
-    public void SetOrigin()
-    {
-        Origin = (X, Y);
     }
 }
 

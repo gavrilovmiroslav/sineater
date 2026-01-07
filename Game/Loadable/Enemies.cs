@@ -57,7 +57,8 @@ public class EnemyParser : ILoadableRowParser<EnemyDefinition>
         var nightGuardUp = row[NIGHT_GUARD_UP].ToString() ?? "0";
         var dayGuardUp = row[DAY_GUARD_UP].ToString() ?? "0";
         var readTags = row.Count > 13 ? row[TAGS].ToString() : "";
-        var tags = (readTags == null ? [] : readTags.Split(",").ToList());
+        var tags = (readTags == null ? [] : readTags.Split(",")
+            .Where(t => t.Trim().Length == 0).ToList());
 
         var def = new EnemyDefinition()
         {
@@ -95,7 +96,7 @@ public class EnemyInterpreter : ILoadableInterpreter<EnemyDefinition, Enemy>
             NightSpeedUp = def?.NightSpeedUp ?? 0, 
             Name = def?.Display ?? "Dummy",
             Guard = def?.Guard ?? 0,
-            Tags = def?.Tags ?? []
+            Tags = [..def?.Tags ?? []]
         };
         return enemy;
     }
@@ -103,7 +104,7 @@ public class EnemyInterpreter : ILoadableInterpreter<EnemyDefinition, Enemy>
 
 public class Enemies : LoadableLibrary<EnemyDefinition, EnemyParser, EnemyInterpreter, Enemy>
 {
-    private static readonly Lazy<Enemies> _Instance = new Lazy<Enemies>(() => new Enemies());
+    private static readonly Lazy<Enemies> _Instance = new (() => new Enemies());
     public static Enemies Instance => _Instance.Value;
     
     protected override string Sheet => "Enemies";

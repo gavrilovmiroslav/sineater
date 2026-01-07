@@ -141,7 +141,7 @@ public class TacticMapScreen : Screen
         }
     }
 
-    private void FindTargets(Item weapon, string selection, int fi, bool flip, out List<int> targets)
+    private void FindTargets(HItem weapon, string selection, int fi, bool flip, out List<int> targets)
     {
         List<int> indices = [];
         targets = [];
@@ -414,16 +414,7 @@ public class TacticMapScreen : Screen
         
         yield break;
     }
-
-    private IEnumerable ResetPartyMembers()
-    {
-        foreach (var pm in _game.Party.Characters)
-        {
-            pm.SetOrigin();
-        }
-        yield break;
-    }
-
+    
     public override void DrawWorld(bool noPlayer = false)
     {
         DrawParty(drawEquips: true);
@@ -791,18 +782,11 @@ public class TacticMapScreen : Screen
         }
     }
 
-    private IEnumerable Coroutine_EndTurn()
-    {
-        yield return RunUpkeep();
-        yield return ResetPartyMembers();
-    }
-
-    private bool _inspectMode = false;
     public Character? AttackTarget = null;
     private int _selectedIndex = 0;
     private int? _focus = null;
     private float _currentFocus = 0.0f;
-    private readonly (int, List<Item>)[] _reward;
+    private readonly (int, List<HItem>)[] _reward;
     private readonly (int X, int Y) _xy;
 
     private void CheckPlayerInputs()

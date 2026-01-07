@@ -20,15 +20,15 @@ public class Dummy : Character
         return Color.White;
     }
 
-    public void Equip(EStat stat, Item? item)
+    public void Equip(EStat stat, HItem? item)
     {
     }
 
-    public void Equip(Item item)
+    public void Equip(HItem hItem)
     {
     }
 
-    public Item? GetItem(EStat stat)
+    public HItem? GetItem(EStat stat)
     {
         return null;
     }
@@ -51,11 +51,11 @@ public class Dummy : Character
         return null;
     }
 
-    public void EquipItem(Item? item)
+    public void EquipItem(HItem? item)
     {
     }
 
-    public Item? GetItem()
+    public HItem? GetItem()
     {
         return null;
     }

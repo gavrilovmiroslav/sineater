@@ -77,6 +77,12 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         Barks.Load(Content);
     }
 
+    public void PopAndPushScreen(IScreen screen)
+    {
+        _toPush = screen;
+        ScreenStack.Pop();
+    }
+    
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
@@ -237,6 +243,13 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        if (_toPush != null)
+        {
+            ScreenStack.Push(_toPush);
+            _toPush = null;
+            return;
+        }
+        
         Tools.SinMod.System.Update(gameTime);
         DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
         _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
@@ -300,6 +313,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     }
 
     private int _x = 35, _y = 27, _w = -71, _h = -271;
+    private IScreen? _toPush;
+
     protected override void Draw(GameTime gameTime)
     {
         if (ScreenStack?.Peek() is { } screen)
@@ -317,17 +332,17 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h);
         _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
-        if (ScreenStack?.Peek() is { } scrn1)
+        if (ScreenStack?.TryPeek(out var scrn) ?? false)
         {
             _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
-            scrn1.PreDraw(_spriteBatch, gameTime);
+            scrn.PreDraw(_spriteBatch, gameTime);
             _spriteBatch.End();
         }
         foreach (var layer in LayerNames)
         {
             Layers[layer].Draw(_spriteBatch);
         }
-        if (ScreenStack?.Peek() is { } scrn2)
+        if (ScreenStack?.TryPeek(out var scrn2) ?? false)
         {
             _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
             scrn2.PostDraw(_spriteBatch, gameTime);
@@ -354,11 +369,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _spriteBatch.End();
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        
-        // var cos = MathF.Cos(((float)_currentHour / 12) * 3.14f) * 0.5f + 0.5f;
-        // _spriteBatch.Draw(_monitor, new Vector2(-focus, -focus * 0.5f) * 66, null, 
-        //     new Color(1, 1, 1, cos), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
-        //     SpriteEffects.None, 0.0f);
         
         _spriteBatch.End();
 

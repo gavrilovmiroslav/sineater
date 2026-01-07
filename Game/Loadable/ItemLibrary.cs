@@ -25,7 +25,7 @@ public class ItemNotFoundException : Exception
 public class Library
 {
     public List<Weapon> Weapons { get; set; } = new();
-    public List<Item> Items { get; set; } = new();
+    public List<HItem> Items { get; set; } = new();
 }
 
 public static class ItemLibrary
@@ -33,7 +33,7 @@ public static class ItemLibrary
     public static readonly (int, int) EmptyUv = (0, 9);
     private static Library Library { get; set; } = new();
     public static readonly MultiDictionary<string, Weapon> InstancedWeapons = new(false);
-    public static readonly MultiDictionary<string, Item> InstancedItems = new(false);
+    public static readonly MultiDictionary<string, HItem> InstancedItems = new(false);
 
     private static string GetLocalItems()
     {
@@ -129,7 +129,7 @@ public static class ItemLibrary
         if (Library.Weapons.Find(x => x.Name == name) is {} result)
         {
             var item = (Weapon)result.Clone();
-            item.ID = Item.NextId();
+            item.ID = HItem.NextId();
             InstancedWeapons.Add(result.GetName(), item);
             return item;
         }

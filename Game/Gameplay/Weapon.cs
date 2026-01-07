@@ -10,7 +10,7 @@ namespace SINEATER.Game.Gameplay;
 public class Weapon(string name, string from, string toParty, string toEnemy, int weight, EStat stat,
     int attack, int guard, int quality,
     EStat? bonus, int drop,
-    string effect, (int, int) inventoryPicture) : Item(name, inventoryPicture, stat, weight), ICloneable
+    string effect, (int, int) inventoryPicture) : HItem(name, inventoryPicture, stat, weight), ICloneable
 {
     ~Weapon()
     {
