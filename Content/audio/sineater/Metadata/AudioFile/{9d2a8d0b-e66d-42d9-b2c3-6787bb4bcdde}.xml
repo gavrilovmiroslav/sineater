@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{9d2a8d0b-e66d-42d9-b2c3-6787bb4bcdde}">
+		<property name="assetPath">
+			<value>Condition/60_Special_move_02.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>2</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{afb77715-eb3a-4d15-a605-9a8ca9081e1e}</destination>
+		</relationship>
+	</object>
+</objects>

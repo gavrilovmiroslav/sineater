@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{25908ed1-4016-48c4-9d50-b6e2586c9558}">
+		<property name="color">
+			<value>Red Light 2</value>
+		</property>
+		<property name="assetPath">
+			<value>UI/click_03.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>48</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>1.0909166666666668</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{afb77715-eb3a-4d15-a605-9a8ca9081e1e}</destination>
+		</relationship>
+	</object>
+</objects>

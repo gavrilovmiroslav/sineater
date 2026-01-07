@@ -234,7 +234,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         _focus = new Focus(_crt);
         ScreenStack.Push(new MainMenuScreen(this));
-//        ScreenStack.Push(new WorldMapScreen(this));
         
         Tools.SinMod.System.LoadBank(@"audio/Desktop/Master");
         fmodInstanceMusic = Tools.SinMod.System.CreateInstance("BGMusic", "bgm");
@@ -306,8 +305,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         {
             screen.Update(gameTime);
         }
-        
-        //_focus.Update();
 
         base.Update(gameTime);
     }
