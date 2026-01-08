@@ -15,6 +15,7 @@ public enum EItemEffect
     Guard = 3,
     Speed = 4,
     Resist = 5,
+    Move = 6,
 }
 
 public class ItemDefinition : ILoadableDefinition

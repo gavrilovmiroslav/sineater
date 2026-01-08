@@ -76,7 +76,7 @@ public static class Corners
     };
 }
 
-public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, int scale, Vector2 offset, Vector2 empty)
+public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, float scale, Vector2 offset, Vector2 empty)
 {
     private Vector2 _offset = Vector2.Zero;
     private readonly Dictionary<int, Glyph> _glyphs = new();

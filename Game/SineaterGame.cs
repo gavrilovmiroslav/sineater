@@ -23,6 +23,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
+    public Texture2D Mrmo => _mrmo;
+    
     private Texture2D _mrmo;
     private Texture2D _mapmotext;
     private Texture2D _ibm;
@@ -143,10 +145,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(75, -25), new Vector2(0, 0));
         Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 0), new Vector2(0, 0));
+        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(80, 80), new Vector2(0, 0), 0.5f, new Vector2(56, 0), new Vector2(0, 0));
         Layers.Add("portrait", portraitLayer);
         
-        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 2, new Vector2(76, 60), new Vector2(0, 0));
+        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(56, 60), new Vector2(0, 0));
         Layers.Add("portrait2", portrait2Layer);
 
         var statusLayer = new TextLayer(_statuses, new Vector2(Width / 16, Height / 16), new Vector2(16, 16),
@@ -264,11 +266,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         InputManager.Instance.Update(DeltaTime);
 
-        if (InputM.IsActive(EInputAction.LoadItems))
-        {
-            ItemLibrary.LoadItems(Content);
-        }
-        
         if (InputM.IsActive(EInputAction.Exit))
         {
             Exit();

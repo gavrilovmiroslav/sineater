@@ -107,12 +107,6 @@ public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) :
 public class WorldMapScreen : Screen
 {
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
-    
-    private readonly List<int> _offsets = [ 1, 1, 0, 0 ];
-    private readonly List<int> _xoffsets = [ 0, 0, 0, 0 ];
-    private readonly List<(int, int)> _positions = [
-        (0, 3), (1, 3), (2, 3), (3, 3)
-    ];
 
     private readonly List<string> _positionStats = [ "WIL", "CLA", "POI", "VIG" ];
     private bool _drawEquips = true;
@@ -396,7 +390,7 @@ public class WorldMapScreen : Screen
         
         //_game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
 
-        DrawParty(drawEquips: _drawEquips);
+        DrawParty();
         
         _game.Layers["ascii"].Set(20, 0, $"{HourNames[h]} ({TimeOfDay})");
         
@@ -411,84 +405,6 @@ public class WorldMapScreen : Screen
                 var en = enc.Enemies[4 - i - 1];
                 var (uu, vv) = en.GetIcon();
                 Draw(15 + i, 0, new Glyph(uu, vv, Color.Transparent, Color.White));
-            }
-        }
-    }
-    
-    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null, bool drawEquips = false)
-    {
-        var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
-        var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
-        var h = 19;
-        var index = 0;
-        
-        for (var c = 0; c < 4; c++)
-        {
-            if (_game.Party.Characters[c] is { } character)
-            {
-                if (drawSet.Contains(character))
-                {
-                    var (m, r) = character.Job.GetImage();
-                    var (u, v) = character.GetPortait();
-                    var (x, y) = _positions[index];
-                    var tint = Color.White;
-
-                    if (colorOverride is { } color)
-                    {
-                        tint = color;
-                    }
-
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
-
-                    if (character == cha)
-                    {
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
-                            cwil == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
-                            ccla == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
-                            cvig == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
-                            cpoi == null ? Color.White : Color.Yellow);
-                    }
-                    else
-                    {
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
-                    }
-
-                    if (drawEquips)
-                    {
-                        for (int ix = 1; ix <= 4; ix++)
-                        {
-                            if (character.GetItem((EStat)ix) is { } item)
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
-                            }
-                            else
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
-                                    $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
-                            }
-                        }
-                    }
-
-                    if (index < 2)
-                    {
-                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                    }
-                    else
-                    {
-                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                    }
-                }
-
-                index++;
             }
         }
     }
@@ -557,16 +473,16 @@ public class WorldMapScreen : Screen
     {
         var left = 3;
         var top = 5;
-        _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
-        _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
-        _game.Layers["inputtext"].Set(left * 2, top - 1, "Left/Right");
-
-        _game.Layers["input"].Set(left - 1, top +1, InputM.GetGlyph(EInputAction.MoveUp));
-        _game.Layers["input"].Set(left, top+1, InputM.GetGlyph(EInputAction.MoveDown));
-        _game.Layers["inputtext"].Set(left * 2, top, "Up/Down");
-
-        _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.Confirm));
-        _game.Layers["inputtext"].Set(left * 2, top + 1, "Inspect");
+        // _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
+        // _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
+        // _game.Layers["inputtext"].Set(left * 2, top - 1, "Left/Right");
+        //
+        // _game.Layers["input"].Set(left - 1, top +1, InputM.GetGlyph(EInputAction.MoveUp));
+        // _game.Layers["input"].Set(left, top+1, InputM.GetGlyph(EInputAction.MoveDown));
+        // _game.Layers["inputtext"].Set(left * 2, top, "Up/Down");
+        //
+        // _game.Layers["input"].Set(left, top + 2, InputM.GetGlyph(EInputAction.Confirm));
+        // _game.Layers["inputtext"].Set(left * 2, top + 1, "Inspect");
     }
 
     private void CheckPlayerInputs()

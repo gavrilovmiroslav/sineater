@@ -171,11 +171,8 @@ public class World(string path)
                                 if (weapon.Trim() == "")
                                     continue;
 
-                                var w = ItemLibrary.GetWeapon(weapon.Trim());
-                                if (w != null)
-                                {
-                                    enemy.Equip(w);
-                                }
+                                var w = Items.Instance.Make(weapon.Trim());
+                                enemy.Equip(w);
                             }
 
                             enemies.Add(enemy);
@@ -195,22 +192,19 @@ public class World(string path)
 
                     if (matches.Count > 0)
                     {
-                        var rewardList = new List<(int, List<HItem>)>();
+                        var rewardList = new List<(int, List<Item>)>();
                         foreach (Match match in matches)
                         {
                             var timeLimit = int.Parse(match.Groups[2].ToString());
 
-                            var items = new List<HItem>();
+                            var items = new List<Item>();
                             foreach (var weapon in match.Groups[3].ToString().Split(','))
                             {
                                 if (weapon.Trim() == "")
                                     continue;
 
-                                var w = ItemLibrary.GetWeapon(weapon.Trim());
-                                if (w != null)
-                                {
-                                    items.Add(w);
-                                }
+                                var w = Items.Instance.Make(weapon.Trim());
+                                items.Add(w);
                             }
 
                             rewardList.Add((timeLimit, items));

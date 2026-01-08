@@ -4,10 +4,10 @@ namespace SINEATER.Game.Gameplay;
 
 public class Inventory
 {
-    public List<HItem> Items = new();
+    public readonly List<Item> Items = [];
 
-    public HItem? GetItem(int ID)
+    public Item? GetItem(string name)
     {
-        return Items.Find(i => i.ID == ID);
+        return Items.Find(i => i.Name == name);
     }
 }

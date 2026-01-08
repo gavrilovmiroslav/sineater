@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
+using SINEATER.Game.Gameplay;
 
 namespace SINEATER.Game.Screens;
 
@@ -148,4 +149,29 @@ public abstract class Screen : IScreen
     }
     
     public virtual void DrawWorld(bool noPlayer = false) {}
+    
+    public void DrawPartyMember(Character character, int index)
+    {
+        var (u, v) = character.GetPortait();
+        var (x, y) = (index, 3);
+        
+        _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
+        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
+        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
+        _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
+        _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
+        
+        _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 10, $"{character.Job}", Color.White);
+        
+        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+        _game.Layers["portrait2"].Set(x * 4, y * 2 + 3, new Glyph(u, v, Color.Black, Color.White));
+    }
+    
+    public void DrawParty()
+    {
+        for (var c = 0; c < 4; c++)
+        {
+            DrawPartyMember(_game.Party.Characters[c], c);
+        }
+    }
 }

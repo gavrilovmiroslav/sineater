@@ -43,33 +43,36 @@ public abstract class Character
         }
     }
     
-    public void Equip(HItem? item)
+    public void Equip(Item? item)
     {
-        if (item != null)
-            Equip(item.Stat, item);
+        if (item == null) return;
+        
+        for (int i = 0; i < 4; i++)
+        {
+            if (Items[i] == null)
+            {
+                Items[i] = item;
+                break;
+            }
+        }
     }
-
-    public HItem? GetItem(EStat stat)
-    {
-        return Items[(int)stat - 1];
-    }
-
+    
     public int Wil => Stats.Will;
     public int Cla => Stats.Clarity;
     public int Poi => Stats.Poise;
     public int Vig => Stats.Vigor;
     
     public ECharacterClass Job;
-    public HItem?[] Items = new HItem?[4];
+    public Item?[] Items = new Item?[4];
     
-    public void Equip(EStat stat, HItem? item)
+    public void Equip(EStat stat, Item? item)
     {
         if (stat == EStat.None) return;
 
         Items[(int)stat - 1] = item;
     }
 
-    public void EquipAndAdd(EStat stat, HItem? item)
+    public void EquipAndAdd(EStat stat, Item? item)
     {
         if (stat == EStat.None) return;
 
@@ -81,13 +84,9 @@ public abstract class Character
         Items[(int)stat - 1] = item;
     }
 
-    public void EquipAndAdd(HItem? item)
+    public void EquipAndAdd(Item? item)
     {
         Equip(item);
-        if (this is PartyMember pm && item != null)
-        {
-            SineaterGame.Instance.Party.Inventory.Items.Add(item);
-        }
     }
 
     public virtual int X { get; set; }

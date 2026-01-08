@@ -32,7 +32,7 @@ public readonly record struct SpecificDescription(
     }
 }
 
-public readonly record struct Reward(List<(int, List<HItem>)> Rewards) : IWorldComponent
+public readonly record struct Reward(List<(int, List<Item>)> Rewards) : IWorldComponent
 {
     public bool IsOkay()
     {

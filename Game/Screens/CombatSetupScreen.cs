@@ -82,78 +82,77 @@ namespace SINEATER.Game.Screens
 
             {
                 DrawItems();
-                DrawPreview();
+                //DrawPreview();
             }
         }
 
-        private void DrawPreview()
-        {
-            var inv = _game.Party.Inventory;
-            var aSelectedItem = inv.Items[_submenuSelection];
-
-            if (aSelectedItem is Weapon selectedItem)
-            {
-                var from = selectedItem.From;
-                if (from.Any(x => x != '-') && from.Length == 4)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        var c = from[i];
-                        if (c == 'x')
-                        {
-                            // ISPOD IGRACA
-                            _game.Layers["mrmo"].Set((i*2 - 1 + 8 + 2 * (i + 1))/2, 6, new Glyph(12, 25, Color.Transparent, Color.Yellow));
-                        }
-                    }
-                }
-
-                var toEnemy = selectedItem.ToEnemy;
-                if (toEnemy.Any(x => x != '-') && toEnemy.Length == 4)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        var c = toEnemy[i];
-                        if (c == 'x')
-                        {
-                            _game.Layers["mrmo"].Set(16 + i * 2, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
-                        }
-                        else if(c == 'X')
-                        {
-                            _game.Layers["mrmo"].Set(16 + i*2, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
-                        }
-                    }
-                }
-
-                var toParty = selectedItem.ToParty;
-                if (toParty.Any(x => x != '-') && toParty.Length == 4)
-                {
-                    if (toParty == "self")
-                    {
-                        _game.Layers["mrmo"].Set((_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1)) / 2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
-                    }
-
-                    for (int i = 0; i < 4; i++)
-                    {
-                        var c = toParty[i];
-                        if (c == 'x')
-                        {
-                            _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1)) / 2, 2, new Glyph(12, 26, Color.Transparent, Color.Green));
-                        }
-                        else if (c == 'X')
-                        {
-                            _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1))/2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
-                        }
-                    }
-                }
-            }
-        }
+        // private void DrawPreview()
+        // {
+        //     var inv = _game.Party.Inventory;
+        //     var aSelectedItem = inv.Items[_submenuSelection];
+        //
+        //     if (aSelectedItem is Weapon selectedItem)
+        //     {
+        //         var from = selectedItem.From;
+        //         if (from.Any(x => x != '-') && from.Length == 4)
+        //         {
+        //             for (int i = 0; i < 4; i++)
+        //             {
+        //                 var c = from[i];
+        //                 if (c == 'x')
+        //                 {
+        //                     // ISPOD IGRACA
+        //                     _game.Layers["mrmo"].Set((i*2 - 1 + 8 + 2 * (i + 1))/2, 6, new Glyph(12, 25, Color.Transparent, Color.Yellow));
+        //                 }
+        //             }
+        //         }
+        //
+        //         var toEnemy = selectedItem.ToEnemy;
+        //         if (toEnemy.Any(x => x != '-') && toEnemy.Length == 4)
+        //         {
+        //             for (int i = 0; i < 4; i++)
+        //             {
+        //                 var c = toEnemy[i];
+        //                 if (c == 'x')
+        //                 {
+        //                     _game.Layers["mrmo"].Set(16 + i * 2, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
+        //                 }
+        //                 else if(c == 'X')
+        //                 {
+        //                     _game.Layers["mrmo"].Set(16 + i*2, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
+        //                 }
+        //             }
+        //         }
+        //
+        //         var toParty = selectedItem.ToParty;
+        //         if (toParty.Any(x => x != '-') && toParty.Length == 4)
+        //         {
+        //             if (toParty == "self")
+        //             {
+        //                 _game.Layers["mrmo"].Set((_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1)) / 2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
+        //             }
+        //
+        //             for (int i = 0; i < 4; i++)
+        //             {
+        //                 var c = toParty[i];
+        //                 if (c == 'x')
+        //                 {
+        //                     _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1)) / 2, 2, new Glyph(12, 26, Color.Transparent, Color.Green));
+        //                 }
+        //                 else if (c == 'X')
+        //                 {
+        //                     _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1))/2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         private void SetupItems()
         {
             _submenuSelection = 0;
             _submenu.Clear();
 
-            _game.Party.Inventory.Items.Sort((x, y) => x.Stat.CompareTo(y.Stat));
             _game.Party.Inventory.Items.Reverse();
 
             var items = _game.Party.Inventory.Items;
@@ -163,7 +162,7 @@ namespace SINEATER.Game.Screens
                 if (items.Count <= i)
                     break;
 
-                _submenu.Add(items[i].ID.ToString());
+                _submenu.Add(items[i].Name);
             }
         }
 
@@ -184,14 +183,14 @@ namespace SINEATER.Game.Screens
             }
         }
 
-        private bool IsEquipped(HItem w)
+        private bool IsEquipped(Item? w)
         {
             if (w is null)
                 return false;
 
             foreach(var c in _game.Party.Characters)
             {
-                if (c.Items.Any(x => x is not null && x.ID == w.ID))
+                if (c.Items.Any(x => x is not null && x.Name == w.Name))
                     return true;
             }
 
@@ -211,18 +210,10 @@ namespace SINEATER.Game.Screens
 
                 for (var i = 0; i < _submenu.Count; i++)
                 {
-                    var item = _game.Party.Inventory.Items.Find(x => x.ID.ToString() == _submenu[i]);
+                    var item = _game.Party.Inventory.Items.Find(x => x.Name.ToString() == _submenu[i]);
 
-                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White, GetColorForStat(item.Stat));
+                    _game.Layers["ascii"].Set(x + 3, y + 1 + i, IsEquipped(item) ? "#" : " ", Color.White, Color.White);
                     _game.Layers["ascii"].Set(x + 4, y + 1 + i, $" {item.Name}");
-
-                    if (item is Weapon wpn)
-                    {
-                        var stat = wpn.Attack > 0 ? -wpn.Attack : wpn.Guard;
-
-                        _game.Layers["ascii"].Set(x + len, y + 1 + i, stat < 0 ? $" {stat}" : $" +{stat}",
-                            stat < 0 ? Color.Red : Color.Green);
-                    }
                 }
 
                 _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
@@ -258,25 +249,25 @@ namespace SINEATER.Game.Screens
 
         public override void SubmenuActivate(string action)
         {
-            var item = _game.Party.Inventory.GetItem(Int32.Parse(action));
+            var item = _game.Party.Inventory.GetItem(action);
             if (item == null)
                 return;
 
-            bool hasItem = _game.Party.Characters[_selectedIndex].Items.FirstOrDefault(x => x is not null && x.ID == item.ID) != null;
+            bool hasItem = _game.Party.Characters[_selectedIndex].Items.FirstOrDefault(x => x is not null && x.Name == item.Name) != null;
 
             if (hasItem)
             {
-                _game.Party.Characters[_selectedIndex].Equip(item.Stat, null);
+                _game.Party.Characters[_selectedIndex].Equip(item);
             }
             else
             {
                 for (int i = 0; i < 4; i++)
                 {
                     var c = _game.Party.Characters[i];
-                    var equipped = c.Items.FirstOrDefault(x => x is not null && x.ID == item.ID);
+                    var equipped = c.Items.FirstOrDefault(x => x is not null && x.Name == item.Name);
                     if (equipped != null)
                     {
-                        c.Equip(item.Stat, null);
+                        c.Equip(item);
                     }
                 }
 
@@ -378,83 +369,5 @@ namespace SINEATER.Game.Screens
         {
             (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
         }
-
-        private readonly List<(int, int)> _positions = [(0, 3), (1, 3), (2, 3), (3, 3)];
-
-        public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null)
-        {
-            var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
-            var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
-            var h = 19;
-            var index = 0;
-
-            for (var c = 0; c < 4; c++)
-            {
-                if (_game.Party.Characters[c] is { } character)
-                {
-                    if (drawSet.Contains(character))
-                    {
-                        var (m, r) = character.Job.GetImage();
-                        var (u, v) = character.GetPortait();
-                        var (x, y) = _positions[index];
-                        var tint = Color.White;
-
-                        if (colorOverride is { } color)
-                        {
-                            tint = color;
-                        }
-
-                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
-                        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
-
-                        if (character == cha)
-                        {
-                            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
-                                cwil == null ? Color.White : Color.Yellow);
-                            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
-                                ccla == null ? Color.White : Color.Yellow);
-                            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
-                                cvig == null ? Color.White : Color.Yellow);
-                            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
-                                cpoi == null ? Color.White : Color.Yellow);
-                        }
-                        else
-                        {
-                            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
-                            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
-                            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
-                            _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
-                        }
-
-                        for (int ix = 1; ix <= 4; ix++)
-                        {
-                            if (character.GetItem((EStat)ix) is { } item)
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
-                            }
-                            else
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
-                                    $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
-                            }
-                        }
-
-                        if (index < 2)
-                        {
-                            _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                            _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                        }
-                        else
-                        {
-                            _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                            _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                        }
-                    }
-
-                    index++;
-                }
-            }
-        }
-
     }
 }

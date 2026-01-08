@@ -8,9 +8,11 @@ using RogueSharp;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.SinMod;
 using Wintellect.PowerCollections;
+using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace SINEATER.Game.Screens;
 
@@ -143,7 +145,7 @@ public class TacticMapScreen : Screen
         }
     }
 
-    private void FindTargets(HItem weapon, string selection, int fi, bool flip, out List<int> targets)
+    private void FindTargets(Item weapon, string selection, int fi, bool flip, out List<int> targets)
     {
         List<int> indices = [];
         targets = [];
@@ -178,36 +180,9 @@ public class TacticMapScreen : Screen
             }
         }
     }
-
-    private string GetTargetText(Weapon weapon, Func<Weapon, string> prop)
-    {
-        var p = prop(weapon);
-        if (p == "self")
-        {
-            return " to self";
-        }
-        else if (p.Contains('X'))
-        {
-            if (p.All(c => c == 'X'))
-            {
-                return " to all";
-            }
-            else
-            {
-                return " to many";
-            }
-        }
-        else if (p.Contains('x'))
-        {
-            return " to one";
-        }
-
-        return "";
-    }
     
-    private IEnumerable CoAttack(Character c)
+    private IEnumerable CoAttack(Character first)
     {
-        var first = c;
         var flip = false;
         Character[] friends = [];
         Character[] enemies = [];
@@ -225,9 +200,9 @@ public class TacticMapScreen : Screen
         }
 
         _timeFlow = false;
-        _selected.Add(c);
+        _selected.Add(first);
         DrawCombat();
-        yield return new CoBlinkCharacter(c, this);
+        yield return new CoBlinkCharacter(first, this);
         DrawCombat();
         yield return new WaitForSeconds(0.5f);
         
@@ -236,166 +211,71 @@ public class TacticMapScreen : Screen
             var fi = flip ? 4 - i - 1 : i;
             if (first == friends[i])
             {
-                var stat = (EStat)(4 - i);
                 for (var w = 0; w < 4; w++)
                 {
-                    if (first.GetItem((EStat)(w + 1)) is Weapon weapon)
+                    var item = first.Items[w];
+                    if (item == null) continue;
+                    var prim = item.PrimaryEffectModifier;
+                    var friend = true;
+                    switch (item.PrimaryEffect)
                     {
-                        if (weapon.From[fi] != '-')
-                        {
-                            _game.Layers["ascii"].Set(37 - (weapon.Name.Length / 2), 12, $"{weapon.Name}");
-                            var atk = weapon.Attack;
-                            var grd = weapon.Guard;
-
-                            if (i == w)
-                            {
-                                atk += (int)Math.Min(1, MathF.Ceiling(atk * (float)weapon.Quality / 10.0f));
-                                grd += (int)Math.Min(1, MathF.Ceiling(grd * (float)weapon.Quality / 10.0f));
-                            }
-                            var msg = "";
-                            if (weapon.Attack > 0)
-                            {
-                                msg = $"-{atk} GUARD" + GetTargetText(weapon, w => w.ToEnemy);
-                            }
+                        case EItemEffect.None:
+                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: No effect.");
+                            break;
+                        case EItemEffect.Attack:
+                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Attacking for {prim} damage.");
+                            friend = false;
+                            break;
+                        case EItemEffect.Guard:
+                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase guard by {prim}.");
+                            break;
+                        case EItemEffect.Resist:
+                            if (prim > 0)
+                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to resist break by {prim}%");
                             else
                             {
-                                msg = $"+{grd} GUARD" + GetTargetText(weapon, w => w.ToParty);
+                                friend = false;
+                                _game.Layers["ascii"].Set(20, 18,
+                                    $"{item.Name}: Decrease chance to resist break by {prim}%");
                             }
-                            
-                            _game.Layers["ascii"].Set(37 - (msg.Length / 2), 13, msg);
-                            yield return new WaitForSeconds(1f);
 
-                            if (!weapon.ToParty.All(c => c == '-'))
-                            {
-                                FindTargets(weapon, weapon.ToParty, fi, flip, out var targets);
-
-                                foreach (var idx in targets)
-                                {
-                                    if (friends[idx].Guard == 9)
-                                    {
-                                        foreach (var e in friends)
-                                        {
-                                            if (e.Guard < 9)
-                                            {
-                                                _selected.Add(e);
-                                                DrawCombat();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        _selected.Add(friends[idx]);
-                                        DrawCombat();
-                                    }
-                                }
-                                yield return new WaitForSeconds(0.5f);
-                                foreach (var idx in targets)
-                                {
-                                    if (friends[idx].Guard == 0)
-                                    {
-                                        foreach (var e in friends)
-                                        {
-                                            if (e.Guard < 9)
-                                            {
-                                                yield return new CoBlinkCharacter(e, this);
-                                                e.Guard.Up(grd);
-                                                DrawCombat();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        yield return new CoBlinkCharacter(friends[idx], this);
-                                        friends[idx].Guard.Up(grd);
-                                        DrawCombat();
-                                    }
-                                }
-                            }
+                            break;
+                        case EItemEffect.Shield:
+                            if (prim > 0)
+                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to shield from damage by {prim}%");
                             else
                             {
-                                FindTargets(weapon, weapon.ToEnemy, fi, flip, out var targets);
-
-                                foreach (var idx in targets)
-                                {
-                                    var ii = flip ? idx : 4 - idx - 1;
-                                    if (enemies[ii].Guard == 0)
-                                    {
-                                        foreach (var e in enemies)
-                                        {
-                                            if (e.Guard > 0)
-                                            {
-                                                _selected.Add(e);
-                                                DrawCombat();
-                                                yield return new WaitForSeconds(0.2f);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        _selected.Add(enemies[ii]);
-                                        DrawCombat();
-                                    }
-                                }
-                                yield return new WaitForSeconds(0.5f);
-                                foreach (var idx in targets)
-                                {
-                                    var ii = flip ? idx : 4 - idx - 1;
-                                    if (enemies[ii].Guard == 0)
-                                    {
-                                        foreach (var e in enemies)
-                                        {
-                                            if (e.Guard > 0)
-                                            {
-                                                yield return new CoBlinkCharacter(e, this);
-                                                DrawCombat();
-                                                e.Guard.Down(atk);
-                                                DrawCombat();
-                                                if (e.CheckBroken())
-                                                {
-                                                    yield return new CoBlinkCharacter(e, this, front: Color.Red);
-                                                }
-                                                DrawCombat();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        yield return new CoBlinkCharacter(enemies[ii], this);
-                                        DrawCombat();
-                                        enemies[ii].Guard.Down(atk);
-                                        DrawCombat();
-                                        if (enemies[ii].CheckBroken())
-                                        {
-                                            yield return new CoBlinkCharacter(enemies[ii], this, front: Color.Red);
-                                        }
-                                        DrawCombat();
-                                    }
-                                }
+                                friend = false;
+                                _game.Layers["ascii"].Set(20, 18,
+                                    $"{item.Name}: Decrease chance to shield from damage by {prim}%");
                             }
-                        }
-                        else
-                        {
-                            var msg = $"{weapon.Name} is useless from here!";
-                            for (int ix = 0; ix < 5; ix++)
+
+                            break;
+                        case EItemEffect.Speed:
+                            if (prim > 0)
+                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase speed this turn by {prim}%");
+                            else
                             {
-                                _game.Layers["ascii"].Set(37 - (msg.Length / 2), 9, msg, Color.Red);
-                                yield return new WaitForSeconds(0.1f);
-                                _game.Layers["ascii"].Set(37 - (msg.Length / 2), 9, msg, Color.Transparent, Color.Transparent);
-                                yield return new WaitForSeconds(0.1f);
+                                friend = false;
+                                _game.Layers["ascii"].Set(20, 18,
+                                    $"{item.Name}: Decrease speed this turn by {prim}%");
                             }
 
-                            yield return new WaitForSeconds(1f);
-                            DrawCombat();
-                        }
-                        
-                        _selected.Clear();
-                        _selected.Add(first);
-                        DrawCombat();
+                            break;
+                        case EItemEffect.Move:
+                            friend = false;
+                            if (prim > 0)
+                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Knock back by {prim} positions.");
+                            else
+                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Pull closer by {prim} positions.");
+
+                            break;
                     }
+                    
+                    yield return new WaitForSeconds(2f);
+                    _selected.Clear();
+                    _selected.Add(first);
+                    DrawCombat();
                 }
             }
         }
@@ -419,7 +299,7 @@ public class TacticMapScreen : Screen
     
     public override void DrawWorld(bool noPlayer = false)
     {
-        DrawParty(drawEquips: true);
+        DrawParty();
         DrawCombat();
         DrawTop();
     }
@@ -468,68 +348,9 @@ public class TacticMapScreen : Screen
             _game.Layers[layer].Clear();
         }
         
-        DrawParty(drawEquips: true);
-        
-        int i = 0;
-        foreach (var p in SineaterGame.Instance.Party.Characters)
-        {
-            var (u, v) = p.Job.GetImage();
-            p.X = 6 + i * 2 - 10;
-            p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
-            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
-            Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
-
-            if (_selectedIndex == i)
-            {
-                if (_paused)
-                {
-                    Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
-                }
-            }
-
-            i++;
-        }
-        
-        foreach (var p in _enemies)
-        {
-            var (u, v) = p.GetIcon();
-            p.X = 5 + (4 - i) * 2 + 18;
-            p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
-            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
-            Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
-            i++;
-        }
-        
+        DrawParty();
         DrawTop();
     }
-
-    private void DrawAP()
-    {
-        //_game.Party.Characters[0].AP.Draw(DrawOffset.X + 1, 27);
-
-        MultiDictionary<int, PartyMember> xs = new(false);
-        foreach (var w in _game.Party.Characters)
-        {
-            var g = w.Job.GetImage();
-            xs.Add(w.X, w);
-        }
-
-        foreach (var x in xs.Keys.Order())
-        {
-            var y = 25 - xs[x].Count;
-            int n = 0;
-            foreach (var pm in xs[x].OrderBy(p => p.Y))
-            {
-                var (u, v) = pm.Job.GetImage();
-                Draw(x, y + n, new Glyph(u, v, Color.Black, Color.White));
-                n++;
-            }
-        }
-    }
-    
-    private readonly List<(int, int)> _positions = [
-        (0, 3), (1, 3), (2, 3), (3, 3)
-    ];
     
     private void DrawSubmenu()
     {
@@ -564,84 +385,6 @@ public class TacticMapScreen : Screen
         }
     }
     
-    public void DrawParty((PartyMember?, int?, int?, int?, int?)? change = null, IEnumerable<PartyMember>? toDraw = null, Color? colorOverride = null, bool drawEquips = false)
-    {
-        var drawSet = (toDraw ?? _game.Party.Characters).ToHashSet();
-        var (cha, cwil, ccla, cvig, cpoi) = change ?? (null, null, null, null, null);
-        var h = 19;
-        var index = 0;
-        
-        for (var c = 0; c < 4; c++)
-        {
-            if (_game.Party.Characters[c] is { } character)
-            {
-                if (drawSet.Contains(character))
-                {
-                    var (m, r) = character.Job.GetImage();
-                    var (u, v) = character.GetPortait();
-                    var (x, y) = _positions[index];
-                    var tint = Color.White;
-
-                    if (colorOverride is { } color)
-                    {
-                        tint = color;
-                    }
-
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"WIL  CLA  ", tint);
-                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 12, $"VIG  POI  ", tint);
-
-                    if (character == cha)
-                    {
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{cwil ?? character.Wil}",
-                            cwil == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{ccla ?? character.Cla}",
-                            ccla == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{cvig ?? character.Vig}",
-                            cvig == null ? Color.White : Color.Yellow);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{cpoi ?? character.Poi}",
-                            cpoi == null ? Color.White : Color.Yellow);
-                    }
-                    else
-                    {
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Wil}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 11, $"{character.Cla}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 12, $"{character.Vig}", Color.White);
-                        _game.Layers["ascii"].Set(20 * x + 10, 5 * y + 12, $"{character.Poi}", Color.White);
-                    }
-
-                    if (drawEquips)
-                    {
-                        for (int ix = 1; ix <= 4; ix++)
-                        {
-                            if (character.GetItem((EStat)ix) is { } item)
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix, $"{item.Name}", tint);
-                            }
-                            else
-                            {
-                                _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - ix,
-                                    $"[{((EStat)ix).ToString().ToUpper()}]", Color.Gray);
-                            }
-                        }
-                    }
-
-                    if (index < 2)
-                    {
-                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                    }
-                    else
-                    {
-                        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-                        _game.Layers["portrait2"].Set(x * 2, y + 1, new Glyph(u, v, Color.Black, tint));
-                    }
-                }
-
-                index++;
-            }
-        }
-    }
-    
     public bool ShouldHardUpdate { get; set; } = true;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
@@ -668,6 +411,8 @@ public class TacticMapScreen : Screen
     
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
     {
+        var mrmo = SineaterGame.Instance.Mrmo;
+        
         var slowdown = 1.0f;
         var color = Color.White;
         if (_currentFocus < 0)
@@ -680,19 +425,29 @@ public class TacticMapScreen : Screen
         }
 
         color = Color.Lerp(Color.White, color, MathF.Abs(MathF.Sign(_currentFocus)) / 3.0f);
-        for (int i = 0; i < _city.Count; i++)
+        for (int ix = 0; ix < _city.Count; ix++)
         {
-            batch.Draw(_city[i], new Vector2(-100 + -30 * _currentFocus * (float)i / _city.Count, -300), null, 
-                Color.Lerp(color, Color.Black, (float)i / 12), 0.0f, Vector2.Zero, new Vector2(4.5f, 4.5f),
+            batch.Draw(_city[ix], new Vector2(-100 + -30 * _currentFocus * (float)ix / _city.Count, -300), null, 
+                Color.Lerp(color, Color.Black, (float)ix / 12), 0.0f, Vector2.Zero, new Vector2(4.5f, 4.5f),
                 SpriteEffects.None, 0.0f); 
         }
         
+        // CHARACTERS
         for (var n = 0; n < 4; n++)
         {
-            slowdown = 1.0f;
-            batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), null, Color.White, 0.0f, Vector2.Zero, new Vector2(34.0f, 4.0f),
-                SpriteEffects.None, 0);
-            batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), null, Color.Red, 0.0f, Vector2.Zero, new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
+            batch.Draw(mrmo, 
+                new Vector2(190 + 64 * n, 420 - 32), 
+                new Rectangle(7 * 16, 65 * 16, 16, 16), 
+                Color.White, 0.0f, Vector2.Zero, 
+                new Vector2(2, 2), SpriteEffects.None, 0);
+            
+            batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), 
+                null, Color.White, 0.0f, Vector2.Zero, 
+                new Vector2(34.0f, 4.0f), SpriteEffects.None, 0);
+            
+            batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), 
+                null, Color.Red, 0.0f, Vector2.Zero, 
+                new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
                 SpriteEffects.None, 0);
 
             if (!_timeFlow) continue;
@@ -735,6 +490,37 @@ public class TacticMapScreen : Screen
             }
         }
         
+        var i = 0;
+        foreach (var p in SineaterGame.Instance.Party.Characters)
+        {
+            var (u, v) = p.Job.GetImage();
+            p.X = 6 + i * 2 - 10;
+            p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
+            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
+            Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
+
+            if (_selectedIndex == i)
+            {
+                if (_paused)
+                {
+                    Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
+                }
+            }
+
+            i++;
+        }
+        
+        foreach (var p in _enemies)
+        {
+            var (u, v) = p.GetIcon();
+            p.X = 5 + (4 - i) * 2 + 18;
+            p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
+            Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
+            Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
+            i++;
+        }
+        
+        // ENEMIES
         for (var j = 0; j < 4; j++)
         {
             slowdown = 1.0f;
@@ -788,7 +574,7 @@ public class TacticMapScreen : Screen
     private int _selectedIndex = 0;
     private int? _focus = null;
     private float _currentFocus = 0.0f;
-    private readonly (int, List<HItem>)[] _reward;
+    private readonly (int, List<Item>)[] _reward;
     private readonly (int X, int Y) _xy;
 
     private void CheckPlayerInputs()
