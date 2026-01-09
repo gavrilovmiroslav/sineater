@@ -215,64 +215,9 @@ public class TacticMapScreen : Screen
                 {
                     var item = first.Items[w];
                     if (item == null) continue;
-                    var prim = item.PrimaryEffectModifier;
-                    var friend = true;
-                    switch (item.PrimaryEffect)
-                    {
-                        case EItemEffect.None:
-                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: No effect.");
-                            break;
-                        case EItemEffect.Attack:
-                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Attacking for {prim} damage.");
-                            friend = false;
-                            break;
-                        case EItemEffect.Guard:
-                            _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase guard by {prim}.");
-                            break;
-                        case EItemEffect.Resist:
-                            if (prim > 0)
-                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to resist break by {prim}%");
-                            else
-                            {
-                                friend = false;
-                                _game.Layers["ascii"].Set(20, 18,
-                                    $"{item.Name}: Decrease chance to resist break by {prim}%");
-                            }
 
-                            break;
-                        case EItemEffect.Shield:
-                            if (prim > 0)
-                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to shield from damage by {prim}%");
-                            else
-                            {
-                                friend = false;
-                                _game.Layers["ascii"].Set(20, 18,
-                                    $"{item.Name}: Decrease chance to shield from damage by {prim}%");
-                            }
-
-                            break;
-                        case EItemEffect.Speed:
-                            if (prim > 0)
-                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase speed this turn by {prim}%");
-                            else
-                            {
-                                friend = false;
-                                _game.Layers["ascii"].Set(20, 18,
-                                    $"{item.Name}: Decrease speed this turn by {prim}%");
-                            }
-
-                            break;
-                        case EItemEffect.Move:
-                            friend = false;
-                            if (prim > 0)
-                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Knock back by {prim} positions.");
-                            else
-                                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Pull closer by {prim} positions.");
-
-                            break;
-                    }
+                    yield return CoAttackWithItem(first, item, true);
                     
-                    yield return new WaitForSeconds(2f);
                     _selected.Clear();
                     _selected.Add(first);
                     DrawCombat();
@@ -285,6 +230,202 @@ public class TacticMapScreen : Screen
 
         Next();
         yield break;
+    }
+
+    private IEnumerable CoAttackWithItem(Character character, Item item, bool isPrimary)
+    {
+        var prim = isPrimary ? item.PrimaryEffectModifier : item.SecondaryEffectModifier;
+        var friend = true;
+        var skip = false;
+        
+        switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
+        {
+            case EItemEffect.None:
+                skip = true;
+                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: No effect.");
+                break;
+            case EItemEffect.Attack:
+                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Attacking for {prim} damage.");
+                friend = false;
+                break;
+            case EItemEffect.Guard:
+                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase guard by {prim}.");
+                break;
+            case EItemEffect.Resist:
+                if (prim > 0)
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to resist break by {prim}%");
+                else
+                {
+                    friend = false;
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease chance to resist break by {prim}%");
+                }
+
+                break;
+            case EItemEffect.Shield:
+                if (prim > 0)
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to shield from damage by {prim}%");
+                else
+                {
+                    friend = false;
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease chance to shield from damage by {prim}%");
+                }
+
+                break;
+            case EItemEffect.Speed:
+                if (prim > 0)
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase speed this turn by {prim}%");
+                else
+                {
+                    friend = false;
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease speed this turn by {prim}%");
+                }
+
+                break;
+            case EItemEffect.Move:
+                friend = false;
+                if (prim > 0)
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Knock back by {prim} positions.");
+                else
+                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Pull closer by {prim} positions.");
+
+                break;
+        }
+        
+        yield return new WaitForSeconds(skip ? 2f : 0.5f);
+
+        var target = isPrimary ? item.PrimaryTargets : item.SecondaryTargets;
+        if (!friend)
+        {
+            target = string.Join("", target.Reverse());
+        }
+
+        bool self = target == "self";
+
+        Character[] ourFriends = SineaterGame.Instance.Party.Characters;
+        Character[] ourEnemies = _enemies;
+        if (character is Enemy)
+        {
+            (ourFriends, ourEnemies) = (ourEnemies, ourFriends);
+        }
+
+        var targets = new Character[] { null, null, null, null };
+        for (int i = 0; i < 4; i++)
+        {
+            targets[i] = (friend ? ourFriends : ourEnemies)[i];
+        }
+
+        var all = false;
+        List<int> chances = [];
+        for (var i = 0; i < 4; i++)
+        {
+            var tgt = targets[i];
+            if (self)
+            {
+                if (tgt == character)
+                {
+                    yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
+                }
+            }
+            else
+            {
+                if (target[i] == 'x')
+                {
+                    chances.Add(i);
+                }
+                else if (target[i] == 'X')
+                {
+                    chances.Add(i);
+                    all = true;
+                }
+            }
+        }
+
+        if (all)
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                var tgt = targets[i];
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
+            }
+        }
+        else
+        {
+            if (chances.Count > 0)
+            {
+                var i = Rnd.Instance.Next(0, chances.Count);
+                var tgt = targets[i];
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
+            }
+        }
+    }
+
+    private IEnumerable CoResolveItem(Character character, Character target, Character[] targets, int index, Item item, bool isPrimary)
+    {
+        var req = isPrimary ? 0 : item.SecondaryStatRequirement;
+        if (!isPrimary)
+        {
+            var ok = false;
+            var stat = (EStat)item.SecondaryStatRequirement;
+            switch (stat)
+            {
+                case EStat.Vigor:
+                    ok = character.Vig >= req;
+                    break;
+                case EStat.Will:
+                    ok = character.Wil >= req;
+                    break;
+                case EStat.Clarity:
+                    ok = character.Cla >= req;
+                    break;
+                case EStat.Poise:
+                    ok = character.Poi >= req;
+                    break;
+            }
+
+            if (!ok)
+            {
+                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Requires {req} {stat}.", Color.OrangeRed);
+                yield return new WaitForSeconds(1.0f);
+                yield break;
+            }
+        }
+        
+        var str = isPrimary ? item.PrimaryEffectModifier : item.SecondaryEffectModifier;
+        _selected.Add(target);
+        DrawCombat();
+        yield return new WaitForSeconds(1.0f);
+        switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
+        {
+            case EItemEffect.None: break;
+            case EItemEffect.Attack:
+                if (Rnd.Instance.D100 < target.Resist)
+                {
+                    str = 0;
+                    target.Resist--;
+                }
+                else if (target.Shield > 0 && Rnd.Instance.D100 < 50)
+                {
+                    str -= target.Shield;
+                    if (str < 0) str = 0;
+                }
+                target.Guard -= str;
+                break;
+            case EItemEffect.Guard:
+                target.Guard += str;
+                break;
+            case EItemEffect.Speed:
+                target.Speed += str;
+                break;
+            case EItemEffect.Resist:
+                target.Resist += str;
+                break;
+            case EItemEffect.Shield:
+                target.Shield += str;
+                break;
+            case EItemEffect.Move:
+                targets.SwapBy(index, str);
+                break;
+        }
     }
     
     private IEnumerable RunUpkeep()
@@ -459,7 +600,7 @@ public class TacticMapScreen : Screen
                 _times[n] = 0;
                 p.Broken = false;
             }
-            var speed = 3.14f * p.Stats[n] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+            var speed = 3.14f * p.Stats[n] + 4 * ((13.0f - p.Weight) / 13.0f) + p.Speed;
 
             var t = _times[n];
 
@@ -540,7 +681,7 @@ public class TacticMapScreen : Screen
                 p.Broken = false;
             }
             
-            var speed = 3 * p.Stats[j] + 4 * ((13.0f - p.Weight) / 13.0f) + Rnd.Instance.D4;
+            var speed = 3 * p.Stats[j] + 4 * ((13.0f - p.Weight) / 13.0f) + p.Speed;
             if (_timeOfDay == ETimeOfDay.Night) speed += p.NightSpeedUp;
             if (_timeOfDay == ETimeOfDay.Afternoon) speed += p.DaySpeedUp;
             if (p.Guard <= 0)

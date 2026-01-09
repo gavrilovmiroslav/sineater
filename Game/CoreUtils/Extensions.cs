@@ -4,11 +4,34 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Xna.Framework;
+using SINEATER.Game.Gameplay;
 
 namespace SINEATER.Game.CoreUtils;
 
 internal static class Extensions
 {
+    public static void Swap<T>(this T[] arr, int leftIndex, int rightIndex)
+        where T: Character
+    {
+        (arr[leftIndex], arr[rightIndex]) = (arr[rightIndex], arr[leftIndex]);
+    }
+    
+    public static void SwapBy<T>(this T[] arr, int index, int ds)
+        where T: Character
+    {
+        var s = Math.Sign(ds);
+        for (int i = 0; i < ds; i++)
+        {
+            if (index + s > 3 || index + s < 0)
+            {
+                break;
+            }
+
+            (arr[index], arr[index + s]) = (arr[index + s], arr[index]);
+            index += s;
+        }
+    }
+
     public static void Consume(this IEnumerable<IEnumerable> ee)
     {
         foreach (var p in ee) { foreach (var _ in p) {} }

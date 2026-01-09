@@ -342,14 +342,14 @@ namespace SINEATER.Game.Screens
             }
             else if (InputM.IsActive(EInputAction.SwapLeft))
             {
-                Swap(_selectedIndex, _selectedIndex - 1 < 0 ? 3 : _selectedIndex - 1);
+                SineaterGame.Instance.Party.Characters.Swap(_selectedIndex, _selectedIndex - 1 < 0 ? 3 : _selectedIndex - 1);
                 _selectedIndex -= 1;
                 if (_selectedIndex < 0) _selectedIndex = 3;
 
             }
             else if (InputM.IsActive(EInputAction.SwapRight))
             {
-                Swap(_selectedIndex, _selectedIndex + 1 > 3 ? 0 : _selectedIndex + 1);
+                SineaterGame.Instance.Party.Characters.Swap(_selectedIndex, _selectedIndex + 1 > 3 ? 0 : _selectedIndex + 1);
                 _selectedIndex += 1;
                 if (_selectedIndex > 3) _selectedIndex = 0;
             }
@@ -363,11 +363,6 @@ namespace SINEATER.Game.Screens
             }
 
             CheckSubmenuInputs(false);
-        }
-        
-        private void Swap(int leftIndex, int rightIndex)
-        {
-            (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
         }
     }
 }

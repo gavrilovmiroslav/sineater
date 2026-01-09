@@ -93,7 +93,9 @@ public abstract class Character
     public virtual int Y { get; set; }
     public Track Guard { get; set; }
     public bool Render { get; set; } = true;
-    
+    public float Speed { get; set; } = 0;
+    public float Resist { get; set; } = 0;
+    public int Shield { get; set; } = 0;
     public Stats Stats { get; set; } = new();
     
     public virtual string GetName()
