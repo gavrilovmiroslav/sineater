@@ -119,17 +119,10 @@ public class TacticMapScreen : Screen
             {
                 if (_levelTime > time)
                 {
-                    foreach (var rew in rews)
-                    {
-                        SineaterGame.Instance.Party.Inventory.Items.Add(rew);
-                        SineaterGame.Instance.World.Encounters.Remove(_xy.X, _xy.Y);
-                    }
-                    break;
+                    CoroutineHandler.Run(Victory(rews));
                 }
             }
-            CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
-            Muse.SetGameState(EMusicState.World);
-            Console.WriteLine("VICTORY!");
+
             return;
         }
         else if (_game.Party.Characters.All(e => e.Guard == 0))
@@ -155,6 +148,27 @@ public class TacticMapScreen : Screen
         {
             CoroutineHandler.Run(CoAttack(_turn.Peek()));
         }
+    }
+
+    private IEnumerable Victory(List<Item> rewards)
+    {
+        SineaterGame.Instance.World.Encounters.Remove(_xy.X, _xy.Y);
+        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(20, 20), (s, t) =>
+        {
+            t.Add("VICTORY!");
+            t.Newline();
+            t.Newline();
+            t.Add("You receive:");
+            t.Newline();
+            foreach (var rew in rewards)
+            {
+                SineaterGame.Instance.Party.Inventory.Items.Add(rew);
+                t.Add($"  1x {rew.Display}");
+            }
+        });
+
+        Muse.SetGameState(EMusicState.World);
+        yield return new FadeOutAndLeaveScreen(1.0f);
     }
 
     private void FindTargets(Item weapon, string selection, int fi, bool flip, out List<int> targets)
@@ -229,6 +243,7 @@ public class TacticMapScreen : Screen
                     if (item == null) continue;
 
                     yield return CoAttackWithItem(first, item, true);
+                    yield return CoAttackWithItem(first, item, false);
                     
                     _selected.Clear();
                     _selected.Add(first);
@@ -251,7 +266,7 @@ public class TacticMapScreen : Screen
         var skip = false;
 
         var mx = 0;
-        var my = 16;
+        var my = 9;
         _game.Layers["inputtext"].SetRect(new Vector2(0, my), new Vector2(80, my), ' ');
         switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
         {
@@ -517,7 +532,7 @@ public class TacticMapScreen : Screen
                 target.Shield += str;
                 break;
             case EItemEffect.Move:
-                targets.SwapBy(index, str);
+                targets.SwapBy(index, -str);
                 break;
         }
     }

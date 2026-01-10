@@ -285,15 +285,14 @@ namespace SINEATER.Game.Screens
             _game.Layers["portrait"].Clear();
             _game.Layers["portrait2"].Clear();
             _game.Layers["porsmol"].Clear();
-            _game.Layers["statuses"].Clear();
             _game.Layers["map"].Clear();
             _game.Layers["ascii"].Clear();
             _game.Layers["mrmo"].Clear();
             _game.Layers["inputtext"].Clear();
 
             SetupItems();
-
         }
+        
         static int delay = 0;
         public override void Update(GameTime gameTime)
         {

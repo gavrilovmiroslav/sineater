@@ -392,19 +392,20 @@ public class WorldMapScreen : Screen
 
         DrawParty();
         
-        _game.Layers["ascii"].Set(20, 0, $"{HourNames[h]} ({TimeOfDay})");
+        _game.Layers["ascii"].Set(4, 0, new Glyph(5, 0, Color.Transparent, Color.White));
+        _game.Layers["ascii"].Set(6, 0, $"{HourNames[h]} ({TimeOfDay})");
         
         var (nx, ny) = (CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
 
         if (_world.Encounters.Get(nx, ny) is {} enc)
         {
-           _game.Layers["ascii"].Set(35, 1, $"Encounter: ");
+           _game.Layers["ascii"].Set(45, 0, $"Encounter: ");
            
             for (var i = 0; i < 4; i++)
             {
                 var en = enc.Enemies[4 - i - 1];
                 var (uu, vv) = en.GetIcon();
-                Draw(15 + i, 0, new Glyph(uu, vv, Color.Transparent, Color.White));
+                Draw(20 + i, -1, new Glyph(uu, vv, Color.Transparent, Color.White));
             }
         }
     }
