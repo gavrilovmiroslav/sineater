@@ -37,6 +37,20 @@ public abstract class Character
             if (Items[i] == null)
             {
                 Items[i] = item;
+                SineaterGame.Instance.Party.Inventory.Items.Remove(item);
+                break;
+            }
+        }
+    }
+
+    public void Unequip(Item item)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (Items[i] == item)
+            {
+                Items[i] = null;
+                SineaterGame.Instance.Party.Inventory.Items.Add(item);
                 break;
             }
         }
