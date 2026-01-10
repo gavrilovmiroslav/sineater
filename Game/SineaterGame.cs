@@ -130,7 +130,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _inputText = Content.Load<Texture2D>("Codepage");
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
-        _statuses = Content.Load<Texture2D>("statuses");
 
         _inputs[0] = Content.Load<Texture2D>("inputs/KEYBOARD/KEYBOARD");
         _inputs[1] = Content.Load<Texture2D>("inputs/XBOX/XBOX");
@@ -150,10 +149,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(56, 60), new Vector2(0, 0));
         Layers.Add("portrait2", portrait2Layer);
-
-        var statusLayer = new TextLayer(_statuses, new Vector2(Width / 16, Height / 16), new Vector2(16, 16),
-            new Vector2(16, 16), Vector2.Zero, 2, Vector2.Zero, new Vector2(16, 16));
-        Layers.Add("statuses", statusLayer);
         
         var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
         mrmoLayer.Map(" ", 0, 0);
@@ -368,7 +363,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     }
     
     public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "statuses", "input", "inputtext"];
+        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "input", "inputtext"];
 
     private void SetupCrt(int w, int h)
     {
