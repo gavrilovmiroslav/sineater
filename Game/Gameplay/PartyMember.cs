@@ -84,6 +84,8 @@ public class PartyMember : Character
         
         Guard = 0;
     }
+
+    public bool Details { get; set; }
 }
 
 public record struct Party

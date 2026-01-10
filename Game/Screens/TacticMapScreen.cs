@@ -36,6 +36,8 @@ public class TacticMapScreen : Screen
     private Queue<Character> _turn = [];
     private bool _timeFlow = true;
     private HashSet<Character> _selected = [];
+    private HashSet<Character> _markedFull = [];
+    private HashSet<Character> _markedEmpty = [];
     private float _levelTime = 60;
     private bool _paused = false;
     private ETimeOfDay _timeOfDay;
@@ -64,6 +66,14 @@ public class TacticMapScreen : Screen
     
     private void Next()
     {
+        if (_turn.TryPeek(out var last))
+        {
+            if (last is PartyMember pm)
+            {
+                pm.Details = false;
+            }
+        }
+        
         _turn.Dequeue();
     }
     
@@ -118,12 +128,14 @@ public class TacticMapScreen : Screen
                 }
             }
             CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            Muse.SetGameState(EMusicState.World);
             Console.WriteLine("VICTORY!");
             return;
         }
         else if (_game.Party.Characters.All(e => e.Guard == 0))
         {
             CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            Muse.SetGameState(EMusicState.World);
             Console.WriteLine("LOSS!");
             return;
         }
@@ -237,61 +249,64 @@ public class TacticMapScreen : Screen
         var prim = isPrimary ? item.PrimaryEffectModifier : item.SecondaryEffectModifier;
         var friend = true;
         var skip = false;
-        
+
+        var mx = 0;
+        var my = 16;
+        _game.Layers["inputtext"].SetRect(new Vector2(0, my), new Vector2(80, my), ' ');
         switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
         {
             case EItemEffect.None:
                 skip = true;
-                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: No effect.");
+                _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: No effect.");
                 break;
             case EItemEffect.Attack:
-                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Attacking for {prim} damage.");
+                _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Attacking for {prim} damage.");
                 friend = false;
                 break;
             case EItemEffect.Guard:
-                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase guard by {prim}.");
+                _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Increase guard by {prim}.");
                 break;
             case EItemEffect.Resist:
                 if (prim > 0)
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to resist break by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Resist break% up by {prim}%");
                 else
                 {
                     friend = false;
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease chance to resist break by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Resist break% down by {prim}%");
                 }
 
                 break;
             case EItemEffect.Shield:
                 if (prim > 0)
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase chance to shield from damage by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Shield up by {prim}%");
                 else
                 {
                     friend = false;
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease chance to shield from damage by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Shield down by {prim}%");
                 }
 
                 break;
             case EItemEffect.Speed:
                 if (prim > 0)
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Increase speed this turn by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Speed up by {prim}%");
                 else
                 {
                     friend = false;
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Decrease speed this turn by {prim}%");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Speed down by {prim}%");
                 }
 
                 break;
             case EItemEffect.Move:
                 friend = false;
                 if (prim > 0)
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Knock back by {prim} positions.");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Knock back by {prim} positions.");
                 else
-                    _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Pull closer by {prim} positions.");
+                    _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Pull closer by {prim} positions.");
 
                 break;
         }
         
-        yield return new WaitForSeconds(skip ? 2f : 0.5f);
+        yield return new WaitForSeconds(2.0f);
 
         var target = isPrimary ? item.PrimaryTargets : item.SecondaryTargets;
         if (!friend)
@@ -321,6 +336,16 @@ public class TacticMapScreen : Screen
             var tgt = targets[i];
             if (self)
             {
+                for (var t = 0; t < 5; t++)
+                {
+                    _markedFull.Add(tgt);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
+                    _markedFull.Remove(tgt);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
+                }
+                
                 if (tgt == character)
                 {
                     yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
@@ -331,10 +356,16 @@ public class TacticMapScreen : Screen
                 if (target[i] == 'x')
                 {
                     chances.Add(i);
+                    _markedEmpty.Add(targets[i]);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
                 }
                 else if (target[i] == 'X')
                 {
                     chances.Add(i);
+                    _markedFull.Add(targets[i]);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
                     all = true;
                 }
             }
@@ -342,7 +373,17 @@ public class TacticMapScreen : Screen
 
         if (all)
         {
-            for (var i = 0; i < 4; i++)
+            for (var t = 0; t < 5; t++)
+            {
+                foreach (var c in chances) _markedFull.Add(targets[c]);
+                DrawCombat();
+                yield return new WaitForSeconds(0.1f);
+                foreach (var c in chances) _markedFull.Remove(targets[c]);
+                DrawCombat();
+                yield return new WaitForSeconds(0.1f);
+            }
+            
+            foreach (var i in chances)
             {
                 var tgt = targets[i];
                 yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
@@ -352,11 +393,58 @@ public class TacticMapScreen : Screen
         {
             if (chances.Count > 0)
             {
-                var i = Rnd.Instance.Next(0, chances.Count);
-                var tgt = targets[i];
-                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
+                for (var t = 0; t < 5; t++)
+                {
+                    foreach (var c in chances)
+                    {
+                        _markedEmpty.Clear();
+                        _markedEmpty.Add(targets[c]);
+                        DrawCombat();
+                        yield return new WaitForSeconds(0.02f);
+                    }
+                }
+
+                var i = -1;
+                if (Rnd.Instance.Next(100) < 80) // target higher guard
+                {
+                    var g = 0;
+                    for (int ix = 0; ix < chances.Count; ix++)
+                    {
+                        if (targets[chances[ix]].Guard > g)
+                        {
+                            i = ix;
+                            g = targets[chances[ix]].Guard;
+                        }
+                    }
+                }
+                
+                if (i == -1)
+                {
+                    i = Rnd.Instance.Next(0, chances.Count);
+                }
+
+                var tgt = targets[chances[i]];
+
+                _markedEmpty.Clear();
+                DrawCombat();
+                
+                for (var t = 0; t < 5; t++)
+                {
+                    _markedFull.Add(tgt);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
+                    _markedFull.Remove(tgt);
+                    DrawCombat();
+                    yield return new WaitForSeconds(0.1f);
+                }
+
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), chances[i], item, isPrimary);
             }
         }
+        
+        _markedEmpty.Clear();
+        _markedFull.Clear();
+        DrawCombat();
     }
 
     private IEnumerable CoResolveItem(Character character, Character target, Character[] targets, int index, Item item, bool isPrimary)
@@ -408,7 +496,13 @@ public class TacticMapScreen : Screen
                     str -= target.Shield;
                     if (str < 0) str = 0;
                 }
-                target.Guard -= str;
+
+                var old = (int)target.Guard;
+                target.Guard.Down(str);
+                if (old == 0)
+                {
+                    target.Broken = true;
+                }
                 break;
             case EItemEffect.Guard:
                 target.Guard += str;
@@ -428,28 +522,11 @@ public class TacticMapScreen : Screen
         }
     }
     
-    private IEnumerable RunUpkeep()
-    {
-        foreach (var ch in SineaterGame.Instance.Party.Characters)
-        {
-            ch.ForceRestart(this);
-        }
-        
-        yield break;
-    }
-    
-    public override void DrawWorld(bool noPlayer = false)
-    {
-        DrawParty();
-        DrawCombat();
-        DrawTop();
-    }
-
     public void DrawTop()
     {
         if (_timeFlow)
         {
-            _game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
+            //_game.Layers["ascii"].SetRect(new Vector2(30, 0), new Vector2(43, 2), ' ');
             if (!_paused)
             {
                 _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
@@ -460,9 +537,8 @@ public class TacticMapScreen : Screen
                 _game.Layers["input"].Set(18, 2, InputM.GetGlyph(EInputAction.Confirm));
                 _game.Layers["ascii"].Set(36, 1, "FIGHT", Color.White);
             }
-
-            _game.Layers["ascii"].SetRect(new Vector2(30, 2), new Vector2(43, 3), ' ');
-            _game.Layers["mini"].Set(70, 7, " TIME LEFT: ", Color.White, Color.Black);
+            
+            _game.Layers["mini"].Set(70, 7, " TIME LEFT: ", Color.White, Color.Transparent);
             _game.Layers["largenums"].Set(9, 2, ((int)MathF.Round(_levelTime)).ToString("00"), Color.White,
                 Color.Transparent);
 
@@ -488,8 +564,19 @@ public class TacticMapScreen : Screen
         {
             _game.Layers[layer].Clear();
         }
-        
-        DrawParty();
+
+        var p = SineaterGame.Instance.Party.Characters;
+        var focus = -1;
+        for (int i = 0; i < 4; i++)
+        {
+            if (p[i].Details)
+            {
+                focus = i;
+                break;
+            }
+        }
+
+        DrawParty(focus);
         DrawTop();
     }
     
@@ -576,12 +663,6 @@ public class TacticMapScreen : Screen
         // CHARACTERS
         for (var n = 0; n < 4; n++)
         {
-            batch.Draw(mrmo, 
-                new Vector2(190 + 64 * n, 420 - 32), 
-                new Rectangle(7 * 16, 65 * 16, 16, 16), 
-                Color.White, 0.0f, Vector2.Zero, 
-                new Vector2(2, 2), SpriteEffects.None, 0);
-            
             batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), 
                 null, Color.White, 0.0f, Vector2.Zero, 
                 new Vector2(34.0f, 4.0f), SpriteEffects.None, 0);
@@ -626,6 +707,11 @@ public class TacticMapScreen : Screen
                 else
                 {
                     _focus = n;
+                    for (var ni = 0; ni < 4; ni++)
+                    {
+                        SineaterGame.Instance.Party.Characters[ni].Details = false;
+                    }
+                    p.Details = true;
                     _turn.Enqueue(p);
                 }
             }
@@ -638,12 +724,28 @@ public class TacticMapScreen : Screen
             p.X = 6 + i * 2 - 10;
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
-            Draw(6 + i * 2 - 10, 10, $"{p.Guard}", Color.White, Color.Transparent);
+            Draw(p.X, 10, $"{p.Guard}", Color.White, Color.Transparent);
 
+            if (_markedEmpty.Contains(p))
+            {
+                Draw(p.X, 14, new Glyph(13, 26, Color.Transparent, Color.White));
+            }
+
+            if (_markedFull.Contains(p))
+            {
+                Draw(p.X, 14, new Glyph(13, 25, Color.Transparent, Color.White));
+            }
+            
             if (_selectedIndex == i)
             {
                 if (_paused)
                 {
+                    for (var ni = 0; ni < 4; ni++)
+                    {
+                        SineaterGame.Instance.Party.Characters[ni].Details = false;
+                    }
+                    p.Details = true;
+                    DrawParty(i);
                     Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
                 }
             }
@@ -657,7 +759,17 @@ public class TacticMapScreen : Screen
             p.X = 5 + (4 - i) * 2 + 18;
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
-            Draw(5 + (4 - i) * 2 + 18, 10, $"{p.Guard}", Color.White, Color.Transparent);
+            Draw(p.X, 10, $"{p.Guard}", Color.White, Color.Transparent);
+                        
+            if (_markedEmpty.Contains(p))
+            {
+                Draw(p.X, 14, new Glyph(13, 26, Color.Transparent, Color.White));
+            }
+
+            if (_markedFull.Contains(p))
+            {
+                Draw(p.X, 14, new Glyph(13, 25, Color.Transparent, Color.White));
+            }
             i++;
         }
         

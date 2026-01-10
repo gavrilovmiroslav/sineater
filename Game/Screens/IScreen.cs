@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Loadable;
 
 namespace SINEATER.Game.Screens;
 
@@ -150,28 +152,91 @@ public abstract class Screen : IScreen
     
     public virtual void DrawWorld(bool noPlayer = false) {}
     
-    public void DrawPartyMember(Character character, int index)
+    public void DrawPartyMember(Character character, int index, bool isFocused)
     {
-        var (u, v) = character.GetPortait();
-        var (x, y) = (index, 3);
-        
-        _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
-        _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
-        _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
-        
-        _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 10, $"{character.Job}", Color.White);
-        
-        _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
-        _game.Layers["portrait2"].Set(x * 4, y * 2 + 3, new Glyph(u, v, Color.Black, Color.White));
+        if (!isFocused)
+        {
+            var (u, v) = character.GetPortait();
+            var (x, y) = (index, 3);
+            _game.Layers["ascii"].SetRect(new Vector2(20 * x + 1, 5 * y + 11), new Vector2(20 * x + 1, 5 * y - 3), ' ');
+            _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
+
+            _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 10, $"{character.Job}", Color.White);
+
+            _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+            _game.Layers["portrait2"].Set(x * 4, y * 2 + 3, new Glyph(u, v, Color.Black, Color.White));
+
+            int i = 0;
+            foreach (var item in character.Items)
+            {
+                if (item is not null)
+                {
+                    _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 7 - i, $"{item.Display}");
+                    i++;
+                }
+            }
+        }
+        else
+        {
+            int[] p = [-1, 0, 1, 2];
+            var (u, v) = character.GetPortait();
+            var (x, y) = (index, 3);
+
+            _game.Layers["ascii"].SetRect(new Vector2(20 * x + 1, 5 * y + 11), new Vector2(20 * x + 20, 5 * y - 3), ' ');
+            _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
+
+            _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
+            _game.Layers["portrait"].Set(p[index] + x + 1, y + 2, new Glyph(u, v, Color.Black, Color.White));
+
+            var items = character.Items.Where(s => s != null).ToList();
+            var s = items.Count * 2;
+            var toText = (char c) =>
+            {
+                if (c == 'x')
+                {
+                    return '^';
+                }
+                else if (c == 'X')
+                {
+                    return '$';
+                }
+                else
+                {
+                    return '_';
+                }
+            };
+            for (var i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                if (item is not null)
+                {
+                    var prim = (item.PrimaryTargets == "self") 
+                        ? "self" 
+                        : string.Join("", item.PrimaryTargets.Select(toText));
+                    
+                    _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - s, $"{item.Display}");
+                    s--;
+                    _game.Layers["ascii"].Set(20 * x + 3, 5 * y + 6 - s, new Glyph(0, 6, Color.Transparent, Color.White));
+                    _game.Layers["ascii"].Set(20 * x + 4, 5 * y + 6 - s, $"{prim}", item.PrimaryEffect == EItemEffect.Attack ? Color.Red : Color.GreenYellow);
+                    s--;
+                }
+            }
+        }
     }
     
-    public void DrawParty()
+    public void DrawParty(int focus = -1)
     {
         for (var c = 0; c < 4; c++)
         {
-            DrawPartyMember(_game.Party.Characters[c], c);
+            DrawPartyMember(_game.Party.Characters[c], c, c == focus);
         }
     }
 }

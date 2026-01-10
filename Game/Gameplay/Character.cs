@@ -9,21 +9,6 @@ public abstract class Character
     public static Character Dummy(int x, int y) => new Dummy() { X = x, Y = y };
     public List<string> Tags { get; set; } = [];
     public bool Broken { get; set; } = false;
-
-    public bool CheckBroken()
-    {
-        if (Guard == 0)
-        {
-            Broken = true;
-            return true;
-        }
-
-        return false;
-    }
-    
-    public void ForceRestart(Screen screen)
-    {
-    }
     
     public float Weight
     {
