@@ -184,9 +184,6 @@ public class WorldMapScreen : Screen
 
     public override void Initialize(SineaterGame game)
     {
-
-
-    
     }
 
     private void InitializeMapLayers()

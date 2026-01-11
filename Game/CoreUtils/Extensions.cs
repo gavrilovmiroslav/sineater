@@ -20,7 +20,7 @@ internal static class Extensions
         where T: Character
     {
         var s = Math.Sign(ds);
-        for (int i = 0; i < ds; i++)
+        for (int i = 0; i < Math.Abs(ds); i++)
         {
             if (index + s > 3 || index + s < 0)
             {

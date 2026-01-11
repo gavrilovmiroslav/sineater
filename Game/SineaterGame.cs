@@ -285,7 +285,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         base.Update(gameTime);
     }
 
-    private int _x = 35, _y = 27, _w = -71, _h = -271;
+    private int _x = 35, _y = 27, _w = -71, _h = 0;
     private IScreen? _toPush;
 
     protected override void Draw(GameTime gameTime)

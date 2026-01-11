@@ -23,6 +23,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
 {
     private Texture2D _logo;
     private Texture2D _pixel;
+    private Texture2D _fmod;
+    private Texture2D _fmodCredits;
     private EMainMenuState _state = EMainMenuState.Waiting;
     private float _fadeTime = 0.0f;
     
@@ -30,6 +32,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     {
         _pixel = _game.Content.Load<Texture2D>("pixel");
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
+        _fmod = _game.Content.Load<Texture2D>("fmod-logo");
+        _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
         _state = EMainMenuState.Waiting;
     }
 
@@ -78,7 +82,9 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private string[] dots = new[] { ".", "..", "..." };
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
-        _game.Layers["mini"].Set(104, 20, $"v1.0.2");
+        _game.Layers["mini"].Set(104, 20, $"v1.0.33");
+        _game.Layers["mini"].Set(40, 35, "Note: This version DOES NOT contain a full loop. You can't LOSE per se.");
+        _game.Layers["mini"].Set(37, 36, "Current goal: beat the north temple by collecting and equipping stronger items.");
         t += 0.01f;
         
         _game.Layers["ascii"].Clear();
@@ -123,5 +129,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
+    
+        batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164), 
+            Color.White, 0.0f, new Vector2(0, 0), Vector2.One * 0.35f, SpriteEffects.None, 0);
+
+        batch.Draw(_fmodCredits, new Vector2(35, game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22), 
+            Color.White, 0.0f, new Vector2(0, 0), Vector2.One, SpriteEffects.None, 0);
     }
 }

@@ -18,6 +18,14 @@ public enum EItemEffect
     Move = 6,
 }
 
+public enum EBonusEffect
+{
+    None = 0,
+    PlusMod = 1,
+    Double = 2,
+    TargetAll = 3,
+}
+
 public class ItemDefinition : ILoadableDefinition
 {
     [JsonProperty] public string Name;
@@ -34,7 +42,7 @@ public class ItemDefinition : ILoadableDefinition
     [JsonProperty] public EStat SecondaryStat;
     [JsonProperty] public int SecondaryStatRequirement;
     
-    [JsonProperty] public EItemEffect SecondaryEffect;
+    [JsonProperty] public EBonusEffect SecondaryEffect;
     [JsonProperty] public int SecondaryEffectModifier;
     [JsonProperty] public string SecondaryTargets;
     [JsonProperty] public int DropChance;
@@ -95,7 +103,7 @@ public class ItemParser : ILoadableRowParser<ItemDefinition>
             PrimaryTargets = primEffectTargets,
             SecondaryStat = Enum.Parse<EStat>(secStat),
             SecondaryStatRequirement = int.Parse(secReq),
-            SecondaryEffect = Enum.Parse<EItemEffect>(secEffect),
+            SecondaryEffect = Enum.Parse<EBonusEffect>(secEffect),
             SecondaryEffectModifier = int.Parse(secEffectMod),
             SecondaryTargets = secEffectTargets,
             DropChance = int.Parse(dropChance),
@@ -122,9 +130,9 @@ public class ItemInterpreter : ILoadableInterpreter<ItemDefinition, Item>
             PrimaryTargets = def?.PrimaryTargets ?? "----",
             SecondaryStat = def?.SecondaryStat ?? EStat.None,
             SecondaryStatRequirement = def?.SecondaryStatRequirement ?? 0,
-            SecondaryEffect = def?.SecondaryEffect ?? EItemEffect.None,
+            SecondaryEffect = def?.SecondaryEffect ?? EBonusEffect.None,
             SecondaryEffectModifier = def?.SecondaryEffectModifier ?? 0,
-            SecondaryTargets = def?.SecondaryTargets ?? "----",
+            SecondarySources = def?.SecondaryTargets ?? "----",
             DropChance = def?.DropChance ?? 0,
             Tags = [..def?.Tags ?? []]
         };

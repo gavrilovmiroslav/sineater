@@ -40,6 +40,7 @@ public class TacticMapScreen : Screen
     private HashSet<Character> _markedEmpty = [];
     private float _levelTime = 60;
     private bool _paused = false;
+    private bool _over = false;
     private ETimeOfDay _timeOfDay;
     
     public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward, ETimeOfDay time) : base(game)
@@ -119,6 +120,8 @@ public class TacticMapScreen : Screen
             {
                 if (_levelTime > time)
                 {
+                    _over = true;
+                    _paused = true;
                     CoroutineHandler.Run(Victory(rews));
                 }
             }
@@ -153,9 +156,9 @@ public class TacticMapScreen : Screen
     private IEnumerable Victory(List<Item> rewards)
     {
         SineaterGame.Instance.World.Encounters.Remove(_xy.X, _xy.Y);
-        yield return new ShowPopupAndWaitForKey(new Vector2(5, 5), new Vector2(20, 20), (s, t) =>
+        yield return new ShowPopupAndWaitForKey(new Vector2(2, 5), new Vector2(33, 14), (s, t) =>
         {
-            t.Add("VICTORY!");
+            t.Add("VICTORY!", Color.Green);
             t.Newline();
             t.Newline();
             t.Add("You receive:");
@@ -171,42 +174,6 @@ public class TacticMapScreen : Screen
         yield return new FadeOutAndLeaveScreen(1.0f);
     }
 
-    private void FindTargets(Item weapon, string selection, int fi, bool flip, out List<int> targets)
-    {
-        List<int> indices = [];
-        targets = [];
-        var all = false;
-
-        if (selection == "self")
-        {
-            targets.Add(fi);
-        }
-        else
-        {
-            for (var e = 0; e < 4; e++)
-            {
-                var fe = flip ? 4 - e - 1 : e;
-                if (selection[fe] == 'x' || selection[fe] == 'X')
-                {
-                    all |= selection[fe] == 'X';
-                    indices.Add(fe);
-                }
-            }
-
-            if (!all)
-            {
-                if (indices.Count > 0)
-                {
-                    targets = [indices[Rnd.Instance.Next(0, indices.Count)]];
-                }
-            }
-            else
-            {
-                targets = indices;
-            }
-        }
-    }
-    
     private IEnumerable CoAttack(Character first)
     {
         var flip = false;
@@ -237,13 +204,12 @@ public class TacticMapScreen : Screen
             var fi = flip ? 4 - i - 1 : i;
             if (first == friends[i])
             {
-                for (var w = 0; w < 4; w++)
+                for (var w = 0; w < first.Items.Length; w++)
                 {
                     var item = first.Items[w];
                     if (item == null) continue;
 
-                    yield return CoAttackWithItem(first, item, true);
-                    yield return CoAttackWithItem(first, item, false);
+                    yield return CoAttackWithItem(first, item);
                     
                     _selected.Clear();
                     _selected.Add(first);
@@ -256,24 +222,23 @@ public class TacticMapScreen : Screen
         _timeFlow = true;
 
         Next();
-        yield break;
     }
 
-    private IEnumerable CoAttackWithItem(Character character, Item item, bool isPrimary)
+    private IEnumerable CoAttackWithItem(Character character, Item item)
     {
-        var prim = isPrimary ? item.PrimaryEffectModifier : item.SecondaryEffectModifier;
+        var prim = item.PrimaryEffectModifier;
         var friend = true;
         var skip = false;
 
         var mx = 0;
         var my = 9;
         _game.Layers["inputtext"].SetRect(new Vector2(0, my), new Vector2(80, my), ' ');
-        switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
+        
+        switch (item.PrimaryEffect)
         {
             case EItemEffect.None:
                 skip = true;
-                _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: No effect.");
-                break;
+                yield break;
             case EItemEffect.Attack:
                 _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Attacking for {prim} damage.");
                 friend = false;
@@ -323,14 +288,14 @@ public class TacticMapScreen : Screen
         
         yield return new WaitForSeconds(2.0f);
 
-        var target = isPrimary ? item.PrimaryTargets : item.SecondaryTargets;
+        var target = item.PrimaryTargets;
         if (!friend)
         {
             target = string.Join("", target.Reverse());
         }
 
         bool self = target == "self";
-
+        
         Character[] ourFriends = SineaterGame.Instance.Party.Characters;
         Character[] ourEnemies = _enemies;
         if (character is Enemy)
@@ -344,27 +309,37 @@ public class TacticMapScreen : Screen
             targets[i] = (friend ? ourFriends : ourEnemies)[i];
         }
 
-        var all = false;
+        int index = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            if (ourFriends[i] == character)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        var sec = item.BonusActivates(character, index);
+        
+        bool all = sec && item.SecondaryEffect == EBonusEffect.TargetAll;
+        
         List<int> chances = [];
         for (var i = 0; i < 4; i++)
         {
             var tgt = targets[i];
-            if (self)
+            if (all || (self && tgt == character))
             {
                 for (var t = 0; t < 5; t++)
                 {
                     _markedFull.Add(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    yield return new WaitForSeconds(0.02f);
                     _markedFull.Remove(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    yield return new WaitForSeconds(0.02f);
                 }
                 
-                if (tgt == character)
-                {
-                    yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
-                }
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, sec);
             }
             else
             {
@@ -392,16 +367,16 @@ public class TacticMapScreen : Screen
             {
                 foreach (var c in chances) _markedFull.Add(targets[c]);
                 DrawCombat();
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.02f);
                 foreach (var c in chances) _markedFull.Remove(targets[c]);
                 DrawCombat();
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.02f);
             }
             
             foreach (var i in chances)
             {
                 var tgt = targets[i];
-                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, isPrimary);
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, sec);
             }
         }
         else
@@ -420,7 +395,7 @@ public class TacticMapScreen : Screen
                 }
 
                 var i = -1;
-                if (Rnd.Instance.Next(100) < 80) // target higher guard
+                if (Rnd.Instance.Next(100) < (friend ? 50 : 80)) // target higher guard
                 {
                     var g = 0;
                     for (int ix = 0; ix < chances.Count; ix++)
@@ -447,13 +422,13 @@ public class TacticMapScreen : Screen
                 {
                     _markedFull.Add(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    yield return new WaitForSeconds(0.02f);
                     _markedFull.Remove(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    yield return new WaitForSeconds(0.02f);
                 }
 
-                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), chances[i], item, isPrimary);
+                yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), chances[i], item, sec);
             }
         }
         
@@ -462,46 +437,37 @@ public class TacticMapScreen : Screen
         DrawCombat();
     }
 
-    private IEnumerable CoResolveItem(Character character, Character target, Character[] targets, int index, Item item, bool isPrimary)
+    private IEnumerable CoResolveItem(Character character, Character target, Character[] targets, int index, Item item, bool secondary)
     {
-        var req = isPrimary ? 0 : item.SecondaryStatRequirement;
-        if (!isPrimary)
+        var stat = (EStat)item.SecondaryStatRequirement;
+        var ok = false;
+        var str = item.PrimaryEffectModifier;
+        
+        if (secondary)
         {
-            var ok = false;
-            var stat = (EStat)item.SecondaryStatRequirement;
-            switch (stat)
+            switch (item.SecondaryEffect)
             {
-                case EStat.Vigor:
-                    ok = character.Vig >= req;
+                case EBonusEffect.None:
                     break;
-                case EStat.Will:
-                    ok = character.Wil >= req;
+                case EBonusEffect.PlusMod:
+                    str += character.Stats.Mod(stat) + item.SecondaryEffectModifier;
                     break;
-                case EStat.Clarity:
-                    ok = character.Cla >= req;
+                case EBonusEffect.Double:
+                    str *= 2;
                     break;
-                case EStat.Poise:
-                    ok = character.Poi >= req;
-                    break;
-            }
-
-            if (!ok)
-            {
-                _game.Layers["ascii"].Set(20, 18, $"{item.Name}: Requires {req} {stat}.", Color.OrangeRed);
-                yield return new WaitForSeconds(1.0f);
-                yield break;
             }
         }
-        
-        var str = isPrimary ? item.PrimaryEffectModifier : item.SecondaryEffectModifier;
+
         _selected.Add(target);
         DrawCombat();
         yield return new WaitForSeconds(1.0f);
-        switch (isPrimary ? item.PrimaryEffect : item.SecondaryEffect)
+        switch (item.PrimaryEffect)
         {
             case EItemEffect.None: break;
             case EItemEffect.Attack:
-                if (Rnd.Instance.D100 < target.Resist)
+                var roll = Rnd.Instance.D100;
+                Console.WriteLine($"Target resist: {target.Resist} vs {roll}");
+                if (roll < target.Resist)
                 {
                     str = 0;
                     target.Resist--;
@@ -654,6 +620,7 @@ public class TacticMapScreen : Screen
     
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
     {
+        if (_over) return;
         var mrmo = SineaterGame.Instance.Mrmo;
         
         var slowdown = 1.0f;
@@ -874,9 +841,13 @@ public class TacticMapScreen : Screen
             }
         }
 
-        if (InputM.IsActive(EInputAction.Confirm))
+        if (InputM.IsActive(EInputAction.Confirm) && !_over)
         {
             _paused = !_paused;
+            if (!_paused)
+            {
+                DrawParty(-1);
+            }
             Muse.SetPaused(_paused);
         }
     }

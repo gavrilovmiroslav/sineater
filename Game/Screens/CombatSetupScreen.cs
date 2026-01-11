@@ -12,7 +12,6 @@ namespace SINEATER.Game.Screens
 {
     public class CombatSetupScreen : Screen
     {
-
         private World _world => _worldScreen.World;
         private int _combatPositionX;
         private int _combatPositionY;
@@ -65,7 +64,6 @@ namespace SINEATER.Game.Screens
                 }
 
                 i++;
-
             }
 
             int j = 0;
@@ -82,74 +80,8 @@ namespace SINEATER.Game.Screens
 
             DrawParty();
             DrawControls();
-
-            {
-                DrawItems();
-                //DrawPreview();
-            }
+            DrawItems();
         }
-
-        // private void DrawPreview()
-        // {
-        //     var inv = _game.Party.Inventory;
-        //     var aSelectedItem = inv.Items[_submenuSelection];
-        //
-        //     if (aSelectedItem is Weapon selectedItem)
-        //     {
-        //         var from = selectedItem.From;
-        //         if (from.Any(x => x != '-') && from.Length == 4)
-        //         {
-        //             for (int i = 0; i < 4; i++)
-        //             {
-        //                 var c = from[i];
-        //                 if (c == 'x')
-        //                 {
-        //                     // ISPOD IGRACA
-        //                     _game.Layers["mrmo"].Set((i*2 - 1 + 8 + 2 * (i + 1))/2, 6, new Glyph(12, 25, Color.Transparent, Color.Yellow));
-        //                 }
-        //             }
-        //         }
-        //
-        //         var toEnemy = selectedItem.ToEnemy;
-        //         if (toEnemy.Any(x => x != '-') && toEnemy.Length == 4)
-        //         {
-        //             for (int i = 0; i < 4; i++)
-        //             {
-        //                 var c = toEnemy[i];
-        //                 if (c == 'x')
-        //                 {
-        //                     _game.Layers["mrmo"].Set(16 + i * 2, 2, new Glyph(12, 26, Color.Transparent, Color.Red));
-        //                 }
-        //                 else if(c == 'X')
-        //                 {
-        //                     _game.Layers["mrmo"].Set(16 + i*2, 2, new Glyph(12, 25, Color.Transparent, Color.Red));
-        //                 }
-        //             }
-        //         }
-        //
-        //         var toParty = selectedItem.ToParty;
-        //         if (toParty.Any(x => x != '-') && toParty.Length == 4)
-        //         {
-        //             if (toParty == "self")
-        //             {
-        //                 _game.Layers["mrmo"].Set((_selectedIndex * 2 - 1 + 8 + 2 * (_selectedIndex + 1)) / 2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
-        //             }
-        //
-        //             for (int i = 0; i < 4; i++)
-        //             {
-        //                 var c = toParty[i];
-        //                 if (c == 'x')
-        //                 {
-        //                     _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1)) / 2, 2, new Glyph(12, 26, Color.Transparent, Color.Green));
-        //                 }
-        //                 else if (c == 'X')
-        //                 {
-        //                     _game.Layers["mrmo"].Set((i * 2 - 1 + 8 + 2 * (i + 1))/2, 2, new Glyph(12, 25, Color.Transparent, Color.Green));
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
         private void GatherItems()
         {
@@ -182,38 +114,6 @@ namespace SINEATER.Game.Screens
             }
         }
 
-        private Color GetColorForStat(EStat s)
-        {
-            switch (s)
-            {
-                case EStat.Poise:
-                    return affinityColors[0];
-                case EStat.Will:
-                    return affinityColors[1];
-                case EStat.Clarity:
-                    return affinityColors[2];
-                case EStat.Vigor:
-                    return affinityColors[3];
-                default:
-                    return Color.White;
-            }
-        }
-
-        private bool IsEquipped(Item? w)
-        {
-            if (w is null)
-                return false;
-
-            foreach (var c in _game.Party.Characters)
-            {
-                if (c.Items.Any(x => x is not null && x.Name == w.Name))
-                    return true;
-            }
-
-            return false;
-        }
-
-
         private readonly List<string> _positionStats = ["NON", "VIG", "WIL", "CLA", "POI"];
         private void DrawItems()
         {
@@ -233,7 +133,7 @@ namespace SINEATER.Game.Screens
                 _game.Layers["ascii"].Set(NameStart, 7, "NAME");
                 _game.Layers["ascii"].Set(WeightStart, 7, "WT");
                 _game.Layers["ascii"].Set(primStart, 7, "EFFECT");
-                _game.Layers["ascii"].Set(secStart, 7, "SEC EFFECT");
+                _game.Layers["ascii"].Set(secStart, 7, "BONUS");
                 _game.Layers["ascii"].Set(requirmentStart, 7, "REQ");
                 _game.Layers["ascii"].Set(separatorStart, 7, "|");
 
@@ -272,8 +172,7 @@ namespace SINEATER.Game.Screens
 
                     _game.Layers["ascii"].Set(NameStart, y + 1 + i, $"{item.Display}");
                     _game.Layers["ascii"].Set(WeightStart - 1, y + 1 + i, $" {item.Weight}");
-
-
+                    
                     var prim = (item.PrimaryTargets == "self")
                         ? "self"
                             : string.Join("", item.PrimaryTargets.Select(toText));
@@ -289,18 +188,25 @@ namespace SINEATER.Game.Screens
                     };
 
                     _game.Layers["ascii"].Set(primStart - 1, y + 1 + i, $" {align(item.PrimaryEffect.ToString(), 6)} " +
-                        $"{align(prim, 4)} {item.PrimaryEffectModifier}", item.PrimaryEffect == EItemEffect.Attack ? Color.Red : Color.GreenYellow);
+                        $"{align(prim, 4)} {item.PrimaryEffectModifier}", item.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move ? Color.Red : Color.GreenYellow);
 
                     _game.Layers["ascii"].Set(separatorStart, y + 1 + i, "|");
 
-                    var sec = (item.SecondaryTargets == "self")
+                    var sec = (item.SecondarySources == "self")
                         ? "self"
-                            : string.Join("", item.SecondaryTargets.Select(toText));
+                        : string.Join("", item.SecondarySources.Select(toText));
 
                     var secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} " +
                         $"{align(sec, 4)} {item.SecondaryEffectModifier}";
-                    var secondaryColor = item.SecondaryEffect == EItemEffect.Attack ? Color.Red : Color.GreenYellow;
-                    if (item.SecondaryEffect == EItemEffect.None)
+                    var secondaryColor = item.SecondaryEffect switch
+                    {
+                        EBonusEffect.None => Color.Gray,
+                        EBonusEffect.PlusMod => Color.CadetBlue,
+                        EBonusEffect.Double => Color.Red,
+                        EBonusEffect.TargetAll => Color.Green,
+                    };
+                    
+                    if (item.SecondaryEffect == EBonusEffect.None)
                     {
                         secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} ";
                         secondaryColor = Color.Gray;

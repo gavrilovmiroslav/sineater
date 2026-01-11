@@ -32,7 +32,7 @@ public abstract class Character
     {
         if (item == null) return;
         
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < Items.Length; i++)
         {
             if (Items[i] == null)
             {
@@ -45,7 +45,7 @@ public abstract class Character
 
     public void Unequip(Item item)
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < Items.Length; i++)
         {
             if (Items[i] == item)
             {
@@ -62,36 +62,11 @@ public abstract class Character
     public int Vig => Stats.Vigor;
     
     public ECharacterClass Job;
-    public Item?[] Items = new Item?[4];
+    public Item?[] Items = new Item?[2];
     
-    public void Equip(EStat stat, Item? item)
-    {
-        if (stat == EStat.None) return;
-
-        Items[(int)stat - 1] = item;
-    }
-
-    public void EquipAndAdd(EStat stat, Item? item)
-    {
-        if (stat == EStat.None) return;
-
-        if (this is PartyMember pm && item != null)
-        {
-            SineaterGame.Instance.Party.Inventory.Items.Add(item);
-        }
-
-        Items[(int)stat - 1] = item;
-    }
-
-    public void EquipAndAdd(Item? item)
-    {
-        Equip(item);
-    }
-
     public virtual int X { get; set; }
     public virtual int Y { get; set; }
     public Track Guard { get; set; }
-    public bool Render { get; set; } = true;
     public float Speed { get; set; } = 0;
     public float Resist { get; set; } = 0;
     public int Shield { get; set; } = 0;

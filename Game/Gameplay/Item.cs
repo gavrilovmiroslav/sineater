@@ -19,10 +19,35 @@ public class Item
     public EStat SecondaryStat;
     public int SecondaryStatRequirement;
     
-    public EItemEffect SecondaryEffect;
+    public EBonusEffect SecondaryEffect;
     public int SecondaryEffectModifier;
-    public string SecondaryTargets = "----";
+    public string SecondarySources = "----";
     public int DropChance;
     
     public List<string> Tags = [];
+
+    public bool BonusActivates(Character character, int index)
+    {
+        var ok = false;
+        var req = SecondaryStatRequirement;
+        var stat = SecondaryStat;
+        switch (stat)
+        {
+            case EStat.Vigor:
+                ok = character.Vig >= req;
+                break;
+            case EStat.Will:
+                ok = character.Wil >= req;
+                break;
+            case EStat.Clarity:
+                ok = character.Cla >= req;
+                break;
+            case EStat.Poise:
+                ok = character.Poi >= req;
+                break;
+        }
+
+        ok &= SecondarySources[index] == 'x';
+        return ok;
+    }
 }

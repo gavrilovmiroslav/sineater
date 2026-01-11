@@ -144,7 +144,7 @@ public abstract class Screen : IScreen
     }
     
     public virtual void DrawWorld(bool noPlayer = false) {}
-    
+    Color[] affinityColors = [Color.CornflowerBlue, Color.GreenYellow, Color.ForestGreen, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
     public void DrawPartyMember(Character character, int index, bool isFocused)
     {
         if (!isFocused)
@@ -153,11 +153,13 @@ public abstract class Screen : IScreen
             var (x, y) = (index, 3);
             _game.Layers["ascii"].SetRect(new Vector2(20 * x + 1, 5 * y + 11), new Vector2(20 * x + 1, 5 * y - 3), ' ');
             _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", index == 0 ? affinityColors[0] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", index == 1 ? affinityColors[1] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", index == 2 ? affinityColors[2] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", index == 3 ? affinityColors[3] : Color.White);
 
+            _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 8, $"SHLD{character.Shield}", Color.Gray);
+            _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 9, $"RES{character.Resist}% ", Color.Gray);
             _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 10, $"{character.Job}", Color.White);
 
             _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
@@ -181,10 +183,10 @@ public abstract class Screen : IScreen
 
             _game.Layers["ascii"].SetRect(new Vector2(20 * x + 1, 5 * y + 11), new Vector2(20 * x + 20, 5 * y - 3), ' ');
             _game.Layers["ascii"].Set(20 * x + 1, 5 * y + 11, $"Px Cx Vx Wx", Color.Gray);
-            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", Color.White);
-            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", Color.White);
+            _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 11, $"{character.Poi}", index == 0 ? affinityColors[0] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 5, 5 * y + 11, $"{character.Cla}", index == 1 ? affinityColors[1] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", index == 2 ? affinityColors[2] : Color.White);
+            _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", index == 3 ? affinityColors[3] : Color.White);
 
             _game.Layers["portrait"].SetFlip(u, v, SpriteEffects.FlipHorizontally);
             _game.Layers["portrait"].Set(p[index] + x + 1, y + 2, new Glyph(u, v, Color.Black, Color.White));
@@ -206,6 +208,7 @@ public abstract class Screen : IScreen
                     return '_';
                 }
             };
+            
             for (var i = 0; i < items.Count; i++)
             {
                 var item = items[i];
@@ -217,8 +220,8 @@ public abstract class Screen : IScreen
                     
                     _game.Layers["ascii"].Set(20 * x + 2, 5 * y + 6 - s, $"{item.Display}");
                     s--;
-                    _game.Layers["ascii"].Set(20 * x + 3, 5 * y + 6 - s, new Glyph(0, 6, Color.Transparent, Color.White));
-                    _game.Layers["ascii"].Set(20 * x + 4, 5 * y + 6 - s, $"{prim}", item.PrimaryEffect == EItemEffect.Attack ? Color.Red : Color.GreenYellow);
+                    _game.Layers["ascii"].Set(20 * x + 4, 5 * y + 6 - s, $"{prim} {item.PrimaryEffectModifier}", 
+                        item.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move ? Color.Red : Color.GreenYellow);
                     s--;
                 }
             }
