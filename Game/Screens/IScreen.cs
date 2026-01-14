@@ -13,6 +13,7 @@ public interface IScreen
 {
     public void Initialize(SineaterGame game);
     public void Update(GameTime gameTime);
+    public void LayerDraw(GameTime gameTime);
     public void PreDraw(SpriteBatch batch, GameTime gameTime);
     public void Draw(SpriteBatch batch, GameTime gameTime);
     public void PostDraw(SpriteBatch batch, GameTime gameTime);
@@ -25,7 +26,7 @@ public abstract class Screen : IScreen
     protected int _width, _height;
     protected int _time = 0;
     public CoroutineHandler CoroutineHandler = new();
-    
+
     protected List<string> _submenu = [];
     protected int _submenuSelection = 0;
     protected (int X, int Y) _submenuDelta = (0, 0);
@@ -37,7 +38,7 @@ public abstract class Screen : IScreen
         _game = game;
         Initialize(game);
     }
-    
+
     internal (int, int)? GetUV(int x, int y)
     {
         var (ox, oy) = DrawOffset;
@@ -49,31 +50,31 @@ public abstract class Screen : IScreen
         var (ox, oy) = DrawOffset;
         return SineaterGame.Instance.Layers["mrmo"].GetFg(x + ox, y + oy);
     }
-    
+
     internal void Draw(int x, int y, Glyph g)
     {
         var (ox, oy) = DrawOffset;
         _game.Layers["mrmo"].Set(x + ox, y + oy, g);
     }
-    
+
     internal void Draw(int x, int y, string s)
     {
         var (ox, oy) = DrawOffset;
         _game.Layers["mrmo"].Set(x + ox, y + oy, s);
     }
-    
+
     internal void Draw(int x, int y, Color c)
     {
         var (ox, oy) = DrawOffset;
         _game.Layers["mrmo"].Set(x + ox, y + oy, c);
     }
-    
+
     internal void Draw(int x, int y, string s, Color c)
     {
         var (ox, oy) = DrawOffset;
         _game.Layers["mrmo"].Set(x + ox, y + oy, s, c);
     }
-    
+
     internal void Draw(int x, int y, string s, Color c, Color b)
     {
         var (ox, oy) = DrawOffset;
@@ -90,9 +91,14 @@ public abstract class Screen : IScreen
     public abstract void Update(GameTime gameTime);
 
     public virtual void PreDraw(SpriteBatch batch, GameTime gameTime)
-    {}
+    {
+    }
 
-    public abstract void Draw(SpriteBatch batch, GameTime gameTime);
+    public abstract void LayerDraw(GameTime gameTime);
+
+    public virtual void Draw(SpriteBatch batch, GameTime gameTime)
+    {
+    }
 
     public virtual void PostDraw(SpriteBatch batch, GameTime gameTime)
     {}
@@ -158,8 +164,8 @@ public abstract class Screen : IScreen
             _game.Layers["ascii"].Set(20 * x + 8, 5 * y + 11, $"{character.Vig}", index == 2 ? affinityColors[2] : Color.White);
             _game.Layers["ascii"].Set(20 * x + 11, 5 * y + 11, $"{character.Wil}", index == 3 ? affinityColors[3] : Color.White);
 
-            _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 8, $"SHLD{character.Shield}", Color.Gray);
-            _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 9, $"RES{character.Resist}% ", Color.Gray);
+            // _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 8, $"SHLD{character.Shield}", Color.Gray);
+            // _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 9, $"RES{character.Resist}% ", Color.Gray);
             _game.Layers["ascii"].Set(20 * x + 6, 5 * y + 10, $"{character.Job}", Color.White);
 
             _game.Layers["portrait2"].SetFlip(u, v, SpriteEffects.FlipHorizontally);

@@ -1013,6 +1013,16 @@
 /processorParam:TextureFormat=Color
 /build:mapmotext.png
 
+#begin monogram.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:monogram.spritefont
+
+#begin monogram.ttf
+/copy:monogram.ttf
+
 #begin MRMOTEXT.png
 /importer:TextureImporter
 /processor:TextureProcessor

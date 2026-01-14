@@ -486,7 +486,7 @@ public class TacticMapScreen : Screen
                 }
                 break;
             case EItemEffect.Guard:
-                target.Guard += str;
+                target.Guard.Up(str);
                 break;
             case EItemEffect.Speed:
                 target.Speed += str;
@@ -596,7 +596,7 @@ public class TacticMapScreen : Screen
     
     public bool ShouldHardUpdate { get; set; } = true;
     
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
+    public override void LayerDraw(GameTime gameTime)
     {
         if (CoroutineHandler.IsActive())
         {
@@ -650,7 +650,7 @@ public class TacticMapScreen : Screen
                 new Vector2(34.0f, 4.0f), SpriteEffects.None, 0);
             
             batch.Draw(_pixel, new Vector2(190 + 64 * n, 424), 
-                null, Color.Red, 0.0f, Vector2.Zero, 
+                null, Color.Blue, 0.0f, Vector2.Zero, 
                 new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
                 SpriteEffects.None, 0);
 
@@ -762,7 +762,7 @@ public class TacticMapScreen : Screen
             var n = 4 + (4 - j - 1);
             batch.Draw(_pixel, new Vector2(864 + 64 * j, 424), null, Color.White, 0.0f, Vector2.Zero, new Vector2(34.0f, 4.0f),
                 SpriteEffects.None, 0);
-            batch.Draw(_pixel, new Vector2(864 + 64 * j, 424), null, Color.Red, 0.0f, Vector2.Zero, new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
+            batch.Draw(_pixel, new Vector2(864 + 64 * j, 424), null, Color.Blue, 0.0f, Vector2.Zero, new Vector2(34.0f * ((float)_times[n] / 100.0f), 4.0f),
                 SpriteEffects.None, 0);
             
             if (!_timeFlow) continue;

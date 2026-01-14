@@ -37,7 +37,7 @@ namespace SINEATER.Game.Screens
         string[] fieldsAffinity = ["POI", "CLA", "WIL", "VIG"];
         Color[] affinityColors = [Color.CornflowerBlue, Color.GreenYellow, Color.ForestGreen, Color.Lerp(Color.Pink, Color.Purple, 0.5f)];
 
-        public override void Draw(SpriteBatch batch, GameTime gameTime)
+        public override void LayerDraw(GameTime gameTime)
         {
             _game.Layers["ascii"].Clear();
             _game.Layers["mrmo"].Clear();

@@ -78,6 +78,14 @@ public static class Corners
 
 public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2 mapSize, Vector2 edge, float scale, Vector2 offset, Vector2 empty)
 {
+    public float Scale => scale;
+    public Vector2 Edge => edge;
+    public Texture2D Texture => font;
+    public Vector2 Size => tileSize;
+    public Vector2 MapSize => mapSize;
+    public Vector2 Empty => empty;
+    public Vector2 Offset => offset;
+    
     private Vector2 _offset = Vector2.Zero;
     private readonly Dictionary<int, Glyph> _glyphs = new();
     private readonly Dictionary<char, (int, int)> _chars = new();
@@ -368,7 +376,6 @@ public class TextLayer(Texture2D font, Vector2 screen, Vector2 tileSize, Vector2
             }
         }
     }
-
     
     public void SetFrame(Vector2 start, Vector2 end, Glyph h, Glyph v)
     {

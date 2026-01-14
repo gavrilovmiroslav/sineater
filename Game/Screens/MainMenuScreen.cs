@@ -34,6 +34,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
+        _font = _game.Content.Load<SpriteFont>("monogram");
         _state = EMainMenuState.Waiting;
     }
 
@@ -54,6 +55,15 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void Update(GameTime gameTime)
     {
+        if (_state == EMainMenuState.Fading)
+        {
+            if (_fadeTime > 1.0f)
+            {
+                _state = EMainMenuState.Done;
+                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
+            }
+        }
+        
         if (CoroutineHandler.IsActive())
         {
             CoroutineHandler.Update();
@@ -78,31 +88,25 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         }
     }
 
+    public override void LayerDraw(GameTime gameTime)
+    {
+    }
+
     private float t = 3.0f;
     private string[] dots = new[] { ".", "..", "..." };
+    private float sinWave = 0.0f;
+    private SpriteFont _font;
+    
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
-        _game.Layers["mini"].Set(104, 20, $"v1.0.33");
-        _game.Layers["mini"].Set(40, 35, "Note: This version DOES NOT contain a full loop. You can't LOSE per se.");
-        _game.Layers["mini"].Set(37, 36, "Current goal: beat the north temple by collecting and equipping stronger items.");
-        t += 0.01f;
-        
-        _game.Layers["ascii"].Clear();
+        var mid = (int) (SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2.0f);
         if (_state == EMainMenuState.Waiting)
         {
-            _game.Layers["ascii"].Set(24, 20, "PRESS ANY KEY TO ABSOLVE...");
+            batch.DrawText(mid, 700, _font, "Press [SPACE] to start");
         }
         else if (_state == EMainMenuState.Loading)
         {
-            _game.Layers["ascii"].Set(32, 20, $"LOADING{dots[((int)t) % 3]}");
-        }
-        if (_state == EMainMenuState.Fading)
-        {
-            if (_fadeTime > 1.0f)
-            {
-                _state = EMainMenuState.Done;
-                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
-            }
+            batch.DrawText(mid, 700, _font, $"Loading{dots[((int)t) % 3]}");
         }
     }
 

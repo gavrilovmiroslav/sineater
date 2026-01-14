@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,93 +17,6 @@ using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER.Game.Screens;
-
-public class CoBlink(Screen level): IEnumerable
-{
-    public IEnumerator GetEnumerator()
-    {
-        for (var k = 0; k < 5; k++)
-        {
-            for (int i = 0; i < 24; i++)
-            {
-                for (int j = 0; j < 22; j++)
-                {
-                    level.Draw(i, j, " ", Color.Black);
-                }
-            }
-
-            yield return new WaitForSeconds(0.01f * (6 - k));
-            level.DrawWorld();
-            yield return new WaitForSeconds(0.001f);
-        }
-
-        yield return new WaitForSeconds(0.15f);
-    }
-}
-
-public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc, Reward rew): IEnumerable
-{
-    public IEnumerator GetEnumerator()
-    {
-        yield return new CoBlink(map);
-        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, (x, y), enc, rew, map.TimeOfDay));
-    }
-}
-
-public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
-{
-    public IEnumerator GetEnumerator()
-    {
-        yield return new ShowPopupAndWaitForKey(
-            new Vector2(map.DrawOffset.X, 3 + 5),
-            new Vector2(map.DrawOffset.X * 4 - 5, 10 + 5), (game, box) => box.Add(text));
-    }
-}
-
-public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) : IEnumerable
-{
-    public IEnumerator GetEnumerator()
-    {
-        var chr = SineaterGame.Instance.Party.Characters[map.PlayerSelectedIndex];
-        var (u, v) = chr.Job.GetImage();
-        var (ox, oy) = map.CurrentPlayerPosition;
-        var frame = 0;
-        for (var i = 0; i < t.HoursSpent; i++)
-        {
-            map.HoursOfDay++;
-            if (map.HoursOfDay > 5)
-            {
-                map.AtmosphereIndex = (map.AtmosphereIndex + 1) % 4;
-                map.TimeOfDay = (ETimeOfDay)map.AtmosphereIndex;
-                map.HoursOfDay = 0;
-            }
-            map.DrawWorld(true);
-            
-            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
-            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
-            frame++;
-            yield return new WaitForSeconds(0.02f);
-            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
-            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
-            frame++;
-            yield return new WaitForSeconds(0.02f);
-        }
-
-        map.CurrentPlayerPosition.X = x;
-        map.CurrentPlayerPosition.Y = y;
-        
-        if (t.FatigueGained > 0)
-        {
-            //SineaterGame.Instance.Party.Characters[0].AP.Add(EStatus.Fatigue, t.FatigueGained);
-        }
-
-        if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
-        {
-            yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>");
-            map.World.GeneralDescriptions.Visit(x, y);
-        }
-    }
-}
 
 public class WorldMapScreen : Screen
 {
@@ -245,8 +159,38 @@ public class WorldMapScreen : Screen
         }
     }
 
-    public override void PostDraw(SpriteBatch batch, GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
+        foreach (var l in SineaterGame.Instance.Layers)
+        {
+            l.Value.Clear();
+        }
+        
+        var (map, fov) = Maps[CurrentMapLayer];
+        var (x, y) = CurrentPlayerPosition;
+        var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
+        var radius = h switch
+        {
+            < 6 => 3,
+            < 10 => 4,
+            < 16 => 5,
+            < 19 => 4,
+            < 22 => 3,
+            _ => 2
+        };
+        
+        var layer = SineaterGame.Instance.Layers["mrmo"];
+        foreach (var cell in fov.ComputeFov(x, y, radius, true))
+        {
+            var ch = _rex.Layers[1][cell.X, cell.Y];
+            var c = ch.Character;
+            var cy = c == 32 ? 63 : c / (int)layer.MapSize.X;
+            var cx = c == 32 ? 15 : c % (int)layer.MapSize.X;
+            var b = ch.Background;
+            if (b == SadRex.Color.Transparent) continue;
+            var f = ch.Foreground;
+            batch.DrawGlyph(200 + cell.X * 32, 200 + cell.Y * 32, "mrmo", new Glyph(cx, cy, b.ToXNA(), f.ToXNA()), 2.0f);
+        }
     }
 
     public override void SubmenuActivate(string opt)
@@ -289,139 +233,139 @@ public class WorldMapScreen : Screen
 
     public override void DrawWorld(bool noPlayer = false)
     {
-        if (_shouldUpdateView)
-        {
-            _shouldUpdateView = false;
-        }
-
-        foreach (var layer in SineaterGame.LayerNames)
-        {
-            if (layer == "input" || layer == "inputtext")
-                continue;
-
-            _game.Layers[layer].Clear();
-        }
-
-        var (map, fov) = Maps[CurrentMapLayer];
-        var (x, y) = CurrentPlayerPosition;
-        var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
-        var radius = h switch
-        {
-            < 6 => 3,
-            < 10 => 4,
-            < 16 => 5,
-            < 19 => 4,
-            < 22 => 3,
-            _ => 2
-        };
-        
-        var light = fov.ComputeFov(x, y, radius, true);
-        
-        var p = Ambient.Atmospheres[(int)TimeOfDay];
-        var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
-        
-        var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, HoursOfDay / 6.0f);
-        var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, HoursOfDay / 6.0f);
-        var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, HoursOfDay / 6.0f);
-        var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, HoursOfDay / 6.0f);
-        var gr = float.Lerp(p.Grayscale, n.Grayscale, HoursOfDay / 6.0f);
-        AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr),  gr);
-        
-        var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
-        for (var l = 2; l > 0; l--)
-        {
-            var dimLight = fov.ComputeFov(x, y, radius + l, true);
-            _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
-                selected: dimLight.Select(c => (c.X, c.Y)));
-        }
-
-        _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
-        _game.Layers["map"].SetRex(8, 1, _rex, CurrentMapLayer, selected: light.Select(c => (c.X, c.Y)).ToList(), atmo: atmo);
-        
-        var tick = _time is < 400 or > 800 and < 1200;
-        
-        var chr = _game.Party.Characters[PlayerSelectedIndex];
-        var (u, v) = chr.Job.GetImage();
-        if (!noPlayer)
-        {
-            var bgc = _game.Layers["map"].GetBg(x + 8, y + 1);
-            if (_submenuDelta == (0, 0))
-            {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
-            }
-            else
-            {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
-                if (tick)
-                {
-                    _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 1,
-                        new Glyph(8, 74 - 16, bgc, Color.White));
-                }
-            }
-        }
-
-        if (_debug)
-        {
-            if (_time % 400 < 200)
-            {
-                var (dx, dy) = _lastPosBeforeDebug;
-                _game.Layers["mrmo"].Set(dx + 8, dy + 1, "@", Color.Gray, Color.Black);
-            }
-
-            for (var i = 0; i < 20; i++)
-            {
-                for (var j = 0; j < 20; j++)
-                {
-                    var exists = _world.AnythingOn(i, j);
-                    var changed = _world.AnythingChanged(i, j);
-                    if (!exists) continue;
-                    _game.Layers["mrmo"].Set(i + 8, j + 1, "*", changed ? Color.Red : Color.Green, Color.Black);
-                }
-            }
-
-            if (_time < 800)
-            {
-                _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, Color.Black, Color.White));
-            }
-        }
-        
-        //_game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
-
-        DrawParty();
-        
-        _game.Layers["ascii"].Set(4, 0, new Glyph(5, 0, Color.Transparent, Color.White));
-        _game.Layers["ascii"].Set(6, 0, $"{HourNames[h]} ({TimeOfDay})");
-        
-        var (nx, ny) = (CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
-
-        if (_world.Encounters.Get(nx, ny) is {} enc)
-        {
-           _game.Layers["ascii"].Set(45, 0, $"Encounter: ");
-           
-            for (var i = 0; i < 4; i++)
-            {
-                var en = enc.Enemies[4 - i - 1];
-                var (uu, vv) = en.GetIcon();
-                Draw(20 + i, -1, new Glyph(uu, vv, Color.Transparent, Color.White));
-            }
-        }
+        // if (_shouldUpdateView)
+        // {
+        //     _shouldUpdateView = false;
+        // }
+        //
+        // foreach (var layer in SineaterGame.LayerNames)
+        // {
+        //     if (layer == "input" || layer == "inputtext")
+        //         continue;
+        //
+        //     _game.Layers[layer].Clear();
+        // }
+        //
+        // var (map, fov) = Maps[CurrentMapLayer];
+        // var (x, y) = CurrentPlayerPosition;
+        // var h = ((int)TimeOfDay + 1) % 4 * 6 + HoursOfDay;
+        // var radius = h switch
+        // {
+        //     < 6 => 3,
+        //     < 10 => 4,
+        //     < 16 => 5,
+        //     < 19 => 4,
+        //     < 22 => 3,
+        //     _ => 2
+        // };
+        //
+        // var light = fov.ComputeFov(x, y, radius, true);
+        //
+        // var p = Ambient.Atmospheres[(int)TimeOfDay];
+        // var n = Ambient.Atmospheres[((int)TimeOfDay + 1) % 4];
+        //
+        // var bg = Color.Lerp(p.Bg.Tint, n.Bg.Tint, HoursOfDay / 6.0f);
+        // var bgStr = float.Lerp(p.Bg.Strength, n.Bg.Strength, HoursOfDay / 6.0f);
+        // var fg = Color.Lerp(p.Fg.Tint, n.Fg.Tint, HoursOfDay / 6.0f);
+        // var fgStr = float.Lerp(p.Fg.Strength, n.Fg.Strength, HoursOfDay / 6.0f);
+        // var gr = float.Lerp(p.Grayscale, n.Grayscale, HoursOfDay / 6.0f);
+        // AtmosphereOverride = new Atmosphere((bg, bgStr), (fg, fgStr),  gr);
+        //
+        // var atmo = AtmosphereOverride ?? Ambient.Atmospheres[AtmosphereIndex];
+        // for (var l = 2; l > 0; l--)
+        // {
+        //     var dimLight = fov.ComputeFov(x, y, radius + l, true);
+        //     _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr * (0.12f * l * l + 1.0f), atmo: atmo,
+        //         selected: dimLight.Select(c => (c.X, c.Y)));
+        // }
+        //
+        // _game.Layers["map"].SetRexFg(8, 1, _rex, CurrentMapLayer, dim: true, grayscale: gr, atmo: atmo, selected: visited);
+        // _game.Layers["map"].SetRex(8, 1, _rex, CurrentMapLayer, selected: light.Select(c => (c.X, c.Y)).ToList(), atmo: atmo);
+        //
+        // var tick = _time is < 400 or > 800 and < 1200;
+        //
+        // var chr = _game.Party.Characters[PlayerSelectedIndex];
+        // var (u, v) = chr.Job.GetImage();
+        // if (!noPlayer)
+        // {
+        //     var bgc = _game.Layers["map"].GetBg(x + 8, y + 1);
+        //     if (_submenuDelta == (0, 0))
+        //     {
+        //         _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
+        //     }
+        //     else
+        //     {
+        //         _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, bgc, Color.White));
+        //         if (tick)
+        //         {
+        //             _game.Layers["mrmo"].Set(x + _submenuDelta.X + 8, y + _submenuDelta.Y + 1,
+        //                 new Glyph(8, 74 - 16, bgc, Color.White));
+        //         }
+        //     }
+        // }
+        //
+        // if (_debug)
+        // {
+        //     if (_time % 400 < 200)
+        //     {
+        //         var (dx, dy) = _lastPosBeforeDebug;
+        //         _game.Layers["mrmo"].Set(dx + 8, dy + 1, "@", Color.Gray, Color.Black);
+        //     }
+        //
+        //     for (var i = 0; i < 20; i++)
+        //     {
+        //         for (var j = 0; j < 20; j++)
+        //         {
+        //             var exists = _world.AnythingOn(i, j);
+        //             var changed = _world.AnythingChanged(i, j);
+        //             if (!exists) continue;
+        //             _game.Layers["mrmo"].Set(i + 8, j + 1, "*", changed ? Color.Red : Color.Green, Color.Black);
+        //         }
+        //     }
+        //
+        //     if (_time < 800)
+        //     {
+        //         _game.Layers["mrmo"].Set(x + 8, y + 1, new Glyph(u, tick ? v : v - 4, Color.Black, Color.White));
+        //     }
+        // }
+        //
+        // //_game.PartyActionPoints.Draw(DrawOffset.X + 2, 26);
+        //
+        // DrawParty();
+        //
+        // _game.Layers["ascii"].Set(4, 0, new Glyph(5, 0, Color.Transparent, Color.White));
+        // _game.Layers["ascii"].Set(6, 0, $"{HourNames[h]} ({TimeOfDay})");
+        //
+        // var (nx, ny) = (CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
+        //
+        // if (_world.Encounters.Get(nx, ny) is {} enc)
+        // {
+        //    _game.Layers["ascii"].Set(45, 0, $"Encounter: ");
+        //    
+        //     for (var i = 0; i < 4; i++)
+        //     {
+        //         var en = enc.Enemies[4 - i - 1];
+        //         var (uu, vv) = en.GetIcon();
+        //         Draw(20 + i, -1, new Glyph(uu, vv, Color.Transparent, Color.White));
+        //     }
+        // }
     }
     
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
+    public override void LayerDraw(GameTime gameTime)
     {
-        _game.Layers["input"].Clear();
-        DrawControls();
+        //_game.Layers["input"].Clear();
+        //DrawControls();
 
         if (CoroutineHandler.IsActive())
         {
             return;
         }
 
-        _game.Layers["portrait"].Clear();
-        _game.Layers["porsmol"].Clear();
+        //_game.Layers["portrait"].Clear();
+        //_game.Layers["porsmol"].Clear();
 
-        DrawWorld();
-        DrawSubmenu();
+        //DrawWorld();
+        //DrawSubmenu();
     }
 
     private void DrawSubmenu()

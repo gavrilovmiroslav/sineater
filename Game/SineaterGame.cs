@@ -204,7 +204,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         ibmMiniLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
         Layers.Add("mini", ibmMiniLayer);
         
-        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(2, 0), new Vector2(31, 7));
+        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(0, 0), new Vector2(31, 7));
         ibmLayer.SetOffset(1, 0);
         ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
         ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
@@ -290,9 +290,9 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
     protected override void Draw(GameTime gameTime)
     {
-        if (ScreenStack?.Peek() is { } screen)
+        if (ScreenStack?.TryPeek(out var screen) ?? false)
         {
-            screen.Draw(_spriteBatch, gameTime);
+            screen.LayerDraw(gameTime);
         }
         
         var focus = _focus.Get();
@@ -315,6 +315,15 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         {
             Layers[layer].Draw(_spriteBatch);
         }
+
+        if (ScreenStack?.TryPeek(out var scr) ?? false)
+        {
+            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
+                DepthStencilState.Default, rasterizerState);
+            scr.Draw(_spriteBatch, gameTime);
+            _spriteBatch.End();
+        }
+
         if (ScreenStack?.TryPeek(out var scrn2) ?? false)
         {
             _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);

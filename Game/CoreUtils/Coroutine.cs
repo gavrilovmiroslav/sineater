@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
 
 namespace SINEATER.Game.CoreUtils;
@@ -341,3 +342,91 @@ public class CoBlinkCharacter(Character chr, Screen screen, Color? back = null, 
         }
     }
 }
+
+public class CoBlink(Screen level): IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        for (var k = 0; k < 5; k++)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                for (int j = 0; j < 22; j++)
+                {
+                    level.Draw(i, j, " ", Color.Black);
+                }
+            }
+
+            yield return new WaitForSeconds(0.01f * (6 - k));
+            level.DrawWorld();
+            yield return new WaitForSeconds(0.001f);
+        }
+
+        yield return new WaitForSeconds(0.15f);
+    }
+}
+
+public class CoStartCombat(WorldMapScreen map, int x, int y, Encounter enc, Reward rew): IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new CoBlink(map);
+        SineaterGame.Instance.ScreenStack.Push(new TacticMapScreen(SineaterGame.Instance, (x, y), enc, rew, map.TimeOfDay));
+    }
+}
+
+public class CoShowInspectText(WorldMapScreen map, string text) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new ShowPopupAndWaitForKey(
+            new Vector2(map.DrawOffset.X, 3 + 5),
+            new Vector2(map.DrawOffset.X * 4 - 5, 10 + 5), (game, box) => box.Add(text));
+    }
+}
+
+public class CoPassTimeAndMoveTo(WorldMapScreen map, int x, int y, SlowDown t) : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        var chr = SineaterGame.Instance.Party.Characters[map.PlayerSelectedIndex];
+        var (u, v) = chr.Job.GetImage();
+        var (ox, oy) = map.CurrentPlayerPosition;
+        var frame = 0;
+        for (var i = 0; i < t.HoursSpent; i++)
+        {
+            map.HoursOfDay++;
+            if (map.HoursOfDay > 5)
+            {
+                map.AtmosphereIndex = (map.AtmosphereIndex + 1) % 4;
+                map.TimeOfDay = (ETimeOfDay)map.AtmosphereIndex;
+                map.HoursOfDay = 0;
+            }
+            map.DrawWorld(true);
+            
+            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            frame++;
+            yield return new WaitForSeconds(0.02f);
+            //SineaterGame.Instance.Layers["mrmo"].Set(ox + 8, oy + 2,
+            //    new Glyph(u, frame % 2 == 0 ? v : v - 4, Color.Black, chr.Tint));
+            frame++;
+            yield return new WaitForSeconds(0.02f);
+        }
+
+        map.CurrentPlayerPosition.X = x;
+        map.CurrentPlayerPosition.Y = y;
+        
+        if (t.FatigueGained > 0)
+        {
+            //SineaterGame.Instance.Party.Characters[0].AP.Add(EStatus.Fatigue, t.FatigueGained);
+        }
+
+        if (map.World.GeneralDescriptions.Has(x, y) && !map.World.GeneralDescriptions.IsVisited(x, y))
+        {
+            yield return new CoShowInspectText(map, map.World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>");
+            map.World.GeneralDescriptions.Visit(x, y);
+        }
+    }
+}
+
