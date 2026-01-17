@@ -7,6 +7,7 @@ using SINEATER.Game.Loadable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SINEATER.Game.Components;
 
 namespace SINEATER.Game.Screens
 {
@@ -310,9 +311,10 @@ namespace SINEATER.Game.Screens
             }
             else if (InputM.IsActive(EInputAction.StartFight))
             {
-
-                var enc = _world.Encounters.Get(_combatPositionX, _combatPositionY);
-                var rew = _world.Rewards.Get(_combatPositionX, _combatPositionY);
+                var tile = _world.Get(_combatPositionX, _combatPositionY);
+                var enc = _world.ECS.Get<CompEncounter>(tile);
+                var rew = _world.ECS.Get<CompReward>(tile);
+                
                 if (enc is { } encounter && rew is { } reward)
                 {
                     _game.ScreenStack.Pop();

@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSharp;
+using SINEATER.Game.Components;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
@@ -43,7 +44,7 @@ public class TacticMapScreen : Screen
     private bool _over = false;
     private ETimeOfDay _timeOfDay;
     
-    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward, ETimeOfDay time) : base(game)
+    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, CompEncounter encounter, CompReward reward, ETimeOfDay time) : base(game)
     {
         _timeOfDay = time;
         _xy = xy;
@@ -155,7 +156,10 @@ public class TacticMapScreen : Screen
 
     private IEnumerable Victory(List<Item> rewards)
     {
-        SineaterGame.Instance.World.Encounters.Remove(_xy.X, _xy.Y);
+        var world = SineaterGame.Instance.World; 
+        var tile = world.Get(_xy.X, _xy.Y);
+        world.ECS.Remove<CompEncounter>(tile);
+
         yield return new ShowPopupAndWaitForKey(new Vector2(2, 5), new Vector2(33, 14), (s, t) =>
         {
             t.Add("VICTORY!", Color.Green);

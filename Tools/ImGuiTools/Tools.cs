@@ -127,19 +127,19 @@ namespace SINEATER.Tools.ImGuiTools
                         var changed = false;
                         var (x, y) = w.CurrentPlayerPosition;
                         ImGui.Text($"Current Tile: {x}, {y}");
-                        MakeButtonFor(w.World.GeneralDescriptions, x, y);
-                        MakeButtonFor(w.World.SpecificDescriptions, x, y);
-                        MakeButtonFor(w.World.Encounters, x, y);
-                        MakeButtonFor(w.World.SlowDowns, x, y);
-                        ImGui.Separator();
-                        changed |= MakeEditorFor(w.World.GeneralDescriptions, x, y);
-                        changed |= MakeEditorFor(w.World.SpecificDescriptions, x, y);
-                        changed |= MakeEditorFor(w.World.Encounters, x, y);
-                        changed |= MakeEditorFor(w.World.SlowDowns, x, y);
-                        if (changed)
-                        {
-                            w.World.Save();
-                        }
+                        // MakeButtonFor(w.World.GeneralDescriptions, x, y);
+                        // MakeButtonFor(w.World.SpecificDescriptions, x, y);
+                        // MakeButtonFor(w.World.Encounters, x, y);
+                        // MakeButtonFor(w.World.SlowDowns, x, y);
+                        // ImGui.Separator();
+                        // changed |= MakeEditorFor(w.World.GeneralDescriptions, x, y);
+                        // changed |= MakeEditorFor(w.World.SpecificDescriptions, x, y);
+                        // changed |= MakeEditorFor(w.World.Encounters, x, y);
+                        // changed |= MakeEditorFor(w.World.SlowDowns, x, y);
+                        // if (changed)
+                        // {
+                        //     w.World.Save();
+                        // }
                     }
                     ImGui.EndTabItem();
                 }

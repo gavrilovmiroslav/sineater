@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Arch.Core;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Microsoft.Xna.Framework;
+using SINEATER.Game.Components;
 using SINEATER.Game.Gameplay;
 using SINEATER.Game.Loadable;
 
@@ -81,32 +83,21 @@ public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComp
     }
 }
 
-public class World(string path)
+public class World
 {
-    public string Path => path;
-    public readonly ComponentStorage<GeneralDescription> GeneralDescriptions = new();
-    public readonly ComponentStorage<SpecificDescription> SpecificDescriptions = new();
-    public readonly ComponentStorage<Encounter> Encounters = new();
-    public readonly ComponentStorage<Reward> Rewards = new();
-    public readonly ComponentStorage<SlowDown> SlowDowns = new();
-    
-    public bool AnythingOn(int x, int y)
-    {
-        if (GeneralDescriptions.Has(x, y)) return true;
-        if (SpecificDescriptions.Has(x, y)) return true;
-        if (Encounters.Has(x, y)) return true;
-        if (Rewards.Has(x, y)) return true;
-        if (SlowDowns.Has(x, y)) return true;
-        return false;
-    }
+    public Arch.Core.World ECS { get; set; }
+    private readonly Dictionary<(int X, int Y), Entity> _entitiesOnMaps = [];
+    private readonly Dictionary<Entity, (int X, int Y)> _positionByEntity = [];
 
-    public bool AnythingChanged(int x, int y)
+    public Entity Get(int x, int y) => _entitiesOnMaps[(x, y)];
+    public (int X, int Y) Get(Entity e) => _positionByEntity[e];
+    
+    public string Path { get; }
+
+    public World(string path)
     {
-        return !(GeneralDescriptions.IsOkay(x, y) || 
-            SpecificDescriptions.IsOkay(x, y) || 
-            Encounters.IsOkay(x, y) ||
-            Rewards.IsOkay(x, y) ||
-            SlowDowns.IsOkay(x, y));
+        Path = path;
+        ECS = Arch.Core.World.Create();
     }
     
     public void Save()
@@ -133,24 +124,24 @@ public class World(string path)
         
         const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
         var inspect = res.Get(APPS_ID, $"Inspect!A1:T20").Execute();
-        var slowdown = res.Get(APPS_ID, $"Time!A1:T20").Execute();
         var combats = res.Get(APPS_ID, $"Combat!A1:T20").Execute();
         var rewards = res.Get(APPS_ID, $"Rewards!A1:T20").Execute();
+        
         var world = new World(path);
         
         for (var i = 0; i < 20; i++)
         {
             for (var j = 0; j < 20; j++)
             {
+                var tile = world.ECS.Create();
+                world.ECS.Add(tile, new CompWorldLocation(i, j));
+                world._entitiesOnMaps.Add((i, j), tile);
+                world._positionByEntity.Add(tile, (i, j));
+                
                 var text = inspect.Values[j][i].ToString() ?? "";
-                if (text.Length > 0 && text.Contains(" "))
+                if (text.Length > 0 && text.Contains(' '))
                 {
-                    world.GeneralDescriptions.Add((i, j), new GeneralDescription(text));
-                }
-
-                if (int.TryParse(slowdown.Values[j][i].ToString() ?? "/", out var time))
-                {
-                    world.SlowDowns.Add((i, j), new SlowDown(time, time > 3 ? time - 3 : 0));
+                    world.ECS.Add(tile, new CompDialogue([], text)); // TODO: tags
                 }
 
                 // COMBAT
@@ -180,7 +171,7 @@ public class World(string path)
 
                         if (enemies.Count > 0)
                         {
-                            world.Encounters.Add((i, j), new Encounter(enemies));
+                            world.ECS.Add(tile, new CompEncounter(enemies));
                         }
                     }
                 }
@@ -212,7 +203,7 @@ public class World(string path)
 
                         if (rewardList.Count > 0)
                         {
-                            world.Rewards.Add((i, j), new Reward(rewardList));
+                            world.ECS.Add(tile, new CompReward(rewardList));
                         }
                     }
                 }

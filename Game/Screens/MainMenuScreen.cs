@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
+using SINEATER.Game.Gameplay;
+using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
@@ -27,6 +29,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _fmodCredits;
     private EMainMenuState _state = EMainMenuState.Waiting;
     private float _fadeTime = 0.0f;
+    private Character _wizard = new PartyMember(ECharacterClass.Wizard);
     
     public override void Initialize(SineaterGame game)
     {
@@ -34,7 +37,9 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
-        _font = _game.Content.Load<SpriteFont>("monogram");
+
+        _wizard.Items[0] = new Item() { Name = "Misericorde", PrimaryTargets = "xx--" };
+        _wizard.Items[1] = new Item() { Name = "Ash Branch", PrimaryTargets = "XXXX" };
         _state = EMainMenuState.Waiting;
     }
 
@@ -87,27 +92,31 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 break;
         }
     }
-
+    
     public override void LayerDraw(GameTime gameTime)
     {
     }
 
     private float t = 3.0f;
+    private float tt = 0.0f;
     private string[] dots = new[] { ".", "..", "..." };
     private float sinWave = 0.0f;
-    private SpriteFont _font;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
         var mid = (int) (SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2.0f);
         if (_state == EMainMenuState.Waiting)
         {
-            batch.DrawText(mid, 700, _font, "Press [SPACE] to start");
+            batch.DrawTextCenter(mid + Rnd.Instance.D4 - 2, 700 + Rnd.Instance.D4 - 2, SineaterGame.Instance.Font, "Press [SPACE] to start", rot: tt);
+            tt += 0.01f;
         }
         else if (_state == EMainMenuState.Loading)
         {
-            batch.DrawText(mid, 700, _font, $"Loading{dots[((int)t) % 3]}");
+            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading{dots[((int)t) % 3]}");
         }
+        
+        Drawing.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."], batch);
+        Drawing.CharacterProfile(200, 600, _wizard, 3, batch);
     }
 
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)

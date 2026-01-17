@@ -6,7 +6,6 @@ using MonoGame.ImGui;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
-using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
 using SINEATER.Tools.SinMod;
@@ -25,6 +24,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
     public Texture2D Mrmo => _mrmo;
     
+    public Texture2D Frames => _frames;
+    public Texture2D Portraits => _portraits;
+    public Texture2D Pins => _pins;
+    private Texture2D _frames;
     private Texture2D _mrmo;
     private Texture2D _mapmotext;
     private Texture2D _ibm;
@@ -32,6 +35,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D _largeNums;
     private Texture2D _portraits;
     private Texture2D _statuses;
+    private Texture2D _pins;
     private Texture2D[] _room = new Texture2D[24];
     private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
     private float _dHour;
@@ -56,6 +60,9 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public World World { get; set; }
 
     private IScreen _lastScreen;
+    public SpriteFont Font;
+    public SpriteFont FontMono;
+    public SpriteFont FontBold;
 
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
@@ -123,14 +130,19 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _renderTargetMonitor = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         
         Party = new Party();
-        
+
+        _frames = Content.Load<Texture2D>("Frames32px");
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _mapmotext = Content.Load<Texture2D>("mapmotext");
         _ibm = Content.Load<Texture2D>("Codepage");
         _inputText = Content.Load<Texture2D>("Codepage");
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
-
+        _pins = Content.Load<Texture2D>("pins");
+        Font = Content.Load<SpriteFont>("eldring");
+        FontMono = Content.Load<SpriteFont>("monogram");
+        FontBold = Content.Load<SpriteFont>("eldring-bold");
+        
         _inputs[0] = Content.Load<Texture2D>("inputs/KEYBOARD/KEYBOARD");
         _inputs[1] = Content.Load<Texture2D>("inputs/XBOX/XBOX");
         
@@ -318,8 +330,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         if (ScreenStack?.TryPeek(out var scr) ?? false)
         {
-            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
-                DepthStencilState.Default, rasterizerState);
+            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
             scr.Draw(_spriteBatch, gameTime);
             _spriteBatch.End();
         }

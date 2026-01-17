@@ -31,6 +31,7 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Arch" Version="2.1.0" />
         <PackageReference Include="FmodForFoxes" Version="3.2.0" />
         <PackageReference Include="FmodForFoxes.Desktop" Version="3.2.0" />
         <PackageReference Include="Google.Apis.Sheets.v4" Version="1.70.0.3819" />
