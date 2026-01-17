@@ -24,7 +24,7 @@ enum EMainMenuState
 public class MainMenuScreen(SineaterGame game) : Screen(game)
 {
     private Texture2D _logo;
-    private Texture2D _pixel;
+    
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
     private EMainMenuState _state = EMainMenuState.Waiting;
@@ -33,13 +33,28 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void Initialize(SineaterGame game)
     {
-        _pixel = _game.Content.Load<Texture2D>("pixel");
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
 
-        _wizard.Items[0] = new Item() { Name = "Misericorde", PrimaryTargets = "xx--" };
-        _wizard.Items[1] = new Item() { Name = "Ash Branch", PrimaryTargets = "XXXX" };
+        _wizard.Items[0] = new Item
+        {
+            Name = "Misericorde", 
+            PrimaryTargets = "xxx-",
+            PrimaryEffect = EItemEffect.Attack,
+            PrimaryEffectModifier = 2,
+            SecondaryStat = EStat.Clarity, 
+            SecondaryEffect = EBonusEffect.TargetAll
+        };
+        _wizard.Items[1] = new Item
+        {
+            Name = "Ash Branch", 
+            PrimaryTargets = "XXXX", 
+            PrimaryEffect = EItemEffect.Guard,
+            PrimaryEffectModifier = 1,
+            SecondaryStat = EStat.Vigor, 
+            SecondaryEffect = EBonusEffect.PlusMod
+        };
         _state = EMainMenuState.Waiting;
     }
 
@@ -114,9 +129,10 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading{dots[((int)t) % 3]}");
         }
-        
-        Drawing.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."], batch);
-        Drawing.CharacterProfile(200, 600, _wizard, 3, batch);
+
+        var rc = new Drawing.RenderContext(batch, gameTime);
+        rc.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."]);
+        rc.CharacterProfile(200, 600, _wizard, 3);
     }
 
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
@@ -127,17 +143,18 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void PostDraw(SpriteBatch batch, GameTime gameTime)
     {
+        var pixel = SineaterGame.Instance.Pixel; 
         if (_state == EMainMenuState.Fading)
         {
             _fadeTime += 0.01f;
-            batch.Draw(_pixel, new Vector2(0, 0), null,
+            batch.Draw(pixel, new Vector2(0, 0), null,
                 new Color(0, 0, 0, _fadeTime), 0.0f, new Vector2(0, 0),
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
         else if (_state == EMainMenuState.Done)
         {
-            batch.Draw(_pixel, new Vector2(0, 0), null,
+            batch.Draw(pixel, new Vector2(0, 0), null,
                 new Color(0, 0, 0, 1), 0.0f, new Vector2(0, 0),
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);

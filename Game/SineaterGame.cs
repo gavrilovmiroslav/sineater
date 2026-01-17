@@ -27,6 +27,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public Texture2D Frames => _frames;
     public Texture2D Portraits => _portraits;
     public Texture2D Pins => _pins;
+    public Texture2D Pixel => _pixel;
+    private Texture2D _pixel;
     private Texture2D _frames;
     private Texture2D _mrmo;
     private Texture2D _mapmotext;
@@ -94,7 +96,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
-
+        _pixel = Content.Load<Texture2D>("pixel");
+        
         this.Window.AllowUserResizing = true;
         
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
