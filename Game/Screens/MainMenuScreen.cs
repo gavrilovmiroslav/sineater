@@ -44,7 +44,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             PrimaryEffect = EItemEffect.Attack,
             PrimaryEffectModifier = 2,
             SecondaryStat = EStat.Clarity, 
-            SecondaryEffect = EBonusEffect.TargetAll
+            SecondaryEffect = EBonusEffect.TargetAll,
+            TimeGauge = 52
         };
         _wizard.Items[1] = new Item
         {
@@ -53,7 +54,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             PrimaryEffect = EItemEffect.Guard,
             PrimaryEffectModifier = 1,
             SecondaryStat = EStat.Vigor, 
-            SecondaryEffect = EBonusEffect.PlusMod
+            SecondaryEffect = EBonusEffect.PlusMod,
+            TimeGauge = 40
         };
         _state = EMainMenuState.Waiting;
     }
@@ -116,14 +118,15 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private float tt = 0.0f;
     private string[] dots = new[] { ".", "..", "..." };
     private float sinWave = 0.0f;
+    private bool selected = false;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
         var mid = (int) (SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2.0f);
         if (_state == EMainMenuState.Waiting)
         {
-            batch.DrawTextCenter(mid + Rnd.Instance.D4 - 2, 700 + Rnd.Instance.D4 - 2, SineaterGame.Instance.Font, "Press [SPACE] to start", rot: tt);
-            tt += 0.01f;
+        //    batch.DrawTextCenter(mid + Rnd.Instance.D4 - 2, 700 + Rnd.Instance.D4 - 2, SineaterGame.Instance.Font, "Press [SPACE] to start", rot: tt);
+        //    tt += 0.01f;
         }
         else if (_state == EMainMenuState.Loading)
         {
@@ -132,7 +135,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
 
         var rc = new Drawing.RenderContext(batch, gameTime);
         rc.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."]);
-        rc.CharacterProfile(200, 600, _wizard, 3);
     }
 
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)

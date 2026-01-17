@@ -9,6 +9,7 @@ using SINEATER.Game.Components;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Graphics;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.ImGuiTools;
 using Cell = RogueSharp.Cell;
@@ -59,7 +60,11 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
-        DrawCharacter(SineaterGame.Instance.Party.Characters[0], 100, 100, batch);
+        var rc = new Drawing.RenderContext(batch, gameTime);
+        for (var i = 0; i < 4; i++)
+        {
+            rc.CharacterProfile(60 + 300 * i, 800, SineaterGame.Instance.Party.Characters[i], i, false);
+        }
     }
     
     public override void LayerDraw(GameTime gameTime)

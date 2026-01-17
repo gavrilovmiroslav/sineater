@@ -25,6 +25,7 @@ public class Item
     public int DropChance;
     
     public List<string> Tags = [];
+    public int TimeGauge = 0;
 
     public bool BonusActivates(Character character, int index)
     {
