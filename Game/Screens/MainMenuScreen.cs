@@ -28,7 +28,7 @@ public enum EMainMenuState
 
 public class MainMenuStateContext
 {
-    public MainMenuScreen Screen;
+    public Task? LoaderTask = null;
     public EMainMenuState State;
     public float FadeTime;
     public bool WorldLoaded;
@@ -61,9 +61,13 @@ public static class MainMenuEventHandler
                 {
                     try
                     {
-                        Enemies.Instance.Load();
-                        Items.Instance.Load();
-                        SineaterGame.Instance.Party.MakeParty();
+                        @event.Menu.LoaderTask = Task.Run(() =>
+                        {
+                            Enemies.Instance.Load();
+                            Items.Instance.Load();
+                            SineaterGame.Instance.Party.MakeParty();
+                            Console.WriteLine("DONE!");
+                        });
 
                         var goToFadingEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.Fading);
                         EventBus.Send(ref goToFadingEvent);
@@ -102,13 +106,13 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     public override void Initialize(SineaterGame game)
     {
         _vfx = _game.Content.Load<Texture2D>("vfx11");
-        _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 0.5f);
+        _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 2.0f);
         _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
         
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
-        _ctx = new MainMenuStateContext() { Screen = this, State = EMainMenuState.Starting, FadeTime = 0.0f };
+        _ctx = new MainMenuStateContext() { LoaderTask = null, State = EMainMenuState.Starting, FadeTime = 0.0f };
 
         Task.Run(() =>
         {
@@ -130,8 +134,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 _ctx.FadeTime += SineaterGame.DeltaTime;
                 if (_ctx.FadeTime >= 1)
                 {
-                    var goToDoneEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Done);
-                    EventBus.Send(ref goToDoneEvent);
+                    if (_ctx.LoaderTask?.IsCompleted ?? false)
+                    {
+                        var goToDoneEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Done);
+                        EventBus.Send(ref goToDoneEvent);
+                    }
                 }
             }
             else if (_ctx.State is EMainMenuState.Waiting or EMainMenuState.LoadingFailed && InputM.IsActive(EInputAction.Confirm))
@@ -153,13 +160,9 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "Checking updates...");
         }
-        else if (_ctx.State == EMainMenuState.Waiting)
+        else if (_ctx.State is EMainMenuState.Waiting or EMainMenuState.Loading)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "Press [SPACE] to start");
-        }
-        else if (_ctx.State == EMainMenuState.Loading)
-        {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading...");
         }
         else if (_ctx.State == EMainMenuState.LoadingFailed)
         {
