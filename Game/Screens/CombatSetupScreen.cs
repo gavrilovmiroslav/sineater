@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
@@ -7,16 +6,17 @@ using SINEATER.Game.Loadable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SINEATER.Game.Components;
+using Encounter = SINEATER.Game.Gameplay.Encounter;
+using Reward = SINEATER.Game.Gameplay.Reward;
 
 namespace SINEATER.Game.Screens
 {
     public class CombatSetupScreen : Screen
     {
-        private World _world => _worldScreen.World;
+        private World _world => SineaterGame.Instance.World;
         private int _combatPositionX;
         private int _combatPositionY;
-        private Encounter _encounter;
+        private CoreUtils.Encounter _encounter;
         private WorldMapScreen _worldScreen;
 
         private int _selectedIndex = 0;
@@ -27,7 +27,7 @@ namespace SINEATER.Game.Screens
 
         List<Item> AvailableItems = new();
 
-        public CombatSetupScreen(SineaterGame game, int x, int y, WorldMapScreen worldScreen, Encounter encounter) : base(game)
+        public CombatSetupScreen(SineaterGame game, int x, int y, WorldMapScreen worldScreen, CoreUtils.Encounter encounter) : base(game)
         {
             _combatPositionX = x;
             _combatPositionY = y;
@@ -293,12 +293,6 @@ namespace SINEATER.Game.Screens
         static int delay = 0;
         public override void Update(GameTime gameTime)
         {
-            if (CoroutineHandler.IsActive())
-            {
-                CoroutineHandler.Update();
-                return;
-            }
-
             if (delay < 10)
             {
                 delay++;
@@ -312,14 +306,14 @@ namespace SINEATER.Game.Screens
             else if (InputM.IsActive(EInputAction.StartFight))
             {
                 var tile = _world.Get(_combatPositionX, _combatPositionY);
-                var enc = _world.ECS.Get<CompEncounter>(tile);
-                var rew = _world.ECS.Get<CompReward>(tile);
+                var enc = _world.ECS.Get<Encounter>(tile);
+                var rew = _world.ECS.Get<Reward>(tile);
                 
                 if (enc is { } encounter && rew is { } reward)
                 {
                     _game.ScreenStack.Pop();
-                    _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX,
-                        _combatPositionY, encounter, reward));
+                    // _worldScreen.CoroutineHandler.Run(new CoStartCombat(_worldScreen, _combatPositionX,
+                    //     _combatPositionY, encounter, reward));
                 }
                 else
                 {

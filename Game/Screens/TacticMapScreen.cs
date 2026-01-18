@@ -5,7 +5,6 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSharp;
-using SINEATER.Game.Components;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
@@ -13,7 +12,9 @@ using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.SinMod;
 using Wintellect.PowerCollections;
+using Encounter = SINEATER.Game.Gameplay.Encounter;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
+using Reward = SINEATER.Game.Gameplay.Reward;
 
 namespace SINEATER.Game.Screens;
 
@@ -44,7 +45,7 @@ public class TacticMapScreen : Screen
     private bool _over = false;
     private ETimeOfDay _timeOfDay;
     
-    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, CompEncounter encounter, CompReward reward, ETimeOfDay time) : base(game)
+    public TacticMapScreen(SineaterGame game, (int X, int Y) xy, Encounter encounter, Reward reward, ETimeOfDay time) : base(game)
     {
         _timeOfDay = time;
         _xy = xy;
@@ -87,7 +88,7 @@ public class TacticMapScreen : Screen
             _levelTime -= ms;
             if ((int)Math.Round(_levelTime) == 0)
             {
-                CoroutineHandler.Run(new CoBlink(this));
+                //CoroutineHandler.Run(new CoBlink(this));
             }
         }
 
@@ -108,12 +109,12 @@ public class TacticMapScreen : Screen
         
         _currentFocus = float.Lerp(_currentFocus, f, 0.1f);
         
-        if (CoroutineHandler.IsActive())
-        {
-            DrawTop();
-            CoroutineHandler.Update();
-            return;
-        }
+        // if (CoroutineHandler.IsActive())
+        // {
+        //     DrawTop();
+        //     CoroutineHandler.Update();
+        //     return;
+        // }
         
         if (_enemies.All(e => e.Guard == 0))
         {
@@ -123,7 +124,7 @@ public class TacticMapScreen : Screen
                 {
                     _over = true;
                     _paused = true;
-                    CoroutineHandler.Run(Victory(rews));
+                    //CoroutineHandler.Run(Victory(rews));
                 }
             }
 
@@ -131,7 +132,7 @@ public class TacticMapScreen : Screen
         }
         else if (_game.Party.Characters.All(e => e.Guard == 0))
         {
-            CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
+            //CoroutineHandler.Run(new FadeOutAndLeaveScreen(1.0f));
             Muse.SetGameState(EMusicState.World);
             Console.WriteLine("LOSS!");
             return;
@@ -150,7 +151,7 @@ public class TacticMapScreen : Screen
         
         if (_turn.Count > 0)
         {
-            CoroutineHandler.Run(CoAttack(_turn.Peek()));
+            //CoroutineHandler.Run(CoAttack(_turn.Peek()));
         }
     }
 
@@ -158,24 +159,25 @@ public class TacticMapScreen : Screen
     {
         var world = SineaterGame.Instance.World; 
         var tile = world.Get(_xy.X, _xy.Y);
-        world.ECS.Remove<CompEncounter>(tile);
+        world.ECS.Remove<Encounter>(tile);
 
-        yield return new ShowPopupAndWaitForKey(new Vector2(2, 5), new Vector2(33, 14), (s, t) =>
-        {
-            t.Add("VICTORY!", Color.Green);
-            t.Newline();
-            t.Newline();
-            t.Add("You receive:");
-            t.Newline();
-            foreach (var rew in rewards)
-            {
-                SineaterGame.Instance.Party.Inventory.Items.Add(rew);
-                t.Add($"  1x {rew.Display}");
-            }
-        });
+        // yield return new ShowPopupAndWaitForKey(new Vector2(2, 5), new Vector2(33, 14), (s, t) =>
+        // {
+        //     t.Add("VICTORY!", Color.Green);
+        //     t.Newline();
+        //     t.Newline();
+        //     t.Add("You receive:");
+        //     t.Newline();
+        //     foreach (var rew in rewards)
+        //     {
+        //         SineaterGame.Instance.Party.Inventory.Items.Add(rew);
+        //         t.Add($"  1x {rew.Display}");
+        //     }
+        // });
 
         Muse.SetGameState(EMusicState.World);
-        yield return new FadeOutAndLeaveScreen(1.0f);
+        //yield return new FadeOutAndLeaveScreen(1.0f);
+        yield break;
     }
 
     private IEnumerable CoAttack(Character first)
@@ -199,9 +201,9 @@ public class TacticMapScreen : Screen
         _timeFlow = false;
         _selected.Add(first);
         DrawCombat();
-        yield return new CoBlinkCharacter(first, this);
+        //yield return new CoBlinkCharacter(first, this);
         DrawCombat();
-        yield return new WaitForSeconds(0.5f);
+        //yield return new WaitForSeconds(0.5f);
         
         for (var i = 0; i < 4; i++)
         {
@@ -290,7 +292,7 @@ public class TacticMapScreen : Screen
                 break;
         }
         
-        yield return new WaitForSeconds(2.0f);
+        //yield return new WaitForSeconds(2.0f);
 
         var target = item.PrimaryTargets;
         if (!friend)
@@ -337,10 +339,10 @@ public class TacticMapScreen : Screen
                 {
                     _markedFull.Add(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.02f);
+                    //yield return new WaitForSeconds(0.02f);
                     _markedFull.Remove(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.02f);
+                    //yield return new WaitForSeconds(0.02f);
                 }
                 
                 yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), i, item, sec);
@@ -352,14 +354,14 @@ public class TacticMapScreen : Screen
                     chances.Add(i);
                     _markedEmpty.Add(targets[i]);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    //yield return new WaitForSeconds(0.1f);
                 }
                 else if (target[i] == 'X')
                 {
                     chances.Add(i);
                     _markedFull.Add(targets[i]);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.1f);
+                    //yield return new WaitForSeconds(0.1f);
                     all = true;
                 }
             }
@@ -371,10 +373,10 @@ public class TacticMapScreen : Screen
             {
                 foreach (var c in chances) _markedFull.Add(targets[c]);
                 DrawCombat();
-                yield return new WaitForSeconds(0.02f);
+                //yield return new WaitForSeconds(0.02f);
                 foreach (var c in chances) _markedFull.Remove(targets[c]);
                 DrawCombat();
-                yield return new WaitForSeconds(0.02f);
+                //yield return new WaitForSeconds(0.02f);
             }
             
             foreach (var i in chances)
@@ -394,7 +396,7 @@ public class TacticMapScreen : Screen
                         _markedEmpty.Clear();
                         _markedEmpty.Add(targets[c]);
                         DrawCombat();
-                        yield return new WaitForSeconds(0.02f);
+                        //yield return new WaitForSeconds(0.02f);
                     }
                 }
 
@@ -426,10 +428,10 @@ public class TacticMapScreen : Screen
                 {
                     _markedFull.Add(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.02f);
+                    //yield return new WaitForSeconds(0.02f);
                     _markedFull.Remove(tgt);
                     DrawCombat();
-                    yield return new WaitForSeconds(0.02f);
+                    //yield return new WaitForSeconds(0.02f);
                 }
 
                 yield return CoResolveItem(character, tgt, (friend ? ourFriends : ourEnemies), chances[i], item, sec);
@@ -464,7 +466,7 @@ public class TacticMapScreen : Screen
 
         _selected.Add(target);
         DrawCombat();
-        yield return new WaitForSeconds(1.0f);
+        //yield return new WaitForSeconds(1.0f);
         switch (item.PrimaryEffect)
         {
             case EItemEffect.None: break;
@@ -505,6 +507,8 @@ public class TacticMapScreen : Screen
                 targets.SwapBy(index, -str);
                 break;
         }
+
+        yield break;
     }
     
     public void DrawTop()
@@ -602,10 +606,10 @@ public class TacticMapScreen : Screen
     
     public override void LayerDraw(GameTime gameTime)
     {
-        if (CoroutineHandler.IsActive())
-        {
-            return;
-        }
+        // if (CoroutineHandler.IsActive())
+        // {
+        //     return;
+        // }
 
         _game.Layers["portrait"].Clear();
         _game.Layers["porsmol"].Clear();

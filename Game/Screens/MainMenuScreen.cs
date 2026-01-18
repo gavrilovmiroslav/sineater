@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Collections;
 using System.Threading.Tasks;
+using Arch.Bus;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
-using SINEATER.Game.Gameplay;
-using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using World = Arch.Core.World;
+using Arch.System;
 
 namespace SINEATER.Game.Screens;
 
-enum EMainMenuState
+public enum EMainMenuState
 {
     Waiting,
     Loading,
@@ -22,132 +23,126 @@ enum EMainMenuState
     Done
 }
 
+public class MainMenuStateContext
+{
+    public MainMenuScreen Screen;
+    public EMainMenuState State;
+    public float FadeTime;
+}
+
+public record struct MainMenuChangeContext(MainMenuStateContext Menu, EMainMenuState Next);
+public record struct MainMenuChangeStateEvent(MainMenuChangeContext Context);
+
+public partial class MainMenuStateEventReceiver
+{
+    public MainMenuStateEventReceiver() { Hook(); }
+    [Event] public void OnChangeState(ref MainMenuChangeStateEvent ev) {}
+}
+
+public static class MainMenuEventHandler
+{
+    [Event(order: 1)]
+    public static void OnLoadEvent(ref MainMenuChangeStateEvent ev)
+    {
+        Console.WriteLine("MAIN MENU EVENT HANDLER");
+        Console.WriteLine(ev);
+        ev.Context.Menu.State = EMainMenuState.Loading;
+        var @event = ev;
+        Task.Run(() =>
+        {
+            Enemies.Instance.Load();
+            Items.Instance.Load();
+            SineaterGame.Instance.Party.MakeParty();
+            
+            var loadEvent = new MainMenuChangeStateEvent(new MainMenuChangeContext(@event.Context.Menu, EMainMenuState.Fading));
+            EventBus.Send(ref loadEvent);
+        });
+    }
+}
+
+public partial class MainMenuStateUpdateSystem(World world) : BaseSystem<World, MainMenuStateContext>(world)
+{
+    [Query]
+    public void UpdateMainMenuState([Data] in MainMenuStateContext ctx)
+    {
+        if (ctx is { State: EMainMenuState.Fading, FadeTime: > 1.0f })
+        {
+            ctx.State = EMainMenuState.Done;
+            SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
+        }
+        
+        switch (ctx.State)
+        {
+            case EMainMenuState.Waiting:
+            case EMainMenuState.LoadingFailed:
+                if (InputM.IsActive(EInputAction.Confirm))
+                {
+                    var loadEvent = new MainMenuChangeStateEvent(new MainMenuChangeContext(ctx, EMainMenuState.Loading));
+                    EventBus.Send(ref loadEvent);
+                }
+                break;
+            case EMainMenuState.Fading:
+                Muse.SetGameState(EMusicState.World);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 public class MainMenuScreen(SineaterGame game) : Screen(game)
 {
     private Texture2D _logo;
-    
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
-    private EMainMenuState _state = EMainMenuState.Waiting;
-    private float _fadeTime = 0.0f;
-    private Character _wizard = new PartyMember(ECharacterClass.Wizard);
+    
+    private MainMenuStateContext _ctx;
+    private Group<MainMenuStateContext>? _systems = null;
+    private bool _systemsLoaded = false;
     
     public override void Initialize(SineaterGame game)
     {
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
+        _ctx = new MainMenuStateContext() { Screen = this, State = EMainMenuState.Waiting, FadeTime = 0.0f };
 
-        _wizard.Items[0] = new Item
+        Task.Run(() =>
         {
-            Name = "Misericorde", 
-            PrimaryTargets = "xxx-",
-            PrimaryEffect = EItemEffect.Attack,
-            PrimaryEffectModifier = 2,
-            SecondaryStat = EStat.Clarity, 
-            SecondaryEffect = EBonusEffect.TargetAll,
-            TimeGauge = 52
-        };
-        _wizard.Items[1] = new Item
-        {
-            Name = "Ash Branch", 
-            PrimaryTargets = "XXXX", 
-            PrimaryEffect = EItemEffect.Guard,
-            PrimaryEffectModifier = 1,
-            SecondaryStat = EStat.Vigor, 
-            SecondaryEffect = EBonusEffect.PlusMod,
-            TimeGauge = 40
-        };
-        _state = EMainMenuState.Waiting;
-    }
+            SineaterGame.Instance.World = CoreUtils.World.LoadOrCreate("Content\\world.json");
+            _systems = new Group<MainMenuStateContext>("Main Menu", new MainMenuStateUpdateSystem(SineaterGame.Instance.World.ECS));
+            _systems.Initialize();
+            _systemsLoaded = true;
+            Console.WriteLine("Systems loaded!");
+        });
 
-    private void LoadItems()
-    {
-        try
-        {
-            Enemies.Instance.Load();
-            Items.Instance.Load();
-            SineaterGame.Instance.Party.MakeParty();
-            _state = EMainMenuState.Fading;
-        }
-        catch (Exception e)
-        {
-            _state = EMainMenuState.LoadingFailed;
-        }
-    }
-    
-    private IEnumerable LoadGame()
-    {
-        _state = EMainMenuState.Loading;
-        yield return new WaitForSeconds(0.5f);
-        yield return Task.Run(LoadItems);
     }
     
     public override void Update(GameTime gameTime)
     {
-        if (_state == EMainMenuState.Fading)
+        if (_systemsLoaded && _systems is not null)
         {
-            if (_fadeTime > 1.0f)
-            {
-                _state = EMainMenuState.Done;
-                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
-            }
-        }
-        
-        if (CoroutineHandler.IsActive())
-        {
-            CoroutineHandler.Update();
-            return;
-        }
-        
-        switch (_state)
-        {
-            case EMainMenuState.Waiting:
-            case EMainMenuState.LoadingFailed:
-                if (InputM.IsActive(EInputAction.Confirm))
-                {
-                    CoroutineHandler.Run(LoadGame());
-                }
-                break;
-            case EMainMenuState.Loading:
-                break;
-            case EMainMenuState.Fading:
-                Muse.SetGameState(EMusicState.World);
-                break;
-            case EMainMenuState.Done:
-                break;
+            _systems.BeforeUpdate(in _ctx);
+            _systems.Update(in _ctx);
+            _systems.AfterUpdate(in _ctx);
         }
     }
     
     public override void LayerDraw(GameTime gameTime)
     {
     }
-
-    private float t = 3.0f;
-    private float tt = 0.0f;
-    private string[] dots = new[] { ".", "..", "..." };
-    private float sinWave = 0.0f;
-    private bool selected = false;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
         var mid = (int) (SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2.0f);
-        if (_state == EMainMenuState.Waiting)
+        if (_ctx.State == EMainMenuState.Waiting)
         {
-        //    batch.DrawTextCenter(mid + Rnd.Instance.D4 - 2, 700 + Rnd.Instance.D4 - 2, SineaterGame.Instance.Font, "Press [SPACE] to start", rot: tt);
-        //    tt += 0.01f;
+            batch.DrawTextCenter(mid + Rnd.Instance.D4 - 2, 700 + Rnd.Instance.D4 - 2, SineaterGame.Instance.Font, "Press [SPACE] to start");
         }
-        else if (_state == EMainMenuState.Loading)
+        else if (_ctx.State == EMainMenuState.Loading)
         {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading{dots[((int)t) % 3]}");
+            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading...");
         }
-        else if (_state == EMainMenuState.LoadingFailed)
-        {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading failed! Something went wrong!");
-        }
-
-            var rc = new Drawing.RenderContext(batch, gameTime);
-        rc.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."]);
     }
 
     public override void PreDraw(SpriteBatch batch, GameTime gameTime)
@@ -158,27 +153,27 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void PostDraw(SpriteBatch batch, GameTime gameTime)
     {
+        batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164), 
+            Color.White, 0.0f, new Vector2(0, 0), Vector2.One * 0.35f, SpriteEffects.None, 0);
+
+        batch.Draw(_fmodCredits, new Vector2(35, game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22), 
+            Color.White, 0.0f, new Vector2(0, 0), Vector2.One, SpriteEffects.None, 0);
+
         var pixel = SineaterGame.Instance.Pixel; 
-        if (_state == EMainMenuState.Fading)
+        if (_ctx.State == EMainMenuState.Fading)
         {
-            _fadeTime += 0.01f;
+            _ctx.FadeTime += 0.01f;
             batch.Draw(pixel, new Vector2(0, 0), null,
-                new Color(0, 0, 0, _fadeTime), 0.0f, new Vector2(0, 0),
+                new Color(0, 0, 0, _ctx.FadeTime), 0.0f, new Vector2(0, 0),
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
-        else if (_state == EMainMenuState.Done)
+        else if (_ctx.State == EMainMenuState.Done)
         {
             batch.Draw(pixel, new Vector2(0, 0), null,
                 new Color(0, 0, 0, 1), 0.0f, new Vector2(0, 0),
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
-    
-        batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164), 
-            Color.White, 0.0f, new Vector2(0, 0), Vector2.One * 0.35f, SpriteEffects.None, 0);
-
-        batch.Draw(_fmodCredits, new Vector2(35, game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22), 
-            Color.White, 0.0f, new Vector2(0, 0), Vector2.One, SpriteEffects.None, 0);
     }
 }

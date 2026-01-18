@@ -9,83 +9,14 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Microsoft.Xna.Framework;
-using SINEATER.Game.Components;
 using SINEATER.Game.Gameplay;
 using SINEATER.Game.Loadable;
 
 namespace SINEATER.Game.CoreUtils;
 
-public interface IComponentStorage
-{
-    public bool Has(int x, int y);
-}
-
-public class ComponentStorage<T> : IComponentStorage where T: struct, IWorldComponent
-{
-    public readonly HashSet<int> Visited = [];
-    public readonly Dictionary<int, T> InternalStorage = [];
-    
-    public void Visit(int x, int y)
-    {
-        Visited.Add(y * 20 + x);
-    }
-    
-    public void Add((int X, int Y) key, T value)
-    {
-        InternalStorage[key.Y * 20 + key.X] = value;
-    }
-
-    public T? Get((int X, int Y) key)
-    {
-        return Get(key.X, key.Y);
-    }
-    
-    public T? Get(int x, int y)
-    {
-        var index = y * 20 + x;
-        if (InternalStorage.ContainsKey(index))
-        {
-            return InternalStorage[index];
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    public bool Has(int x, int y)
-    {
-        var index = y * 20 + x;
-        return InternalStorage.ContainsKey(index);
-    }
-
-    public bool IsVisited(int x, int y)
-    {
-        return Visited.Contains(y * 20 + x);
-    }
-    
-    public bool IsOkay(int x, int y)
-    {
-        if (!Has(x, y)) return false;
-        return Get(x, y)?.IsOkay() ?? false;
-    }
-    
-    public void Set(int x, int y, T t)
-    {
-        var index = y * 20 + x;
-        InternalStorage[index] = t;
-    }
-
-    public void Remove(int x, int y)
-    {
-        var index = y * 20 + x;
-        InternalStorage.Remove(index);
-    }
-}
-
 public class World
 {
-    public Arch.Core.World ECS { get; set; }
+    public Arch.Core.World ECS { get; }
     private readonly Dictionary<(int X, int Y), Entity> _entitiesOnMaps = [];
     private readonly Dictionary<Entity, (int X, int Y)> _positionByEntity = [];
 
@@ -111,6 +42,8 @@ public class World
     
     public static World LoadOrCreate(string path)
     {
+        var rex = SineaterGame.Instance.Rex;
+        
         var se = string.Concat(string.Join("\n", TitleContainer.OpenStream("Content/sheets.nosj.txt").ReadLines(Encoding.Default)).Reverse());
         var service = new SheetsService(new BaseClientService.Initializer()
         {
@@ -120,7 +53,6 @@ public class World
         });
         
         var res = new SpreadsheetsResource.ValuesResource(service);
-        var key = Environment.UserName.ToUpper()[0];
         
         const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
         var inspect = res.Get(APPS_ID, $"Inspect!A1:T20").Execute();
@@ -134,14 +66,15 @@ public class World
             for (var j = 0; j < 20; j++)
             {
                 var tile = world.ECS.Create();
-                world.ECS.Add(tile, new CompWorldLocation(i, j));
+                world.ECS.Add(tile, new WorldMapTile(rex.Layers[1][i, j]));
+                world.ECS.Add(tile, new Position(i, j));
                 world._entitiesOnMaps.Add((i, j), tile);
                 world._positionByEntity.Add(tile, (i, j));
                 
                 var text = inspect.Values[j][i].ToString() ?? "";
                 if (text.Length > 0 && text.Contains(' '))
                 {
-                    world.ECS.Add(tile, new CompDialogue([], text)); // TODO: tags
+                    world.ECS.Add(tile, new Dialogue([], text)); // TODO: tags
                 }
 
                 // COMBAT
@@ -171,7 +104,7 @@ public class World
 
                         if (enemies.Count > 0)
                         {
-                            world.ECS.Add(tile, new CompEncounter(enemies));
+                            world.ECS.Add(tile, new Gameplay.Encounter(enemies));
                         }
                     }
                 }
@@ -203,7 +136,7 @@ public class World
 
                         if (rewardList.Count > 0)
                         {
-                            world.ECS.Add(tile, new CompReward(rewardList));
+                            world.ECS.Add(tile, new Gameplay.Reward(rewardList));
                         }
                     }
                 }

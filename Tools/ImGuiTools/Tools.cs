@@ -75,44 +75,6 @@ namespace SINEATER.Tools.ImGuiTools
             instance = (T)boxed;
             return (instance, changed, false);
         }
-
-        private static void MakeButtonFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct, IWorldComponent
-        {
-            if (!ts.Has(x, y))
-            {
-                if (ImGui.Button($"Add {typeof(T).Name}"))
-                {
-                    ts.Add((x, y), new T());
-                }
-            }
-            else
-            {
-                ImGui.BeginDisabled();
-                ImGui.Button($"Add {typeof(T).Name}");
-                ImGui.EndDisabled();
-            }
-        }
-        
-        private static bool MakeEditorFor<T>(ComponentStorage<T> ts, int x, int y) where T: struct, IWorldComponent
-        {
-            bool changed = false;
-            if (ts.Has(x, y))
-            {
-                if (MakeEditor<T>(ts.Get(x, y).Value, $"{x}{y}{typeof(T).Name}") is { } e)
-                {
-                    if (e.Deleted)
-                    {
-                        ts.Remove(x, y);
-                    }
-                    else
-                    {
-                        ts.Set(x, y, e.Editor);
-                        changed |= e.Changed;
-                    }
-                }
-            }
-            return changed;
-        }
         
         public static void ShowTools(ref bool isOpen)
         {

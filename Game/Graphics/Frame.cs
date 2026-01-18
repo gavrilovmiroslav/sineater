@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
@@ -98,12 +97,13 @@ public static class Drawing
             new Rectangle(bx * 32 + 24, by * 32 + 24, 8, 8), color);
     }
 
-    public static void SpeakerBox(this RenderContext ctx, int x, int y, (int U, int V) portrait, string speaker,
-        string[] text)
+    public static void SpeakerBox(this RenderContext ctx, int x, int y, (int U, int V) portrait, 
+        string speaker, string[] text)
     {
         ctx.TextBox(x + 110, y, (3, 3));
         ctx.Portrait(x, y, portrait);
         ctx.Batch.DrawText(x + 120, y + 10, SineaterGame.Instance.FontBold, speaker, Color.Black);
+
         var offset = 0;
         foreach (var line in text)
         {
@@ -141,7 +141,7 @@ public static class Drawing
         var i = 0;
         foreach (var item in chr.Items)
         {
-            ctx.WeaponProfile(x + 125, y + 60 * i, item, index);
+            ctx.WeaponProfile(x + 125, y + 58 * i, item, index);
             i++;
         }
     }
@@ -154,10 +154,10 @@ public static class Drawing
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x - 6, y, 2, 55), item == null ? gray : Color.Lerp(Color.CornflowerBlue, Color.Gray, 0.5f));
         ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x - 8, y + 49, 16, 16), new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : Color.Gray);
         
-        ctx.Batch.DrawText(x, y + i * 20 + 5, SineaterGame.Instance.FontMono, item?.Display ?? "Empty", item == null ? gray : Color.White);
+        ctx.Batch.DrawText(x, y + i * 20 + 3, SineaterGame.Instance.FontMono, item?.Display ?? "Empty", item == null ? gray : Color.White);
         i++;
 
-        var ny = y + 10 + i * 20;
+        var ny = y + 8 + i * 20;
         
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, 100, 4),
             new Rectangle(0, 0, 1, 1), item == null ? gray : Color.White);
@@ -178,7 +178,7 @@ public static class Drawing
         
         var effectIndex = 0;
         var effectColor = Color.Gray;
-        if (item is not null && item.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move)
+        if (item?.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move)
         {
             effectIndex = 10;
             effectColor = Color.OrangeRed;
@@ -275,8 +275,7 @@ public static class Drawing
             }
         }
 
-        i++;
-        i++;
+        i += 2;
         return;
 
         int Pin(char c)
