@@ -18,6 +18,7 @@ enum EMainMenuState
     Waiting,
     Loading,
     Fading,
+    LoadingFailed,
     Done
 }
 
@@ -62,10 +63,17 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
 
     private void LoadItems()
     {
-        Enemies.Instance.Load();
-        Items.Instance.Load();
-        SineaterGame.Instance.Party.MakeParty();
-        _state = EMainMenuState.Fading;
+        try
+        {
+            Enemies.Instance.Load();
+            Items.Instance.Load();
+            SineaterGame.Instance.Party.MakeParty();
+            _state = EMainMenuState.Fading;
+        }
+        catch (Exception e)
+        {
+            _state = EMainMenuState.LoadingFailed;
+        }
     }
     
     private IEnumerable LoadGame()
@@ -95,6 +103,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         switch (_state)
         {
             case EMainMenuState.Waiting:
+            case EMainMenuState.LoadingFailed:
                 if (InputM.IsActive(EInputAction.Confirm))
                 {
                     CoroutineHandler.Run(LoadGame());
@@ -132,8 +141,12 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading{dots[((int)t) % 3]}");
         }
+        else if (_state == EMainMenuState.LoadingFailed)
+        {
+            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading failed! Something went wrong!");
+        }
 
-        var rc = new Drawing.RenderContext(batch, gameTime);
+            var rc = new Drawing.RenderContext(batch, gameTime);
         rc.SpeakerBox(400, 400, (2, 2), "Temple of Bones", ["Achievement unlocked!", "Defeat 50 skeletons."]);
     }
 

@@ -49,15 +49,18 @@
       <ClCompile Include="Content\crt.fx" />
     </ItemGroup>
     <ItemGroup>
-      <Reference Include="MonoJ">
-        <HintPath>..\..\SinEditor\MonoJ\bin\Debug\net8.0\MonoJ.dll</HintPath>
-      </Reference>
-      <Reference Include="Steamworks.NET">
-        <HintPath>Steamworks.NET.dll</HintPath>
-      </Reference>
-      <Reference Include="wvcs">
-        <HintPath>..\..\wv\wvcs\bin\Debug\net8.0\wvcs.dll</HintPath>
-      </Reference>
+        <Reference Include="MonoJ">
+            <HintPath>..\..\SinEditor\MonoJ\bin\Debug\net8.0\MonoJ.dll</HintPath>
+        </Reference>
+		
+	    <Reference Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'" Include="Libs//win64//Steamworks.NET.dll">
+		    <HintPath> Libs//win64//Steamworks.NET.dll</HintPath>
+	    </Reference>
+
+	    <Reference Condition="'$(RuntimeIdentifier)' == 'linux-x64' or '$(OS)' != 'Windows_NT'" Include="Libs//linux64//Steamworks.NET.dll">
+		    <HintPath>Libs//linux64//Steamworks.NET.dll</HintPath>
+	    </Reference>
+		
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Content\audio\" />
@@ -66,32 +69,21 @@
     <ItemGroup>
       <ProjectReference Include="MonoGame.ImGui\MonoGame.ImGui.csproj" />
     </ItemGroup>
-    <ItemGroup>
-      <None Update="fmod.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="fmodL.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="fmodstudio.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="fmodstudioL.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Steamworks.NET.dll">
-        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      </None>
-      <None Update="Steamworks.NET.pdb">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="steam_api.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="steam_api64.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+	
+	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'">
+		<None Include="Libs/win64/**/*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>%(Filename)%(Extension)</TargetPath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' or '$(OS)' != 'Windows_NT'">
+		<None Include="Libs/linux64/**/*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>%(Filename)%(Extension)</TargetPath>
+		</None>
+	</ItemGroup>
+	
     <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
         <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />
         <Exec Command="dotnet tool restore" />
