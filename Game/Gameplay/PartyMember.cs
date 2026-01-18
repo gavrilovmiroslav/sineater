@@ -100,15 +100,15 @@ public record struct Party
     {
         var jobs = new[]
         {
+            ECharacterClass.Knight,
             ECharacterClass.Witch,
             ECharacterClass.Wizard,
-            ECharacterClass.Knight,
             ECharacterClass.Monk,
             // ECharacterClass.Sage,
             // ECharacterClass.Priest,
             // ECharacterClass.Thief,
         };
-        jobs.Shuffle();
+        //jobs.Shuffle();
         var queue = new Queue<ECharacterClass>(jobs);
         for (var i = 0; i < 4; i++)
         {

@@ -11,6 +11,9 @@ using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using World = Arch.Core.World;
 using Arch.System;
+using SINEATER.Game.LookNFeel;
+using Encounter = SINEATER.Game.Gameplay.Encounter;
+using Reward = SINEATER.Game.Gameplay.Reward;
 
 namespace SINEATER.Game.Screens;
 
@@ -29,6 +32,7 @@ public class MainMenuStateContext
     public MainMenuScreen Screen;
     public EMainMenuState State;
     public float FadeTime;
+    public bool WorldLoaded;
 }
 
 public record struct MainMenuChangeStateEvent(MainMenuStateContext Menu, EMainMenuState Next);
@@ -76,7 +80,9 @@ public static class MainMenuEventHandler
                 Muse.SetGameState(EMusicState.World);
                 break;
             case EMainMenuState.Done:
-                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
+                var encounterEntity = SineaterGame.Instance.World.Get(3, 7);
+                var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(encounterEntity);
+                SineaterGame.Instance.PopAndPushScreen(new TacticMapScreen(SineaterGame.Instance, (3, 7), encounter, new Reward([]), ETimeOfDay.Afternoon));
                 break;
         }
     }
@@ -89,7 +95,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _fmodCredits;
     
     private MainMenuStateContext _ctx;
-    private bool _worldLoaded = false;
     
     public override void Initialize(SineaterGame game)
     {
@@ -101,7 +106,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         Task.Run(() =>
         {
             SineaterGame.Instance.World = CoreUtils.World.LoadOrCreate("Content\\world.json");
-            _worldLoaded = true;
+            _ctx.WorldLoaded = true;
             var goToWaitingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Waiting);
             EventBus.Send(ref goToWaitingEvent);
         });
@@ -109,7 +114,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void Update(GameTime gameTime)
     {
-        if (_worldLoaded)
+        if (_ctx.WorldLoaded)
         {
             if (_ctx.State == EMainMenuState.Fading)
             {
