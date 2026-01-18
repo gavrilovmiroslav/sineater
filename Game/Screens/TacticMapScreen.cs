@@ -626,7 +626,7 @@ public class TacticMapScreen : Screen
             DrawControls();
     }
     
-    public override void PreDraw(SpriteBatch batch, GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
         if (_over) return;
         var mrmo = SineaterGame.Instance.Mrmo;

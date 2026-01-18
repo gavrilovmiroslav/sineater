@@ -127,10 +127,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             }
         }
     }
-    
-    public override void LayerDraw(GameTime gameTime)
-    {
-    }
 
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {

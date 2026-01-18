@@ -329,12 +329,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h);
         _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
-        if (ScreenStack?.TryPeek(out var scrn) ?? false)
-        {
-            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
-            scrn.PreDraw(_spriteBatch, gameTime);
-            _spriteBatch.End();
-        }
         foreach (var layer in LayerNames)
         {
             Layers[layer].Draw(_spriteBatch);
@@ -347,12 +341,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
             _spriteBatch.End();
         }
 
-        if (ScreenStack?.TryPeek(out var scrn2) ?? false)
-        {
-            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
-            scrn2.PostDraw(_spriteBatch, gameTime);
-            _spriteBatch.End();
-        }
         GraphicsDevice.SetRenderTarget(null);
         
         GraphicsDevice.SetRenderTarget(_renderTargetMonitor);

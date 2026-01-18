@@ -14,9 +14,7 @@ public interface IScreen
     public void Initialize(SineaterGame game);
     public void Update(GameTime gameTime);
     public void LayerDraw(GameTime gameTime);
-    public void PreDraw(SpriteBatch batch, GameTime gameTime);
     public void Draw(SpriteBatch batch, GameTime gameTime);
-    public void PostDraw(SpriteBatch batch, GameTime gameTime);
 }
 
 public abstract class Screen : IScreen
@@ -89,18 +87,13 @@ public abstract class Screen : IScreen
     public abstract void Initialize(SineaterGame game);
     public abstract void Update(GameTime gameTime);
 
-    public virtual void PreDraw(SpriteBatch batch, GameTime gameTime)
+    public virtual void LayerDraw(GameTime gameTime)
     {
     }
-
-    public abstract void LayerDraw(GameTime gameTime);
 
     public virtual void Draw(SpriteBatch batch, GameTime gameTime)
     {
     }
-
-    public virtual void PostDraw(SpriteBatch batch, GameTime gameTime)
-    {}
 
     public virtual void SubmenuActivate(string action)
     {
