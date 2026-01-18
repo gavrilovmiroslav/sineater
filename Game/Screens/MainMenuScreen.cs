@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Threading.Tasks;
 using Arch.Bus;
 using Microsoft.Xna.Framework;
@@ -19,7 +18,6 @@ public enum EMainMenuState
     Waiting,
     Loading,
     Fading,
-    LoadingFailed,
     Done
 }
 
@@ -50,12 +48,19 @@ public static class MainMenuEventHandler
         var @event = ev;
         Task.Run(() =>
         {
-            Enemies.Instance.Load();
-            Items.Instance.Load();
-            SineaterGame.Instance.Party.MakeParty();
-            
-            var loadEvent = new MainMenuChangeStateEvent(new MainMenuChangeContext(@event.Context.Menu, EMainMenuState.Fading));
-            EventBus.Send(ref loadEvent);
+            try
+            {
+                Enemies.Instance.Load();
+                Items.Instance.Load();
+                SineaterGame.Instance.Party.MakeParty();
+
+                var loadEvent = new MainMenuChangeStateEvent(new MainMenuChangeContext(@event.Context.Menu, EMainMenuState.Fading));
+                EventBus.Send(ref loadEvent);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Loading failed: " + e.ToString());
+            }
         });
     }
 }
@@ -74,7 +79,6 @@ public partial class MainMenuStateUpdateSystem(World world) : BaseSystem<World, 
         switch (ctx.State)
         {
             case EMainMenuState.Waiting:
-            case EMainMenuState.LoadingFailed:
                 if (InputM.IsActive(EInputAction.Confirm))
                 {
                     var loadEvent = new MainMenuChangeStateEvent(new MainMenuChangeContext(ctx, EMainMenuState.Loading));
