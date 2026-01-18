@@ -8,3 +8,5 @@ riderModule.iml
 .vscode/
 .config/
 *steam_appid.txt
+
+/Builds/
