@@ -19,6 +19,7 @@ public enum EMainMenuState
     Starting,
     Waiting,
     Loading,
+    LoadingFailed,
     Fading,
     Done
 }
@@ -55,12 +56,20 @@ public static class MainMenuEventHandler
             case EMainMenuState.Loading:
                 Task.Run(() =>
                 {
-                    Enemies.Instance.Load();
-                    Items.Instance.Load();
-                    SineaterGame.Instance.Party.MakeParty();
-            
-                    var goToFadingEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.Fading);
-                    EventBus.Send(ref goToFadingEvent);
+                    try
+                    {
+                        Enemies.Instance.Load();
+                        Items.Instance.Load();
+                        SineaterGame.Instance.Party.MakeParty();
+
+                        var goToFadingEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.Fading);
+                        EventBus.Send(ref goToFadingEvent);
+                    }
+                    catch (Exception e)
+                    {
+                        var goToFailedEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.LoadingFailed);
+                        EventBus.Send(ref goToFailedEvent);
+                    }
                 });
                 break;
             case EMainMenuState.Fading:
@@ -111,7 +120,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                     EventBus.Send(ref goToDoneEvent);
                 }
             }
-            else if (_ctx.State == EMainMenuState.Waiting && InputM.IsActive(EInputAction.Confirm))
+            else if (_ctx.State is EMainMenuState.Waiting or EMainMenuState.LoadingFailed && InputM.IsActive(EInputAction.Confirm))
             {
                 var goToLoadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Loading);
                 EventBus.Send(ref goToLoadingEvent);
@@ -141,6 +150,10 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         else if (_ctx.State == EMainMenuState.Loading)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading...");
+        }
+        else if (_ctx.State == EMainMenuState.LoadingFailed)
+        {
+            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading failed?");
         }
 
         batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),
