@@ -1135,6 +1135,18 @@
 /processorParam:TextureFormat=Color
 /build:swordnsorcery_portraits.png
 
+#begin vfx11.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:vfx11.png
+
 #begin world.json
 /importer:JSONImporter
 /processor:JSONProcessor

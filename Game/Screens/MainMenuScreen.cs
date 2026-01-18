@@ -6,11 +6,10 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
+using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using World = Arch.Core.World;
-using Arch.System;
 using SINEATER.Game.LookNFeel;
 using Encounter = SINEATER.Game.Gameplay.Encounter;
 using Reward = SINEATER.Game.Gameplay.Reward;
@@ -95,9 +94,17 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _fmodCredits;
     
     private MainMenuStateContext _ctx;
+
+    private Texture2D _vfx;
+    private GridAnimation _vfxAnimation;
+    private GridAnimationContext _vfxAnimationContext;
     
     public override void Initialize(SineaterGame game)
     {
+        _vfx = _game.Content.Load<Texture2D>("vfx11");
+        _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 0.5f);
+        _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
+        
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
@@ -107,6 +114,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         {
             SineaterGame.Instance.World = CoreUtils.World.LoadOrCreate("Content\\world.json");
             _ctx.WorldLoaded = true;
+            _vfxAnimation.Start();
+            
             var goToWaitingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Waiting);
             EventBus.Send(ref goToWaitingEvent);
         });
@@ -163,6 +172,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         batch.Draw(_fmodCredits, new Vector2(35, game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22),
             Color.White, 0.0f, new Vector2(0, 0), Vector2.One, SpriteEffects.None, 0);
 
+        _vfxAnimation?.Update(mid, 700, new Drawing.RenderContext(batch, gameTime));
+        
         var pixel = SineaterGame.Instance.Pixel;
         if (_ctx.State == EMainMenuState.Fading)
         {
