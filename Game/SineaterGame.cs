@@ -19,7 +19,7 @@ namespace SINEATER.Game;
 public class SineaterGame : Microsoft.Xna.Framework.Game
 {
     public static SineaterGame Instance;
-    public static int DeltaTime;
+    public static float DeltaTime;
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -268,9 +268,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
             _toPush = null;
             return;
         }
-        
-        DeltaTime = gameTime.ElapsedGameTime.Milliseconds;
-        _currentMinutes += gameTime.ElapsedGameTime.Milliseconds;
+
+        var millis = gameTime.ElapsedGameTime.Milliseconds;
+        DeltaTime = (float)millis / 1000.0f;
+        _currentMinutes += millis;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0.01f, 0.99f);
 
         SteamManager.Instance.Update();
@@ -282,7 +283,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
             _currentMinutes = 0;
         }
 
-        InputManager.Instance.Update(DeltaTime);
+        InputManager.Instance.Update(millis);
 
         if (InputM.IsActive(EInputAction.Exit))
         {
