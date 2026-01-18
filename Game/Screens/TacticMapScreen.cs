@@ -143,11 +143,6 @@ public class TacticMapScreen : Screen
         {
             _time = 0;
         }
-
-        if (!CheckSubmenuInputs())
-        {
-            CheckPlayerInputs();
-        }
         
         if (_turn.Count > 0)
         {
@@ -565,7 +560,6 @@ public class TacticMapScreen : Screen
             }
         }
 
-        DrawParty(focus);
         DrawTop();
     }
     
@@ -734,7 +728,6 @@ public class TacticMapScreen : Screen
                         SineaterGame.Instance.Party.Characters[ni].Details = false;
                     }
                     p.Details = true;
-                    DrawParty(i);
                     Draw(p.X, p.Y - 4, new Glyph(8, 74 - 16, Color.Transparent, Color.White));
                 }
             }
@@ -850,11 +843,6 @@ public class TacticMapScreen : Screen
 
         if (InputM.IsActive(EInputAction.Confirm) && !_over)
         {
-            _paused = !_paused;
-            if (!_paused)
-            {
-                DrawParty(-1);
-            }
             Muse.SetPaused(_paused);
         }
     }

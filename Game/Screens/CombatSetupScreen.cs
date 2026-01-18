@@ -78,8 +78,7 @@ namespace SINEATER.Game.Screens
                 i++;
                 j++;
             }
-
-            DrawParty();
+            
             DrawControls();
             DrawItems();
         }
@@ -247,35 +246,7 @@ namespace SINEATER.Game.Screens
             _game.Layers["input"].Set(right, top + 2, InputM.GetGlyph(EInputAction.CancelFight));
             _game.Layers["ascii"].Set(right * 2, top + 1, "Back");
         }
-
-        public override void SubmenuActivate(string action)
-        {
-            var item = AvailableItems[_submenuSelection];
-            if (item == null)
-                return;
-
-            bool hasItem = _game.Party.Characters[_selectedIndex].Items.FirstOrDefault(it => it == item) != null;
-
-            if (hasItem)
-            {
-                _game.Party.Characters[_selectedIndex].Unequip(item);
-            }
-            else
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    var c = _game.Party.Characters[i];
-                    var equipped = c.Items.FirstOrDefault(it => it == item);
-                    if (equipped != null)
-                    {
-                        c.Unequip(item);
-                    }
-                }
-
-                _game.Party.Characters[_selectedIndex].Equip(item);
-            }
-        }
-
+        
         public override void Initialize(SineaterGame game)
         {
             _game.Layers["portrait"].Clear();
@@ -352,8 +323,6 @@ namespace SINEATER.Game.Screens
                     SetupItems();
                 }
             }
-
-            CheckSubmenuInputs(false);
         }
     }
 }
