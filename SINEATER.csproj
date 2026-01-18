@@ -32,6 +32,14 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Arch" Version="2.1.0" />
+        <PackageReference Include="Arch.AOT.SourceGenerator" Version="1.0.1" />
+        <PackageReference Include="Arch.EventBus" Version="1.0.2" />
+        <PackageReference Include="Arch.LowLevel" Version="1.1.5" />
+        <PackageReference Include="Arch.Persistence" Version="2.0.0" />
+        <PackageReference Include="Arch.Relationships" Version="1.0.1" />
+        <PackageReference Include="Arch.System" Version="1.1.0" />
+        <PackageReference Include="Arch.System.SourceGenerator" Version="2.1.0" />
+        <PackageReference Include="Coroutine" Version="2.1.5" />
         <PackageReference Include="FmodForFoxes" Version="3.2.0" />
         <PackageReference Include="FmodForFoxes.Desktop" Version="3.2.0" />
         <PackageReference Include="Google.Apis.Sheets.v4" Version="1.70.0.3819" />

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.ImGui;
+using SadRex;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
@@ -42,6 +44,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
     private float _dHour;
     private Texture2D _monitor;
+    private Image _rex;
+    public Image Rex => _rex;
     
     private Effect _crt;
     private RenderTarget2D _renderTargetGame;
@@ -83,7 +87,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _nextHour = (time.Hour + 1) % 24;
         _dHour = Math.Clamp((float)_currentMinutes / (float)HourLengthMillis, 0, 1);
         _dHour += (float)time.Second * 1000.0f;
-
+        
         Barks.Load(Content);
     }
 
@@ -99,6 +103,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _pixel = Content.Load<Texture2D>("pixel");
         
         this.Window.AllowUserResizing = true;
+        
+        var filePath = System.IO.Path.Combine(Content.RootDirectory, $"map.xp");
+        using var stream = TitleContainer.OpenStream(filePath);
+        _rex = Image.Load(stream);
         
         _render = new ImGuiRenderer(this).Initialize().RebuildFontAtlas();
         InputManager.Instance.Initialize("");

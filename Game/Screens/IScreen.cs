@@ -25,7 +25,6 @@ public abstract class Screen : IScreen
     protected readonly int _fullWidth = 20, _fullHeight = 20;
     protected int _width, _height;
     protected int _time = 0;
-    public CoroutineHandler CoroutineHandler = new();
 
     protected List<string> _submenu = [];
     protected int _submenuSelection = 0;
