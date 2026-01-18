@@ -684,8 +684,7 @@ public class TacticMapScreen : Screen
                 slowdown = 1.25f;
             }
             
-            _times[n] = Math.Clamp(
-                _times[n] + slowdown * speed * ((float)gameTime.ElapsedGameTime.Milliseconds / 1000.0f), 0, 100);
+            _times[n] = Math.Clamp(_times[n] + slowdown * speed * ((float)gameTime.ElapsedGameTime.Milliseconds / 1000.0f), 0, 100);
         
             if (t <= 100 && _times[n] >= 100)
             {

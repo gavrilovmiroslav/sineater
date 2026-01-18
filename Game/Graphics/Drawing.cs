@@ -27,10 +27,10 @@ public static class Drawing
     public static void Portrait(this RenderContext ctx, int x, int y, (int U, int V) portrait, Color? frameColor = null,
         Color? portraitColor = null)
     {
-        var frames = SineaterGame.Instance.Portraits;
+        var portraits = SineaterGame.Instance.Portraits;
         ctx.Frame(x, y, 96, 112, 3, 7, false, frameColor ?? Color.White);
-        ctx.Batch.Draw(frames, new Rectangle(x + 16, y + 16, 80, 80),
-            new Rectangle(portrait.U * 80, portrait.V * 80, 80, 80), portraitColor ?? Color.White);
+        ctx.Batch.Draw(portraits, new Rectangle(x + 16, y + 16, 80, 80),
+            new Rectangle(portrait.U * 80, portrait.V * 80, 80, 80), portraitColor ?? Color.White, 0, Vector2.Zero, SpriteEffects.FlipHorizontally, 0);
     }
 
     public static void EmptyFrame(this RenderContext ctx, int x, int y, int w, int h, int bx, int by,

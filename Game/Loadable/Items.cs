@@ -48,6 +48,11 @@ public class ItemDefinition : ILoadableDefinition
     [JsonProperty] public int DropChance;
     
     [JsonProperty] public List<string> Tags;
+
+    [JsonProperty] public float PoiseScale;
+    [JsonProperty] public float ClarityScale;
+    [JsonProperty] public float WillScale;
+    [JsonProperty] public float VigorScale;
     
     public string Key => Name;
 }
@@ -69,6 +74,10 @@ public class ItemParser : ILoadableRowParser<ItemDefinition>
     private const int SECONDARY_EFFECT_TARGETS = 12;
     private const int DROP_CHANCE = 13;
     private const int TAGS = 14;
+    private const int POISE_SCALE = 15;
+    private const int CLARITY_SCALE = 16;
+    private const int WILL_SCALE = 17;
+    private const int VIGOR_SCALE = 18;
     
     public ItemDefinition Parse(IList<object> row)
     {
@@ -90,7 +99,11 @@ public class ItemParser : ILoadableRowParser<ItemDefinition>
         var readTags = row.Count > 14 ? row[TAGS].ToString() : "";
         var tags = (readTags == null ? [] : readTags.Split(",")
             .Where(t => t.Trim().Length == 0).ToList());
-
+        var scaPoise = row[POISE_SCALE].ToString() ?? "0.0";
+        var scaClarity = row[CLARITY_SCALE].ToString() ?? "0.0";
+        var scaWill = row[WILL_SCALE].ToString() ?? "0.0";
+        var scaVigor = row[VIGOR_SCALE].ToString() ?? "0.0";
+        
         var def = new ItemDefinition()
         {
             Name = name,
@@ -108,6 +121,10 @@ public class ItemParser : ILoadableRowParser<ItemDefinition>
             SecondaryTargets = secEffectTargets,
             DropChance = int.Parse(dropChance),
             Tags = tags,
+            PoiseScale = float.Parse(scaPoise),
+            ClarityScale = float.Parse(scaClarity),
+            WillScale = float.Parse(scaWill),
+            VigorScale = float.Parse(scaVigor),
         };
 
         return def;
@@ -134,7 +151,11 @@ public class ItemInterpreter : ILoadableInterpreter<ItemDefinition, Item>
             SecondaryEffectModifier = def?.SecondaryEffectModifier ?? 0,
             SecondarySources = def?.SecondaryTargets ?? "----",
             DropChance = def?.DropChance ?? 0,
-            Tags = [..def?.Tags ?? []]
+            Tags = [..def?.Tags ?? []],
+            PoiseScale = def?.PoiseScale ?? 1.0f,
+            ClarityScale = def?.ClarityScale ?? 1.0f,
+            WillScale = def?.WillScale ?? 1.0f,
+            VigorScale = def?.VigorScale ?? 1.0f,
         };
         return item;
     }

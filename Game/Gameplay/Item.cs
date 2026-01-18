@@ -23,9 +23,14 @@ public class Item
     public int SecondaryEffectModifier;
     public string SecondarySources = "----";
     public int DropChance;
+
+    public float PoiseScale;
+    public float ClarityScale;
+    public float WillScale;
+    public float VigorScale;
     
     public List<string> Tags = [];
-    public int TimeGauge = 0;
+    public int TimeGauge = 55;
 
     public bool BonusActivates(Character character, int index)
     {
