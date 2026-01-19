@@ -96,7 +96,9 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _logo;
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
-    
+    private Texture2D _pg;
+    private Texture2D _wizard;
+    private Texture2D _cleric;
     private MainMenuStateContext _ctx;
 
     private Texture2D _vfx;
@@ -105,6 +107,9 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void Initialize(SineaterGame game)
     {
+        _pg = _game.Content.Load<Texture2D>("world_map");
+        _wizard = _game.Content.Load<Texture2D>("sprites/sineater-_0029_brute");
+        _cleric = _game.Content.Load<Texture2D>("sprites/sineater-_0032_cleric");
         _vfx = _game.Content.Load<Texture2D>("vfx11");
         _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 2.0f);
         _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
@@ -192,5 +197,17 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
+
+        batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 2.0f),
+            null,
+            Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One, SpriteEffects.None, 0);
+        
+        batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 2.0f - 16),
+            null,
+            Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
+        
+        batch.Draw(_cleric, new Vector2(game.Window.ClientBounds.Width / 2.0f - 64, game.Window.ClientBounds.Height / 2.0f - 16),
+            null,
+            Color.White, 0.0f, new Vector2(_cleric.Width / 2, _cleric.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
     }
 }
