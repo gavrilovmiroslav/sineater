@@ -21,11 +21,10 @@ namespace SINEATER.Game.Screens;
 public enum EMainMenuState
 {
     Starting,
-    Waiting,
-    Loading,
-    LoadingFailed,
+    Menu,
     Fading,
-    Done
+    Done,
+    Options
 }
 
 public class MainMenuStateContext
@@ -34,6 +33,7 @@ public class MainMenuStateContext
     public EMainMenuState State;
     public float FadeTime;
     public bool WorldLoaded;
+    public int MenuOption;
 }
 
 public record struct MainMenuChangeStateEvent(MainMenuStateContext Menu, EMainMenuState Next);
@@ -56,30 +56,10 @@ public static class MainMenuEventHandler
         {
             case EMainMenuState.Starting:
                 break;
-            case EMainMenuState.Waiting:
+            case EMainMenuState.Menu:
                 break;
-            case EMainMenuState.Loading:
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        @event.Menu.LoaderTask = Task.Run(() =>
-                        {
-                            Enemies.Instance.Load();
-                            Items.Instance.Load();
-                            SineaterGame.Instance.Party.MakeParty();
-                            Console.WriteLine("DONE!");
-                        });
-
-                        var goToFadingEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.Fading);
-                        EventBus.Send(ref goToFadingEvent);
-                    }
-                    catch (Exception e)
-                    {
-                        var goToFailedEvent = new MainMenuChangeStateEvent(@event.Menu, EMainMenuState.LoadingFailed);
-                        EventBus.Send(ref goToFailedEvent);
-                    }
-                });
+            case EMainMenuState.Options:
+                SineaterGame.Instance.PopAndPushScreen(new OptionsScreen(SineaterGame.Instance));
                 break;
             case EMainMenuState.Fading:
                 Muse.SetGameState(EMusicState.World);
@@ -98,9 +78,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _logo;
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
-    private Texture2D _pg;
-    private Texture2D _wizard;
-    private Texture2D _cleric;
     private MainMenuStateContext _ctx;
     
     private Texture2D _vfx;
@@ -109,9 +86,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     
     public override void Initialize(SineaterGame game)
     {
-        _pg = _game.Content.Load<Texture2D>("Level_0__Tiles");
-        _wizard = _game.Content.Load<Texture2D>("sprites/sineater-_0029_brute");
-        _cleric = _game.Content.Load<Texture2D>("sprites/sineater-_0032_cleric");
         _vfx = _game.Content.Load<Texture2D>("vfx11");
         _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 2.0f);
         _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
@@ -119,7 +93,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
-        _ctx = new MainMenuStateContext() { LoaderTask = null, State = EMainMenuState.Starting, FadeTime = 0.0f };
+        _ctx = new MainMenuStateContext() { LoaderTask = null, State = EMainMenuState.Starting, FadeTime = 0.0f, MenuOption = 0 };
 
         Task.Run(() =>
         {
@@ -127,8 +101,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             _ctx.WorldLoaded = true;
             _vfxAnimation.Start();
             
-            var goToWaitingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Waiting);
-            EventBus.Send(ref goToWaitingEvent);
+            var goToMenuEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Menu);
+            EventBus.Send(ref goToMenuEvent);
         });
     }
     
@@ -148,10 +122,57 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                     }
                 }
             }
-            else if (_ctx.State is EMainMenuState.Waiting or EMainMenuState.LoadingFailed && InputM.IsActive(EInputAction.Confirm))
+            else if (_ctx.State is EMainMenuState.Menu)
             {
-                var goToLoadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Loading);
-                EventBus.Send(ref goToLoadingEvent);
+                if (InputM.IsActive(EInputAction.MoveDown))
+                {
+                    _ctx.MenuOption = (_ctx.MenuOption + 1) % 3;
+                }
+                else if (InputM.IsActive(EInputAction.MoveUp))
+                {
+                    _ctx.MenuOption = _ctx.MenuOption - 1;
+                    if (_ctx.MenuOption < 0)
+                    {
+                        _ctx.MenuOption = 2;
+                    }
+                }
+                
+                else if (InputM.IsActive(EInputAction.Confirm))
+                {
+                    switch (_ctx.MenuOption)
+                    {
+                        case 0:
+                            Task.Run(() =>
+                            {
+                                try
+                                {
+                                    _ctx.LoaderTask = Task.Run(() =>
+                                    {
+                                        Enemies.Instance.Load();
+                                        Items.Instance.Load();
+                                        SineaterGame.Instance.Party.MakeParty();
+                                        Console.WriteLine("DONE!");
+                                    });
+
+                                    var goToFadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Fading);
+                                    EventBus.Send(ref goToFadingEvent);
+                                }
+                                catch (Exception e)
+                                {
+                                    var goToMenuEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Menu);
+                                    EventBus.Send(ref goToMenuEvent);
+                                }
+                            });
+                            break;
+                        case 1:
+                            var goToOptionsEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Options);
+                            EventBus.Send(ref goToOptionsEvent);
+                            break;
+                        case 2:
+                            SineaterGame.Instance.Exit();
+                            break;
+                    }
+                }
             }
         }
     }
@@ -167,13 +188,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         {
             batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "Checking updates...");
         }
-        else if (_ctx.State is EMainMenuState.Waiting or EMainMenuState.Loading)
+        else if (_ctx.State is EMainMenuState.Menu)
         {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "Press [SPACE] to start");
-        }
-        else if (_ctx.State == EMainMenuState.LoadingFailed)
-        {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, $"Loading failed?");
+            batch.DrawTextCenter(mid, 640, SineaterGame.Instance.Font, "START", _ctx.MenuOption == 0 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "OPTIONS", _ctx.MenuOption == 1 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, 760, SineaterGame.Instance.Font, "QUIT", _ctx.MenuOption == 2 ? Color.Gold : Color.White);
         }
 
         batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),
@@ -200,16 +219,12 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 SpriteEffects.None, 0);
         }
 
-        batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f + 40, game.Window.ClientBounds.Height / 2.0f),
-            null,
-            Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One * 4, SpriteEffects.None, 0);
-        
-        batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f - 240, game.Window.ClientBounds.Height / 2.0f - 130),
-            null,
-            Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
-        
-        batch.Draw(_cleric, new Vector2(game.Window.ClientBounds.Width / 2.0f - 64 - 240, game.Window.ClientBounds.Height / 2.0f - 130),
-            null,
-            Color.White, 0.0f, new Vector2(_cleric.Width / 2, _cleric.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
+        // batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f + 40, game.Window.ClientBounds.Height / 2.0f),
+        //     null,
+        //     Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One * 4, SpriteEffects.None, 0);
+        //
+        // batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f - 240, game.Window.ClientBounds.Height / 2.0f - 14 - 80),
+        //     null,
+        //     Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height), Vector2.One * 3, SpriteEffects.None, 0);
     }
 }
