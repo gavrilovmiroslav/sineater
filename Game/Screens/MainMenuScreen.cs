@@ -13,6 +13,8 @@ using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Game.LookNFeel;
 using Encounter = SINEATER.Game.Gameplay.Encounter;
 using Reward = SINEATER.Game.Gameplay.Reward;
+using LDtk;
+using LDtk.Renderer;
 
 namespace SINEATER.Game.Screens;
 
@@ -100,14 +102,14 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private Texture2D _wizard;
     private Texture2D _cleric;
     private MainMenuStateContext _ctx;
-
+    
     private Texture2D _vfx;
     private GridAnimation _vfxAnimation;
     private GridAnimationContext _vfxAnimationContext;
     
     public override void Initialize(SineaterGame game)
     {
-        _pg = _game.Content.Load<Texture2D>("world_map");
+        _pg = _game.Content.Load<Texture2D>("Level_0__Tiles");
         _wizard = _game.Content.Load<Texture2D>("sprites/sineater-_0029_brute");
         _cleric = _game.Content.Load<Texture2D>("sprites/sineater-_0032_cleric");
         _vfx = _game.Content.Load<Texture2D>("vfx11");
@@ -198,15 +200,15 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 SpriteEffects.None, 0);
         }
 
-        batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 2.0f),
+        batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f + 40, game.Window.ClientBounds.Height / 2.0f),
             null,
-            Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One, SpriteEffects.None, 0);
+            Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One * 4, SpriteEffects.None, 0);
         
-        batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 2.0f - 16),
+        batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f - 240, game.Window.ClientBounds.Height / 2.0f - 130),
             null,
             Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
         
-        batch.Draw(_cleric, new Vector2(game.Window.ClientBounds.Width / 2.0f - 64, game.Window.ClientBounds.Height / 2.0f - 16),
+        batch.Draw(_cleric, new Vector2(game.Window.ClientBounds.Width / 2.0f - 64 - 240, game.Window.ClientBounds.Height / 2.0f - 130),
             null,
             Color.White, 0.0f, new Vector2(_cleric.Width / 2, _cleric.Height / 2), Vector2.One * 3, SpriteEffects.None, 0);
     }

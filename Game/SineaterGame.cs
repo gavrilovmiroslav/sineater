@@ -326,7 +326,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
         RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
-        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h);
+        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h - 50);
         _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
         foreach (var layer in LayerNames)
