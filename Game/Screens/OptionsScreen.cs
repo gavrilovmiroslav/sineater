@@ -25,7 +25,7 @@ public class BlankDrawable : IDrawable
 {
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
-    }    
+    }
 }
 
 public class OptionHeaderDrawable(string header) : IDrawable

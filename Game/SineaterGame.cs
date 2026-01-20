@@ -117,12 +117,11 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
             const string writePath = "options.json";
             File.WriteAllText(writePath, json);
         }
+        CurrentOptions?.UpdateOptions();
     }
     
     protected override void Initialize()
     {
-        LoadOrCreateOptions();
-        
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
         _pixel = Content.Load<Texture2D>("pixel");
         
@@ -153,7 +152,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     }
 
     protected override void LoadContent()
-    {
+    {        
+        LoadOrCreateOptions();
         Tools.SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;
@@ -280,6 +280,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         ScreenStack.Push(new MainMenuScreen(this));
 
         Muse.Load();
+        CurrentOptions.UpdateOptions();
     }
 
     protected override void Update(GameTime gameTime)
