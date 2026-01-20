@@ -33,6 +33,21 @@ public static class Drawing
             new Rectangle(portrait.U * 80, portrait.V * 80, 80, 80), portraitColor ?? Color.White, 0, Vector2.Zero, SpriteEffects.FlipHorizontally, 0);
     }
 
+    public static void FrameEdge(this RenderContext ctx, int x, int y, int w, int bx, int by, Color color)
+    {
+        var frames = SineaterGame.Instance.Frames;
+        var n = 0;
+        ctx.Batch.Draw(frames, new Rectangle(x, y, 16, 16), new Rectangle(bx * 32, by * 32, 8, 8), color);
+        for (var i = 0; i < (w - 16) / 16; i++)
+        {
+            ctx.Batch.Draw(frames, new Rectangle(x + 16 + i * 16, y, 16, 16),
+                new Rectangle(bx * 32 + 8 * (n + 1), by * 32, 8, 8), color);
+            n = (n + 1) % 2;
+        }
+
+        ctx.Batch.Draw(frames, new Rectangle(x + w, y, 16, 16), new Rectangle(bx * 32 + 24, by * 32, 8, 8), color);
+    }
+    
     public static void EmptyFrame(this RenderContext ctx, int x, int y, int w, int h, int bx, int by,
         Color color)
     {

@@ -59,7 +59,8 @@ public static class MainMenuEventHandler
             case EMainMenuState.Menu:
                 break;
             case EMainMenuState.Options:
-                SineaterGame.Instance.PopAndPushScreen(new OptionsScreen(SineaterGame.Instance));
+                SineaterGame.Instance.ScreenStack.Push(new OptionsScreen(SineaterGame.Instance));
+                ev.Menu.State = EMainMenuState.Menu;
                 break;
             case EMainMenuState.Fading:
                 Muse.SetGameState(EMusicState.World);
@@ -75,7 +76,6 @@ public static class MainMenuEventHandler
 
 public class MainMenuScreen(SineaterGame game) : Screen(game)
 {
-    private Texture2D _logo;
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
     private MainMenuStateContext _ctx;
@@ -90,7 +90,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 2.0f);
         _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
         
-        _logo = _game.Content.Load<Texture2D>("sineater-logo");
         _fmod = _game.Content.Load<Texture2D>("fmod-logo");
         _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
         _ctx = new MainMenuStateContext() { LoaderTask = null, State = EMainMenuState.Starting, FadeTime = 0.0f, MenuOption = 0 };
@@ -179,7 +178,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
 
     public override void Draw(SpriteBatch batch, GameTime gameTime)
     {
-        batch.Draw(_logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
+        batch.Draw(SineaterGame.Instance.Logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
 

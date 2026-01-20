@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +10,7 @@ using SadRex;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
 using SINEATER.Tools.SinMod;
@@ -25,11 +28,12 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private SpriteBatch _spriteBatch;
 
     public Texture2D Mrmo => _mrmo;
-    
+    public Texture2D Logo => _logo;
     public Texture2D Frames => _frames;
     public Texture2D Portraits => _portraits;
     public Texture2D Pins => _pins;
     public Texture2D Pixel => _pixel;
+    private Texture2D _logo;
     private Texture2D _pixel;
     private Texture2D _frames;
     private Texture2D _mrmo;
@@ -69,7 +73,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public SpriteFont Font;
     public SpriteFont FontMono;
     public SpriteFont FontBold;
-
+    public Options CurrentOptions;
+    
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
@@ -96,9 +101,28 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _toPush = screen;
         ScreenStack.Pop();
     }
+
+    private void LoadOrCreateOptions()
+    {
+        try
+        {
+            var optionsStream = TitleContainer.OpenStream("options.json");
+            var optionsJson = string.Join("\n", optionsStream.ReadLines(Encoding.Default));
+            CurrentOptions = DataSerializer.Load<Options>(optionsJson);
+        }
+        catch
+        {
+            CurrentOptions = new Options();
+            DataSerializer.Serialize(CurrentOptions, out var json);
+            const string writePath = "options.json";
+            File.WriteAllText(writePath, json);
+        }
+    }
     
     protected override void Initialize()
     {
+        LoadOrCreateOptions();
+        
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
         _pixel = Content.Load<Texture2D>("pixel");
         
@@ -142,6 +166,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         Party = new Party();
 
+        _logo = Content.Load<Texture2D>("sineater-logo");
         _frames = Content.Load<Texture2D>("Frames32px");
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _mapmotext = Content.Load<Texture2D>("mapmotext");
@@ -284,11 +309,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         }
 
         InputManager.Instance.Update(millis);
-
-        if (InputM.IsActive(EInputAction.Exit))
-        {
-            Exit();
-        }
         
         if (InputM.IsActive(EInputAction.RestartExploration))
         {

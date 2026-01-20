@@ -132,7 +132,7 @@ namespace SINEATER.Game.CoreUtils.Input
                 Inputs = new List<InputAction>
                 {
                     MakeAction(EInputAction.Debug, Keys.F3, Buttons.None, false, eInput: EInputTrigger.JustReleased),
-                    MakeAction(EInputAction.Exit, Keys.Escape, Buttons.Back, true, 200),
+                    MakeAction(EInputAction.Exit, Keys.Escape, Buttons.Back),
 
                     MakeAction(EInputAction.MoveUp, Keys.Up, Buttons.DPadUp),
                     MakeAction(EInputAction.MoveDown, Keys.Down, Buttons.DPadDown),
