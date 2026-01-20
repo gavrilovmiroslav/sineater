@@ -117,6 +117,11 @@ public static class System
 
     public static SinEventInstance? GetLabelledInstance(string label)
     {
+        if (!_labels.ContainsKey(label))
+        {
+            return null;
+        }
+        
         return _labels[label];
     }
     

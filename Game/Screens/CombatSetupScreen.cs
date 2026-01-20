@@ -102,122 +102,120 @@ namespace SINEATER.Game.Screens
 
         private void SetupItems()
         {
-            _submenuSelection = 0;
-            _submenu.Clear();
-
-            for (int i = _pageIndex * _pageSize; i < _pageIndex * _pageSize + _pageSize; i++)
-            {
-                if (AvailableItems.Count <= i)
-                    break;
-
-                _submenu.Add(AvailableItems[i].Name);
-            }
+            // _submenuSelection = 0;
+            // _submenu.Clear();
+            //
+            // for (int i = _pageIndex * _pageSize; i < _pageIndex * _pageSize + _pageSize; i++)
+            // {
+            //     if (AvailableItems.Count <= i)
+            //         break;
+            //
+            //     _submenu.Add(AvailableItems[i].Name);
+            // }
         }
 
         private readonly List<string> _positionStats = ["NON", "VIG", "WIL", "CLA", "POI"];
         private void DrawItems()
         {
-            if (_submenu.Count > 0)
-            {
-
-                var len = AvailableItems.Select(s => s.Name.Length).Max() + 2 + 3;
-                var (x, y) = (9, 7);
-
-                int NameStart = 11;
-                var WeightStart = NameStart + len + 1;
-                var primStart = WeightStart + 5 + 1;
-                var separatorStart = primStart + 15;
-                var secStart = separatorStart + 2;
-                var requirmentStart = secStart + 15;
-
-                _game.Layers["ascii"].Set(NameStart, 7, "NAME");
-                _game.Layers["ascii"].Set(WeightStart, 7, "WT");
-                _game.Layers["ascii"].Set(primStart, 7, "EFFECT");
-                _game.Layers["ascii"].Set(secStart, 7, "BONUS");
-                _game.Layers["ascii"].Set(requirmentStart, 7, "REQ");
-                _game.Layers["ascii"].Set(separatorStart, 7, "|");
-
-                var toText = (char c) =>
-                {
-                    if (c == 'x')
-                    {
-                        return '^';
-                    }
-                    else if (c == 'X')
-                    {
-                        return '$';
-                    }
-                    else
-                    {
-                        return '_';
-                    }
-                };
+            // if (_submenu.Count > 0)
+            // {
+            //
+            //     var len = AvailableItems.Select(s => s.Name.Length).Max() + 2 + 3;
+            //     var (x, y) = (9, 7);
+            //
+            //     int NameStart = 11;
+            //     var WeightStart = NameStart + len + 1;
+            //     var primStart = WeightStart + 5 + 1;
+            //     var separatorStart = primStart + 15;
+            //     var secStart = separatorStart + 2;
+            //     var requirmentStart = secStart + 15;
+            //
+            //     _game.Layers["ascii"].Set(NameStart, 7, "NAME");
+            //     _game.Layers["ascii"].Set(WeightStart, 7, "WT");
+            //     _game.Layers["ascii"].Set(primStart, 7, "EFFECT");
+            //     _game.Layers["ascii"].Set(secStart, 7, "BONUS");
+            //     _game.Layers["ascii"].Set(requirmentStart, 7, "REQ");
+            //     _game.Layers["ascii"].Set(separatorStart, 7, "|");
+            //
+            //     var toText = (char c) =>
+            //     {
+            //         if (c == 'x')
+            //         {
+            //             return '^';
+            //         }
+            //         else if (c == 'X')
+            //         {
+            //             return '$';
+            //         }
+            //         else
+            //         {
+            //             return '_';
+            //         }
+            //     };
 
                 //_game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
                 //_game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count),
                 //    Sides.Ascii, Corners.Ascii);
 
-                for (var i = 0; i < _submenu.Count; i++)
-                {
-                    var item = AvailableItems[i];
-
-                    var holder = _game.Party.Characters.FirstOrDefault(x => x.Items.Contains(item));
-
-                    if (holder != null)
-                    {
-                        var (u, v) = holder.Job.GetImage();
-                        _game.Layers["mrmo"].Set(NameStart / 2 - 1, (y + 2 * i + 1) / 2 + 4, new Glyph(u, v, Color.Black, Color.White));
-
-                    }
-
-                    _game.Layers["ascii"].Set(NameStart, y + 1 + i, $"{item.Display}");
-                    _game.Layers["ascii"].Set(WeightStart - 1, y + 1 + i, $" {item.Weight}");
-                    
-                    var prim = (item.PrimaryTargets == "self")
-                        ? "self"
-                            : string.Join("", item.PrimaryTargets.Select(toText));
-
-                    var align = (string s, int m) =>
-                    {
-                        var l = s.Length;
-                        for (int i = 0; i < m - l; i++)
-                        {
-                            s += " ";
-                        }
-                        return s;
-                    };
-
-                    _game.Layers["ascii"].Set(primStart - 1, y + 1 + i, $" {align(item.PrimaryEffect.ToString(), 6)} " +
-                        $"{align(prim, 4)} {item.PrimaryEffectModifier}", item.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move ? Color.Red : Color.GreenYellow);
-
-                    _game.Layers["ascii"].Set(separatorStart, y + 1 + i, "|");
-
-                    var sec = (item.SecondarySources == "self")
-                        ? "self"
-                        : string.Join("", item.SecondarySources.Select(toText));
-
-                    var secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} " +
-                        $"{align(sec, 4)} {item.SecondaryEffectModifier}";
-                    var secondaryColor = item.SecondaryEffect switch
-                    {
-                        EBonusEffect.None => Color.Gray,
-                        EBonusEffect.PlusMod => Color.CadetBlue,
-                        EBonusEffect.Double => Color.Red,
-                        EBonusEffect.TargetAll => Color.Green,
-                    };
-                    
-                    if (item.SecondaryEffect == EBonusEffect.None)
-                    {
-                        secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} ";
-                        secondaryColor = Color.Gray;
-                    }
-                    _game.Layers["ascii"].Set(secStart - 1, y + 1 + i, secondaryText, secondaryColor);
-
-                    _game.Layers["ascii"].Set(requirmentStart - 1, y + 1 + i, $" {_positionStats[(int)item.SecondaryStat]} {item.SecondaryStatRequirement}");
-                }
-
-                _game.Layers["ascii"].Set(x - 2, y + 1 + _submenuSelection, ">");
-            }
+                // for (var i = 0; i < _submenu.Count; i++)
+                // {
+                //     var item = AvailableItems[i];
+                //
+                //     var holder = _game.Party.Characters.FirstOrDefault(x => x.Items.Contains(item));
+                //
+                //     if (holder != null)
+                //     {
+                //         var (u, v) = holder.Job.GetImage();
+                //         _game.Layers["mrmo"].Set(NameStart / 2 - 1, (y + 2 * i + 1) / 2 + 4, new Glyph(u, v, Color.Black, Color.White));
+                //
+                //     }
+                //
+                //     _game.Layers["ascii"].Set(NameStart, y + 1 + i, $"{item.Display}");
+                //     _game.Layers["ascii"].Set(WeightStart - 1, y + 1 + i, $" {item.Weight}");
+                //     
+                //     var prim = (item.PrimaryTargets == "self")
+                //         ? "self"
+                //             : string.Join("", item.PrimaryTargets.Select(toText));
+                //
+                //     var align = (string s, int m) =>
+                //     {
+                //         var l = s.Length;
+                //         for (int i = 0; i < m - l; i++)
+                //         {
+                //             s += " ";
+                //         }
+                //         return s;
+                //     };
+                //
+                //     _game.Layers["ascii"].Set(primStart - 1, y + 1 + i, $" {align(item.PrimaryEffect.ToString(), 6)} " +
+                //         $"{align(prim, 4)} {item.PrimaryEffectModifier}", item.PrimaryEffect is EItemEffect.Attack or EItemEffect.Move ? Color.Red : Color.GreenYellow);
+                //
+                //     _game.Layers["ascii"].Set(separatorStart, y + 1 + i, "|");
+                //
+                //     var sec = (item.SecondarySources == "self")
+                //         ? "self"
+                //         : string.Join("", item.SecondarySources.Select(toText));
+                //
+                //     var secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} " +
+                //         $"{align(sec, 4)} {item.SecondaryEffectModifier}";
+                //     var secondaryColor = item.SecondaryEffect switch
+                //     {
+                //         EBonusEffect.None => Color.Gray,
+                //         EBonusEffect.PlusMod => Color.CadetBlue,
+                //         EBonusEffect.Double => Color.Red,
+                //         EBonusEffect.TargetAll => Color.Green,
+                //     };
+                //     
+                //     if (item.SecondaryEffect == EBonusEffect.None)
+                //     {
+                //         secondaryText = $" {align(item.SecondaryEffect.ToString(), 6)} ";
+                //         secondaryColor = Color.Gray;
+                //     }
+                //     _game.Layers["ascii"].Set(secStart - 1, y + 1 + i, secondaryText, secondaryColor);
+                //
+                //     _game.Layers["ascii"].Set(requirmentStart - 1, y + 1 + i, $" {_positionStats[(int)item.SecondaryStat]} {item.SecondaryStatRequirement}");
+                // }
+            //}
         }
 
 

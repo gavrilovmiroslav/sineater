@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +10,7 @@ using SadRex;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
 using SINEATER.Tools.SinMod;
@@ -25,11 +28,17 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private SpriteBatch _spriteBatch;
 
     public Texture2D Mrmo => _mrmo;
-    
+    public Texture2D Logo => _logo;
     public Texture2D Frames => _frames;
     public Texture2D Portraits => _portraits;
     public Texture2D Pins => _pins;
     public Texture2D Pixel => _pixel;
+    public Texture2D WorldMap => _worldMap;
+    public Texture2D PartySprites => _partySprites;
+    public Texture2D SpriteShadow => _spriteShadow;
+    private Texture2D _partySprites;
+    private Texture2D _logo;
+    private Texture2D _worldMap;
     private Texture2D _pixel;
     private Texture2D _frames;
     private Texture2D _mrmo;
@@ -39,6 +48,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D _largeNums;
     private Texture2D _portraits;
     private Texture2D _statuses;
+    private Texture2D _spriteShadow;
     private Texture2D _pins;
     private Texture2D[] _room = new Texture2D[24];
     private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
@@ -69,7 +79,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public SpriteFont Font;
     public SpriteFont FontMono;
     public SpriteFont FontBold;
-
+    public Options CurrentOptions;
+    
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
@@ -95,6 +106,24 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     {
         _toPush = screen;
         ScreenStack.Pop();
+    }
+
+    private void LoadOrCreateOptions()
+    {
+        try
+        {
+            var optionsStream = TitleContainer.OpenStream("options.json");
+            var optionsJson = string.Join("\n", optionsStream.ReadLines(Encoding.Default));
+            CurrentOptions = DataSerializer.Load<Options>(optionsJson);
+        }
+        catch
+        {
+            CurrentOptions = new Options();
+            DataSerializer.Serialize(CurrentOptions, out var json);
+            const string writePath = "options.json";
+            File.WriteAllText(writePath, json);
+        }
+        CurrentOptions?.UpdateOptions();
     }
     
     protected override void Initialize()
@@ -129,7 +158,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     }
 
     protected override void LoadContent()
-    {
+    {        
+        LoadOrCreateOptions();
         Tools.SinMod.System.Init("audio/GUIDs.txt");
 
         _graphics.PreferredBackBufferWidth = Width;
@@ -142,6 +172,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         Party = new Party();
 
+        _worldMap = Content.Load<Texture2D>("Level_0__Tiles");
+        _partySprites = Content.Load<Texture2D>("party_sprites");
+        _spriteShadow = Content.Load<Texture2D>("sprite_shadow");
+        _logo = Content.Load<Texture2D>("sineater-logo");
         _frames = Content.Load<Texture2D>("Frames32px");
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
         _mapmotext = Content.Load<Texture2D>("mapmotext");
@@ -255,6 +289,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         ScreenStack.Push(new MainMenuScreen(this));
 
         Muse.Load();
+        CurrentOptions.UpdateOptions();
     }
 
     protected override void Update(GameTime gameTime)
@@ -284,11 +319,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         }
 
         InputManager.Instance.Update(millis);
-
-        if (InputM.IsActive(EInputAction.Exit))
-        {
-            Exit();
-        }
         
         if (InputM.IsActive(EInputAction.RestartExploration))
         {
@@ -326,7 +356,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
         RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
-        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h);
+        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h - 50);
         _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
         foreach (var layer in LayerNames)
@@ -336,9 +366,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         if (ScreenStack?.TryPeek(out var scr) ?? false)
         {
-            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
-            scr.Draw(_spriteBatch, gameTime);
-            _spriteBatch.End();
+            scr.Draw(_spriteBatch, gameTime, rasterizerState);
         }
 
         GraphicsDevice.SetRenderTarget(null);

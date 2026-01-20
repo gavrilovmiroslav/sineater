@@ -139,10 +139,10 @@ public class TacticMapScreen : Screen
             return;
         }
 
-        _time += gameTime.ElapsedGameTime.Milliseconds;
-        if (_time > 1600)
+        Time += gameTime.ElapsedGameTime.Milliseconds;
+        if (Time > 1600)
         {
-            _time = 0;
+            Time = 0;
         }
         
         if (_turn.Count > 0)
@@ -240,7 +240,7 @@ public class TacticMapScreen : Screen
         {
             case EItemEffect.None:
                 skip = true;
-                yield break;
+                break;
             case EItemEffect.Attack:
                 _game.Layers["inputtext"].Set(mx, my, $" {item.Display}: Attacking for {prim} damage.");
                 friend = false;
@@ -566,35 +566,6 @@ public class TacticMapScreen : Screen
     
     private void DrawSubmenu()
     {
-        if (_submenu.Count > 0)
-        {
-            var len = _submenu.Select(s => s.Length).Max() + 2;
-            var (x, y) = (15, 19);
-            _game.Layers["ascii"].SetRect(new Vector2(x, y), new Vector2(x + 5 + len, y + 1 + _submenu.Count), ' ');
-            _game.Layers["ascii"].SetBox(new Vector2(x, y), new Vector2(x + 4 + len, y + 1 + _submenu.Count), Sides.Ascii, Corners.Ascii);
-
-            for (var i = 0; i < _submenu.Count; i++)
-            {
-                var name = _submenu[i];
-                if (name.EndsWith("*"))
-                {
-                    _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {name[..^1]}", Color.Gray);    
-                }
-                else
-                {
-                    _game.Layers["ascii"].Set(x + 2, y + 1 + i, $"  {name}");
-                }
-            }
-
-            if (_submenu[_submenuSelection].EndsWith("*"))
-            {
-                _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, "x", Color.Gray);
-            }
-            else
-            {
-                _game.Layers["ascii"].Set(x + 2, y + 1 + _submenuSelection, ">");
-            }
-        }
     }
     
     public bool ShouldHardUpdate { get; set; } = true;
@@ -621,9 +592,12 @@ public class TacticMapScreen : Screen
         //    DrawControls();
     }
     
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         if (_over) return;
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
+            DepthStencilState.Default, rasterizerState);
+
         var mrmo = SineaterGame.Instance.Mrmo;
         
         var slowdown = 1.0f;
@@ -810,6 +784,8 @@ public class TacticMapScreen : Screen
         {
             rc.CharacterProfile(60 + 300 * ii, 800, SineaterGame.Instance.Party.Characters[ii], ii, false);
         }
+        
+        batch.End();
     }
 
     public Character? AttackTarget = null;
@@ -871,17 +847,5 @@ public class TacticMapScreen : Screen
         _game.Layers["input"].Set(left - 1, top, InputM.GetGlyph(EInputAction.MoveLeft));
         _game.Layers["input"].Set(left, top, InputM.GetGlyph(EInputAction.MoveRight));
         _game.Layers["ascii"].Set(left * 2, top - 1, "Select");
-    }
-
-    private void StartSubmenu(string[] opts, bool cancel = true)
-    {
-        _submenuSelection = 0;
-        foreach (var opt in opts)
-        {
-            _submenu.Add(opt);
-        }
-        
-        if (cancel)
-            _submenu.Add("CANCEL");
     }
 }
