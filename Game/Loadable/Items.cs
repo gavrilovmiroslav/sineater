@@ -167,7 +167,7 @@ public class Items : LoadableLibrary<ItemDefinition, ItemParser, ItemInterpreter
     public static Items Instance => _Instance.Value;
     
     protected override string Sheet => "Items";
-    protected override string DataRange => "A1:N20";
+    protected override string DataRange => "A1:S20";
     protected override string JsonPath => "items.json";
 }
 
