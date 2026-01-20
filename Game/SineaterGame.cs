@@ -344,47 +344,47 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
     protected override void Draw(GameTime gameTime)
     {
-        if (ScreenStack?.TryPeek(out var screen) ?? false)
-        {
-            screen.LayerDraw(gameTime);
-        }
-        
+        // if (ScreenStack?.TryPeek(out var screen) ?? false)
+        // {
+        //     screen.LayerDraw(gameTime);
+        // }
+        //
         var focus = _focus.Get();
-
-        GraphicsDevice.Clear(Color.Black);
-        GraphicsDevice.SetRenderTarget(_renderTargetGame);
-
-        Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
-        RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
-        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h - 50);
-        _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
-        
-        foreach (var layer in LayerNames)
-        {
-            Layers[layer].Draw(_spriteBatch);
-        }
-
-        if (ScreenStack?.TryPeek(out var scr) ?? false)
-        {
-            scr.Draw(_spriteBatch, gameTime, rasterizerState);
-        }
+        //
+        // GraphicsDevice.Clear(Color.Black);
+        // GraphicsDevice.SetRenderTarget(_renderTargetGame);
+        //
+        // Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
+        // RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
+        // Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h - 50);
+        // _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
+        //
+        // foreach (var layer in LayerNames)
+        // {
+        //     Layers[layer].Draw(_spriteBatch);
+        // }
+        //
+        // if (ScreenStack?.TryPeek(out var scr) ?? false)
+        // {
+        //     scr.Draw(_spriteBatch, gameTime, rasterizerState);
+        // }
 
         GraphicsDevice.SetRenderTarget(null);
         
         GraphicsDevice.SetRenderTarget(_renderTargetMonitor);
         _spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
-        _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+        _spriteBatch.Draw(_room[11], new Vector2(-focus, -focus * 0.5f) * 66, null, 
             new Color(1.0f, 1.0f, 1.0f, 1.0f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
-        _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
-            new Color(1.0f, 1.0f, 1.0f, _dHour), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
-            SpriteEffects.None, 0.0f);
+        // _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+        //     new Color(1.0f, 1.0f, 1.0f, _dHour), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
+        //     SpriteEffects.None, 0.0f);
         _spriteBatch.End();
         GraphicsDevice.SetRenderTarget(null);
         
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp, effect: _crt);
-        _spriteBatch.Draw(_renderTargetGame, Vector2.Zero, Color.White);
-        _spriteBatch.End();
+        // _spriteBatch.Begin(samplerState: SamplerState.PointClamp, effect: _crt);
+        // _spriteBatch.Draw(_renderTargetGame, Vector2.Zero, Color.White);
+        // _spriteBatch.End();
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.45f));
         _spriteBatch.End();
@@ -393,10 +393,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         _spriteBatch.End();
 
-        if (ShouldDrawImgui)
-        {
-            DrawImgui(gameTime);
-        }
+        // if (ShouldDrawImgui)
+        // {
+        //     DrawImgui(gameTime);
+        // }
 
         base.Draw(gameTime);
     }
