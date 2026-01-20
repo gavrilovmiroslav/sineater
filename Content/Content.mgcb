@@ -1079,6 +1079,18 @@
 /processorParam:TextureFormat=Color
 /build:MRMOTEXT.png
 
+#begin party_sprites.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:party_sprites.png
+
 #begin pins.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -1273,6 +1285,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:sineater-logo.png
+
+#begin sprite_shadow.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sprite_shadow.png
 
 #begin sprites/sineater-_0000_jubilex.png
 /importer:TextureImporter

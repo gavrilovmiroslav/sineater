@@ -66,9 +66,7 @@ public static class MainMenuEventHandler
                 Muse.SetGameState(EMusicState.World);
                 break;
             case EMainMenuState.Done:
-                var encounterEntity = SineaterGame.Instance.World.Get(3, 7);
-                var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(encounterEntity);
-                SineaterGame.Instance.PopAndPushScreen(new TacticMapScreen(SineaterGame.Instance, (3, 7), encounter, new Reward([]), ETimeOfDay.Afternoon));
+                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
                 break;
         }
     }
@@ -176,8 +174,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         }
     }
 
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
+            DepthStencilState.Default, rasterizerState);
+
         batch.Draw(SineaterGame.Instance.Logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
@@ -225,5 +226,7 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         // batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f - 240, game.Window.ClientBounds.Height / 2.0f - 14 - 80),
         //     null,
         //     Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height), Vector2.One * 3, SpriteEffects.None, 0);
+        
+        batch.End();
     }
 }

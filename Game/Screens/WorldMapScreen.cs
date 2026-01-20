@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content.Pipeline;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
+using MonoGame.Extended.Particles.Modifiers.Interpolators;
 using RogueSharp;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
@@ -10,6 +14,7 @@ using SINEATER.Game.Graphics;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.ImGuiTools;
 using Cell = RogueSharp.Cell;
+using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using World = SINEATER.Game.CoreUtils.World;
 
 namespace SINEATER.Game.Screens;
@@ -17,19 +22,11 @@ namespace SINEATER.Game.Screens;
 public class WorldMapScreen(SineaterGame game) : Screen(game)
 {
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
-    
-    private readonly Dictionary<int, (Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
-    HashSet<(int,int)> _visited = [];
-
-    public (int X, int Y) CurrentPlayerPosition = (2, 7);
-    public ETimeOfDay TimeOfDay = ETimeOfDay.Morning;
-    public int HoursOfDay = 0;
+    public (int X, int Y) CurrentPlayerPosition = (4, 8);
 
     public override void Initialize(SineaterGame game)
     {
-        var colors = TitleContainer.OpenStream("Content\\colors.json");
-        var c = string.Join("\n", colors.ReadLines(Encoding.Default));
-        Ambient.Atmospheres = DataSerializer.Load<Atmospheres>(c);
+        Camera = new OrthographicCamera(game.GraphicsDevice);
     }
     
     public override void Update(GameTime gameTime)
@@ -37,18 +34,41 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         CheckPlayerInputs();
     }
     
-    
-    public void DrawCharacter(Character c, int x, int y, SpriteBatch batch)
+    private Vector2 InWorld(int x, int y) => new Vector2(x * 48 + 50, y * 48 + 50);
+    private float _time = 0;
+    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
-    }
-    
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
-    {
+        _time += gameTime.ElapsedGameTime.Milliseconds;
+        // In camera
+        var (x, y) = CurrentPlayerPosition;
+        var playerPos = InWorld(x, y);
+        
+        if (Camera != null) Camera.LookAt(playerPos);
+
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
+            DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
+        var wm = SineaterGame.Instance.WorldMap;
+        batch.Draw(wm, new Vector2(0, 0), null, Color.White, 0, Vector2.Zero, Vector2.One * 3, SpriteEffects.None, 0);
+        var pxy = InWorld(x, y);
+
+        var sh = SineaterGame.Instance.SpriteShadow;
+        var ps = SineaterGame.Instance.PartySprites;
+        var chosen = SineaterGame.Instance.Party.Characters[0];
+        var job = (int)chosen.Job;
+        batch.Draw(sh, playerPos - new Vector2(24, 20), new Rectangle(0, 0, 64, 64), 
+            Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
+        batch.Draw(ps, playerPos - new Vector2(24, 24), new Rectangle(job * 64, 0, 64, 64), 
+            Color.White, 0, new Vector2(32, 64), new Vector2(3, 2.9f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), SpriteEffects.None, 0);
+        batch.End();
+        
+        // GUI
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
+            DepthStencilState.Default, rasterizerState);
+
         var rc = new Drawing.RenderContext(batch, gameTime);
-        for (var i = 0; i < 4; i++)
-        {
-            rc.CharacterProfile(60 + 300 * i, 800, SineaterGame.Instance.Party.Characters[i], i, false);
-        }
+        rc.Party(60, 800);
+        
+        batch.End();
     }
     
     public override void LayerDraw(GameTime gameTime)
@@ -75,19 +95,19 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                 var x = CurrentPlayerPosition.X + dx;
                 var y = CurrentPlayerPosition.Y + dy;
                 
-                if (Maps[1].Map.IsWalkable(x, y))
-                {
-                    CurrentPlayerPosition.X = x;
-                    CurrentPlayerPosition.Y = y;
-                }
-                else
-                {
-                    var tile = SineaterGame.Instance.World.Get(x, y);
-                    if (SineaterGame.Instance.World.ECS.Has<Dialogue>(tile))
-                    {
-                        //CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>"));
-                    }
-                }
+                // if (Maps[1].Map.IsWalkable(x, y))
+                // {
+                //     CurrentPlayerPosition.X = x;
+                //     CurrentPlayerPosition.Y = y;
+                // }
+                // else
+                // {
+                //     var tile = SineaterGame.Instance.World.Get(x, y);
+                //     if (SineaterGame.Instance.World.ECS.Has<Dialogue>(tile))
+                //     {
+                //         //CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>"));
+                //     }
+                // }
             }
         }
     }

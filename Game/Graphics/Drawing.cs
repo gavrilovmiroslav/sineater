@@ -307,4 +307,15 @@ public static class Drawing
             }
         }
     }
+
+    public static void Party(this RenderContext ctx, int x, int y)
+    {
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.White);
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 126, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.Gray);
+        for (var i = 0; i < 4; i++)
+        {
+            ctx.CharacterProfile(x + 300 * i, y, SineaterGame.Instance.Party.Characters[i], i, false);
+        }
+    }
 }

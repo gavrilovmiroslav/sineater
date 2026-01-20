@@ -33,7 +33,12 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public Texture2D Portraits => _portraits;
     public Texture2D Pins => _pins;
     public Texture2D Pixel => _pixel;
+    public Texture2D WorldMap => _worldMap;
+    public Texture2D PartySprites => _partySprites;
+    public Texture2D SpriteShadow => _spriteShadow;
+    private Texture2D _partySprites;
     private Texture2D _logo;
+    private Texture2D _worldMap;
     private Texture2D _pixel;
     private Texture2D _frames;
     private Texture2D _mrmo;
@@ -43,6 +48,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D _largeNums;
     private Texture2D _portraits;
     private Texture2D _statuses;
+    private Texture2D _spriteShadow;
     private Texture2D _pins;
     private Texture2D[] _room = new Texture2D[24];
     private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
@@ -166,6 +172,9 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         Party = new Party();
 
+        _worldMap = Content.Load<Texture2D>("Level_0__Tiles");
+        _partySprites = Content.Load<Texture2D>("party_sprites");
+        _spriteShadow = Content.Load<Texture2D>("sprite_shadow");
         _logo = Content.Load<Texture2D>("sineater-logo");
         _frames = Content.Load<Texture2D>("Frames32px");
         _mrmo = Content.Load<Texture2D>("MRMOTEXT");
@@ -357,9 +366,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         if (ScreenStack?.TryPeek(out var scr) ?? false)
         {
-            _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, rasterizerState);
-            scr.Draw(_spriteBatch, gameTime);
-            _spriteBatch.End();
+            scr.Draw(_spriteBatch, gameTime, rasterizerState);
         }
 
         GraphicsDevice.SetRenderTarget(null);

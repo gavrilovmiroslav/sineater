@@ -10,7 +10,7 @@ namespace SINEATER.Game.Gameplay;
 
 public enum ECharacterClass
 {
-    Wizard,
+    Wizard = 0,
     Witch,
     Knight,
     Monk,

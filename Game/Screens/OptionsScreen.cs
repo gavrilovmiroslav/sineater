@@ -203,8 +203,11 @@ public class OptionsScreen(SineaterGame game) : Screen(game)
         }
     }
 
-    public override void Draw(SpriteBatch batch, GameTime gameTime)
+    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
+            DepthStencilState.Default, rasterizerState);
+
         batch.Draw(SineaterGame.Instance.Logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
@@ -214,5 +217,7 @@ public class OptionsScreen(SineaterGame game) : Screen(game)
         {
             _drawables[i].Update(480, 500 + i * 40, ctx);
         }
+        
+        batch.End();
     }
 }
