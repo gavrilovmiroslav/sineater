@@ -33,6 +33,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public Texture2D Portraits => _portraits;
     public Texture2D Pins => _pins;
     public Texture2D Pixel => _pixel;
+    public Texture2D Semi => _semi;
     public Texture2D WorldMap => _worldMap;
     public Texture2D PartySprites => _partySprites;
     public Texture2D SpriteShadow => _spriteShadow;
@@ -40,6 +41,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D _logo;
     private Texture2D _worldMap;
     private Texture2D _pixel;
+    private Texture2D _semi;
     private Texture2D _frames;
     private Texture2D _mrmo;
     private Texture2D _mapmotext;
@@ -184,6 +186,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _largeNums = Content.Load<Texture2D>("largenumbers");
         _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
         _pins = Content.Load<Texture2D>("pins");
+        _semi = Content.Load<Texture2D>("semi");
         Font = Content.Load<SpriteFont>("eldring");
         FontMono = Content.Load<SpriteFont>("monogram");
         FontBold = Content.Load<SpriteFont>("eldring-bold");
@@ -339,7 +342,11 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         base.Update(gameTime);
     }
 
-    private int _x = 35, _y = 27, _w = -71, _h = 0;
+    private const int X = 35;
+    private const int Y = 27;
+    private const int W = -71;
+    private const int H = 0;
+    
     private IScreen? _toPush;
 
     protected override void Draw(GameTime gameTime)
@@ -356,7 +363,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
         RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
-        Rectangle targetRect = new Rectangle(_x, _y, GraphicsDevice.Viewport.Width + _w, GraphicsDevice.Viewport.Height + _h - 50);
+        Rectangle targetRect = new Rectangle(X, Y, GraphicsDevice.Viewport.Width + W, GraphicsDevice.Viewport.Height + H - 50);
         _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
         foreach (var layer in LayerNames)
