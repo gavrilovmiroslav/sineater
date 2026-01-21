@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
 using MonoGame.Extended.Particles.Modifiers.Interpolators;
 using RogueSharp;
+using SadRex;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
@@ -16,6 +17,7 @@ using SINEATER.Game.Graphics;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.ImGuiTools;
 using Cell = RogueSharp.Cell;
+using Color = Microsoft.Xna.Framework.Color;
 using IDrawable = SINEATER.Game.CoreUtils.IDrawable;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using World = SINEATER.Game.CoreUtils.World;
@@ -116,9 +118,9 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IDrawabl
                 } 
                 
                 var a = MathF.Sin(180.0f * _moveDelta * MathF.PI / 180.0f) * 0.5f;
-                rc.Batch.Draw(sh, screenOffset + _position - new Vector2(28, 16), new Rectangle(0, 0, 64, 64),
+                rc.Batch.Draw(sh, screenOffset + _position - new Vector2(28 + _facing < 0 ? 10 : 0, 16), new Rectangle(0, 0, 64, 64),
                     Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
-                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(28, 16), new Rectangle(job * 64, 0, 64, 64),
+                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(28 + _facing < 0 ? 10 : 0, 16), new Rectangle(job * 64, 0, 64, 64),
                     Color.White, 0, new Vector2(32, 64), new Vector2(3, 3 - a * 2.8f), 
                     _facing > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally, 0);
                 if (_moveDelta >= 1.0f)
@@ -147,7 +149,6 @@ public static class PartyAvatarEventHandler
     {
         if (ev.XY is var (x, y))
         {
-            var p = WorldMapScreen.OutWorld(ev.Screen.PartyAvatar.Position);
             ev.Screen.PartyContext.Delta = new Vector2(ev.Delta?.DX ?? 0, ev.Delta?.DY ?? 0);
             ev.Screen.PartyContext.Destination = new Vector2(x, y);
             ev.Screen.CurrentPlayerPosition = ev.XY!.Value;
@@ -162,11 +163,42 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     public (int X, int Y) CurrentPlayerPosition = (4, 8);
 
+    public Map OverworldMap;
     public PartyAvatarContext PartyContext;
     public PartyAvatarDrawable PartyAvatar;
 
+    private void InitializeMapLayers()
+    {
+        var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
+        using var stream = TitleContainer.OpenStream(filePath);
+        var rex = Image.Load(stream);
+        
+        for (var layerIndex = 0; layerIndex < 2; layerIndex++)
+        {
+            var layer = rex.Layers[layerIndex];
+            var visibilityMask = rex.Layers[layerIndex + 2];
+            var levelMap = new Map<Cell>(20, 20);
+            
+            for (var y = 0; y < 20; y++)
+            {
+                for (var x = 0; x < 20; x++)
+                {
+                    var bg = layer[x, y].Background;
+                    var transparent = visibilityMask[x, y].Character != 32;
+                    var isAccessible = bg != SadRex.Color.Transparent && bg != new SadRex.Color(0, 0, 0);
+                    levelMap.SetCellProperties(x, y, isAccessible || transparent, isAccessible);
+                }
+            }
+            
+            Maps[layerIndex] = (levelMap, new FieldOfView<Cell>(levelMap));
+        }
+    }
+
+    public Dictionary<int, (RogueSharp.Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
+
     public override void Initialize(SineaterGame game)
     {
+        InitializeMapLayers();
         Camera = new OrthographicCamera(game.GraphicsDevice);
         PartyContext = new PartyAvatarContext() { Camera = Camera };
         PartyAvatar = new PartyAvatarDrawable(PartyContext, InWorld(4, 8));
@@ -195,11 +227,16 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         batch.Draw(wm, xy, null, Color.White, 0, Vector2.Zero, Vector2.One * 3, SpriteEffects.None, 0);
         
         // for test
-        for (var i = 0; i < 25; i++)
+        for (var i = 0; i < 20; i++)
         {
             for (var j = 0; j < 12; j++)
             {
-                if ((i + j) % 2 == 0)
+                if (!Maps[1].Map.IsWalkable(i, j))
+                {
+                    batch.Draw(SineaterGame.Instance.Pixel, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
+                        new Color(1.0f, 0.0f, 0.0f, 0.5f), 0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                }
+                else if ((i + j) % 2 == 0)
                 {
                     batch.Draw(SineaterGame.Instance.Semi, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
                         new Color(0.8f, 0.25f, 0.45f, 0.3f), 0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
@@ -244,22 +281,11 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                     var x = CurrentPlayerPosition.X + dx;
                     var y = CurrentPlayerPosition.Y + dy;
 
-                    var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Moving, (x, y), (dx, dy)); 
-                    EventBus.Send(ref changeEvent);
-
-                    // if (Maps[1].Map.IsWalkable(x, y))
-                    // {
-                    //     CurrentPlayerPosition.X = x;
-                    //     CurrentPlayerPosition.Y = y;
-                    // }
-                    // else
-                    // {
-                    //     var tile = SineaterGame.Instance.World.Get(x, y);
-                    //     if (SineaterGame.Instance.World.ECS.Has<Dialogue>(tile))
-                    //     {
-                    //         //CoroutineHandler.Run(new CoShowInspectText(this, World.GeneralDescriptions.Get(x, y)?.Text ?? $"<GENERAL DESCRIPTIONS MISSING AT {x}, {y}>"));
-                    //     }
-                    // }
+                    if (Maps[1].Map.IsWalkable(x, y))
+                    {
+                        var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Moving, (x, y), (dx, dy)); 
+                        EventBus.Send(ref changeEvent);
+                    }
                 }
             }
             else if (change)
