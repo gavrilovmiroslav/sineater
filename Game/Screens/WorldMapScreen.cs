@@ -115,9 +115,13 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IDrawabl
                 {
                     ctx.Index = (ctx.Index + 1) % 4;
                     _changed = true;
-                } 
+                }
                 
                 var a = MathF.Sin(180.0f * _moveDelta * MathF.PI / 180.0f) * 0.5f;
+                if (_moveDelta is < 0.2f or >= 0.8f)
+                {
+                    a = -0.05f;
+                }
                 rc.Batch.Draw(sh, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(0, 0, 64, 64),
                     Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
                 rc.Batch.Draw(ps, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(job * 64, 0, 64, 64),
@@ -135,17 +139,21 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IDrawabl
 }
 
 public record struct PartyAvatarStateChanged(WorldMapScreen Screen, EPartyAvatarState NewState, (int X, int Y)? XY = null, (int DX, int DY)? Delta = null);
+public record struct PartyAvatarMoved(WorldMapScreen Screen, (int X, int Y) NewPosition);
 
 public partial class PartyAvatarStateEventReceiver
 {
     public PartyAvatarStateEventReceiver() { Hook(); }
-    [Event] public void OnPartyAvatarStateChanged(ref PartyAvatarStateChanged ev) {}
+    [Event] public void OnPartyAvatarStateChangedEvent(ref PartyAvatarStateChanged ev) {}
+
+    [Event]
+    public void OnPartyAvatarMovedEvent(ref PartyAvatarMoved ev) {}
 }
 
 public static class PartyAvatarEventHandler
 {
     [Event(order: 1)]
-    public static void OnPartyAvatarStateChanged(ref PartyAvatarStateChanged ev)
+    public static void OnPartyAvatarStateChangedEvent(ref PartyAvatarStateChanged ev)
     {
         if (ev.XY is var (x, y))
         {
@@ -156,6 +164,12 @@ public static class PartyAvatarEventHandler
         
         ev.Screen.PartyContext.State = ev.NewState;
     }
+
+    [Event(order: 1)]
+    public static void OnPartyAvatarMovedEvent(ref PartyAvatarMoved ev)
+    {
+        ev.Screen.Maps[1].Fov.ComputeFov(ev.NewPosition.X, ev.NewPosition.Y, 5, true);
+    }
 }
 
 public class WorldMapScreen(SineaterGame game) : Screen(game)
@@ -163,10 +177,10 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     public (int X, int Y) CurrentPlayerPosition = (4, 8);
 
-    public Map OverworldMap;
     public PartyAvatarContext PartyContext;
     public PartyAvatarDrawable PartyAvatar;
-
+    public readonly Dictionary<int, (RogueSharp.Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
+    
     private void InitializeMapLayers()
     {
         var filePath = System.IO.Path.Combine(_game.Content.RootDirectory, $"map.xp");
@@ -189,13 +203,14 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                     levelMap.SetCellProperties(x, y, isAccessible || transparent, isAccessible);
                 }
             }
+
+            var fov = new FieldOfView<Cell>(levelMap);
+            fov.ComputeFov(CurrentPlayerPosition.X, CurrentPlayerPosition.Y, 5, true);
             
-            Maps[layerIndex] = (levelMap, new FieldOfView<Cell>(levelMap));
+            Maps[layerIndex] = (levelMap, fov);
         }
     }
-
-    public Dictionary<int, (RogueSharp.Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
-
+    
     public override void Initialize(SineaterGame game)
     {
         InitializeMapLayers();
@@ -231,15 +246,26 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         {
             for (var j = 0; j < 12; j++)
             {
-                if (!Maps[1].Map.IsWalkable(i, j))
+                if (!Maps[1].Fov.IsInFov(i, j))
                 {
                     batch.Draw(SineaterGame.Instance.Pixel, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
-                        new Color(1.0f, 0.0f, 0.0f, 0.5f), 0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                        new Color(0.0f, 0.0f, 0.0f, 1f), 0, new Vector2(24, 24), Vector2.One * 2,
+                        SpriteEffects.None, 0);
                 }
-                else if ((i + j) % 2 == 0)
+                else
                 {
-                    batch.Draw(SineaterGame.Instance.Semi, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
-                        new Color(0.8f, 0.25f, 0.45f, 0.3f), 0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                    if (!Maps[1].Map.IsWalkable(i, j))
+                    {
+                        batch.Draw(SineaterGame.Instance.Pixel, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
+                            new Color(1.0f, 0.0f, 0.0f, 0.5f), 0, new Vector2(24, 24), Vector2.One * 2,
+                            SpriteEffects.None, 0);
+                    }
+                    else if ((i + j) % 2 == 0)
+                    {
+                        batch.Draw(SineaterGame.Instance.Semi, xy + InWorld(i, j), new Rectangle(0, 0, 24, 24),
+                            new Color(0.8f, 0.25f, 0.45f, 0.3f), 0, new Vector2(24, 24), Vector2.One * 2,
+                            SpriteEffects.None, 0);
+                    }
                 }
             }
         }
@@ -285,6 +311,9 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                     {
                         var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Moving, (x, y), (dx, dy)); 
                         EventBus.Send(ref changeEvent);
+                        
+                        var onMoved = new PartyAvatarMoved(this, (x, y));
+                        EventBus.Send(ref onMoved);
                     }
                 }
             }
