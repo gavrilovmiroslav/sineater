@@ -148,7 +148,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                                         Enemies.Instance.Load();
                                         Items.Instance.Load();
                                         SineaterGame.Instance.Party.MakeParty();
-                                        Console.WriteLine("DONE!");
                                     });
 
                                     var goToFadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Fading);
@@ -218,14 +217,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
-
-        // batch.Draw(_pg, new Vector2(game.Window.ClientBounds.Width / 2.0f + 40, game.Window.ClientBounds.Height / 2.0f),
-        //     null,
-        //     Color.White, 0.0f, new Vector2(_pg.Width / 2, _pg.Height / 2), Vector2.One * 4, SpriteEffects.None, 0);
-        //
-        // batch.Draw(_wizard, new Vector2(game.Window.ClientBounds.Width / 2.0f - 240, game.Window.ClientBounds.Height / 2.0f - 14 - 80),
-        //     null,
-        //     Color.White, 0.0f, new Vector2(_wizard.Width / 2, _wizard.Height), Vector2.One * 3, SpriteEffects.None, 0);
         
         batch.End();
     }

@@ -56,7 +56,7 @@ public class SinEventInstance
     public SinEventInstance(EventInstance instance, float volume = 0.0f)
     {
         Event = instance;
-        for (int i = 0; i < instance.Description.ParameterCount; i++)
+        for (var i = 0; i < instance.Description.ParameterCount; i++)
         {
             var desc = instance.Description.GetParameterDescription(i);
             _parameters[(string)desc.name] = desc.id;
