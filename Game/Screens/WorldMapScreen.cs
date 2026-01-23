@@ -1,28 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Arch.Bus;
+﻿using Arch.Bus;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content.Pipeline;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
-using MonoGame.Extended.Particles.Modifiers.Interpolators;
-using RogueSharp;
-using SadRex;
-using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
-using SINEATER.Game.Gameplay;
 using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
-using SINEATER.Game.LookNFeel;
-using SINEATER.Tools.ImGuiTools;
-using Cell = RogueSharp.Cell;
-using Color = Microsoft.Xna.Framework.Color;
-using IDrawable = SINEATER.Game.CoreUtils.IDrawable;
-using Rectangle = Microsoft.Xna.Framework.Rectangle;
-using World = SINEATER.Game.CoreUtils.World;
-
 namespace SINEATER.Game.Screens;
 
 public class WorldMapScreen(SineaterGame game) : Screen(game)
@@ -33,8 +15,6 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     public PartyAvatarContext PartyContext;
     public PartyAvatarDrawable PartyAvatar;
     public WorldMapDrawable WorldMap;
-    
-    
     
     public override void Initialize(SineaterGame game)
     {
@@ -49,8 +29,8 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         CheckPlayerInputs();
     }
 
-    public const int OffsetX = 40;
-    public const int OffsetY = 96;
+    private const int OFFSET_X = 40;
+    private const int OFFSET_Y = 96;
     public static Vector2 InWorld(int x, int y) => new(x * 48 + 48, y * 48 + 48);
     public static Vector2 InWorld(Vector2 xy) => InWorld((int)xy.X, (int)xy.Y);
     
@@ -59,15 +39,15 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
-        var xy = new Vector2(OffsetX, OffsetY);
+        var xy = new Vector2(OFFSET_X, OFFSET_Y);
         // In camera
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
         
         var rc = new Drawing.RenderContext(batch, gameTime);
         
-        WorldMap.Update(OffsetX, OffsetY, rc);
-        PartyAvatar.Update(OffsetX, OffsetY, rc);
+        WorldMap.Update(OFFSET_X, OFFSET_Y, rc);
+        PartyAvatar.Update(OFFSET_X, OFFSET_Y, rc);
         batch.End();
         
         // GUI
