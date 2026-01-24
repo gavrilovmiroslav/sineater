@@ -5,6 +5,7 @@ using MonoGame.Extended;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
+using SINEATER.Game.Save;
 namespace SINEATER.Game.Screens;
 
 public class WorldMapScreen(SineaterGame game) : Screen(game)
@@ -102,6 +103,11 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                 var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Change); 
                 EventBus.Send(ref changeEvent);
             }
+        }
+
+        if (InputM.IsActive(EInputAction.Save))
+        {
+            SaveSystem.Save();
         }
     }
 }
