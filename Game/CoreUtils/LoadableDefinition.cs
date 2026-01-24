@@ -48,6 +48,16 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
 
     private TInterpreter interp = new();
 
+    public List<string> EnumerateItems()
+    {
+        var result = new List<string>();
+        foreach(var item in  _library.Keys)
+        {
+            result.Add(item);
+        }
+        return result;
+    }
+
     public bool Has(string key)
     {
         return _library.ContainsKey(key);

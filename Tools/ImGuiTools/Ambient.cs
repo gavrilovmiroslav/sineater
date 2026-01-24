@@ -63,6 +63,12 @@ namespace SINEATER.Tools.ImGuiTools
 
         public static void ImguiEditor()
         {
+            if (Atmospheres == null)
+            {
+                ImGui.Text("Data is NULL!");
+                return;
+            }
+
             bool changed = ImGui.Button("Force Save");
 
             changed |= ImguiAtmo("Morning", ref Atmospheres.morning);

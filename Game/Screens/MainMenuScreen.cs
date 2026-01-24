@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Threading.Tasks;
 using Arch.Bus;
 using Microsoft.Xna.Framework;
@@ -10,11 +9,7 @@ using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using SINEATER.Game.LookNFeel;
-using Encounter = SINEATER.Game.Gameplay.Encounter;
-using Reward = SINEATER.Game.Gameplay.Reward;
-using LDtk;
-using LDtk.Renderer;
+using SINEATER.Game.Save;
 
 namespace SINEATER.Game.Screens;
 
@@ -102,7 +97,8 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             EventBus.Send(ref goToMenuEvent);
         });
     }
-    
+
+    public int _menuItemsCount = SaveSystem.HasSave() ? 4 : 3;
     public override void Update(GameTime gameTime)
     {
         if (_ctx.WorldLoaded)
@@ -123,22 +119,24 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             {
                 if (InputM.IsActive(EInputAction.MoveDown))
                 {
-                    _ctx.MenuOption = (_ctx.MenuOption + 1) % 3;
+                    _ctx.MenuOption = (_ctx.MenuOption + 1) % _menuItemsCount;
                 }
                 else if (InputM.IsActive(EInputAction.MoveUp))
                 {
                     _ctx.MenuOption = _ctx.MenuOption - 1;
                     if (_ctx.MenuOption < 0)
                     {
-                        _ctx.MenuOption = 2;
+                        _ctx.MenuOption = _menuItemsCount - 1;
                     }
                 }
-                
+
                 else if (InputM.IsActive(EInputAction.Confirm))
                 {
+                    bool loadSave = _ctx.MenuOption == 0;
                     switch (_ctx.MenuOption)
                     {
                         case 0:
+                        case 1:
                             Task.Run(() =>
                             {
                                 try
@@ -147,7 +145,16 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                                     {
                                         Enemies.Instance.Load();
                                         Items.Instance.Load();
-                                        SineaterGame.Instance.Party.MakeParty();
+
+                                        if (loadSave)
+                                        {
+                                            SaveSystem.Load();
+                                        }
+                                        else
+                                        {
+                                            SineaterGame.Instance.Party.MakeParty();
+                                            SaveSystem.Save();
+                                        }
                                     });
 
                                     var goToFadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Fading);
@@ -160,11 +167,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                                 }
                             });
                             break;
-                        case 1:
+                        case 2:
                             var goToOptionsEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Options);
                             EventBus.Send(ref goToOptionsEvent);
                             break;
-                        case 2:
+                        case 3:
                             SineaterGame.Instance.Exit();
                             break;
                     }
@@ -189,9 +196,18 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         }
         else if (_ctx.State is EMainMenuState.Menu)
         {
-            batch.DrawTextCenter(mid, 640, SineaterGame.Instance.Font, "START", _ctx.MenuOption == 0 ? Color.Gold : Color.White);
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "OPTIONS", _ctx.MenuOption == 1 ? Color.Gold : Color.White);
-            batch.DrawTextCenter(mid, 760, SineaterGame.Instance.Font, "QUIT", _ctx.MenuOption == 2 ? Color.Gold : Color.White);
+            var top = 640;
+            var height = 60;
+
+            if (SaveSystem.HasSave())
+            {
+                batch.DrawTextCenter(mid, top, SineaterGame.Instance.Font, "CONTINUE", _ctx.MenuOption == 0 ? Color.Gold : Color.White);
+                top += height;
+            }
+
+            batch.DrawTextCenter(mid, top, SineaterGame.Instance.Font, "START", _ctx.MenuOption == 1 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, top + height, SineaterGame.Instance.Font, "OPTIONS", _ctx.MenuOption == 2 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, top + height + height, SineaterGame.Instance.Font, "QUIT", _ctx.MenuOption == 3 ? Color.Gold : Color.White);
         }
 
         batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),

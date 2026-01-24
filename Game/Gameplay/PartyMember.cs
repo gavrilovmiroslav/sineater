@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.Xna.Framework;
-using SINEATER.Game.CoreUtils;
+﻿using SINEATER.Game.CoreUtils;
 using SINEATER.Game.Loadable;
-using SINEATER.Game.LookNFeel;
+using SINEATER.Game.Save;
+using System;
+using System.Collections.Generic;
 using static SINEATER.Game.CoreUtils.Extensions;
 
 namespace SINEATER.Game.Gameplay;
@@ -88,13 +87,16 @@ public class PartyMember : Character
     public bool Details { get; set; }
 }
 
-public record struct Party
+public class Party
 {
     public readonly PartyMember[] Characters = new PartyMember[4];
     public Inventory Inventory { get; } = new();
-    
+
+    public (int X, int Y) CurrentPlayerPosition = (4, 8);
     public Party()
-    {}
+    {
+        SaveSystem.OnSaveLoaded += LoadParty;
+    }
 
     public void MakeParty()
     {
@@ -113,60 +115,114 @@ public record struct Party
         for (var i = 0; i < 4; i++)
         {
             Characters[i] = new PartyMember(queue.Dequeue());
-            
-            switch (Characters[i].Job)
-            {
-                case ECharacterClass.Wizard:
-                    Characters[i].Equip(Items.Instance.Make("AshBranch"));
-                    Characters[i].Equip(Items.Instance.Make("Dagger"));
-                    Characters[i].Stats.Will = 5;
-                    Characters[i].Stats.Clarity = 2;
-                    Characters[i].Stats.Poise = 2;
-                    Characters[i].Stats.Vigor = 3;
-                    break;
-                case ECharacterClass.Witch:
-                    Characters[i].Equip(Items.Instance.Make("Dagger"));
-                    Characters[i].Stats.Will = 4;
-                    Characters[i].Stats.Clarity = 5;
-                    Characters[i].Stats.Poise = 1;
-                    Characters[i].Stats.Vigor = 3;
-                    break;
-                case ECharacterClass.Knight:
-                    Characters[i].Equip(Items.Instance.Make("LongSword"));
-                    Characters[i].Stats.Will = 3;
-                    Characters[i].Stats.Clarity = 1;
-                    Characters[i].Stats.Poise = 5;
-                    Characters[i].Stats.Vigor = 5;
-                    break;
-                case ECharacterClass.Monk:
-                    Characters[i].Equip(Items.Instance.Make("ThornWhip"));
-                    Characters[i].Stats.Will = 2;
-                    Characters[i].Stats.Clarity = 2;
-                    Characters[i].Stats.Poise = 2;
-                    Characters[i].Stats.Vigor = 6;
-                    break;
-                case ECharacterClass.Sage:
-                    Characters[i].Equip(Items.Instance.Make("ThornWhip"));
-                    Characters[i].Stats.Will = 2;
-                    Characters[i].Stats.Clarity = 5;
-                    Characters[i].Stats.Poise = 3;
-                    Characters[i].Stats.Vigor = 3;
-                    break;
-                case ECharacterClass.Priest:
-                    Characters[i].Equip(Items.Instance.Make("ThornWhip"));
-                    Characters[i].Stats.Will = 5;
-                    Characters[i].Stats.Clarity = 4;
-                    Characters[i].Stats.Poise = 2;
-                    Characters[i].Stats.Vigor = 3;
-                    break;
-                case ECharacterClass.Thief:
-                    Characters[i].Equip(Items.Instance.Make("Dagger"));
-                    Characters[i].Stats.Will = 6;
-                    Characters[i].Stats.Clarity = 6;
-                    Characters[i].Stats.Poise = 2;
-                    Characters[i].Stats.Vigor = 2;
-                    break;
-            }
+            InitCharacter(Characters[i], defaultEquip: true);
         }
+    }
+
+    private void InitCharacter(PartyMember character, bool defaultEquip)
+    {
+        switch (character.Job)
+        {
+            case ECharacterClass.Wizard:
+                if (defaultEquip)
+                {
+                    character.Equip(Items.Instance.Make("AshBranch"));
+                    character.Equip(Items.Instance.Make("Dagger"));
+                }
+
+                character.Stats.Will = 5;
+                character.Stats.Clarity = 2;
+                character.Stats.Poise = 2;
+                character.Stats.Vigor = 3;
+                break;
+            case ECharacterClass.Witch:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("Dagger"));
+
+                character.Stats.Will = 4;
+                character.Stats.Clarity = 5;
+                character.Stats.Poise = 1;
+                character.Stats.Vigor = 3;
+                break;
+            case ECharacterClass.Knight:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("LongSword"));
+
+                character.Stats.Will = 3;
+                character.Stats.Clarity = 1;
+                character.Stats.Poise = 5;
+                character.Stats.Vigor = 5;
+                break;
+            case ECharacterClass.Monk:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("ThornWhip"));
+
+                character.Stats.Will = 2;
+                character.Stats.Clarity = 2;
+                character.Stats.Poise = 2;
+                character.Stats.Vigor = 6;
+                break;
+            case ECharacterClass.Sage:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("ThornWhip"));
+
+                character.Stats.Will = 2;
+                character.Stats.Clarity = 5;
+                character.Stats.Poise = 3;
+                character.Stats.Vigor = 3;
+                break;
+            case ECharacterClass.Priest:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("ThornWhip"));
+
+                character.Stats.Will = 5;
+                character.Stats.Clarity = 4;
+                character.Stats.Poise = 2;
+                character.Stats.Vigor = 3;
+                break;
+            case ECharacterClass.Thief:
+                if (defaultEquip)
+                    character.Equip(Items.Instance.Make("Dagger"));
+
+                character.Stats.Will = 6;
+                character.Stats.Clarity = 6;
+                character.Stats.Poise = 2;
+                character.Stats.Vigor = 2;
+                break;
+        }
+    }
+
+    public void LoadParty(object? _, SaveData data)
+    {
+        // Load party
+        Inventory.Items.Clear();
+        int i = 0;
+        foreach (var character in data.characterDatas)
+        {
+            var member = new PartyMember(character.Class);
+            InitCharacter(member, defaultEquip: false);
+
+            foreach (var item in character.Inventory)
+            {
+                if (item == null)
+                    continue;
+
+                member.Equip(Items.Instance.Make(item));
+            }
+
+            Characters[i] = member;
+            i++;
+        }
+
+        // Load Inventory
+        foreach (var item in data.Inventory)
+        {
+            if (item == null)
+                continue;
+
+            Inventory.Items.Add(Items.Instance.Make(item));
+        }
+
+        CurrentPlayerPosition = (data.PlayerPositionX, data.PlayerPositionY);
     }
 }
