@@ -102,22 +102,24 @@ public class PointOfInterestMarker(int X, int Y, string text) : IWorldMapMarker
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
         if (text == "") return;
-        Console.WriteLine(text);
         var (u, v) = SineaterGame.Instance.AllSpritesMap[text];
         _time += renderContext.Time.ElapsedGameTime.Milliseconds; 
         _moveDelta += 5 * renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
         var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
         
         var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.DrawTextCenter((int)xy.X - 24, (int)xy.Y - 24, SineaterGame.Instance.FontBold, text, Color.White);
         renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy - new Vector2(28, 20), new Rectangle(u * 64, v * 64, 64, 64),
             Color.White, 0, new Vector2(32, 64),
-            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
+            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
             SpriteEffects.None, 0);
-        renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy - new Vector2(28, 20), new Rectangle(u * 64, v * 64, 64, 64),
-            Color.White, 0, new Vector2(32, 64),
-            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
-            SpriteEffects.None, 0);
+        if (SineaterGame.Instance.ShowHelp)
+        {
+            renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy - new Vector2(28, 20),
+                new Rectangle(u * 64, v * 64, 64, 64),
+                Color.White, 0, new Vector2(32, 64),
+                new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
+                SpriteEffects.None, 0);
+        }
     }
 }
 
@@ -225,7 +227,7 @@ public class WorldMapDrawable : IDrawable
         var xy = new Vector2(x, y);
         var wm = SineaterGame.Instance.WorldMap;
         
-        renderContext.Batch.Draw(wm, xy, null, Color.White, 0, 
+        renderContext.Batch.Draw(wm, xy, null, new Color(0.8f, 0.7f, 0.7f), 0, 
             Vector2.Zero, Vector2.One * 3, SpriteEffects.None, 0);
         
         // for test

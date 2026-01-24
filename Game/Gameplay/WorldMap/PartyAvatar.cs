@@ -43,7 +43,6 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
         var ps = SineaterGame.Instance.AllSprites;
         var os = SineaterGame.Instance.AllSpriteOutlines;
         var chosen = SineaterGame.Instance.Party.Characters[ctx.Index];
-        var job = (int)chosen.Job;
         var klass = $"{chosen.Job}".ToLower();
         var (u, v) = SineaterGame.Instance.AllSpritesMap[klass];
         
