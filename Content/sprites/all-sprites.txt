@@ -1,0 +1,36 @@
+0 0 alchemist
+0 1 asperal_bud
+0 2 astral_wight
+0 3 thorn_wine
+0 4 brute
+0 5 cockatrice
+1 0 daughter_of_exile
+1 1 wraith
+1 2 petrolith
+1 3 juiblex
+1 4 lich
+1 5 saurin
+2 0 lore hunter
+2 1 malbogia 
+2 2 mandragora
+2 3 monk
+2 4 moon thorn
+2 5 naga
+3 0 ooze
+3 1 oozette
+3 2 oozegg
+3 3 priestess
+3 4 sage
+3 5 sentinel
+4 0 wight
+4 1 sinner
+4 2 skeleton
+4 3 thief
+4 4 thorn reverent
+4 5 troll
+5 0 witch
+5 1 wizard
+5 2 wargr
+5 3 drow
+5 4 thorn priest
+5 5 blank

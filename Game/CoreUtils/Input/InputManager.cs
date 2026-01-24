@@ -179,6 +179,7 @@ namespace SINEATER.Game.CoreUtils.Input
                     MakeAction(EInputAction.ChangePage, Keys.W, Buttons.Y),
                     MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftShoulder),
                     MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightShoulder),
+                    MakeAction(EInputAction.ShowHelp, Keys.LeftAlt, Buttons.LeftShoulder, isHold: true),
                 }
             });
         }

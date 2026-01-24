@@ -39,8 +39,17 @@ public static class WorldMapEventHandler
     [Event(order: 1)]
     public static void OnUncoverWorld(ref UncoverWorld ev)
     {
-        var poi = new PointOfInterestMarker(ev.X, ev.Y, "!");
-        ev.Screen.WorldMap?.MapMarkers.Add(poi);
+        var tile = SineaterGame.Instance.World.Get(ev.X, ev.Y);
+        var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(tile);
+        var name = encounter.Enemies[0].Name;
+        Console.WriteLine($"{string.Join(", ", encounter.Enemies.Select(s => s.Name))}");
+        Console.WriteLine($"{name}");
+        if (!SineaterGame.Instance.AllSpritesMap.ContainsKey(name))
+        {
+            name = "";
+        }
+        ev.Screen.WorldMap?.MapMarkers.Add(new PointOfInterestMarker(ev.X, ev.Y, name));
+        ev.Screen.WorldMap?.MapMarkers.Add(new SurpriseMarker(ev.X, ev.Y));
         if (ev.Screen.WorldMap != null)
         {
             Console.WriteLine(ev.Screen.WorldMap.MapMarkers.Count);
@@ -48,22 +57,64 @@ public static class WorldMapEventHandler
     }
 }
 
-public interface IWorldMapMarker : IDrawable;
+public enum EMarkerOrder
+{
+    Before,
+    After
+}
+public interface IWorldMapMarker : IDrawable
+{
+    public bool ShouldDelete { get; set; }
+    public EMarkerOrder GetOrder();
+}
+
+public class SurpriseMarker(int X, int Y) : IWorldMapMarker
+{
+    public EMarkerOrder GetOrder() => EMarkerOrder.After;
+    public bool ShouldDelete { get; set; } = false;
+    
+    private float _time = 0.0f;
+
+    public void Update(int x, int y, Drawing.RenderContext renderContext)
+    {
+        _time += renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
+        var alpha = float.Lerp(0f, 1.0f, _time.Low(0.4f, Easing.CubicEaseOut));
+        var t = float.Lerp(0f, -20.0f, _time.Low(0.2f, Easing.CubicEaseIn));
+        var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
+        renderContext.Batch.DrawTextCenter((int)xy.X - 24, (int)(xy.Y - 40 + t), SineaterGame.Instance.FontBold, 
+            "!!", new Color(1.0f, 1.0f, 1.0f, 1.0f - alpha));
+        
+        if (alpha >= 1.0f)
+        {
+            ShouldDelete = true;
+        }
+    }
+}
 
 public class PointOfInterestMarker(int X, int Y, string text) : IWorldMapMarker
 {
+    public EMarkerOrder GetOrder() => EMarkerOrder.Before;
+    public bool ShouldDelete { get; set; } = false;
+    
     private float _time = 0.0f;
     private float _moveDelta = 0.0f;
 
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
+        if (text == "") return;
+        Console.WriteLine(text);
+        var (u, v) = SineaterGame.Instance.AllSpritesMap[text];
         _time += renderContext.Time.ElapsedGameTime.Milliseconds; 
         _moveDelta += 5 * renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
         var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
         
         var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
         renderContext.Batch.DrawTextCenter((int)xy.X - 24, (int)xy.Y - 24, SineaterGame.Instance.FontBold, text, Color.White);
-        renderContext.Batch.Draw(SineaterGame.Instance.PartySprites, xy - new Vector2(28, 20), new Rectangle(0, 0, 64, 64),
+        renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy - new Vector2(28, 20), new Rectangle(u * 64, v * 64, 64, 64),
+            Color.White, 0, new Vector2(32, 64),
+            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
+            SpriteEffects.None, 0);
+        renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy - new Vector2(28, 20), new Rectangle(u * 64, v * 64, 64, 64),
             Color.White, 0, new Vector2(32, 64),
             new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
             SpriteEffects.None, 0);
@@ -127,7 +178,7 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
-        _fov = Maps[1].Fov.ComputeFov(x, y, 3, true);
+        _fov = Maps[1].Fov.ComputeFov(x, y, 5, true);
         List<Cell> uncovered = [];
         foreach (var cell in _fov)
         {
@@ -197,6 +248,11 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
+        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.Before))
+        {
+            marker.Update(x, y, renderContext);
+        }
+        
         for (var j = 0; j < 20; j++)
         {
             for (var i = 0; i < 20; i++)
@@ -209,12 +265,11 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
-        foreach (var marker in MapMarkers)
+        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.After))
         {
-            if (marker is PointOfInterestMarker poi)
-            {
-                poi.Update(x, y, renderContext);
-            }
+            marker.Update(x, y, renderContext);
         }
+
+        MapMarkers.RemoveAll(m => m.ShouldDelete);
     }
 }

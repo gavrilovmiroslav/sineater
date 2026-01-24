@@ -45,7 +45,7 @@ public class Barks
                     return Wizard;
                 case ECharacterClass.Witch:
                     return Witch;
-                case ECharacterClass.Knight:
+                case ECharacterClass.Brute:
                     return Knight;
                 case ECharacterClass.Monk:
                     return Monk;
