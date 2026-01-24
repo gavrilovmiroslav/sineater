@@ -76,7 +76,6 @@
     <ItemGroup>
       <Folder Include="Content\audio\" />
       <Folder Include="Scripts\" />
-      <Folder Include="Tools\" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="MonoGame.ImGui\MonoGame.ImGui.csproj" />

@@ -5,12 +5,17 @@ using MonoGame.Extended;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
+using SINEATER.Game.Save;
 namespace SINEATER.Game.Screens;
 
 public class WorldMapScreen(SineaterGame game) : Screen(game)
 {
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
-    public (int X, int Y) CurrentPlayerPosition = (4, 8);
+    public (int X, int Y) CurrentPlayerPosition
+    {
+        get => SineaterGame.Instance.Party.CurrentPlayerPosition;
+        set => SineaterGame.Instance.Party.CurrentPlayerPosition = value;
+    }
 
     public PartyAvatarContext PartyContext;
     public PartyAvatarDrawable PartyAvatar;
@@ -21,7 +26,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         WorldMap = new WorldMapDrawable(this);
         Camera = new OrthographicCamera(game.GraphicsDevice);
         PartyContext = new PartyAvatarContext() { Camera = Camera };
-        PartyAvatar = new PartyAvatarDrawable(PartyContext, InWorld(4, 8));
+        PartyAvatar = new PartyAvatarDrawable(PartyContext, InWorld(CurrentPlayerPosition.X, CurrentPlayerPosition.Y));
     }
     
     public override void Update(GameTime gameTime)
@@ -98,6 +103,11 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                 var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Change); 
                 EventBus.Send(ref changeEvent);
             }
+        }
+
+        if (InputM.IsActive(EInputAction.Save))
+        {
+            SaveSystem.Save();
         }
     }
 }

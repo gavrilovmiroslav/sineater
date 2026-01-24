@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSharp;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay;
+using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Tools.SinMod;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Wintellect.PowerCollections;
 using Encounter = SINEATER.Game.Gameplay.Encounter;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
@@ -576,19 +577,19 @@ public class TacticMapScreen : Screen
         //     return;
         // }
 
-        _game.Layers["portrait"].Clear();
-        _game.Layers["porsmol"].Clear();
+        //_game.Layers["portrait"].Clear();
+        //_game.Layers["porsmol"].Clear();
 
-        if (ShouldHardUpdate)
-        {
-            ShouldHardUpdate = false;
-        }
+        //if (ShouldHardUpdate)
+        //{
+        //    ShouldHardUpdate = false;
+        //}
         
-        DrawCombat();
-        DrawSubmenu();
+        //DrawCombat();
+        //DrawSubmenu();
 
-        if (_paused)
-            DrawControls();
+        //if (_paused)
+        //    DrawControls();
     }
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
@@ -776,6 +777,12 @@ public class TacticMapScreen : Screen
                     _turn.Enqueue(p);
                 }
             }
+        }
+
+        var rc = new Drawing.RenderContext(batch, gameTime);
+        for (var ii = 0; ii < 4; ii++)
+        {
+            rc.CharacterProfile(60 + 300 * ii, 800, SineaterGame.Instance.Party.Characters[ii], ii, false);
         }
         
         batch.End();

@@ -82,6 +82,18 @@ namespace SINEATER.Tools.ImGuiTools
 
             if (ImGui.BeginTabBar("#ToolsTabBar", ImGuiTabBarFlags.Reorderable))
             {
+                if (ImGui.BeginTabItem("Save"))
+                {
+                    SaveEditor.ImguiEditor();
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem("Inventory"))
+                {
+                    InventoryEditor.ImguiEditor();
+                    ImGui.EndTabItem();
+                }
+
                 if (ImGui.BeginTabItem("World"))
                 {
                     if (DebugScreen is WorldMapScreen w)
@@ -111,7 +123,7 @@ namespace SINEATER.Tools.ImGuiTools
                     Ambient.ImguiEditor();
                     ImGui.EndTabItem();
                 }
-                
+
                 ImGui.EndTabBar();
             }
 

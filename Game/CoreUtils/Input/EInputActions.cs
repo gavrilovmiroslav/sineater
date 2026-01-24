@@ -56,6 +56,6 @@ public enum EInputAction
     SwapRight,
     Equip,
     ChangePage,
-    
-    ShowHelp
+    ShowHelp,
+    Save
 }
