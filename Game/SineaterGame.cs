@@ -4,9 +4,7 @@ using LDtkTypes;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.ImGui;
@@ -19,11 +17,6 @@ using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
 using SINEATER.steam;
 using SINEATER.Tools.SinMod;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER.Game;
@@ -101,6 +94,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private ImGuiRenderer _render;
 
     private ExampleRenderer _exRender;
+    public ExampleRenderer lDtkRender => _exRender;
+    public LDtkWorld lDtkWorld => _world;
 
     private LDtkWorld _world;
     public SineaterGame()
@@ -163,7 +158,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         InputManager.Instance.OnInputSourceChanged += OnInputSourceChanged;
 
-        var file = LDtk.LDtkFile.FromFile("Content\\world_map.ldtk");
+        var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
         _world = file.LoadWorld(Worlds.World.Iid);
         //_world.LoadLevel(Worlds.World.Level_0);
 
@@ -442,17 +437,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _spriteBatch.End();
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        _spriteBatch.End();
-
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        {
-            foreach (LDtkLevel level in _world.Levels)
-            {
-                level.FilePath = "C:\\Users\\Isa\\Desktop\\sineater\\bin\\Debug\\net8.0\\Content\\world_map\\Level_0.ldtkl";
-                _exRender.RenderPrerenderedLevel(level);
-            }
-        }
-
         _spriteBatch.End();
 
         if (ShouldDrawImgui)

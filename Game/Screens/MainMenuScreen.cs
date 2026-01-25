@@ -10,6 +10,7 @@ using SINEATER.Game.Loadable;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Game.Save;
+using LDtk;
 
 namespace SINEATER.Game.Screens;
 
@@ -235,6 +236,16 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 SpriteEffects.None, 0);
         }
         
+        batch.End();
+
+        batch.Begin(samplerState: SamplerState.PointClamp);
+        {
+            foreach (LDtkLevel level in SineaterGame.Instance.lDtkWorld.Levels)
+            {
+                SineaterGame.Instance.lDtkRender.RenderPrerenderedLevel(level);
+            }
+        }
+
         batch.End();
     }
 }
