@@ -1,6 +1,12 @@
 ﻿using LDtk;
 using LDtk.Renderer;
 using LDtkTypes;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.ImGui;
@@ -38,9 +44,13 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public Texture2D Pixel => _pixel;
     public Texture2D Semi => _semi;
     public Texture2D WorldMap => _worldMap;
-    public Texture2D PartySprites => _partySprites;
+    public Texture2D AllSprites => _allSprites;
+    public Texture2D AllSpriteOutlines => _allSpriteOutlines;
     public Texture2D SpriteShadow => _spriteShadow;
-    private Texture2D _partySprites;
+    public Dictionary<string, (int, int)> AllSpritesMap => _allSpritesMap;
+    private readonly Dictionary<string, (int, int)> _allSpritesMap = [];
+    private Texture2D _allSprites;
+    private Texture2D _allSpriteOutlines;
     private Texture2D _logo;
     private Texture2D _worldMap;
     private Texture2D _pixel;
@@ -79,7 +89,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public World World { get; set; }
-
+    public bool ShowHelp { get; set; } = false;
+    
     private IScreen _lastScreen;
     public SpriteFont Font;
     public SpriteFont FontMono;
@@ -192,7 +203,22 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         Party = new Party();
 
         _worldMap = Content.Load<Texture2D>("Level_0__Tiles");
-        _partySprites = Content.Load<Texture2D>("party_sprites");
+        
+        _allSprites = Content.Load<Texture2D>("sprites/all-sprites");
+        _allSpriteOutlines = Content.Load<Texture2D>("sprites/all-sprite-outlines");
+        using var allSpritesList = TitleContainer.OpenStream("Content/sprites/all-sprites.txt");
+        if (allSpritesList != null)
+        {
+            var lines = allSpritesList.ReadLines(Encoding.ASCII);
+            foreach (var line in lines)
+            {
+                var split = line.Split(' ');
+                var x = int.Parse(split[0]);
+                var y = int.Parse(split[1]);
+                var name = split[2];
+                _allSpritesMap[name] = (y, x);
+            }
+        }
         _spriteShadow = Content.Load<Texture2D>("sprite_shadow");
         _logo = Content.Load<Texture2D>("sineater-logo");
         _frames = Content.Load<Texture2D>("Frames32px");
@@ -316,7 +342,9 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     {
         Tools.SinMod.System.Update(gameTime);
         Muse.Update(gameTime);
-        
+
+        ShowHelp = InputM.IsActive(EInputAction.ShowHelp);
+
         if (_toPush != null)
         {
             ScreenStack.Push(_toPush);

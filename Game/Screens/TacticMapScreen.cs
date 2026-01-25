@@ -712,7 +712,7 @@ public class TacticMapScreen : Screen
         
         foreach (var p in _enemies)
         {
-            var (u, v) = p.GetIcon();
+            var (u, v) = (0, 0);
             p.X = 5 + (4 - i) * 2 + 18;
             p.Y = 12 + (_selected.Contains(p) ? 1 : 0);
             Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));

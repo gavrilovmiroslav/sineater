@@ -39,34 +39,94 @@ public static class WorldMapEventHandler
     [Event(order: 1)]
     public static void OnUncoverWorld(ref UncoverWorld ev)
     {
-        var poi = new PointOfInterestMarker(ev.X, ev.Y, "!");
-        ev.Screen.WorldMap?.MapMarkers.Add(poi);
-        if (ev.Screen.WorldMap != null)
+        var tile = SineaterGame.Instance.World.Get(ev.X, ev.Y);
+        var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(tile);
+        var name = encounter.Enemies[0].Name;
+        if (!SineaterGame.Instance.AllSpritesMap.ContainsKey(name))
         {
-            Console.WriteLine(ev.Screen.WorldMap.MapMarkers.Count);
+            name = "";
+        }
+        ev.Screen.WorldMap?.MapMarkers.Add(new PointOfInterestMarker(ev.X, ev.Y, name));
+        ev.Screen.WorldMap?.MapMarkers.Add(new SurpriseMarker(ev.X, ev.Y));
+    }
+}
+
+public enum EMarkerOrder
+{
+    Before,
+    After
+}
+public interface IWorldMapMarker : IDrawable
+{
+    public bool ShouldDelete { get; set; }
+    public EMarkerOrder GetOrder();
+}
+
+public class SurpriseMarker(int X, int Y) : IWorldMapMarker
+{
+    public EMarkerOrder GetOrder() => EMarkerOrder.After;
+    public bool ShouldDelete { get; set; } = false;
+    
+    private float _time = 0.0f;
+
+    public void Update(int x, int y, Drawing.RenderContext renderContext)
+    {
+        _time += renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
+        var alpha = float.Lerp(0f, 1.0f, _time.Low(0.4f, Easing.CubicEaseOut));
+        var t = float.Lerp(0f, -20.0f, _time.Low(0.2f, Easing.CubicEaseIn));
+        var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
+        renderContext.Batch.DrawTextCenter((int)xy.X - 20, (int)(xy.Y - 70 + t), SineaterGame.Instance.FontBold, 
+            "!", new Color(1.0f, 1.0f, 1.0f, 1.0f - alpha));
+        
+        if (alpha >= 1.0f)
+        {
+            ShouldDelete = true;
         }
     }
 }
 
-public interface IWorldMapMarker : IDrawable;
-
-public class PointOfInterestMarker(int X, int Y, string text) : IWorldMapMarker
+public class PointOfInterestMarker : IWorldMapMarker
 {
+    public EMarkerOrder GetOrder() => EMarkerOrder.Before;
+    public bool ShouldDelete { get; set; } = false;
+    
     private float _time = 0.0f;
     private float _moveDelta = 0.0f;
 
+    public int X { get; set; }
+    public int Y { get; set; }
+    public string Text { get; set; }
+    
+    public PointOfInterestMarker(int x, int y, string text)
+    {
+        X = x;
+        Y = y;
+        Text = text;
+        _time += Rnd.Instance.Next(0, 1000);
+    }
+    
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
+        if (Text == "") return;
+        var (u, v) = SineaterGame.Instance.AllSpritesMap[Text];
         _time += renderContext.Time.ElapsedGameTime.Milliseconds; 
         _moveDelta += 5 * renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
         var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
         
-        var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.DrawTextCenter((int)xy.X - 24, (int)xy.Y - 24, SineaterGame.Instance.FontBold, text, Color.White);
-        renderContext.Batch.Draw(SineaterGame.Instance.PartySprites, xy - new Vector2(28, 20), new Rectangle(0, 0, 64, 64),
+        var xy = new Vector2(x - 40, y - 20) + WorldMapScreen.InWorld(X, Y);
+        renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy, new Rectangle(u * 64, v * 64, 64, 64),
             Color.White, 0, new Vector2(32, 64),
-            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
+            new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
             SpriteEffects.None, 0);
+        
+        if (SineaterGame.Instance.ShowHelp)
+        {
+            renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy,
+                new Rectangle(u * 64, v * 64, 64, 64),
+                Color.White, 0, new Vector2(32, 64),
+                new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
+                SpriteEffects.None, 0);
+        }
     }
 }
 
@@ -113,8 +173,6 @@ public class WorldMapDrawable : IDrawable
             var fov = new FieldOfView<Cell>(levelMap);
             Maps[layerIndex] = (levelMap, fov);
         }
-        
-        UpdateFov(_screen.CurrentPlayerPosition.X, _screen.CurrentPlayerPosition.Y);
     }
 
     public void UpdateFov(int x, int y)
@@ -127,7 +185,7 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
-        _fov = Maps[1].Fov.ComputeFov(x, y, 3, true);
+        _fov = Maps[1].Fov.ComputeFov(x, y, 5, true);
         List<Cell> uncovered = [];
         foreach (var cell in _fov)
         {
@@ -174,27 +232,34 @@ public class WorldMapDrawable : IDrawable
         var xy = new Vector2(x, y);
         var wm = SineaterGame.Instance.WorldMap;
         
-        renderContext.Batch.Draw(wm, xy, null, Color.White, 0, 
-            Vector2.Zero, Vector2.One * 3, SpriteEffects.None, 0);
+        renderContext.Batch.Draw(wm, new Rectangle(x, y, wm.Width * 5, wm.Height * 5),
+            new Rectangle(0, 0, wm.Width, wm.Height),
+            new Color(0.8f, 0.7f, 0.7f));
         
         // for test
         for (var j = 0; j < 20; j++)
         {
             for (var i = 0; i < 20; i++)
             {
-                if (!Maps[1].Map.IsWalkable(i, j))
+                // if (!Maps[1].Map.IsWalkable(i, j))
+                // {
+                //     renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
+                //         new Rectangle(0, 0, 48, 48), new Color(1.0f, 0.0f, 0.0f, 0.5f), 
+                //         0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                // }
+                //else
+                if ((i + j) % 2 == 0)
                 {
-                    renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-                        new Rectangle(0, 0, 24, 24), new Color(1.0f, 0.0f, 0.0f, 0.5f), 
-                        0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
-                }
-                else if ((i + j) % 2 == 0)
-                {
-                    renderContext.Batch.Draw(SineaterGame.Instance.Semi, xy + WorldMapScreen.InWorld(i, j), 
-                        new Rectangle(0, 0, 24, 24), new Color(0.8f, 0.25f, 0.45f, 0.3f), 
-                        0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                    renderContext.Batch.Draw(SineaterGame.Instance.Semi, WorldMapScreen.InWorld(i, j), 
+                        new Rectangle(0, 0, 80, 80), new Color(0.8f, 0.25f, 0.45f, 0.3f), 
+                        0, new Vector2(40, 40), Vector2.One, SpriteEffects.None, 0);
                 }
             }
+        }
+        
+        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.Before))
+        {
+            marker.Update(x, y, renderContext);
         }
         
         for (var j = 0; j < 20; j++)
@@ -203,18 +268,19 @@ public class WorldMapDrawable : IDrawable
             {
                 FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
 
-                renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-                    new Rectangle(0, 0, 24, 24), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
-                    0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                var r = WorldMapScreen.InWorld(i, j);
+                renderContext.Batch.Draw(SineaterGame.Instance.Pixel, 
+                    new Rectangle((int)r.X, (int)r.Y, 80, 80), 
+                    new Rectangle(0, 0, 80, 80), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
+                    0.0f, new Vector2(40, 40), SpriteEffects.None, 0);
             }
         }
         
-        foreach (var marker in MapMarkers)
+        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.After))
         {
-            if (marker is PointOfInterestMarker poi)
-            {
-                poi.Update(x, y, renderContext);
-            }
+            marker.Update(x, y, renderContext);
         }
+
+        MapMarkers.RemoveAll(m => m.ShouldDelete);
     }
 }

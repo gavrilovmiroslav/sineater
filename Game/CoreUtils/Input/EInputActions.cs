@@ -36,6 +36,8 @@ public enum EInputAction
     OpenInventory,
     OpenInventoryOutfit,
 
+    MoveMapUp,
+    MoveMapDown,
     MoveMapLeft,
     MoveMapRight,
     Regenerate,
@@ -56,6 +58,6 @@ public enum EInputAction
     SwapRight,
     Equip,
     ChangePage,
-
-    Save,
+    ShowHelp,
+    Save
 }

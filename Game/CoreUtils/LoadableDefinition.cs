@@ -99,7 +99,7 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
 
         var local = JsonConvert.DeserializeObject<LoadableLibraryDefinition<TDefinition>>(
             File.ReadAllText($"{dir}/Content/{JsonPath}"));
-
+        
         foreach (var e in local?.Entries ?? [])
         {
             _library.Add(e.Item1, e.Item2);
@@ -119,6 +119,7 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
         if (hash != (local?.Hash ?? ""))
         {
             Console.WriteLine("Hashes not matching, loading from net!");
+            _library.Clear();
             var sheet = res.Get(APPS_ID, $"{Sheet}!{DataRange}").Execute();
 
             var parser = new TParser();

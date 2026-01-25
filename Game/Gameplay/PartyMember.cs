@@ -11,7 +11,7 @@ public enum ECharacterClass
 {
     Wizard = 0,
     Witch,
-    Knight,
+    Brute,
     Monk,
     Sage,
     Priest,
@@ -28,7 +28,7 @@ public static class ECharacterClassExtensions
                 return (3, 0);
             case ECharacterClass.Witch:
                 return (2, 0);
-            case ECharacterClass.Knight:
+            case ECharacterClass.Brute:
                 return (4, 0);
             case ECharacterClass.Monk:
                 return (2, 1);
@@ -52,7 +52,7 @@ public static class ECharacterClassExtensions
                 return (0, 64 + dy);
             case ECharacterClass.Witch:
                 return (4, 67 + dy);
-            case ECharacterClass.Knight:
+            case ECharacterClass.Brute:
                 return (4, 65 + dy);
             case ECharacterClass.Monk:
                 return (1, 64 + dy);
@@ -92,7 +92,7 @@ public class Party
     public readonly PartyMember[] Characters = new PartyMember[4];
     public Inventory Inventory { get; } = new();
 
-    public (int X, int Y) CurrentPlayerPosition = (4, 8);
+    public (int X, int Y) CurrentPlayerPosition = (2, 2);
     public Party()
     {
         SaveSystem.OnSaveLoaded += LoadParty;
@@ -102,7 +102,7 @@ public class Party
     {
         var jobs = new[]
         {
-            ECharacterClass.Knight,
+            ECharacterClass.Brute,
             ECharacterClass.Witch,
             ECharacterClass.Wizard,
             ECharacterClass.Monk,
@@ -144,7 +144,7 @@ public class Party
                 character.Stats.Poise = 1;
                 character.Stats.Vigor = 3;
                 break;
-            case ECharacterClass.Knight:
+            case ECharacterClass.Brute:
                 if (defaultEquip)
                     character.Equip(Items.Instance.Make("LongSword"));
 

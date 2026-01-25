@@ -70,7 +70,7 @@ namespace SINEATER.Game.Screens
             int j = 0;
             foreach (var p in _encounter.Enemies)
             {
-                var (u, v) = p.GetIcon();
+                var (u, v) = (0, 0);
                 p.X = 5 + (4 - i) * 2 + 9;
                 p.Y = 3;
                 Draw(p.X, p.Y, new Glyph(u, v, Color.Transparent, Color.White));
