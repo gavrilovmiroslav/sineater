@@ -92,7 +92,7 @@ public class Party
     public readonly PartyMember[] Characters = new PartyMember[4];
     public Inventory Inventory { get; } = new();
 
-    public (int X, int Y) CurrentPlayerPosition = (4, 8);
+    public (int X, int Y) CurrentPlayerPosition = (2, 2);
     public Party()
     {
         SaveSystem.OnSaveLoaded += LoadParty;

@@ -42,18 +42,12 @@ public static class WorldMapEventHandler
         var tile = SineaterGame.Instance.World.Get(ev.X, ev.Y);
         var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(tile);
         var name = encounter.Enemies[0].Name;
-        Console.WriteLine($"{string.Join(", ", encounter.Enemies.Select(s => s.Name))}");
-        Console.WriteLine($"{name}");
         if (!SineaterGame.Instance.AllSpritesMap.ContainsKey(name))
         {
             name = "";
         }
         ev.Screen.WorldMap?.MapMarkers.Add(new PointOfInterestMarker(ev.X, ev.Y, name));
         ev.Screen.WorldMap?.MapMarkers.Add(new SurpriseMarker(ev.X, ev.Y));
-        if (ev.Screen.WorldMap != null)
-        {
-            Console.WriteLine(ev.Screen.WorldMap.MapMarkers.Count);
-        }
     }
 }
 
@@ -179,8 +173,6 @@ public class WorldMapDrawable : IDrawable
             var fov = new FieldOfView<Cell>(levelMap);
             Maps[layerIndex] = (levelMap, fov);
         }
-        
-        UpdateFov(_screen.CurrentPlayerPosition.X, _screen.CurrentPlayerPosition.Y);
     }
 
     public void UpdateFov(int x, int y)
@@ -270,17 +262,19 @@ public class WorldMapDrawable : IDrawable
             marker.Update(x, y, renderContext);
         }
         
-        // for (var j = 0; j < 20; j++)
-        // {
-        //     for (var i = 0; i < 20; i++)
-        //     {
-        //         FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
-        //
-        //         renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-        //             new Rectangle(0, 0, 48, 48), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
-        //             0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
-        //     }
-        // }
+        for (var j = 0; j < 20; j++)
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
+
+                var r = WorldMapScreen.InWorld(i, j);
+                renderContext.Batch.Draw(SineaterGame.Instance.Pixel, 
+                    new Rectangle((int)r.X, (int)r.Y, 80, 80), 
+                    new Rectangle(0, 0, 80, 80), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
+                    0.0f, new Vector2(40, 40), SpriteEffects.None, 0);
+            }
+        }
         
         foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.After))
         {

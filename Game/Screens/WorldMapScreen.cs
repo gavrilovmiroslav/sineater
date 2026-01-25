@@ -28,6 +28,8 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         Camera = new OrthographicCamera(game.GraphicsDevice);
         PartyContext = new PartyAvatarContext() { Camera = Camera };
         PartyAvatar = new PartyAvatarDrawable(PartyContext, InWorld(CurrentPlayerPosition.X, CurrentPlayerPosition.Y));
+        
+        WorldMap.UpdateFov(CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
     }
     
     public override void Update(GameTime gameTime)
