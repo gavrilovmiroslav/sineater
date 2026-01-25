@@ -1369,6 +1369,15 @@
 /processorParam:TextureFormat=Color
 /build:vfx11.png
 
+#begin world_map_tiles_SumerWinter-Merger_Tiles.png
+/copy:world_map_tiles_SumerWinter-Merger_Tiles.png
+
+#begin world_map_tiles_SUMMER.png
+/copy:world_map_tiles_SUMMER.png
+
+#begin world_map_tiles_WINTER.png
+/copy:world_map_tiles_WINTER.png
+
 #begin world_map.ldtk
 /copy:world_map.ldtk
 

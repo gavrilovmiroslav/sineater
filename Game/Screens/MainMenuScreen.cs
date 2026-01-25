@@ -237,15 +237,5 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         }
         
         batch.End();
-
-        batch.Begin(samplerState: SamplerState.PointClamp);
-        {
-            foreach (LDtkLevel level in SineaterGame.Instance.lDtkWorld.Levels)
-            {
-                SineaterGame.Instance.lDtkRender.RenderPrerenderedLevel(level);
-            }
-        }
-
-        batch.End();
     }
 }

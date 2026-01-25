@@ -139,7 +139,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         }
         CurrentOptions?.UpdateOptions();
     }
-    
+
+    private LDtkLevel _level;
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
@@ -163,11 +164,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         //_world.LoadLevel(Worlds.World.Level_0);
 
         _exRender = new ExampleRenderer(_spriteBatch, null);
-
-        foreach (LDtkLevel level in _world.Levels)
-        {
-            _exRender.PrerenderLevel(level);
-        }
+        _level = _world.LoadLevel(0);
     }
 
     private void OnInputSourceChanged(object? sender, EventArgs args)
@@ -437,8 +434,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _spriteBatch.End();
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
+        _exRender.RenderLevel(_level);
         _spriteBatch.End();
-
+        GraphicsDevice.SetRenderTarget(null);
+        
         if (ShouldDrawImgui)
         {
             DrawImgui(gameTime);
