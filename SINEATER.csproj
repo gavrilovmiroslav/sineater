@@ -99,4 +99,8 @@
         <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />
         <Exec Command="dotnet tool restore" />
     </Target>
+
+	<Target Name="Codegen" BeforeTargets="BeforeBuild">
+		<Exec Command="ldtkgen.exe -i Content\world_map.ldtk -o .\LDTK_Gen"></Exec>
+	</Target>
 </Project>

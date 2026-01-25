@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+﻿using LDtk;
+using LDtk.Renderer;
+using LDtkTypes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.ImGui;
@@ -13,8 +11,13 @@ using SINEATER.Game.Gameplay;
 using SINEATER.Game.Loadable;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Screens;
-using SINEATER.Tools.SinMod;
 using SINEATER.steam;
+using SINEATER.Tools.SinMod;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using Color = Microsoft.Xna.Framework.Color;
 
 namespace SINEATER.Game;
@@ -86,6 +89,9 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
+    private ExampleRenderer _exRender;
+
+    private LDtkWorld _world;
     public SineaterGame()
     {
         Instance = this;
@@ -145,6 +151,17 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         base.Initialize();
 
         InputManager.Instance.OnInputSourceChanged += OnInputSourceChanged;
+
+        var file = LDtk.LDtkFile.FromFile("Content\\world_map.ldtk");
+        _world = file.LoadWorld(Worlds.World.Iid);
+        //_world.LoadLevel(Worlds.World.Level_0);
+
+        _exRender = new ExampleRenderer(_spriteBatch, null);
+
+        foreach (LDtkLevel level in _world.Levels)
+        {
+            _exRender.PrerenderLevel(level);
+        }
     }
 
     private void OnInputSourceChanged(object? sender, EventArgs args)
@@ -397,7 +414,17 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _spriteBatch.End();
         
         _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        
+        _spriteBatch.End();
+
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        {
+            foreach (LDtkLevel level in _world.Levels)
+            {
+                level.FilePath = "C:\\Users\\Isa\\Desktop\\sineater\\bin\\Debug\\net8.0\\Content\\world_map\\Level_0.ldtkl";
+                _exRender.RenderPrerenderedLevel(level);
+            }
+        }
+
         _spriteBatch.End();
 
         if (ShouldDrawImgui)

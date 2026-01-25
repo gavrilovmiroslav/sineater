@@ -41,5 +41,15 @@ namespace SINEATER.Game.Save
         {
             return File.Exists("save//save.sav");
         }
+
+        public static string[] TempSaveFiles = new string[] { };
+
+        public static void GatherTempSaves()
+        {
+            if (Directory.Exists("temp_save"))
+            {
+                TempSaveFiles = Directory.GetFiles("temp_save");
+            }
+        }
     }
 }

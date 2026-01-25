@@ -89,6 +89,8 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
     
     public void Load()
     {
+        _library.Clear();
+
         var dir = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName;
         if (dir is null)
         {
