@@ -1042,6 +1042,9 @@
 /processorParam:TextureFormat=Color
 /build:locations/Spikey Lands/Spikey Lands - 4.png;locations/Spikey Lands/Spikey Lands - 4
 
+#begin map.ldtk
+/copy:map.ldtk
+
 #begin map.xp
 /copy:map.xp
 
