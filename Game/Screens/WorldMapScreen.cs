@@ -50,19 +50,19 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
-        if (InputM.IsActive(EInputAction.ShowHelp))
-        {
-            dx += (InputM.IsActive(EInputAction.MoveMapLeft) ? -1 : 0);
-            dx += (InputM.IsActive(EInputAction.MoveMapRight) ? 1 : 0);
-            dy += (InputM.IsActive(EInputAction.MoveMapUp) ? -1 : 0);
-            dy += (InputM.IsActive(EInputAction.MoveMapDown) ? 1 : 0);
-            batch.DrawText(500, 100, SineaterGame.Instance.FontMono, $"{dx} {dy}", Color.White);
-        }
-
         // In camera
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
-        
+
+            if (InputM.IsActive(EInputAction.ShowHelp))
+            {
+                dx += (InputM.IsActive(EInputAction.MoveMapLeft) ? -1 : 0);
+                dx += (InputM.IsActive(EInputAction.MoveMapRight) ? 1 : 0);
+                dy += (InputM.IsActive(EInputAction.MoveMapUp) ? -1 : 0);
+                dy += (InputM.IsActive(EInputAction.MoveMapDown) ? 1 : 0);
+                batch.DrawText(500, 100, SineaterGame.Instance.FontMono, $"{dx} {dy}", Color.White);
+            }
+
             var rc = new Drawing.RenderContext(batch, gameTime);
             WorldMap.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
             PartyAvatar.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
