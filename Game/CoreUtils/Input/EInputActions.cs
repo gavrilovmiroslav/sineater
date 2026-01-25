@@ -36,6 +36,8 @@ public enum EInputAction
     OpenInventory,
     OpenInventoryOutfit,
 
+    MoveMapUp,
+    MoveMapDown,
     MoveMapLeft,
     MoveMapRight,
     Regenerate,

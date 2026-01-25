@@ -81,8 +81,8 @@ public class SurpriseMarker(int X, int Y) : IWorldMapMarker
         var alpha = float.Lerp(0f, 1.0f, _time.Low(0.4f, Easing.CubicEaseOut));
         var t = float.Lerp(0f, -20.0f, _time.Low(0.2f, Easing.CubicEaseIn));
         var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.DrawTextCenter((int)xy.X - 24, (int)(xy.Y - 40 + t), SineaterGame.Instance.FontBold, 
-            "!!", new Color(1.0f, 1.0f, 1.0f, 1.0f - alpha));
+        renderContext.Batch.DrawTextCenter((int)xy.X - 20, (int)(xy.Y - 70 + t), SineaterGame.Instance.FontBold, 
+            "!", new Color(1.0f, 1.0f, 1.0f, 1.0f - alpha));
         
         if (alpha >= 1.0f)
         {
@@ -91,7 +91,7 @@ public class SurpriseMarker(int X, int Y) : IWorldMapMarker
     }
 }
 
-public class PointOfInterestMarker(int X, int Y, string text) : IWorldMapMarker
+public class PointOfInterestMarker : IWorldMapMarker
 {
     public EMarkerOrder GetOrder() => EMarkerOrder.Before;
     public bool ShouldDelete { get; set; } = false;
@@ -99,22 +99,35 @@ public class PointOfInterestMarker(int X, int Y, string text) : IWorldMapMarker
     private float _time = 0.0f;
     private float _moveDelta = 0.0f;
 
+    public int X { get; set; }
+    public int Y { get; set; }
+    public string Text { get; set; }
+    
+    public PointOfInterestMarker(int x, int y, string text)
+    {
+        X = x;
+        Y = y;
+        Text = text;
+        _time += Rnd.Instance.Next(0, 1000);
+    }
+    
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
-        if (text == "") return;
-        var (u, v) = SineaterGame.Instance.AllSpritesMap[text];
+        if (Text == "") return;
+        var (u, v) = SineaterGame.Instance.AllSpritesMap[Text];
         _time += renderContext.Time.ElapsedGameTime.Milliseconds; 
         _moveDelta += 5 * renderContext.Time.ElapsedGameTime.Milliseconds / 1000.0f;
         var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
         
-        var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy - new Vector2(28, 20), new Rectangle(u * 64, v * 64, 64, 64),
+        var xy = new Vector2(x - 40, y - 20) + WorldMapScreen.InWorld(X, Y);
+        renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy, new Rectangle(u * 64, v * 64, 64, 64),
             Color.White, 0, new Vector2(32, 64),
             new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
             SpriteEffects.None, 0);
+        
         if (SineaterGame.Instance.ShowHelp)
         {
-            renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy - new Vector2(28, 20),
+            renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy,
                 new Rectangle(u * 64, v * 64, 64, 64),
                 Color.White, 0, new Vector2(32, 64),
                 new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
@@ -227,25 +240,27 @@ public class WorldMapDrawable : IDrawable
         var xy = new Vector2(x, y);
         var wm = SineaterGame.Instance.WorldMap;
         
-        renderContext.Batch.Draw(wm, xy, null, new Color(0.8f, 0.7f, 0.7f), 0, 
-            Vector2.Zero, Vector2.One * 3, SpriteEffects.None, 0);
+        renderContext.Batch.Draw(wm, new Rectangle(x, y, wm.Width * 5, wm.Height * 5),
+            new Rectangle(0, 0, wm.Width, wm.Height),
+            new Color(0.8f, 0.7f, 0.7f));
         
         // for test
         for (var j = 0; j < 20; j++)
         {
             for (var i = 0; i < 20; i++)
             {
-                if (!Maps[1].Map.IsWalkable(i, j))
+                // if (!Maps[1].Map.IsWalkable(i, j))
+                // {
+                //     renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
+                //         new Rectangle(0, 0, 48, 48), new Color(1.0f, 0.0f, 0.0f, 0.5f), 
+                //         0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                // }
+                //else
+                if ((i + j) % 2 == 0)
                 {
-                    renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-                        new Rectangle(0, 0, 24, 24), new Color(1.0f, 0.0f, 0.0f, 0.5f), 
-                        0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
-                }
-                else if ((i + j) % 2 == 0)
-                {
-                    renderContext.Batch.Draw(SineaterGame.Instance.Semi, xy + WorldMapScreen.InWorld(i, j), 
-                        new Rectangle(0, 0, 24, 24), new Color(0.8f, 0.25f, 0.45f, 0.3f), 
-                        0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+                    renderContext.Batch.Draw(SineaterGame.Instance.Semi, WorldMapScreen.InWorld(i, j), 
+                        new Rectangle(0, 0, 80, 80), new Color(0.8f, 0.25f, 0.45f, 0.3f), 
+                        0, new Vector2(40, 40), Vector2.One, SpriteEffects.None, 0);
                 }
             }
         }
@@ -255,17 +270,17 @@ public class WorldMapDrawable : IDrawable
             marker.Update(x, y, renderContext);
         }
         
-        for (var j = 0; j < 20; j++)
-        {
-            for (var i = 0; i < 20; i++)
-            {
-                FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
-
-                renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-                    new Rectangle(0, 0, 24, 24), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
-                    0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
-            }
-        }
+        // for (var j = 0; j < 20; j++)
+        // {
+        //     for (var i = 0; i < 20; i++)
+        //     {
+        //         FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
+        //
+        //         renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
+        //             new Rectangle(0, 0, 48, 48), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
+        //             0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
+        //     }
+        // }
         
         foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.After))
         {

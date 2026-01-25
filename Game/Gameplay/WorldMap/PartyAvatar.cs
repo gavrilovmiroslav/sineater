@@ -38,7 +38,8 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
     
     public void Update(int x, int y, Drawing.RenderContext rc)
     {
-        var screenOffset = new Vector2(x, y);
+        var fx = -4;
+        var screenOffset = new Vector2(x - 40, y - 20);
         var sh = SineaterGame.Instance.SpriteShadow;
         var ps = SineaterGame.Instance.AllSprites;
         var os = SineaterGame.Instance.AllSpriteOutlines;
@@ -51,16 +52,14 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
         {
             case EPartyAvatarState.Idle:
                 _moveDelta = 0.0f;
-
-                rc.Batch.Draw(sh, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(0, 0, 64, 64),
-                    Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
-                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 20), new Rectangle(u * 64, v * 64, 64, 64),
+                
+                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(0 - (_facing < 0 ? fx : 0), 0), new Rectangle(u * 64, v * 64, 64, 64),
                     Color.White, 0, new Vector2(32, 64),
                     new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f), 
                     _facing > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally, 0);
                 if (SineaterGame.Instance.ShowHelp)
                 {
-                    rc.Batch.Draw(os, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 20),
+                    rc.Batch.Draw(os, screenOffset + _position - new Vector2(0 - (_facing < 0 ? fx : 0), 0),
                         new Rectangle(u * 64, v * 64, 64, 64),
                         Color.White, 0, new Vector2(32, 64),
                         new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
@@ -81,10 +80,8 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
                     _moveDelta += 10 * rc.Time.ElapsedGameTime.Milliseconds / 1000.0f;
                     var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
                     var xy = Vector2.Lerp(_position, _destinationInWorld, c);
-
-                    rc.Batch.Draw(sh, screenOffset + xy - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(0, 0, 64, 64),
-                        Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
-                    rc.Batch.Draw(ps, screenOffset + xy - new Vector2(28 - (_facing < 0 ? 8 : 0), 20), new Rectangle(u * 64, v * 64, 64, 64),
+                    
+                    rc.Batch.Draw(ps, screenOffset + xy - new Vector2(0 - (_facing < 0 ? fx : 0), 0), new Rectangle(u * 64, v * 64, 64, 64),
                         Color.White, 0, new Vector2(32, 64),
                         new Vector2(
                             3.0f + float.Lerp(0.0f, 0.5f, c), 
@@ -92,7 +89,7 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
                         _facing > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally, 0);
                     if (SineaterGame.Instance.ShowHelp)
                     {
-                        rc.Batch.Draw(os, screenOffset + xy - new Vector2(28 - (_facing < 0 ? 8 : 0), 20), new Rectangle(u * 64, v * 64, 64, 64),
+                        rc.Batch.Draw(os, screenOffset + xy - new Vector2(0 - (_facing < 0 ? fx : 0), 0), new Rectangle(u * 64, v * 64, 64, 64),
                         Color.White, 0, new Vector2(32, 64),
                         new Vector2(
                             3.0f + float.Lerp(0.0f, 0.5f, c), 
@@ -128,14 +125,13 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
                 {
                     a = -0.05f;
                 }
-                rc.Batch.Draw(sh, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(0, 0, 64, 64),
-                    Color.White, 0, new Vector2(32, 64), Vector2.One * 3, SpriteEffects.None, 0);
-                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16), new Rectangle(u * 64, v * 64, 64, 64),
+
+                rc.Batch.Draw(ps, screenOffset + _position - new Vector2(0 - (_facing < 0 ? fx : 0), 0), new Rectangle(u * 64, v * 64, 64, 64),
                     Color.White, 0, new Vector2(32, 64), new Vector2(3, 3 - a * 2.8f), 
                     _facing > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally, 0);
                 if (SineaterGame.Instance.ShowHelp)
                 {
-                    rc.Batch.Draw(os, screenOffset + _position - new Vector2(28 - (_facing < 0 ? 8 : 0), 16),
+                    rc.Batch.Draw(os, screenOffset + _position - new Vector2(0 - (_facing < 0 ? fx : 0), 0),
                         new Rectangle(u * 64, v * 64, 64, 64),
                         Color.White, 0, new Vector2(32, 64), new Vector2(3, 3 - a * 2.8f),
                         _facing > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally, 0);

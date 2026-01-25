@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
+using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
@@ -34,33 +35,42 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         CheckPlayerInputs();
     }
 
-    private const int OFFSET_X = 40;
-    private const int OFFSET_Y = 96;
-    public static Vector2 InWorld(int x, int y) => new(x * 48 + 48, y * 48 + 48);
+    private int OFFSET_X = 24;
+    private int OFFSET_Y = 96;
+    public static Vector2 InWorld(int x, int y) => new((1 + x) * 80, (1 + y) * 80);
     public static Vector2 InWorld(Vector2 xy) => InWorld((int)xy.X, (int)xy.Y);
     
-    public static Vector2 OutWorld(float x, float y) => new((x - 48) / 48, (y - 48) / 48);
+    public static Vector2 OutWorld(float x, float y) => new(x / 80 - 80, y / 80 - 80);
     public static Vector2 OutWorld(Vector2 xy) => OutWorld(xy.X, xy.Y);
+    
+    int dx = 16;
+    int dy = -56;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
-        var xy = new Vector2(OFFSET_X, OFFSET_Y);
+        if (InputM.IsActive(EInputAction.ShowHelp))
+        {
+            dx += (InputM.IsActive(EInputAction.MoveMapLeft) ? -1 : 0);
+            dx += (InputM.IsActive(EInputAction.MoveMapRight) ? 1 : 0);
+            dy += (InputM.IsActive(EInputAction.MoveMapUp) ? -1 : 0);
+            dy += (InputM.IsActive(EInputAction.MoveMapDown) ? 1 : 0);
+            batch.DrawText(500, 100, SineaterGame.Instance.FontMono, $"{dx} {dy}", Color.White);
+        }
+
         // In camera
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
         
-        var rc = new Drawing.RenderContext(batch, gameTime);
-        
-        WorldMap.Update(OFFSET_X, OFFSET_Y, rc);
-        PartyAvatar.Update(OFFSET_X, OFFSET_Y, rc);
+            var rc = new Drawing.RenderContext(batch, gameTime);
+            WorldMap.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
+            PartyAvatar.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
         batch.End();
         
         // GUI
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
 
-        rc.Party(60, 800);
-        
+            rc.Party(60, 800);
         batch.End();
     }
     
