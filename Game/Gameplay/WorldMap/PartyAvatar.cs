@@ -26,7 +26,7 @@ public class PartyAvatarContext
     public Vector2 Delta { get; set; } = Vector2.Zero;
 }
 
-public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtils.IDrawable
+public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IWorldMapMarker
 {
     private float _time = 0.0f;
     private float _moveDelta = 0.0f;
@@ -146,6 +146,10 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : CoreUtil
                 break;
         }
     }
+
+    public bool ShouldDelete { get; set; } = false;
+    public int X { get; set; } = (int)(ctx.Destination?.X ?? 0);
+    public int Y { get; set; } = (int)(ctx.Destination?.Y ?? 0);
 }
 
 public record struct PartyAvatarStateChanged(WorldMapScreen Screen, EPartyAvatarState NewState, (int X, int Y)? XY = null, (int DX, int DY)? Delta = null);
@@ -167,11 +171,11 @@ public static class PartyAvatarEventHandler
     {
         if (ev.XY is var (x, y))
         {
-            ev.Screen.PartyContext.Delta = new Vector2(ev.Delta?.DX ?? 0, ev.Delta?.DY ?? 0);
-            ev.Screen.PartyContext.Destination = new Vector2(x, y);
+            ev.Screen.WorldMap.PartyContext.Delta = new Vector2(ev.Delta?.DX ?? 0, ev.Delta?.DY ?? 0);
+            ev.Screen.WorldMap.PartyContext.Destination = new Vector2(x, y);
             ev.Screen.CurrentPlayerPosition = ev.XY!.Value;
         }
         
-        ev.Screen.PartyContext.State = ev.NewState;
+        ev.Screen.WorldMap.PartyContext.State = ev.NewState;
     }
 }

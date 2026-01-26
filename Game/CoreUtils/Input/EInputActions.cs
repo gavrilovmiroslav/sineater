@@ -59,5 +59,10 @@ public enum EInputAction
     Equip,
     ChangePage,
     ShowHelp,
-    Save
+    Save,
+    
+    Combat1,
+    Combat2,
+    Combat3,
+    Combat4,
 }

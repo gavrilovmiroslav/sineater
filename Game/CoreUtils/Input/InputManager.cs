@@ -183,7 +183,11 @@ namespace SINEATER.Game.CoreUtils.Input
                     MakeAction(EInputAction.SwapLeft, Keys.Q, Buttons.LeftShoulder),
                     MakeAction(EInputAction.SwapRight, Keys.E, Buttons.RightShoulder),
                     MakeAction(EInputAction.ShowHelp, Keys.LeftAlt, Buttons.LeftShoulder, isHold: true),
-                    MakeAction(EInputAction.Save, Keys.F5, Buttons.None),
+                    MakeAction(EInputAction.Combat1, Keys.Q, Buttons.Y),
+                    MakeAction(EInputAction.Combat2, Keys.W, Buttons.X),
+                    MakeAction(EInputAction.Combat3, Keys.E, Buttons.B),
+                    MakeAction(EInputAction.Combat4, Keys.R, Buttons.A),
+                    
                 }
             });
         }

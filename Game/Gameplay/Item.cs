@@ -30,7 +30,8 @@ public class Item
     public float VigorScale;
     
     public List<string> Tags = [];
-    public int TimeGauge = 55;
+    public float TimeGauge = 0;
+    public float[] Scale => [PoiseScale, ClarityScale, WillScale, VigorScale]; 
 
     public bool BonusActivates(Character character, int index)
     {

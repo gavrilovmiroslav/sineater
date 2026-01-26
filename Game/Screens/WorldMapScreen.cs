@@ -1,4 +1,5 @@
-﻿using Arch.Bus;
+﻿using System.Linq;
+using Arch.Bus;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
@@ -17,17 +18,13 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         get => SineaterGame.Instance.Party.CurrentPlayerPosition;
         set => SineaterGame.Instance.Party.CurrentPlayerPosition = value;
     }
-
-    public PartyAvatarContext PartyContext;
-    public PartyAvatarDrawable PartyAvatar;
+    
     public WorldMapDrawable WorldMap;
     
     public override void Initialize(SineaterGame game)
     {
         WorldMap = new WorldMapDrawable(this);
         Camera = new OrthographicCamera(game.GraphicsDevice);
-        PartyContext = new PartyAvatarContext() { Camera = Camera };
-        PartyAvatar = new PartyAvatarDrawable(PartyContext, InWorld(CurrentPlayerPosition.X, CurrentPlayerPosition.Y));
         
         WorldMap.UpdateFov(CurrentPlayerPosition.X, CurrentPlayerPosition.Y);
     }
@@ -50,6 +47,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
+        var rc = new Drawing.RenderContext(batch, gameTime);
         // In camera
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
@@ -63,9 +61,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                 batch.DrawText(500, 100, SineaterGame.Instance.FontMono, $"{dx} {dy}", Color.White);
             }
 
-            var rc = new Drawing.RenderContext(batch, gameTime);
             WorldMap.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
-            PartyAvatar.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
         batch.End();
         
         // GUI
@@ -78,7 +74,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     private void CheckPlayerInputs()
     {
-        if (PartyContext.State == EPartyAvatarState.Idle)
+        if (WorldMap.PartyContext.State == EPartyAvatarState.Idle)
         {
             var up = InputM.IsActive(EInputAction.MoveUp);
             var down = InputM.IsActive(EInputAction.MoveDown);

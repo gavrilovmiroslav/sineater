@@ -1,9 +1,12 @@
 
+using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.Gameplay;
 using SINEATER.Game.Loadable;
+using SINEATER.Game.Screens;
 
 namespace SINEATER.Game.Graphics;
 
@@ -130,9 +133,15 @@ public static class Drawing
     public static void CharacterProfile(this RenderContext ctx, int x, int y, Character chr, int index, bool selected)
     {
         var (u, v) = chr.Job.GetPortrait();
-        ctx.Portrait(x, y, (u, v), frameColor: Color.Gray);
+        var anyItemReady = chr.AnyItemReady;
+        if (anyItemReady)
+        {
+            y -= 40;
+        }
+
+        ctx.Portrait(x, y, (u, v), frameColor: anyItemReady ? Color.White : Color.Gray);
         ctx.Batch.DrawTextCenter(x + 56, y - 14, SineaterGame.Instance.FontBold, chr.GetName(), Color.White);
-        if (selected)
+        if (selected || anyItemReady)
         {
             ctx.EmptyFrame(x, y, 96, 112, 4, 7, Color.White);
         }
@@ -169,25 +178,29 @@ public static class Drawing
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x - 6, y, 2, 55), item == null ? gray : Color.Lerp(Color.CornflowerBlue, Color.Gray, 0.5f));
         ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x - 8, y + 49, 16, 16), new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : Color.Gray);
         
-        ctx.Batch.DrawText(x, y + i * 20 + 3, SineaterGame.Instance.FontMono, item?.Display ?? "Empty", item == null ? gray : Color.White);
+        ctx.Batch.DrawText(x, y + i * 20 + 3, SineaterGame.Instance.FontMono, item?.Display ?? "Empty", item == null ? gray : (item.TimeGauge >= 100.0f ? Color.OrangeRed : Color.White));
         i++;
 
         var ny = y + 8 + i * 20;
+        var blue = Color.Lerp(Color.Blue, Color.CornflowerBlue, 0.75f);
         
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, 100, 4),
             new Rectangle(0, 0, 1, 1), item == null ? gray : Color.White);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, item?.TimeGauge ?? 0, 4),
-            new Rectangle(0, 0, 1, 1), item == null ? gray : Color.CornflowerBlue);
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, (int)(item?.TimeGauge ?? 0), 4),
+            new Rectangle(0, 0, 1, 1), item == null ? gray : blue);
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, (((int)(item?.TimeGauge ?? 0) / 25) * 25) , 4),
+            new Rectangle(0, 0, 1, 1), item == null ? gray : Color.OrangeRed);
         ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x, ny - 29, 32, 16),
             new Rectangle(14 * 16, 0, 32, 16), item == null ? gray : Color.White);
         ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x + 32, ny - 29, 16, 16),
-            new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : Color.CornflowerBlue);
+            new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : blue);
         
         if (item != null)
         {
-            for (var dx = 0; dx < 4; dx++)
+            for (var dx = 0; dx < 5; dx++)
             {
-                ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x + 32 + 25 * dx, ny - 29, 16, 16), new Rectangle(14 * 16, 16, 16, 16), Color.Lerp(Color.Blue, Color.CornflowerBlue, 0.75f));   
+                ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x + 32 + 25 * dx, ny - 29, 16, 16), new Rectangle(14 * 16, 16, 16, 16), 
+                    (item?.TimeGauge ?? 0) >= dx * 25 ? Color.OrangeRed : blue);
             }
         }
         
@@ -313,9 +326,14 @@ public static class Drawing
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.White);
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 126, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.Gray);
-        for (var i = 0; i < 4; i++)
+        if (SineaterGame.Instance.ScreenStack.First(s => s is WorldMapScreen) is { } world)
         {
-            ctx.CharacterProfile(x + 300 * i, y, SineaterGame.Instance.Party.Characters[i], i, false);
+            for (var i = 0; i < 4; i++)
+            {
+                ctx.CharacterProfile(x + 300 * i, y, SineaterGame.Instance.Party.Characters[i], i,
+                    ((world as WorldMapScreen)?.WorldMap.PartyContext.Index ?? 0) == i);
+            }            
         }
+
     }
 }

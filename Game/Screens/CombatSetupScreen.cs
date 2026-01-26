@@ -16,7 +16,7 @@ namespace SINEATER.Game.Screens
         private World _world => SineaterGame.Instance.World;
         private int _combatPositionX;
         private int _combatPositionY;
-        private CoreUtils.Encounter _encounter;
+        private Encounter _encounter;
         private WorldMapScreen _worldScreen;
 
         private int _selectedIndex = 0;
@@ -27,7 +27,7 @@ namespace SINEATER.Game.Screens
 
         List<Item> AvailableItems = new();
 
-        public CombatSetupScreen(SineaterGame game, int x, int y, WorldMapScreen worldScreen, CoreUtils.Encounter encounter) : base(game)
+        public CombatSetupScreen(SineaterGame game, int x, int y, WorldMapScreen worldScreen, Encounter encounter) : base(game)
         {
             _combatPositionX = x;
             _combatPositionY = y;

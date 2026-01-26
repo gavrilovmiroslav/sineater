@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Arch.Bus;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSharp;
@@ -33,7 +34,15 @@ public static class WorldMapEventHandler
     [Event(order: 1)]
     public static void OnPartyAvatarMovedEvent(ref PartyAvatarMoved ev)
     {
-        ev.Screen.WorldMap.UpdateFov(ev.NewPosition.X, ev.NewPosition.Y);
+        var x = ev.NewPosition.X;
+        var y = ev.NewPosition.Y;
+        ev.Screen.WorldMap.UpdateFov(x, y);
+        if (ev.Screen.WorldMap.MapMarkers.Any(m => m.X == x && m.Y == y))
+        {
+            var tile = SineaterGame.Instance.World.Get(x, y);
+            var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(tile);
+            SineaterGame.Instance.ScreenStack.Push(new CombatScreen(SineaterGame.Instance, ev.Screen, (x, y), encounter, new Reward([])));
+        }
     }
 
     [Event(order: 1)]
@@ -51,22 +60,19 @@ public static class WorldMapEventHandler
     }
 }
 
-public enum EMarkerOrder
-{
-    Before,
-    After
-}
 public interface IWorldMapMarker : IDrawable
 {
     public bool ShouldDelete { get; set; }
-    public EMarkerOrder GetOrder();
+    public int X { get; set; }
+    public int Y { get; set; }
 }
 
 public class SurpriseMarker(int X, int Y) : IWorldMapMarker
 {
-    public EMarkerOrder GetOrder() => EMarkerOrder.After;
     public bool ShouldDelete { get; set; } = false;
-    
+    public int X { get; set; } = X;
+    public int Y { get; set; } = Y;
+
     private float _time = 0.0f;
 
     public void Update(int x, int y, Drawing.RenderContext renderContext)
@@ -87,7 +93,6 @@ public class SurpriseMarker(int X, int Y) : IWorldMapMarker
 
 public class PointOfInterestMarker : IWorldMapMarker
 {
-    public EMarkerOrder GetOrder() => EMarkerOrder.Before;
     public bool ShouldDelete { get; set; } = false;
     
     private float _time = 0.0f;
@@ -138,13 +143,18 @@ public class WorldMapDrawable : IDrawable
     public readonly float[,] FogOfWarTarget = new float[20, 20];
     public readonly int[,] FogOfWarMemory = new int[20, 20];
     public List<IWorldMapMarker> MapMarkers = [];
-
+    public PartyAvatarContext PartyContext;
+    public PartyAvatarDrawable PartyAvatar;
+    
     private ReadOnlyCollection<Cell> _fov = new ReadOnlyCollection<Cell>([]);
     
     public WorldMapDrawable(WorldMapScreen screen)
     {
         _screen = screen;
         InitializeMapLayers();
+        PartyContext = new PartyAvatarContext() { Camera = screen.Camera };
+        PartyAvatar = new PartyAvatarDrawable(PartyContext, 
+            WorldMapScreen.InWorld(screen.CurrentPlayerPosition.X, screen.CurrentPlayerPosition.Y));
     }
     
     private void InitializeMapLayers()
@@ -185,17 +195,27 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
-        _fov = Maps[1].Fov.ComputeFov(x, y, 5, true);
+        _fov = Maps[1].Fov.ComputeFov(x, y, 2, true);
         List<Cell> uncovered = [];
         foreach (var cell in _fov)
         {
+            var d = Vector2.Distance(new Vector2(x, y), new Vector2(cell.X, cell.Y));
             if (FogOfWarMemory[cell.X, cell.Y] == 0)
             {
                 FogOfWarMemory[cell.X, cell.Y] += 5;
-                uncovered.Add(cell);
-            }
 
-            var d = Vector2.Distance(new Vector2(x, y), new Vector2(cell.X, cell.Y));
+                if (d < 2)
+                {
+                    var tile = SineaterGame.Instance.World.Get(cell.X, cell.Y);
+                    var encounter = SineaterGame.Instance.World.ECS.Has<Encounter>(tile);
+
+                    if (cell.IsWalkable && encounter)
+                    {
+                        uncovered.Add(cell);
+                    }
+                }
+            }
+            
             if (d == 0.0f)
             {
                 FogOfWarTarget[cell.X, cell.Y] = 1;
@@ -206,17 +226,8 @@ public class WorldMapDrawable : IDrawable
             }
         }
 
-        var sorted = uncovered.OrderByDescending(c =>
+        foreach (var c in uncovered)
         {
-            var tile = SineaterGame.Instance.World.Get(c.X, c.Y);
-            var encounter = SineaterGame.Instance.World.ECS.Has<Encounter>(tile);
-            
-            return c.IsWalkable && encounter;
-        });
-
-        if (sorted.Any())
-        {
-            var c = sorted.First();
             var tile = SineaterGame.Instance.World.Get(c.X, c.Y);
             var encounter = SineaterGame.Instance.World.ECS.Has<Encounter>(tile);
             if (encounter)
@@ -241,13 +252,6 @@ public class WorldMapDrawable : IDrawable
         {
             for (var i = 0; i < 20; i++)
             {
-                // if (!Maps[1].Map.IsWalkable(i, j))
-                // {
-                //     renderContext.Batch.Draw(SineaterGame.Instance.Pixel, xy + WorldMapScreen.InWorld(i, j), 
-                //         new Rectangle(0, 0, 48, 48), new Color(1.0f, 0.0f, 0.0f, 0.5f), 
-                //         0, new Vector2(24, 24), Vector2.One * 2, SpriteEffects.None, 0);
-                // }
-                //else
                 if ((i + j) % 2 == 0)
                 {
                     renderContext.Batch.Draw(SineaterGame.Instance.Semi, WorldMapScreen.InWorld(i, j), 
@@ -255,11 +259,6 @@ public class WorldMapDrawable : IDrawable
                         0, new Vector2(40, 40), Vector2.One, SpriteEffects.None, 0);
                 }
             }
-        }
-        
-        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.Before))
-        {
-            marker.Update(x, y, renderContext);
         }
         
         for (var j = 0; j < 20; j++)
@@ -276,7 +275,10 @@ public class WorldMapDrawable : IDrawable
             }
         }
         
-        foreach (var marker in MapMarkers.Where(m => m.GetOrder() == EMarkerOrder.After))
+        PartyAvatar.Update(x, y, renderContext);
+
+        List<IWorldMapMarker> all = [ PartyAvatar, ..MapMarkers ];
+        foreach (var marker in all.OrderBy(a => a.Y))
         {
             marker.Update(x, y, renderContext);
         }

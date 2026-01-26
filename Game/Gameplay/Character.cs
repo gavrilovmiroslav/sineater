@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using SINEATER.Game.CoreUtils;
 using SINEATER.Game.Screens;
 
@@ -71,7 +72,8 @@ public abstract class Character
     public float Resist { get; set; } = 0;
     public int Shield { get; set; } = 0;
     public Stats Stats { get; set; } = new();
-    
+    public bool AnyItemReady => Items.Any(item => item?.TimeGauge >= 100);
+
     public virtual string GetName()
     {
         return Job.ToString();

@@ -433,9 +433,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _spriteBatch.Draw(_renderTargetMonitor, Vector2.Zero, new Color(1.0f, 1.0f, 1.0f, 0.45f));
         _spriteBatch.End();
         
-        _spriteBatch.Begin(blendState: BlendState.AlphaBlend);
-        _exRender.RenderLevel(_level);
-        _spriteBatch.End();
         GraphicsDevice.SetRenderTarget(null);
         
         if (ShouldDrawImgui)

@@ -64,10 +64,10 @@ public class Stats
         {
             switch (n)
             {
-                case 1: return Will;
-                case 2: return Clarity;
-                case 3: return Poise;
-                case 0: return Vigor;
+                case 0: return Poise;
+                case 1: return Clarity;
+                case 2: return Will;
+                case 3: return Vigor;
                 default:
                     return 0;
             }
