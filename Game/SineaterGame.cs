@@ -18,6 +18,8 @@ using SINEATER.Game.Screens;
 using SINEATER.steam;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
+using System.Linq;
+using SINEATER.Game.Graphics;
 
 namespace SINEATER.Game;
 
@@ -93,8 +95,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
-    private ExampleRenderer _exRender;
-    public ExampleRenderer lDtkRender => _exRender;
+    private LDTKRender _exRender;
+    public LDTKRender lDtkRender => _exRender;
     public LDtkWorld lDtkWorld => _world;
 
     private LDtkWorld _world;
@@ -162,9 +164,14 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
         _world = file.LoadWorld(Worlds.World.Iid);
         //_world.LoadLevel(Worlds.World.Level_0);
-
-        _exRender = new ExampleRenderer(_spriteBatch, null);
+        var ent = _world.Levels[0].GetLDKTEntities<Start>();
+        _exRender = new LDTKRender(_spriteBatch, null);
         _level = _world.LoadLevel(0);
+
+        foreach (LDtkLevel level in _world.Levels)
+        {
+            _exRender.PrerenderLevel(level);
+        }
     }
 
     private void OnInputSourceChanged(object? sender, EventArgs args)
