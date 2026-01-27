@@ -8,6 +8,7 @@ using LDtk;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
 
 namespace SINEATER.Game.Graphics
 {
@@ -218,7 +219,7 @@ namespace SINEATER.Game.Graphics
         /// <param name="level">Level to prerender</param>
         /// <param name="layerDepth">A depth of the layer of this level.</param>
         /// <exception cref="LDtkException"></exception>
-        public void RenderPrerenderedLevel(Vector2 position, LDtkLevel level, float layerDepth = 0, Vector2? scale = null)
+        public void RenderPrerenderedLevel(Vector2 position, LDtkLevel level, float layerDepth = 0, Vector2? scale = null, Color? color = null)
         {
             if (PrerenderedLevels.TryGetValue(level.Identifier, out RenderedLevel prerenderedLevel))
             {
@@ -227,8 +228,37 @@ namespace SINEATER.Game.Graphics
                     var p = level.Position.ToVector2();
                     p.X *= scale?.X ?? 1;
                     p.Y *= scale?.Y ?? 1;
-                    SpriteBatch.Draw(prerenderedLevel.Layers[i], p + position, null, Color.White, 0, Vector2.Zero, 
+                    SpriteBatch.Draw(prerenderedLevel.Layers[i], p + position, null, color ?? Color.White, 0, Vector2.Zero, 
                         scale ?? Vector2.One, SpriteEffects.None, layerDepth);
+                }
+            }
+            else
+            {
+                throw new LDtkException($"No prerendered level with Identifier {level.Identifier} found.");
+            }
+        }
+        
+        public void RenderPrerenderedLevelRect(Vector2 position, LDtkLevel level, float layerDepth = 0, Vector2? scale = null, Color? color = null, bool fill = true)
+        {
+            if (PrerenderedLevels.TryGetValue(level.Identifier, out RenderedLevel prerenderedLevel))
+            {
+                for (var i = 0; i < prerenderedLevel.Layers.Length; i++)
+                {
+                    var p = level.Position.ToVector2();
+                    var s = level.Size.ToVector2();
+                    p.X *= scale?.X ?? 1;
+                    p.Y *= scale?.Y ?? 1;
+                    s.X *= scale?.X ?? 1;
+                    s.Y *= scale?.Y ?? 1;
+                    var size = new SizeF(s.X, s.Y);
+                    if (fill)
+                    {
+                        SpriteBatch.FillRectangle(position + p, size, color ?? Color.White, 0.0f);
+                    }
+                    else
+                    {
+                        SpriteBatch.DrawRectangle(position + p, size, color ?? Color.White, 2.0f);
+                    }
                 }
             }
             else

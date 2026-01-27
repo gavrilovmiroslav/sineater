@@ -9,6 +9,7 @@ using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
+using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Save;
 namespace SINEATER.Game.Screens;
 
@@ -28,38 +29,44 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         WorldMap = new WorldMapDrawable(this);
         Camera = new OrthographicCamera(game.GraphicsDevice);
     }
-    
-    public override void Update(GameTime gameTime)
+
+    public void UpdateCamera(GameTime gameTime)
     {
-        CheckPlayerInputs();
         var xy = WorldMap.CurrentLevel.Position;
         var s = WorldMap.CurrentLevel.Size;
         s.X /= 2;
         s.Y /= 2;
         var px = xy.X + s.X;
         var py = xy.Y + s.Y;
-        px *= 5;
-        py *= 5;
+        px *= 4;
+        py *= 4;
         px -= SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2;
-        py -= SineaterGame.Instance.GraphicsDevice.Viewport.Height / 4 + 80;
+        py -= SineaterGame.Instance.GraphicsDevice.Viewport.Height / 4 + RESIZE * 16;
         if (Camera != null)
         {
             Camera.Position = Vector2.Lerp(Camera.Position, new Vector2(px, py),
-                gameTime.TotalGameTime.Milliseconds / 1000.0f);
-            Console.WriteLine($"Going to {px}, {py}");
+                (float)(gameTime.TotalGameTime.Milliseconds / 1000.0f * 0.5f).CubicEaseOut());
         }
     }
+    
+    public override void Update(GameTime gameTime)
+    {
+        CheckPlayerInputs();
+        UpdateCamera(gameTime);
+    }
 
+    public static readonly int RESIZE = 4;
     private int OFFSET_X = 24;
     private int OFFSET_Y = 96;
-    public static Vector2 InWorld(int x, int y) => new((1 + x) * 80, (1 + y) * 80);
+    public static Vector2 InWorld(int x, int y) => new((1 + x) * (RESIZE * 16), (1 + y) * (RESIZE * 16));
     public static Vector2 InWorld(Vector2 xy) => InWorld((int)xy.X, (int)xy.Y);
     
-    public static Vector2 OutWorld(float x, float y) => new(x / 80 - 80, y / 80 - 80);
+    public static Vector2 OutWorld(float x, float y) => new(x / (RESIZE * 16) - (RESIZE * 16), y / (RESIZE * 16) - (RESIZE * 16));
     public static Vector2 OutWorld(Vector2 xy) => OutWorld(xy.X, xy.Y);
     
     int dx = 16;
     int dy = -56;
+    private float _mapSize = 0.4f;
     
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
@@ -83,6 +90,25 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         // GUI
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
+
+            if (InputM.IsActive(EInputAction.MoveMapUp))
+            {
+                _mapSize += 0.1f;
+            }
+            else if (InputM.IsActive(EInputAction.MoveMapDown))
+            {
+                _mapSize -= 0.1f;
+            } 
+            
+            // MAP
+            var xy = new Vector2(OFFSET_X, OFFSET_Y);
+            foreach (var lvl in WorldMap.VisitedLevels)
+            {
+                SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(WorldMap.PartyContext.Camera?.Position ?? Vector2.Zero + xy + new Vector2(1000, 200), 
+                    lvl, 0, Vector2.One * _mapSize, color: new Color(29, 43, 83), fill: false);
+            }
+            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(WorldMap.PartyContext.Camera?.Position ?? Vector2.Zero + xy + new Vector2(1000, 200), 
+                WorldMap.CurrentLevel, 0, Vector2.One * _mapSize, color: new Color(131, 118, 156), fill: true);
 
             rc.Party(60, 800);
             
@@ -157,7 +183,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
                     }
                     
                     var walk = WorldMap.CurrentLevel.GetIntGrid("Walkable");
-                    if (walk.GetValueAt(x, y) != 1)
+                    if (walk.GetValueAt(x - levelPos.X, y - levelPos.Y) != 1)
                     {
                         var changeEvent = new PartyAvatarStateChanged(this, EPartyAvatarState.Moving, (x, y), (dx, dy)); 
                         EventBus.Send(ref changeEvent);

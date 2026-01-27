@@ -160,10 +160,10 @@ namespace SINEATER.Game.CoreUtils.Input
                     MakeAction(EInputAction.OpenInventory, Keys.Tab, Buttons.Start),
                     MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
 
-                    MakeAction(EInputAction.MoveMapLeft, Keys.A, Buttons.None, isHold: true),
-                    MakeAction(EInputAction.MoveMapRight, Keys.D, Buttons.None, isHold: true),
-                    MakeAction(EInputAction.MoveMapUp, Keys.W, Buttons.None, isHold: true),
-                    MakeAction(EInputAction.MoveMapDown, Keys.S, Buttons.None, isHold: true),
+                    MakeAction(EInputAction.MoveMapLeft, Keys.A, Buttons.None),
+                    MakeAction(EInputAction.MoveMapRight, Keys.D, Buttons.None),
+                    MakeAction(EInputAction.MoveMapUp, Keys.W, Buttons.None),
+                    MakeAction(EInputAction.MoveMapDown, Keys.S, Buttons.None),
 
                     MakeAction(EInputAction.Regenerate, Keys.F1, Buttons.None),
                     MakeAction(EInputAction.ShowMap, Keys.F10, Buttons.None),

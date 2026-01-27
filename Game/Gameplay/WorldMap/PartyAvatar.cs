@@ -39,7 +39,7 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IWorldMa
     
     public void Update(int x, int y, Drawing.RenderContext rc)
     {
-        var fx = -4;
+        var fx = WorldMapScreen.RESIZE / 2;
         var screenOffset = new Vector2(x - 40, y - 20);
         var sh = SineaterGame.Instance.SpriteShadow;
         var ps = SineaterGame.Instance.AllSprites;
@@ -192,6 +192,7 @@ public static class PartyAvatarEventHandler
         xy.X /= 16;
         xy.Y /= 16;
         ev.Screen.WorldMap.PartyContext.Destination = new Vector2(xy.X + ev.XY.X, xy.Y + ev.XY.Y);
+        ev.Screen.WorldMap.VisitedLevels.Add(ev.Screen.WorldMap.CurrentLevel);
         ev.Screen.WorldMap.CurrentLevel = ev.NewLevel;
         ev.Screen.CurrentPlayerPosition = (xy.X + ev.XY.X, xy.Y + ev.XY.Y);
         ev.Screen.WorldMap.PartyContext.State = EPartyAvatarState.Moving;

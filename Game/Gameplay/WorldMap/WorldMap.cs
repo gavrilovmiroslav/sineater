@@ -156,13 +156,19 @@ public class WorldMapDrawable : IDrawable
         PartyAvatar = new PartyAvatarDrawable(PartyContext, 
             WorldMapScreen.InWorld(screen.CurrentPlayerPosition.X, screen.CurrentPlayerPosition.Y));
     }
-    
+
+    public readonly HashSet<LDtkLevel> VisitedLevels = [];
+
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
         var xy = new Vector2(x, y);
         var wm = SineaterGame.Instance.WorldMap;
         
-        SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, CurrentLevel, 0, Vector2.One * 5);
+        foreach (var lvl in VisitedLevels)
+        {
+            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, lvl, 0, Vector2.One * WorldMapScreen.RESIZE, color: new Color(25, 25, 25, 25));
+        }
+        SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, CurrentLevel, 0, Vector2.One * WorldMapScreen.RESIZE);
         PartyAvatar.Update(x, y, renderContext);
 
         List<IWorldMapMarker> all = [ PartyAvatar, ..MapMarkers ];
