@@ -95,11 +95,11 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public bool ShouldDrawImgui = false;
     private ImGuiRenderer _render;
 
-    private LDTKRender _exRender;
-    public LDTKRender lDtkRender => _exRender;
-    public LDtkWorld lDtkWorld => _world;
+    private LDTKRender _ldtkRenderer;
+    public LDTKRender LDtkRenderer => _ldtkRenderer;
+    public LDtkWorld LDTKWorld => _ldtkWorld;
 
-    private LDtkWorld _world;
+    private LDtkWorld _ldtkWorld;
     public SineaterGame()
     {
         Instance = this;
@@ -142,7 +142,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         CurrentOptions?.UpdateOptions();
     }
 
-    private LDtkLevel _level;
+    private LDtkLevel _ldtkLevel;
+    
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
@@ -162,15 +163,13 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         InputManager.Instance.OnInputSourceChanged += OnInputSourceChanged;
 
         var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
-        _world = file.LoadWorld(Worlds.World.Iid);
-        //_world.LoadLevel(Worlds.World.Level_0);
-        var ent = _world.Levels[0].GetLDKTEntities<Start>();
-        _exRender = new LDTKRender(_spriteBatch, null);
-        _level = _world.LoadLevel(0);
-
-        foreach (LDtkLevel level in _world.Levels)
+        _ldtkWorld = file.LoadWorld(Worlds.World.Iid);
+        _ldtkRenderer = new LDTKRender(_spriteBatch, null);
+        _ldtkLevel = _ldtkWorld.LoadLevel(0);
+        
+        foreach (LDtkLevel level in _ldtkWorld.Levels)
         {
-            _exRender.PrerenderLevel(level);
+            _ldtkRenderer.PrerenderLevel(level);
         }
     }
 

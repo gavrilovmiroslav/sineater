@@ -236,11 +236,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                 SpriteEffects.None, 0);
         }
         
-        foreach (LDtkLevel level in SineaterGame.Instance.lDtkWorld.Levels)
-        {
-            SineaterGame.Instance.lDtkRender.RenderPrerenderedLevel(new Vector2(200, 200), level, scale: Vector2.One * 3);
-        }
-        
         batch.End();
     }
 }

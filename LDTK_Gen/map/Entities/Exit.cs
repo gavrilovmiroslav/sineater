@@ -30,5 +30,6 @@ public partial class Exit : ILDtkEntity
 
     public EntityReference? Endpoint { get; set; }
     public MoveBehavior? Kind { get; set; }
+    public Direction Direction { get; set; }
 }
 #pragma warning restore

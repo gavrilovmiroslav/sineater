@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Arch.Bus;
+using LDtk;
+using LDtkTypes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -36,7 +38,6 @@ public static class WorldMapEventHandler
     {
         var x = ev.NewPosition.X;
         var y = ev.NewPosition.Y;
-        ev.Screen.WorldMap.UpdateFov(x, y);
         if (ev.Screen.WorldMap.MapMarkers.Any(m => m.X == x && m.Y == y))
         {
             var tile = SineaterGame.Instance.World.Get(x, y);
@@ -138,104 +139,22 @@ public class PointOfInterestMarker : IWorldMapMarker
 public class WorldMapDrawable : IDrawable
 {
     private readonly WorldMapScreen _screen;
-    public readonly Dictionary<int, (RogueSharp.Map<Cell> Map, FieldOfView<Cell> Fov)> Maps = [];
-    public readonly float[,] FogOfWar = new float[20, 20];
-    public readonly float[,] FogOfWarTarget = new float[20, 20];
-    public readonly int[,] FogOfWarMemory = new int[20, 20];
     public List<IWorldMapMarker> MapMarkers = [];
     public PartyAvatarContext PartyContext;
     public PartyAvatarDrawable PartyAvatar;
     
+    public LDtkLevel CurrentLevel;
     private ReadOnlyCollection<Cell> _fov = new ReadOnlyCollection<Cell>([]);
     
     public WorldMapDrawable(WorldMapScreen screen)
     {
         _screen = screen;
-        InitializeMapLayers();
+        CurrentLevel = SineaterGame.Instance.LDTKWorld.Levels[0];
+        var start = CurrentLevel.GetEntityInstances<Start>().First();
+        screen.CurrentPlayerPosition = (start._Grid.X, start._Grid.Y);
         PartyContext = new PartyAvatarContext() { Camera = screen.Camera };
         PartyAvatar = new PartyAvatarDrawable(PartyContext, 
             WorldMapScreen.InWorld(screen.CurrentPlayerPosition.X, screen.CurrentPlayerPosition.Y));
-    }
-    
-    private void InitializeMapLayers()
-    {
-        var filePath = System.IO.Path.Combine(SineaterGame.Instance.Content.RootDirectory, $"map.xp");
-        using var stream = TitleContainer.OpenStream(filePath);
-        var rex = Image.Load(stream);
-        
-        for (var layerIndex = 0; layerIndex < 2; layerIndex++)
-        {
-            var layer = rex.Layers[layerIndex];
-            var visibilityMask = rex.Layers[layerIndex + 2];
-            var levelMap = new Map<Cell>(20, 20);
-            
-            for (var y = 0; y < 20; y++)
-            {
-                for (var x = 0; x < 20; x++)
-                {
-                    var bg = layer[x, y].Background;
-                    var transparent = visibilityMask[x, y].Character != 32;
-                    var isAccessible = bg != SadRex.Color.Transparent && bg != new SadRex.Color(0, 0, 0);
-                    levelMap.SetCellProperties(x, y, isAccessible || transparent, isAccessible);
-                }
-            }
-
-            var fov = new FieldOfView<Cell>(levelMap);
-            Maps[layerIndex] = (levelMap, fov);
-        }
-    }
-
-    public void UpdateFov(int x, int y)
-    {
-        for (var j = 0; j < 20; j++)
-        {
-            for (var i = 0; i < 20; i++)
-            {
-                FogOfWarTarget[i, j] = 0.0f;
-            }
-        }
-        
-        _fov = Maps[1].Fov.ComputeFov(x, y, 2, true);
-        List<Cell> uncovered = [];
-        foreach (var cell in _fov)
-        {
-            var d = Vector2.Distance(new Vector2(x, y), new Vector2(cell.X, cell.Y));
-            if (FogOfWarMemory[cell.X, cell.Y] == 0)
-            {
-                FogOfWarMemory[cell.X, cell.Y] += 5;
-
-                if (d < 2)
-                {
-                    var tile = SineaterGame.Instance.World.Get(cell.X, cell.Y);
-                    var encounter = SineaterGame.Instance.World.ECS.Has<Encounter>(tile);
-
-                    if (cell.IsWalkable && encounter)
-                    {
-                        uncovered.Add(cell);
-                    }
-                }
-            }
-            
-            if (d == 0.0f)
-            {
-                FogOfWarTarget[cell.X, cell.Y] = 1;
-            }
-            else
-            {
-                FogOfWarTarget[cell.X, cell.Y] = 1 / d;
-            }
-        }
-
-        foreach (var c in uncovered)
-        {
-            var tile = SineaterGame.Instance.World.Get(c.X, c.Y);
-            var encounter = SineaterGame.Instance.World.ECS.Has<Encounter>(tile);
-            if (encounter)
-            {
-                var uncover = new UncoverWorld(_screen, c.X, c.Y);
-                EventBus.Send(ref uncover);
-            }
-        }
     }
     
     public void Update(int x, int y, Drawing.RenderContext renderContext)
@@ -243,38 +162,7 @@ public class WorldMapDrawable : IDrawable
         var xy = new Vector2(x, y);
         var wm = SineaterGame.Instance.WorldMap;
         
-        renderContext.Batch.Draw(wm, new Rectangle(x, y, wm.Width * 5, wm.Height * 5),
-            new Rectangle(0, 0, wm.Width, wm.Height),
-            new Color(0.8f, 0.7f, 0.7f));
-        
-        // for test
-        for (var j = 0; j < 20; j++)
-        {
-            for (var i = 0; i < 20; i++)
-            {
-                if ((i + j) % 2 == 0)
-                {
-                    renderContext.Batch.Draw(SineaterGame.Instance.Semi, WorldMapScreen.InWorld(i, j), 
-                        new Rectangle(0, 0, 80, 80), new Color(0.8f, 0.25f, 0.45f, 0.3f), 
-                        0, new Vector2(40, 40), Vector2.One, SpriteEffects.None, 0);
-                }
-            }
-        }
-        
-        for (var j = 0; j < 20; j++)
-        {
-            for (var i = 0; i < 20; i++)
-            {
-                FogOfWar[i, j] = float.Lerp(FogOfWar[i, j], FogOfWarTarget[i, j], 0.1f);
-
-                var r = WorldMapScreen.InWorld(i, j);
-                renderContext.Batch.Draw(SineaterGame.Instance.Pixel, 
-                    new Rectangle((int)r.X, (int)r.Y, 80, 80), 
-                    new Rectangle(0, 0, 80, 80), new Color(0.0f, 0.0f, 0.0f, 1 - FogOfWar[i, j]), 
-                    0.0f, new Vector2(40, 40), SpriteEffects.None, 0);
-            }
-        }
-        
+        SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, CurrentLevel, 0, Vector2.One * 5);
         PartyAvatar.Update(x, y, renderContext);
 
         List<IWorldMapMarker> all = [ PartyAvatar, ..MapMarkers ];

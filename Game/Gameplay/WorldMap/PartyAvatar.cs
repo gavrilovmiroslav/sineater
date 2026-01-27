@@ -1,5 +1,6 @@
 using System;
 using Arch.Bus;
+using LDtk;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
@@ -152,6 +153,7 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IWorldMa
     public int Y { get; set; } = (int)(ctx.Destination?.Y ?? 0);
 }
 
+public record struct PartyAvatarLevelChanged(WorldMapScreen Screen, (int X, int Y) XY, (int DX, int DY) Delta, LDtkLevel NewLevel);
 public record struct PartyAvatarStateChanged(WorldMapScreen Screen, EPartyAvatarState NewState, (int X, int Y)? XY = null, (int DX, int DY)? Delta = null);
 public record struct PartyAvatarMoved(WorldMapScreen Screen, (int X, int Y) NewPosition);
 
@@ -162,6 +164,9 @@ public partial class PartyAvatarStateEventReceiver
 
     [Event]
     public void OnPartyAvatarMovedEvent(ref PartyAvatarMoved ev) {}
+    
+    [Event]
+    public void OnPartyAvatarChangedLevelEvent(ref PartyAvatarLevelChanged ev) {}
 }
 
 public static class PartyAvatarEventHandler
@@ -177,5 +182,18 @@ public static class PartyAvatarEventHandler
         }
         
         ev.Screen.WorldMap.PartyContext.State = ev.NewState;
+    }
+
+    [Event(order: 1)]
+    public static void OnPartyAvatarChangedLevelEvent(ref PartyAvatarLevelChanged ev)
+    {
+        ev.Screen.WorldMap.PartyContext.Delta = new Vector2(ev.Delta.DX, ev.Delta.DY);
+        var xy = ev.NewLevel.Position;
+        xy.X /= 16;
+        xy.Y /= 16;
+        ev.Screen.WorldMap.PartyContext.Destination = new Vector2(xy.X + ev.XY.X, xy.Y + ev.XY.Y);
+        ev.Screen.WorldMap.CurrentLevel = ev.NewLevel;
+        ev.Screen.CurrentPlayerPosition = (xy.X + ev.XY.X, xy.Y + ev.XY.Y);
+        ev.Screen.WorldMap.PartyContext.State = EPartyAvatarState.Moving;
     }
 }

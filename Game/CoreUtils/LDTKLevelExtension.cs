@@ -54,5 +54,20 @@ namespace SINEATER.Game.CoreUtils
 
             return [.. result];
         }
+
+        public static LDTKEntity<T>? GetLDTKEntity<T>(this LDtkLevel level, int x, int y) where T : class, ILDtkEntity, new()
+        {
+            var entities = level.GetLDKTEntities<T>();
+            var xy = level.Position;
+            xy.X /= 16;
+            xy.Y /= 16;
+            var ldtkEntities = entities.Where(e => (xy.X + e.Instance._Grid.X) == x && (xy.Y + e.Instance._Grid.Y) == y).ToList();
+            if (ldtkEntities.Count > 0)
+            {
+                return ldtkEntities.First();
+            }
+
+            return null;
+        }
     }
 }
