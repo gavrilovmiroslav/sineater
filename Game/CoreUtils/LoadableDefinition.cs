@@ -91,6 +91,8 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
     {
         _library.Clear();
 
+        // using parent parent with exception will bug ship build, since menu never changes states!
+        // FIX ME
         var dir = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName;
         if (dir is null)
         {
