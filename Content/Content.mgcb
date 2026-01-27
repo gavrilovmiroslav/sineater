@@ -355,6 +355,9 @@
 #begin EldringBold.ttf
 /copy:EldringBold.ttf
 
+#begin enemies.json
+/copy:enemies.json
+
 #begin fingerprints.png
 /importer:TextureImporter
 /processor:TextureProcessor
