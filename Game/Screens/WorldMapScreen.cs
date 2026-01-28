@@ -42,6 +42,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         py *= 4;
         px -= SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2;
         py -= SineaterGame.Instance.GraphicsDevice.Viewport.Height / 4 + RESIZE * 16;
+        px += 350;
         if (Camera != null)
         {
             Camera.Position = Vector2.Lerp(Camera.Position, new Vector2(px, py),
@@ -101,15 +102,16 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
             } 
             
             // MAP
-            var xy = new Vector2(OFFSET_X, OFFSET_Y);
+            var xy = new Vector2(950 + OFFSET_X, 200 + OFFSET_Y);
+            xy -= WorldMap.CurrentLevel.Position.ToVector2() / 2 + WorldMap.CurrentLevel.Size.ToVector2() * 0.5f;
             foreach (var lvl in WorldMap.VisitedLevels)
             {
-                SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(WorldMap.PartyContext.Camera?.Position ?? Vector2.Zero + xy + new Vector2(1000, 200), 
-                    lvl, 0, Vector2.One * _mapSize, color: new Color(29, 43, 83), fill: false);
+                SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(xy, lvl, 0, 
+                    Vector2.One * _mapSize, color: new Color(29, 43, 83), fill: false);
             }
-            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(WorldMap.PartyContext.Camera?.Position ?? Vector2.Zero + xy + new Vector2(1000, 200), 
-                WorldMap.CurrentLevel, 0, Vector2.One * _mapSize, color: new Color(131, 118, 156), fill: true);
-
+            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevelRect(xy, WorldMap.CurrentLevel, 
+                0, Vector2.One * _mapSize, color: new Color(131, 118, 156), fill: true);
+            
             rc.Party(60, 800);
             
             batch.DrawText(100, 60, SineaterGame.Instance.FontMono, $"Player position: {CurrentPlayerPosition}");

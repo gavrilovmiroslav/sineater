@@ -323,7 +323,7 @@ public static class Drawing
 
     public static void Party(this RenderContext ctx, int x, int y)
     {
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
+        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 150, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.White);
         ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 126, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.Gray);
         if (SineaterGame.Instance.ScreenStack.First(s => s is WorldMapScreen) is { } world)
