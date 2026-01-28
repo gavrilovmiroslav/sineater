@@ -72,7 +72,15 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         var rc = new Drawing.RenderContext(batch, gameTime);
+
         // In camera
+        batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
+            DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity, 
+            effect: SineaterGame.Instance.Grayscale);
+
+            WorldMap.DrawVisited(OFFSET_X + dx, OFFSET_Y + dy, rc);
+        batch.End();
+        
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
 

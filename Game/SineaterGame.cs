@@ -66,7 +66,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private Texture2D _monitor;
     private Image _rex;
     public Image Rex => _rex;
-    
+
+    public Effect Grayscale;
     private Effect _crt;
     private RenderTarget2D _renderTargetGame;
     private RenderTarget2D _renderTargetMonitor;
@@ -328,6 +329,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         _crt = Content.Load<Effect>("crt");
         SetupCrt(Width, Height);
+
+        Grayscale = Content.Load<Effect>("Grayscale");
 
         _focus = new Focus(_crt);
         ScreenStack.Push(new MainMenuScreen(this));
