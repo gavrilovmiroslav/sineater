@@ -29,10 +29,6 @@ public enum EInputAction
     ShowImGui,
     #endregion
 
-    ChacterSheetEnter,
-    ChacterSheetCycle,
-    ChacterSheetExit,
-
     OpenInventory,
     OpenInventoryOutfit,
 

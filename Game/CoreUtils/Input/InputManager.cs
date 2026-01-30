@@ -153,10 +153,6 @@ namespace SINEATER.Game.CoreUtils.Input
                     MakeAction(EInputAction.ExplorationDebug, Keys.F10, Buttons.None),
                     MakeAction(EInputAction.ShowImGui, Keys.F2, Buttons.None),
 
-                    MakeAction(EInputAction.ChacterSheetEnter, Keys.C, Buttons.Y),
-                    MakeAction(EInputAction.ChacterSheetCycle, Keys.Space, Buttons.A),
-                    MakeAction(EInputAction.ChacterSheetExit, Keys.Escape, Buttons.B),
-
                     MakeAction(EInputAction.OpenInventory, Keys.Tab, Buttons.Start),
                     MakeAction(EInputAction.OpenInventoryOutfit, Keys.O, Buttons.None),
 
