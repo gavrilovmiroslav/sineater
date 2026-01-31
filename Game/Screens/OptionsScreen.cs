@@ -103,13 +103,13 @@ public static class OptionsEventHandler
     }
 }
 
-public class OptionsScreen(SineaterGame game) : Screen(game)
+public class OptionsScreen() : Screen()
 {
     private OptionsStateContext _ctx;
     private readonly List<IDrawable> _drawables = [];
     private readonly List<WeakReference<IOptionDrawable>> _options = [];
 
-    public override void Initialize(SineaterGame game)
+    public override void Initialize()
     {
         _ctx = new OptionsStateContext() { MenuOption = 0};
         var opts = SineaterGame.Instance.CurrentOptions;
@@ -134,7 +134,7 @@ public class OptionsScreen(SineaterGame game) : Screen(game)
         }
     }
     
-    public override void Update(GameTime gameTime)
+    public override void Update(EScreenFadeState fade, GameTime gameTime)
     {
         void Unselect()
         {
@@ -203,12 +203,12 @@ public class OptionsScreen(SineaterGame game) : Screen(game)
         }
     }
 
-    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
+    public override void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
 
-        batch.Draw(SineaterGame.Instance.Logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
+        batch.Draw(SineaterGame.Instance.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
 

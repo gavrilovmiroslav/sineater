@@ -7,10 +7,8 @@ using SINEATER.Game.CoreUtils;
 using SINEATER.Game.CoreUtils.Input;
 using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
-using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Game.Save;
-using LDtk;
 
 namespace SINEATER.Game.Screens;
 
@@ -18,7 +16,6 @@ public enum EMainMenuState
 {
     Starting,
     Menu,
-    Fading,
     Done,
     Options
 }
@@ -55,20 +52,25 @@ public static class MainMenuEventHandler
             case EMainMenuState.Menu:
                 break;
             case EMainMenuState.Options:
-                SineaterGame.Instance.ScreenStack.Push(new OptionsScreen(SineaterGame.Instance));
+                if (SineaterGame.Instance.ScreenStack.Peek() is { } peek)
+                {
+                    peek.NextScreen = new OptionsScreen();
+                }
+                
                 ev.Menu.State = EMainMenuState.Menu;
                 break;
-            case EMainMenuState.Fading:
-                Muse.SetGameState(EMusicState.World);
-                break;
+            
             case EMainMenuState.Done:
-                SineaterGame.Instance.PopAndPushScreen(new WorldMapScreen(SineaterGame.Instance));
+                if (SineaterGame.Instance.ScreenStack.Peek() is { } world)
+                {
+                    world.NextScreen = new WorldMapScreen();
+                }
                 break;
         }
     }
 }
 
-public class MainMenuScreen(SineaterGame game) : Screen(game)
+public class MainMenuScreen() : Screen()
 {
     private Texture2D _fmod;
     private Texture2D _fmodCredits;
@@ -78,14 +80,14 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     private GridAnimation _vfxAnimation;
     private GridAnimationContext _vfxAnimationContext;
     
-    public override void Initialize(SineaterGame game)
+    public override void Initialize()
     {
-        _vfx = _game.Content.Load<Texture2D>("vfx11");
+        _vfx = Game.Content.Load<Texture2D>("vfx11");
         _vfxAnimationContext = new GridAnimationContext(_vfx, (4, 4), 0.01f, Color.White, 2.0f);
         _vfxAnimation = new GridAnimation(_vfxAnimationContext, () => { });
         
-        _fmod = _game.Content.Load<Texture2D>("fmod-logo");
-        _fmodCredits = _game.Content.Load<Texture2D>("fmod-credits");
+        _fmod = Game.Content.Load<Texture2D>("fmod-logo");
+        _fmodCredits = Game.Content.Load<Texture2D>("fmod-credits");
         _ctx = new MainMenuStateContext() { LoaderTask = null, State = EMainMenuState.Starting, FadeTime = 0.0f, MenuOption = 0 };
 
         Task.Run(() =>
@@ -103,23 +105,11 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
     }
 
     public int _menuItemsCount = SaveSystem.HasSave() ? 4 : 3;
-    public override void Update(GameTime gameTime)
+    public override void Update(EScreenFadeState fade, GameTime gameTime)
     {
         if (_ctx.WorldLoaded)
         {
-            if (_ctx.State == EMainMenuState.Fading)
-            {
-                _ctx.FadeTime += SineaterGame.DeltaTime;
-                if (_ctx.FadeTime >= 1)
-                {
-                    if (_ctx.LoaderTask?.IsCompleted ?? false)
-                    {
-                        var goToDoneEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Done);
-                        EventBus.Send(ref goToDoneEvent);
-                    }
-                }
-            }
-            else if (_ctx.State is EMainMenuState.Menu)
+            if (_ctx.State is EMainMenuState.Menu)
             {
                 if (InputM.IsActive(EInputAction.MoveDown))
                 {
@@ -133,7 +123,6 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                         _ctx.MenuOption = _menuItemsCount - 1;
                     }
                 }
-
                 else if (InputM.IsActive(EInputAction.Confirm))
                 {
                     bool loadSave = SaveSystem.HasSave() && _ctx.MenuOption == 0;
@@ -141,31 +130,16 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
                     {
                         case 0:
                         case 1:
-                            Task.Run(() =>
+                            _ctx.LoaderTask = Task.Run(() =>
                             {
-                                try
+                                if (loadSave)
                                 {
-                                    _ctx.LoaderTask = Task.Run(() =>
-                                    {
-                                        
-                                        if (loadSave)
-                                        {
-                                            SaveSystem.Load();
-                                        }
-                                        else
-                                        {
-                                            SineaterGame.Instance.Party.MakeParty();
-                                            SaveSystem.Save();
-                                        }
-                                    });
-
-                                    var goToFadingEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Fading);
-                                    EventBus.Send(ref goToFadingEvent);
+                                    SaveSystem.Load();
                                 }
-                                catch (Exception e)
+                                else
                                 {
-                                    var goToMenuEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Menu);
-                                    EventBus.Send(ref goToMenuEvent);
+                                    SineaterGame.Instance.Party.MakeParty();
+                                    SaveSystem.Save();
                                 }
                             });
                             break;
@@ -182,12 +156,12 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
         }
     }
 
-    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
+    public override void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
 
-        batch.Draw(SineaterGame.Instance.Logo, new Vector2(game.Window.ClientBounds.Width / 2.0f, game.Window.ClientBounds.Height / 4.0f),
+        batch.Draw(SineaterGame.Instance.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
 
@@ -212,30 +186,29 @@ public class MainMenuScreen(SineaterGame game) : Screen(game)
             batch.DrawTextCenter(mid, top + height + height, SineaterGame.Instance.Font, "QUIT", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) + 2 ? Color.Gold : Color.White);
         }
 
-        batch.Draw(_fmod, new Vector2(35, game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),
+        batch.Draw(_fmod, new Vector2(35, Game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),
             Color.White, 0.0f, new Vector2(0, 0), Vector2.One * 0.35f, SpriteEffects.None, 0);
 
-        batch.Draw(_fmodCredits, new Vector2(35, game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22),
+        batch.Draw(_fmodCredits, new Vector2(35, Game.Window.ClientBounds.Height - 40), new Rectangle(0, 0, 428, 22),
             Color.White, 0.0f, new Vector2(0, 0), Vector2.One, SpriteEffects.None, 0);
 
         _vfxAnimation?.Update(mid, 700, new Drawing.RenderContext(batch, gameTime));
         
         var pixel = SineaterGame.Instance.Pixel;
-        if (_ctx.State == EMainMenuState.Fading)
-        {
-            batch.Draw(pixel, new Vector2(0, 0), null,
-                new Color(0, 0, 0, _ctx.FadeTime), 0.0f, new Vector2(0, 0),
-                new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
-                SpriteEffects.None, 0);
-        }
-        else if (_ctx.State == EMainMenuState.Done)
+        if (_ctx.State == EMainMenuState.Done)
         {
             batch.Draw(pixel, new Vector2(0, 0), null,
                 new Color(0, 0, 0, 1), 0.0f, new Vector2(0, 0),
-                new Vector2(game.Window.ClientBounds.Width, game.Window.ClientBounds.Height),
+                new Vector2(Game.Window.ClientBounds.Width, Game.Window.ClientBounds.Height),
                 SpriteEffects.None, 0);
         }
         
         batch.End();
     }
+
+    public override void OnFadeOutComplete()
+    {
+        
+    }
+
 }

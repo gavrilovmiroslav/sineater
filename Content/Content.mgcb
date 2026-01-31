@@ -463,6 +463,16 @@
 #begin items/items.json
 /copy:items/items.json
 
+#begin Knightwood.otf
+/copy:Knightwood.otf
+
+#begin Knightwood.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Knightwood.spritefont
+
 #begin largenumbers.png
 /importer:TextureImporter
 /processor:TextureProcessor

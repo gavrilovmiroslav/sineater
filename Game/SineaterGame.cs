@@ -1,5 +1,4 @@
 ﻿using LDtk;
-using LDtk.Renderer;
 using LDtkTypes;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,6 @@ using SINEATER.Game.Screens;
 using SINEATER.steam;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
-using System.Linq;
 using SINEATER.Game.Graphics;
 
 namespace SINEATER.Game;
@@ -81,7 +79,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private const int HourLengthMillis = 1000 * 60 * 60;
     private Focus _focus;
     
-    public Dictionary<string, TextLayer> Layers = new();
     public Stack<IScreen> ScreenStack = new();
     public Party Party;
     public World World { get; set; }
@@ -161,8 +158,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         InputManager.Instance.PushContext("Default"); 
         base.Initialize();
 
-        InputManager.Instance.OnInputSourceChanged += OnInputSourceChanged;
-
         var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
         _ldtkWorld = file.LoadWorld(Worlds.World.Iid);
         _ldtkRenderer = new LDTKRender(_spriteBatch, null);
@@ -171,18 +166,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         foreach (LDtkLevel level in _ldtkWorld.Levels)
         {
             _ldtkRenderer.PrerenderLevel(level);
-        }
-    }
-
-    private void OnInputSourceChanged(object? sender, EventArgs args)
-    {
-        if (InputManager.Instance.InputSource == InputManager.EInputSource.Keyboard)
-        {
-            Layers["input"] = new TextLayer(_inputs[0], new Vector2(74, 28), new Vector2(16, 16), new Vector2(12, 12), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
-        }
-        else
-        {
-            Layers["input"] = new TextLayer(_inputs[1], new Vector2(74, 28), new Vector2(16, 16), new Vector2(5, 6), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
         }
     }
 
@@ -242,98 +225,14 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         }
         
         _monitor = Content.Load<Texture2D>("fingerprints");
-
-        var portraitSmolLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(75, -25), new Vector2(0, 0));
-        Layers.Add("porsmol", portraitSmolLayer);
         
-        var portraitLayer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(80, 80), new Vector2(0, 0), 2, new Vector2(56, -96), new Vector2(0, 0));
-        Layers.Add("portrait", portraitLayer);
-        
-        var portrait2Layer = new TextLayer(_portraits, new Vector2(Width / 80, Height / 80), new Vector2(80, 80), new Vector2(12, 10), new Vector2(0, 0), 1, new Vector2(56, 60), new Vector2(0, 0));
-        Layers.Add("portrait2", portrait2Layer);
-        
-        var mrmoLayer = new TextLayer(_mrmo, new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 73), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
-        mrmoLayer.Map(" ", 0, 0);
-        mrmoLayer.Map("!\"#$%&'()*+,-./", 1, 54);
-        mrmoLayer.Map("@abcdefghijklmno", 0, 55);
-        mrmoLayer.Map("ABCDEFGHIJKLMNO", 1, 55);
-        mrmoLayer.Map("`{|}~", 0, 56);
-        mrmoLayer.Map(":;<=>?", 10, 59);
-        mrmoLayer.Map("0123456789", 6, 57);
-        mrmoLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
-        mrmoLayer.Map("PQRSTUVWXYZ", 0, 60);
-        foreach (var (u, v) in new[]
-                 {
-                     (2, 64), (3, 64), (4, 64), (5, 64), (6, 64), (7, 64), (8, 64), (10, 64),
-                     (0, 65), (5, 65), (7, 65), (8, 65), (9, 65),
-                     (0, 66), (1, 66), (2, 66), (3, 66), (7, 66), (8, 66), (9, 66), (10, 66), (11, 66), (12, 66),
-                     (0, 67), (1, 67), (2, 67), (3, 67) 
-                 })
-        {
-            mrmoLayer.SetFlip(u, v, SpriteEffects.None);
-        }
-        
-        foreach (var (u, v) in new[]
-                 {
-                     (0, 64), (1, 64),
-                     (1, 65), (2, 65), (3, 65), (4, 65), (6, 65),
-                     (4, 66), 
-                     (4, 67), (5, 67),
-                 })
-        {
-            mrmoLayer.SetFlip(u, v, SpriteEffects.FlipHorizontally);
-            mrmoLayer.SetFlip(u, v - 4, SpriteEffects.FlipHorizontally);
-            mrmoLayer.SetFlip(u, v + 5, SpriteEffects.FlipHorizontally);
-        }
-        Layers.Add("mrmo", mrmoLayer);
-        
-        var mapLayer = new TextLayer(_mapmotext,new Vector2(36, 28), new Vector2(16, 16),new Vector2(16, 64), new Vector2(2, 1), 2, new Vector2(0, -3), new Vector2(15, 63));
-        mapLayer.Map(" ", 0, 0);
-        mapLayer.Map("!\"#$%&'()*+,-./", 1, 54);
-        mapLayer.Map("@abcdefghijklmno", 0, 55);
-        mapLayer.Map("ABCDEFGHIJKLMNO", 1, 55);
-        mapLayer.Map("`{|}~", 0, 56);
-        mapLayer.Map(":;<=>?", 10, 59);
-        mapLayer.Map("0123456789", 6, 57);
-        mapLayer.Map("pqrstuvwxyz[\\]^_", 0, 60);
-        mapLayer.Map("PQRSTUVWXYZ", 0, 60);
-        Layers.Add("map", mapLayer);
-        
-        var ibmMiniLayer = new TextLayer(_ibm, new Vector2(2 * 74, 2 * 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 1, new Vector2(2, 3), new Vector2(0, 0));
-        ibmMiniLayer.SetOffset(1, 0);
-        ibmMiniLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
-        ibmMiniLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
-        ibmMiniLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
-        Layers.Add("mini", ibmMiniLayer);
-        
-        var ibmLayer = new TextLayer(_ibm, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(0, 0), new Vector2(31, 7));
-        ibmLayer.SetOffset(1, 0);
-        ibmLayer.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
-        ibmLayer.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
-        ibmLayer.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
-        Layers.Add("ascii", ibmLayer);
-
-        var inputText = new TextLayer(_inputText, new Vector2(74, 28), new Vector2(8, 16), new Vector2(32, 8), new Vector2(3, 1), 2, new Vector2(2, 0), new Vector2(31, 7));
-        inputText.SetOffset(1, 0);
-        inputText.Map(" !\"#$%&'()*+,-./0123456789:;<=>?", 0, 1);
-        inputText.Map("@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_", 0, 2);
-        inputText.Map("`abcdefghijklmnopqrstuvwxyz{|}~", 0, 3);
-        Layers.Add("inputtext", inputText);
-
-        var largeNums = new TextLayer(_largeNums, new Vector2(30, 30), new Vector2(32, 32), new Vector2(20, 20), new Vector2(0, 0), 2, new Vector2(0, 28), new Vector2(0, 0));
-        largeNums.Map(" 1234567890", 0, 0);
-        Layers.Add("largenums", largeNums);
-
-        var inputLayer = new TextLayer(_inputs[0], new Vector2(74, 28), new Vector2(16, 16), new Vector2(12, 12), new Vector2(0, 0), 2, new Vector2(0, 0), new Vector2(0, 0));
-        Layers.Add("input", inputLayer);
-
         _crt = Content.Load<Effect>("crt");
         SetupCrt(Width, Height);
 
         Grayscale = Content.Load<Effect>("Grayscale");
 
         _focus = new Focus(_crt);
-        ScreenStack.Push(new MainMenuScreen(this));
+        ScreenStack.Push(new MainMenuScreen());
 
         Muse.Load();
         CurrentOptions.UpdateOptions();
@@ -372,7 +271,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         if (InputM.IsActive(EInputAction.RestartExploration))
         {
             ScreenStack.Pop();
-            ScreenStack.Push(new WorldMapScreen(this));
+            ScreenStack.Push(new WorldMapScreen());
         }
 
         if (InputM.IsActive(EInputAction.ShowImGui))
@@ -397,25 +296,14 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
     protected override void Draw(GameTime gameTime)
     {
-        if (ScreenStack?.TryPeek(out var screen) ?? false)
-        {
-            screen.LayerDraw(gameTime);
-        }
-        
         var focus = _focus.Get();
 
         GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.SetRenderTarget(_renderTargetGame);
-
-        Rectangle orgScissorRec = _spriteBatch.GraphicsDevice.ScissorRectangle;
-        RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
-        Rectangle targetRect = new Rectangle(X, Y, GraphicsDevice.Viewport.Width + W, GraphicsDevice.Viewport.Height + H - 50);
-        _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
         
-        foreach (var layer in LayerNames)
-        {
-            Layers[layer].Draw(_spriteBatch);
-        }
+        var rasterizerState = new RasterizerState() { ScissorTestEnable = true };
+        var targetRect = new Rectangle(X, Y, GraphicsDevice.Viewport.Width + W, GraphicsDevice.Viewport.Height + H - 50);
+        _spriteBatch.GraphicsDevice.ScissorRectangle = targetRect;
 
         if (ScreenStack?.TryPeek(out var scr) ?? false)
         {
@@ -461,9 +349,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         _render.EndLayout();
     }
     
-    public static IEnumerable<string> LayerNames 
-        => [ "map", "mrmo", "ascii", "portrait", "portrait2", "porsmol", "mini", "largenums", "input", "inputtext"];
-
     private void SetupCrt(int w, int h)
     {
         _crt.Parameters["hardScan"]?.SetValue(-5.0f);

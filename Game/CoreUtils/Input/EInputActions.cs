@@ -3,6 +3,8 @@
 public enum EInputAction
 {
     None,
+    DebugStartCombat, 
+    
     Exit,
     MoveLeft,
     MoveRight,

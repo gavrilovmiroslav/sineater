@@ -42,7 +42,7 @@ public static class WorldMapEventHandler
         {
             var tile = SineaterGame.Instance.World.Get(x, y);
             var encounter = SineaterGame.Instance.World.ECS.Get<Encounter>(tile);
-            SineaterGame.Instance.ScreenStack.Push(new CombatScreen(SineaterGame.Instance, ev.Screen, (x, y), encounter, new Reward([])));
+            SineaterGame.Instance.ScreenStack.Push(new CombatScreen(ev.Screen, (x, y), encounter, new Reward([])));
         }
     }
 

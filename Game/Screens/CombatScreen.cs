@@ -44,23 +44,23 @@ public class CombatScreen : Screen
     
     public List<CombatAnimation> Animations = [];
     
-    public CombatScreen(SineaterGame game, WorldMapScreen world, (int X, int Y) xy, Encounter encounter, Reward reward) : base(game)
+    public CombatScreen(WorldMapScreen world, (int X, int Y) xy, Encounter encounter, Reward reward) : base()
     {
         _world = world;
         _xy = xy;
         _reward = reward.Rewards.ToArray();
-        foreach (var p in _game.Party.Characters)
+        foreach (var p in Game.Party.Characters)
         {
             p.Guard = 1;
         }
     }
 
-    public override void Initialize(SineaterGame game)
+    public override void Initialize()
     {
         Muse.SetGameState(EMusicState.Combat);
-        for (int i = 1; i < 7; i++)
+        for (var i = 1; i < 7; i++)
         {
-            _city.Add(_game.Content.Load<Texture2D>($"locations/Dusk City/City Dusk - {i}"));
+            _city.Add(Game.Content.Load<Texture2D>($"locations/Dusk City/City Dusk - {i}"));
         }
     }
 
@@ -71,7 +71,7 @@ public class CombatScreen : Screen
         EInputAction.Combat4,
     ];
     
-    public override void Update(GameTime gameTime)
+    public override void Update(EScreenFadeState fade, GameTime gameTime)
     {
         // TODO: if animations are running, don't update the items
         if (Animations.Count > 0)
@@ -118,12 +118,17 @@ public class CombatScreen : Screen
         }
     }
     
-    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
+    public override void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         var rc = new Drawing.RenderContext(batch, gameTime);
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
-
+        
+            foreach (var player in SineaterGame.Instance.Party.Characters)
+            {
+                
+            }
+        
             if (Animations.Count > 0)
             {
                 Animations[0].Update(rc);
@@ -143,7 +148,7 @@ public class CombatScreen : Screen
     
     private void Swap(int leftIndex, int rightIndex)
     {
-        (_game.Party.Characters[leftIndex], _game.Party.Characters[rightIndex]) = (_game.Party.Characters[rightIndex], _game.Party.Characters[leftIndex]);
+        (Game.Party.Characters[leftIndex], Game.Party.Characters[rightIndex]) = (Game.Party.Characters[rightIndex], Game.Party.Characters[leftIndex]);
         //(_times[leftIndex], _times[rightIndex]) = (_times[rightIndex], _times[leftIndex]);
     }
 }

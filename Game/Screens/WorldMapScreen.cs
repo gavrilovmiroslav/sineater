@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Arch.Bus;
 using LDtkTypes;
 using Microsoft.Xna.Framework;
@@ -11,9 +10,12 @@ using SINEATER.Game.Gameplay.WorldMap;
 using SINEATER.Game.Graphics;
 using SINEATER.Game.LookNFeel;
 using SINEATER.Game.Save;
+using Encounter = SINEATER.Game.Gameplay.Encounter;
+using Reward = SINEATER.Game.Gameplay.Reward;
+
 namespace SINEATER.Game.Screens;
 
-public class WorldMapScreen(SineaterGame game) : Screen(game)
+public class WorldMapScreen() : Screen()
 {
     private static readonly (int, int)[] Directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     public (int X, int Y) CurrentPlayerPosition
@@ -24,10 +26,10 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     public WorldMapDrawable WorldMap;
     
-    public override void Initialize(SineaterGame game)
+    public override void Initialize()
     {
         WorldMap = new WorldMapDrawable(this);
-        Camera = new OrthographicCamera(game.GraphicsDevice);
+        Camera = new OrthographicCamera(Game.GraphicsDevice);
     }
 
     public void UpdateCamera(GameTime gameTime)
@@ -50,7 +52,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
         }
     }
     
-    public override void Update(GameTime gameTime)
+    public override void Update(EScreenFadeState fade, GameTime gameTime)
     {
         CheckPlayerInputs();
         UpdateCamera(gameTime);
@@ -69,7 +71,7 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     int dy = -56;
     private float _mapSize = 0.4f;
     
-    public override void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
+    public override void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
     {
         var rc = new Drawing.RenderContext(batch, gameTime);
 
@@ -128,6 +130,11 @@ public class WorldMapScreen(SineaterGame game) : Screen(game)
     
     private void CheckPlayerInputs()
     {
+        if (InputM.IsActive(EInputAction.DebugStartCombat))
+        {
+            SineaterGame.Instance.ScreenStack.Push(new CombatScreen(this,CurrentPlayerPosition, new Encounter([]), new Reward([])));
+        }
+        
         if (WorldMap.PartyContext.State == EPartyAvatarState.Idle)
         {
             var up = InputM.IsActive(EInputAction.MoveUp);

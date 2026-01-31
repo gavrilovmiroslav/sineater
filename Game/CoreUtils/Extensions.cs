@@ -11,16 +11,6 @@ namespace SINEATER.Game.CoreUtils;
 
 internal static class Extensions
 {
-    public static void DrawGlyph(this SpriteBatch batch, int x, int y, string layer, Glyph g, float scale = 1.0f)
-    {
-        var l = SineaterGame.Instance.Layers[layer];
-        var (eu, ev) = l.Empty;
-        var (u, v) = l.Size;
-        
-        batch.Draw(l.Texture, new Vector2(x, y), new Rectangle((int)(eu * u), (int)(ev * v), (int)u, (int)v), g.Bg, 0.0f, new Vector2(u * 0.5f, v * 0.5f), scale, SpriteEffects.None, 0);
-        batch.Draw(l.Texture, new Vector2(x, y), new Rectangle((int)(g.U * u), (int)(g.V * v), (int)u, (int)v), g.Fg, 0.0f, new Vector2(u * 0.5f, v * 0.5f), scale, SpriteEffects.None, 0);
-    }
-
     public static void DrawText(this SpriteBatch batch, int x, int y, SpriteFont font, string text, Color? fg = null)
     {
         batch.DrawString(font, text, new Vector2(x, y), fg ?? Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0);
