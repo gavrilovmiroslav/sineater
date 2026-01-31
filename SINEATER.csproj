@@ -100,7 +100,12 @@
         <Exec Command="dotnet tool restore" />
     </Target>
 
-	<Target Name="Codegen" BeforeTargets="BeforeBuild">
+
+	<Target Name="Codegen" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'">
 		<Exec Command="ldtkgen.exe -i Content\map.ldtk -o .\LDTK_Gen"></Exec>
+	</Target>
+
+	<Target Name="Codegen_linux" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+		<Exec Command="ldtkgen -i Content/map.ldtk -o ./LDTK_Gen"></Exec>
 	</Target>
 </Project>
