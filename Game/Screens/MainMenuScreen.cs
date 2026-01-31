@@ -9,6 +9,7 @@ using SINEATER.Game.Graphics;
 using SINEATER.Game.Loadable;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Game.Save;
+using SINEATER.Tools;
 
 namespace SINEATER.Game.Screens;
 
@@ -125,27 +126,33 @@ public class MainMenuScreen() : Screen()
                 }
                 else if (InputM.IsActive(EInputAction.Confirm))
                 {
-                    bool loadSave = SaveSystem.HasSave() && _ctx.MenuOption == 0;
+                    var loadSave = SaveSystem.HasSave() && _ctx.MenuOption == 0;
                     switch (_ctx.MenuOption)
                     {
                         case 0:
                         case 1:
                             _ctx.LoaderTask = Task.Run(() =>
                             {
-                                if (loadSave)
+                                try
                                 {
-                                    SaveSystem.Load();
+                                    if (loadSave)
+                                    {
+                                        SaveSystem.Load();
+                                    }
+                                    else
+                                    {
+                                        SineaterGame.Instance.Party.MakeParty();
+                                        SaveSystem.Save();
+                                    }
                                 }
-                                else
+                                catch (Exception e)
                                 {
-                                    SineaterGame.Instance.Party.MakeParty();
-                                    SaveSystem.Save();
+                                    Crash.Report(e);
                                 }
                             });
                             break;
                         case 2:
-                            var goToOptionsEvent = new MainMenuChangeStateEvent(_ctx, EMainMenuState.Options);
-                            EventBus.Send(ref goToOptionsEvent);
+                            NextScreen = new OptionsScreen();
                             break;
                         case 3:
                             SineaterGame.Instance.Exit();
@@ -205,10 +212,4 @@ public class MainMenuScreen() : Screen()
         
         batch.End();
     }
-
-    public override void OnFadeOutComplete()
-    {
-        
-    }
-
 }

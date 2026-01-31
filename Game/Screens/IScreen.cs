@@ -12,6 +12,7 @@ public interface IScreen
     public EScreenFadeState FadeState { get; set; }
     public float FadeSpeed { get; set; }
     public IScreen? NextScreen { get; set; }
+    public void FadeIn();
     
     public MonoGame.Extended.OrthographicCamera? Camera { get; set; }
     public void Initialize();
@@ -24,6 +25,30 @@ public enum EScreenFadeState
     FadingIn,
     Stable,
     FadingOut,
+}
+
+public class DeathScreen : IScreen
+{
+    public EScreenFadeState FadeState { get; set; }
+    public float FadeSpeed { get; set; }
+    public IScreen? NextScreen { get; set; }
+    
+    public void FadeIn()
+    {
+    }
+
+    public OrthographicCamera? Camera { get; set; }
+    public void Initialize()
+    {
+    }
+
+    public void Update(GameTime gameTime)
+    {
+    }
+
+    public void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
+    {
+    }
 }
 
 public abstract class Screen : IScreen
@@ -51,11 +76,34 @@ public abstract class Screen : IScreen
 
     public virtual void OnFadeInComplete() {}
 
+    public void FadeIn()
+    {
+        FadeState = EScreenFadeState.FadingIn;
+        _fadeStrength = 1.0f;
+    }
+    
+    public void GoBack()
+    {
+        NextScreen = this;
+    }
+    
     public virtual void OnFadeOutComplete()
     {
         if (NextScreen != null)
         {
-            Game.PopAndPushScreen(NextScreen);
+            if (NextScreen == this)
+            {
+                Game.ScreenStack.Pop();
+                if (Game.ScreenStack.Peek() is {} screen)
+                {
+                    screen.FadeIn();
+                }
+            }
+            else
+            {
+                Game.ScreenStack.Push(NextScreen);
+            }
+
             NextScreen = null;
         }
     }
@@ -68,6 +116,7 @@ public abstract class Screen : IScreen
                 _fadeStrength -= (gameTime.ElapsedGameTime.Milliseconds / 1000.0f) * FadeSpeed;
                 if (_fadeStrength <= 0.0f)
                 {
+                    _fadeStrength = 0.0f;
                     FadeState = EScreenFadeState.Stable;
                     OnFadeInComplete();
                 }
@@ -75,8 +124,9 @@ public abstract class Screen : IScreen
             
             case EScreenFadeState.FadingOut:
                 _fadeStrength += (gameTime.ElapsedGameTime.Milliseconds / 1000.0f) * FadeSpeed;
-                if (_fadeStrength >= 0.0f)
+                if (_fadeStrength >= 1.0f)
                 {
+                    _fadeStrength = 1.0f;
                     OnFadeOutComplete();
                 }
                 break;
@@ -102,6 +152,8 @@ public abstract class Screen : IScreen
             batch.FillRectangle(new RectangleF(0, 0, Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height), new Color(0, 0, 0, _fadeStrength), 0);
             batch.End();
         }
+        
+        Console.WriteLine($"{Game.ScreenStack.Peek()} {FadeState} {_fadeStrength}");
     }
     
     public virtual void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState) {}

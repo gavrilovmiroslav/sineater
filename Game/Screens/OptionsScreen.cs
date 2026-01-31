@@ -103,7 +103,7 @@ public static class OptionsEventHandler
     }
 }
 
-public class OptionsScreen() : Screen()
+public class OptionsScreen() : Screen() 
 {
     private OptionsStateContext _ctx;
     private readonly List<IDrawable> _drawables = [];
@@ -199,7 +199,7 @@ public class OptionsScreen() : Screen()
         }
         else if (InputM.IsActive(EInputAction.Exit))
         {
-            SineaterGame.Instance.ScreenStack.Pop();
+            GoBack();
         }
     }
 
