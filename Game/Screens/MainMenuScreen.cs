@@ -144,6 +144,7 @@ public class MainMenuScreen() : Screen()
                                         SineaterGame.Instance.Party.MakeParty();
                                         SaveSystem.Save();
                                     }
+                                    NextScreen = new WorldMapScreen();
                                 }
                                 catch (Exception e)
                                 {
