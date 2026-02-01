@@ -141,8 +141,6 @@ public abstract class Screen : IScreen
             batch.FillRectangle(new RectangleF(0, 0, Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height), new Color(0, 0, 0, _fadeStrength), 0);
             batch.End();
         }
-        
-        Console.WriteLine($"{Game.ScreenStack.Peek()} {FadeState} {_fadeStrength}");
     }
     
     public virtual void Draw(EScreenFadeState fade, SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState) {}
