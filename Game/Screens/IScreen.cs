@@ -2,8 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
-using SINEATER.Game.CoreUtils;
-using SINEATER.Game.CoreUtils.Input;
 
 namespace SINEATER.Game.Screens;
 
@@ -102,6 +100,7 @@ public abstract class Screen : IScreen
         switch (FadeState)
         {
             case EScreenFadeState.FadingIn:
+                Update(FadeState, gameTime);
                 _fadeStrength -= (gameTime.ElapsedGameTime.Milliseconds / 1000.0f) * FadeSpeed;
                 if (_fadeStrength <= 0.0f)
                 {
@@ -112,6 +111,7 @@ public abstract class Screen : IScreen
                 break;
             
             case EScreenFadeState.FadingOut:
+                Update(FadeState, gameTime);
                 _fadeStrength += (gameTime.ElapsedGameTime.Milliseconds / 1000.0f) * FadeSpeed;
                 if (_fadeStrength >= 1.0f)
                 {
