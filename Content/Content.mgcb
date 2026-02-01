@@ -10,7 +10,6 @@
 
 #-------------------------------- References --------------------------------#
 
-/reference:..\MonoJ.dll
 
 #---------------------------------- Content ---------------------------------#
 
@@ -1360,9 +1359,7 @@
 /copy:sprites/all-sprites.txt
 
 #begin stats.json
-/importer:JSONImporter
-/processor:JSONProcessor
-/build:stats.json
+/copy:stats.json
 
 #begin swordnsorcery_portraits.png
 /importer:TextureImporter
@@ -1401,7 +1398,5 @@
 /copy:world_map.ldtk
 
 #begin world.json
-/importer:JSONImporter
-/processor:JSONProcessor
-/build:world.json
+/copy:world.json
 
