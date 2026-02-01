@@ -13,7 +13,7 @@ public static class Crash
         }
 
         var timeInfo = DateTime.Now;
-        var fileName = $"Crash\\crash_{timeInfo.Day}-{timeInfo.Month}-{timeInfo.Year}-{timeInfo.Hour}-{timeInfo.Minute}.txt";
+        var fileName = $"Crash\\crash_{timeInfo.Year}-{timeInfo.Month}-{timeInfo.Day}-{timeInfo.Hour}h_{timeInfo.Minute}min.txt";
         using StreamWriter w = new StreamWriter(fileName);
 
         w.WriteLine(e.Source);
