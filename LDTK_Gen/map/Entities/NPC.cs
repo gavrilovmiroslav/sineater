@@ -6,22 +6,23 @@ namespace LDtkTypes;
 using LDtk;
 using Microsoft.Xna.Framework;
 
-public partial class Start : ILDtkEntity
+public partial class NPC : ILDtkEntity
 {
-    public static Start Default() => new()
+    public static NPC Default() => new()
     {
-        Identifier = "Start",
-        Uid = 22,
+        Identifier = "NPC",
+        Uid = 34,
         Size = new Vector2(16f, 16f),
         Pivot = new Vector2(0f, 0f),
         Tile = new TilesetRectangle()
         {
-            X = 272,
-            Y = 96,
+            X = 176,
+            Y = 16,
             W = 16,
             H = 16
         },
-        SmartColor = new Color(18, 78, 137, 255),
+        SmartColor = new Color(46, 166, 43, 255),
+
     };
 
     public string Identifier { get; set; }
@@ -33,5 +34,7 @@ public partial class Start : ILDtkEntity
     public Rectangle Tile { get; set; }
 
     public Color SmartColor { get; set; }
+
+    public string[]? Name { get; set; }
 }
 #pragma warning restore
