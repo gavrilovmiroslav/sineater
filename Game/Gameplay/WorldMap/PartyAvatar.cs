@@ -196,5 +196,6 @@ public static class PartyAvatarEventHandler
         ev.Screen.WorldMap.CurrentLevel = ev.NewLevel;
         ev.Screen.CurrentPlayerPosition = (xy.X + ev.XY.X, xy.Y + ev.XY.Y);
         ev.Screen.WorldMap.PartyContext.State = EPartyAvatarState.Moving;
+        ev.Screen.WorldMap.MakeVisible(ev.Screen.CurrentPlayerPosition.X, ev.Screen.CurrentPlayerPosition.Y);
     }
 }

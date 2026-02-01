@@ -16,6 +16,8 @@ public static class Crash
         var fileName = $"Crash\\crash_{timeInfo.Day}-{timeInfo.Month}-{timeInfo.Year}-{timeInfo.Hour}-{timeInfo.Minute}.txt";
         using StreamWriter w = new StreamWriter(fileName);
 
+        w.WriteLine(e.Source);
+        w.WriteLine(e.Message);
         w.Write(e.StackTrace);
         w.Flush();
         w.Close();

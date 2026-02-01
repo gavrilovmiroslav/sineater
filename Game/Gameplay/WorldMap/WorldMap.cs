@@ -8,6 +8,7 @@ using LDtkTypes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
 using RogueSharp;
 using SadRex;
 using SINEATER.Game.CoreUtils;
@@ -17,6 +18,7 @@ using SINEATER.Game.Screens;
 using Cell = RogueSharp.Cell;
 using Color = Microsoft.Xna.Framework.Color;
 using IDrawable = SINEATER.Game.CoreUtils.IDrawable;
+using Point = Microsoft.Xna.Framework.Point;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace SINEATER.Game.Gameplay.WorldMap;
@@ -38,6 +40,7 @@ public static class WorldMapEventHandler
     {
         var x = ev.NewPosition.X;
         var y = ev.NewPosition.Y;
+        ev.Screen.WorldMap.MakeVisible(x, y);
         if (ev.Screen.WorldMap.MapMarkers.Any(m => m.X == x && m.Y == y))
         {
             var tile = SineaterGame.Instance.World.Get(x, y);
@@ -152,9 +155,43 @@ public class WorldMapDrawable : IDrawable
         CurrentLevel = SineaterGame.Instance.LDTKWorld.Levels[0];
         var start = CurrentLevel.GetEntityInstances<Start>().First();
         screen.CurrentPlayerPosition = (start._Grid.X, start._Grid.Y);
+        
+        MakeVisible(start._Grid.X, start._Grid.Y);
+        
         PartyContext = new PartyAvatarContext() { Camera = screen.Camera };
         PartyAvatar = new PartyAvatarDrawable(PartyContext, 
             WorldMapScreen.InWorld(screen.CurrentPlayerPosition.X, screen.CurrentPlayerPosition.Y));
+    }
+
+    public void MakeVisible(int gridX, int gridY)
+    {
+        for (var i = -1; i < 2; i++)
+        {
+            for (var j = -1; j < 2; j++)
+            {
+                var f = 0.0f;
+                if (_visibility.TryGetValue((gridX + i, gridY + j), out var value))
+                {
+                    f = value;
+                }
+                
+                if (i == 0 && j == 0)
+                {
+                    _visibility[(gridX, gridY)] = MathF.Max(1.0f, f);
+                }
+                else
+                {
+                    if (i == 0 || j == 0)
+                    {
+                        _visibility[(gridX + i, gridY + j)] = MathF.Max(1.0f, f);
+                    }
+                    else
+                    {
+                        _visibility[(gridX + i, gridY + j)] = MathF.Max(0.5f, f);
+                    }
+                }
+            }
+        }
     }
 
     public readonly HashSet<LDtkLevel> VisitedLevels = [];
@@ -164,15 +201,19 @@ public class WorldMapDrawable : IDrawable
         var xy = new Vector2(x, y);
         foreach (var lvl in VisitedLevels)
         {
-            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, lvl, 0, Vector2.One * WorldMapScreen.RESIZE);
+            SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, lvl, 0, 
+                Vector2.One * WorldMapScreen.RESIZE, color: new Color(0.1f, 0.1f, 0.1f, 0.4f));
         }
     }
+
+    private Dictionary<(int, int), float> _visibility = [];
     
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
         var xy = new Vector2(x, y);
         
-        SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, CurrentLevel, 0, Vector2.One * WorldMapScreen.RESIZE);
+        SineaterGame.Instance.LDtkRenderer.RenderPrerenderedLevel(xy, CurrentLevel, 0, 
+            Vector2.One * WorldMapScreen.RESIZE);
         PartyAvatar.Update(x, y, renderContext);
 
         List<IWorldMapMarker> all = [ PartyAvatar, ..MapMarkers ];
@@ -182,5 +223,26 @@ public class WorldMapDrawable : IDrawable
         }
 
         MapMarkers.RemoveAll(m => m.ShouldDelete);
+        
+        var grid = CurrentLevel.GetIntGrid("Walkable");
+        var px = CurrentLevel.Position.X / 16;
+        var py = CurrentLevel.Position.Y / 16;
+        
+        for (var i = px; i < px + CurrentLevel.Size.X / 16; i++)
+        {
+            for (var j = py; j < py + CurrentLevel.Size.Y / 16; j++)
+            {
+                var visibility = 0.0f;
+                if (_visibility.TryGetValue((i, j), out var vis))
+                {
+                    visibility = vis;
+                }
+                
+                var pos = xy + new Vector2(i, j) * 64;
+                renderContext.Batch.Draw(SineaterGame.Instance.Pixel,
+                    new Rectangle((int)pos.X, (int)pos.Y, 64, 64),
+                    null, new Color(0.0f, 0.0f,0.0f, 1.0f - visibility)); //new Color(0.0f, 0.0f, 0.0f, 0.5f));
+            }
+        }
     }
 }

@@ -85,16 +85,7 @@ public class WorldMapScreen() : Screen()
         
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp,
             DepthStencilState.Default, rasterizerState, transformMatrix: Camera?.GetViewMatrix() ?? Matrix.Identity);
-
-            if (InputM.IsActive(EInputAction.ShowHelp))
-            {
-                dx += (InputM.IsActive(EInputAction.MoveMapLeft) ? -1 : 0);
-                dx += (InputM.IsActive(EInputAction.MoveMapRight) ? 1 : 0);
-                dy += (InputM.IsActive(EInputAction.MoveMapUp) ? -1 : 0);
-                dy += (InputM.IsActive(EInputAction.MoveMapDown) ? 1 : 0);
-                batch.DrawText(500, 100, SineaterGame.Instance.FontMono, $"{dx} {dy}", Color.White);
-            }
-
+        
             WorldMap.Update(OFFSET_X + dx, OFFSET_Y + dy, rc);
         batch.End();
         
