@@ -155,7 +155,7 @@ public class MainMenuScreen() : Screen()
                             NextScreen = new OptionsScreen();
                             break;
                         case 3:
-                            SineaterGame.Instance.Exit();
+                            NextScreen = new DeathScreen();
                             break;
                     }
                 }

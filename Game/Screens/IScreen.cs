@@ -27,27 +27,16 @@ public enum EScreenFadeState
     FadingOut,
 }
 
-public class DeathScreen : IScreen
+public class DeathScreen : Screen
 {
-    public EScreenFadeState FadeState { get; set; }
+    public EScreenFadeState FadeState { get; set; } = EScreenFadeState.FadingIn;
     public float FadeSpeed { get; set; }
     public IScreen? NextScreen { get; set; }
-    
-    public void FadeIn()
-    {
-    }
-
     public OrthographicCamera? Camera { get; set; }
-    public void Initialize()
-    {
-    }
 
-    public void Update(GameTime gameTime)
+    public override void Update(EScreenFadeState fade, GameTime gameTime)
     {
-    }
-
-    public void Draw(SpriteBatch batch, GameTime gameTime, RasterizerState rasterizerState)
-    {
+        SineaterGame.Instance.Exit();
     }
 }
 
