@@ -41,9 +41,9 @@ public class PartyAvatarDrawable(PartyAvatarContext ctx, Vector2 pos) : IWorldMa
     {
         var fx = WorldMapScreen.RESIZE / 2;
         var screenOffset = new Vector2(x - 40, y - 20);
-        var sh = SineaterGame.Instance.SpriteShadow;
-        var ps = SineaterGame.Instance.AllSprites;
-        var os = SineaterGame.Instance.AllSpriteOutlines;
+        var sh = SineaterGame.RM.SpriteShadow;
+        var ps = SineaterGame.RM.AllSprites;
+        var os = SineaterGame.RM.AllSpriteOutlines;
         var chosen = SineaterGame.Instance.Party.Characters[ctx.Index];
         var klass = $"{chosen.Job}".ToLower();
         var (u, v) = SineaterGame.Instance.AllSpritesMap[klass];

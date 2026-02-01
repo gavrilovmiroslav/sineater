@@ -18,6 +18,7 @@ using SINEATER.steam;
 using SINEATER.Tools.SinMod;
 using Color = Microsoft.Xna.Framework.Color;
 using SINEATER.Game.Graphics;
+using SINEATER.Game.CoreUtils.Resources;
 
 namespace SINEATER.Game;
 
@@ -25,43 +26,16 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 {
     public static SineaterGame Instance;
     public static float DeltaTime;
+    public static ResourceManager RM => SineaterGame.Instance.ResourceM;
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    public Texture2D Mrmo => _mrmo;
-    public Texture2D Logo => _logo;
-    public Texture2D Frames => _frames;
-    public Texture2D Portraits => _portraits;
-    public Texture2D Pins => _pins;
-    public Texture2D Pixel => _pixel;
-    public Texture2D Semi => _semi;
-    public Texture2D WorldMap => _worldMap;
-    public Texture2D AllSprites => _allSprites;
-    public Texture2D AllSpriteOutlines => _allSpriteOutlines;
-    public Texture2D SpriteShadow => _spriteShadow;
+    private ResourceManager _resourceManager = new ResourceManager();
     public Dictionary<string, (int, int)> AllSpritesMap => _allSpritesMap;
     private readonly Dictionary<string, (int, int)> _allSpritesMap = [];
-    private Texture2D _allSprites;
-    private Texture2D _allSpriteOutlines;
-    private Texture2D _logo;
-    private Texture2D _worldMap;
-    private Texture2D _pixel;
-    private Texture2D _semi;
-    private Texture2D _frames;
-    private Texture2D _mrmo;
-    private Texture2D _mapmotext;
-    private Texture2D _ibm;
-    private Texture2D _inputText;
-    private Texture2D _largeNums;
-    private Texture2D _portraits;
-    private Texture2D _statuses;
-    private Texture2D _spriteShadow;
-    private Texture2D _pins;
-    private Texture2D[] _room = new Texture2D[24];
-    private Texture2D[] _inputs = new Texture2D[2]; // KB + GP
+
     private float _dHour;
-    private Texture2D _monitor;
     private Image _rex;
     public Image Rex => _rex;
 
@@ -85,9 +59,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     public bool ShowHelp { get; set; } = false;
     
     private IScreen _lastScreen;
-    public SpriteFont Font;
-    public SpriteFont FontMono;
-    public SpriteFont FontBold;
     public Options CurrentOptions;
     
     public bool ShouldDrawImgui = false;
@@ -96,6 +67,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     private LDTKRender _ldtkRenderer;
     public LDTKRender LDtkRenderer => _ldtkRenderer;
     public LDtkWorld LDTKWorld => _ldtkWorld;
+
+    public ResourceManager ResourceM => _resourceManager;
 
     private LDtkWorld _ldtkWorld;
     public SineaterGame()
@@ -145,7 +118,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     protected override void Initialize()
     {
         SteamManager.Instance.Initialize(Content.Load<string>("stats"));
-        _pixel = Content.Load<Texture2D>("pixel");
         
         this.Window.AllowUserResizing = true;
         
@@ -184,10 +156,8 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         Party = new Party();
 
-        _worldMap = Content.Load<Texture2D>("Level_0__Tiles");
-        
-        _allSprites = Content.Load<Texture2D>("sprites/all-sprites");
-        _allSpriteOutlines = Content.Load<Texture2D>("sprites/all-sprite-outlines");
+        _resourceManager.Load(Content);
+
         using var allSpritesList = TitleContainer.OpenStream("Content/sprites/all-sprites.txt");
         if (allSpritesList != null)
         {
@@ -201,31 +171,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
                 _allSpritesMap[name] = (y, x);
             }
         }
-        _spriteShadow = Content.Load<Texture2D>("sprite_shadow");
-        _logo = Content.Load<Texture2D>("sineater-logo");
-        _frames = Content.Load<Texture2D>("Frames32px");
-        _mrmo = Content.Load<Texture2D>("MRMOTEXT");
-        _mapmotext = Content.Load<Texture2D>("mapmotext");
-        _ibm = Content.Load<Texture2D>("Codepage");
-        _inputText = Content.Load<Texture2D>("Codepage");
-        _largeNums = Content.Load<Texture2D>("largenumbers");
-        _portraits = Content.Load<Texture2D>("swordnsorcery_portraits");
-        _pins = Content.Load<Texture2D>("pins");
-        _semi = Content.Load<Texture2D>("semi");
-        Font = Content.Load<SpriteFont>("eldring");
-        FontMono = Content.Load<SpriteFont>("monogram");
-        FontBold = Content.Load<SpriteFont>("eldring-bold");
-        
-        _inputs[0] = Content.Load<Texture2D>("inputs/KEYBOARD/KEYBOARD");
-        _inputs[1] = Content.Load<Texture2D>("inputs/XBOX/XBOX");
-        
-        for (int i = 0; i < 24; i++)
-        {
-            _room[i] = Content.Load<Texture2D>("daynight/" + i.ToString().PadLeft(2, '0'));    
-        }
-        
-        _monitor = Content.Load<Texture2D>("fingerprints");
-        
+
         _crt = Content.Load<Effect>("crt");
         SetupCrt(Width, Height);
 
@@ -314,10 +260,10 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         
         GraphicsDevice.SetRenderTarget(_renderTargetMonitor);
         _spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
-        _spriteBatch.Draw(_room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+        _spriteBatch.Draw(RM.Room[_currentHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
             new Color(1.0f, 1.0f, 1.0f, 1.0f), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
-        _spriteBatch.Draw(_room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
+        _spriteBatch.Draw(RM.Room[_nextHour], new Vector2(-focus, -focus * 0.5f) * 66, null, 
             new Color(1.0f, 1.0f, 1.0f, _dHour), 0, Vector2.Zero, (1.0f + focus * 0.1f) / 1.5f, 
             SpriteEffects.None, 0.0f);
         _spriteBatch.End();

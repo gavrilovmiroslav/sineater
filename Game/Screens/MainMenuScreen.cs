@@ -169,14 +169,14 @@ public class MainMenuScreen() : Screen()
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
 
-        batch.Draw(SineaterGame.Instance.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
+        batch.Draw(SineaterGame.RM.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
 
         var mid = (int)(SineaterGame.Instance.GraphicsDevice.Viewport.Width / 2.0f);
         if (_ctx.State == EMainMenuState.Starting)
         {
-            batch.DrawTextCenter(mid, 700, SineaterGame.Instance.Font, "Checking updates...");
+            batch.DrawTextCenter(mid, 700, SineaterGame.RM.Font, "Checking updates...");
         }
         else if (_ctx.State is EMainMenuState.Menu)
         {
@@ -185,13 +185,13 @@ public class MainMenuScreen() : Screen()
 
             if (SaveSystem.HasSave())
             {
-                batch.DrawTextCenter(mid, top, SineaterGame.Instance.Font, "CONTINUE", _ctx.MenuOption == (SaveSystem.HasSave() ? 0 : 1) ? Color.Gold : Color.White);
+                batch.DrawTextCenter(mid, top, SineaterGame.RM.Font, "CONTINUE", _ctx.MenuOption == (SaveSystem.HasSave() ? 0 : 1) ? Color.Gold : Color.White);
                 top += height;
             }
 
-            batch.DrawTextCenter(mid, top, SineaterGame.Instance.Font, "START", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) ? Color.Gold : Color.White);
-            batch.DrawTextCenter(mid, top + height, SineaterGame.Instance.Font, "OPTIONS", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) + 1 ? Color.Gold : Color.White);
-            batch.DrawTextCenter(mid, top + height + height, SineaterGame.Instance.Font, "QUIT", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) + 2 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, top, SineaterGame.RM.Font, "START", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, top + height, SineaterGame.RM.Font, "OPTIONS", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) + 1 ? Color.Gold : Color.White);
+            batch.DrawTextCenter(mid, top + height + height, SineaterGame.RM.Font, "QUIT", _ctx.MenuOption == (SaveSystem.HasSave() ? 1 : 0) + 2 ? Color.Gold : Color.White);
         }
 
         batch.Draw(_fmod, new Vector2(35, Game.Window.ClientBounds.Height - 100), new Rectangle(0, 0, 640, 164),
@@ -202,7 +202,7 @@ public class MainMenuScreen() : Screen()
 
         _vfxAnimation?.Update(mid, 700, new Drawing.RenderContext(batch, gameTime));
         
-        var pixel = SineaterGame.Instance.Pixel;
+        var pixel = SineaterGame.RM.Pixel;
         if (_ctx.State == EMainMenuState.Done)
         {
             batch.Draw(pixel, new Vector2(0, 0), null,
