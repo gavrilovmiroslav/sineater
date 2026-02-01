@@ -117,7 +117,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
     
     protected override void Initialize()
     {
-        SteamManager.Instance.Initialize(Content.Load<string>("stats"));
+        //SteamManager.Instance.Initialize(Content.Load<string>("stats"));
         
         this.Window.AllowUserResizing = true;
         
