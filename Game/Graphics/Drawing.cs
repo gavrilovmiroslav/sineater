@@ -30,7 +30,7 @@ public static class Drawing
     public static void Portrait(this RenderContext ctx, int x, int y, (int U, int V) portrait, Color? frameColor = null,
         Color? portraitColor = null)
     {
-        var portraits = SineaterGame.Instance.Portraits;
+        var portraits = SineaterGame.RM.Portraits;
         ctx.Frame(x, y, 96, 112, 3, 7, false, frameColor ?? Color.White);
         ctx.Batch.Draw(portraits, new Rectangle(x + 16, y + 16, 80, 80),
             new Rectangle(portrait.U * 80, portrait.V * 80, 80, 80), portraitColor ?? Color.White, 0, Vector2.Zero, SpriteEffects.FlipHorizontally, 0);
@@ -38,7 +38,7 @@ public static class Drawing
 
     public static void FrameEdge(this RenderContext ctx, int x, int y, int w, int bx, int by, Color color)
     {
-        var frames = SineaterGame.Instance.Frames;
+        var frames = SineaterGame.RM.Frames;
         var n = 0;
         ctx.Batch.Draw(frames, new Rectangle(x, y, 16, 16), new Rectangle(bx * 32, by * 32, 8, 8), color);
         for (var i = 0; i < (w - 16) / 16; i++)
@@ -54,7 +54,7 @@ public static class Drawing
     public static void EmptyFrame(this RenderContext ctx, int x, int y, int w, int h, int bx, int by,
         Color color)
     {
-        var frames = SineaterGame.Instance.Frames;
+        var frames = SineaterGame.RM.Frames;
         var n = 0;
         ctx.Batch.Draw(frames, new Rectangle(x, y, 16, 16), new Rectangle(bx * 32, by * 32, 8, 8), color);
         for (var i = 0; i < (w - 16) / 16; i++)
@@ -85,7 +85,7 @@ public static class Drawing
     public static void Frame(this RenderContext ctx, int x, int y, int w, int h, int bx, int by, bool white,
         Color color)
     {
-        var frames = SineaterGame.Instance.Frames;
+        var frames = SineaterGame.RM.Frames;
         var n = 0;
         var wh = white ? 1 : 0;
         ctx.Batch.Draw(frames, new Rectangle(x + 16, y + 16, w - 16, h - 16), new Rectangle(wh * 32, 0, 32, 32), color);
@@ -120,12 +120,12 @@ public static class Drawing
     {
         ctx.TextBox(x + 110, y, (3, 3));
         ctx.Portrait(x, y, portrait);
-        ctx.Batch.DrawText(x + 120, y + 10, SineaterGame.Instance.FontBold, speaker, Color.Black);
+        ctx.Batch.DrawText(x + 120, y + 10, SineaterGame.RM.FontBold, speaker, Color.Black);
 
         var offset = 0;
         foreach (var line in text)
         {
-            ctx.Batch.DrawText(x + 140, y + 40 + offset, SineaterGame.Instance.FontMono, line, Color.Black);
+            ctx.Batch.DrawText(x + 140, y + 40 + offset, SineaterGame.RM.FontMono, line, Color.Black);
             offset += 28;
         }
     }
@@ -140,26 +140,26 @@ public static class Drawing
         }
 
         ctx.Portrait(x, y, (u, v), frameColor: anyItemReady ? Color.White : Color.Gray);
-        ctx.Batch.DrawTextCenter(x + 56, y - 14, SineaterGame.Instance.FontBold, chr.GetName(), Color.White);
+        ctx.Batch.DrawTextCenter(x + 56, y - 14, SineaterGame.RM.FontBold, chr.GetName(), Color.White);
         if (selected || anyItemReady)
         {
             ctx.EmptyFrame(x, y, 96, 112, 4, 7, Color.White);
         }
 
-        ctx.Batch.DrawText(x + 0, y + 108, SineaterGame.Instance.FontMono, $"P{chr.Stats.Poise}",
+        ctx.Batch.DrawText(x + 0, y + 108, SineaterGame.RM.FontMono, $"P{chr.Stats.Poise}",
             index != 0 ? Color.Gray : Color.MediumPurple);
-        ctx.Batch.DrawText(x + 30, y + 108, SineaterGame.Instance.FontMono, $"C{chr.Stats.Clarity}",
+        ctx.Batch.DrawText(x + 30, y + 108, SineaterGame.RM.FontMono, $"C{chr.Stats.Clarity}",
             index != 1 ? Color.Gray : Color.MediumPurple);
-        ctx.Batch.DrawText(x + 60, y + 108, SineaterGame.Instance.FontMono, $"W{chr.Stats.Will}",
+        ctx.Batch.DrawText(x + 60, y + 108, SineaterGame.RM.FontMono, $"W{chr.Stats.Will}",
             index != 2 ? Color.Gray : Color.MediumPurple);
-        ctx.Batch.DrawText(x + 90, y + 108, SineaterGame.Instance.FontMono, $"V{chr.Stats.Vigor}",
+        ctx.Batch.DrawText(x + 90, y + 108, SineaterGame.RM.FontMono, $"V{chr.Stats.Vigor}",
             index != 3 ? Color.Gray : Color.MediumPurple);
-        ctx.Batch.DrawText(x + 0, y + 108, SineaterGame.Instance.FontMono, $"P", index == 0 ? Color.White : Color.Gray);
-        ctx.Batch.DrawText(x + 30, y + 108, SineaterGame.Instance.FontMono, $"C",
+        ctx.Batch.DrawText(x + 0, y + 108, SineaterGame.RM.FontMono, $"P", index == 0 ? Color.White : Color.Gray);
+        ctx.Batch.DrawText(x + 30, y + 108, SineaterGame.RM.FontMono, $"C",
             index == 1 ? Color.White : Color.Gray);
-        ctx.Batch.DrawText(x + 60, y + 108, SineaterGame.Instance.FontMono, $"W",
+        ctx.Batch.DrawText(x + 60, y + 108, SineaterGame.RM.FontMono, $"W",
             index == 2 ? Color.White : Color.Gray);
-        ctx.Batch.DrawText(x + 90, y + 108, SineaterGame.Instance.FontMono, $"V",
+        ctx.Batch.DrawText(x + 90, y + 108, SineaterGame.RM.FontMono, $"V",
             index == 3 ? Color.White : Color.Gray);
 
         var i = 0;
@@ -174,32 +174,32 @@ public static class Drawing
     {
         var gray = Color.Lerp(Color.DarkGray, Color.Black, 0.75f);
         var i = 0;
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x - 9, y, 2, 55), item == null ? gray : Color.White);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x - 6, y, 2, 55), item == null ? gray : Color.Lerp(Color.CornflowerBlue, Color.Gray, 0.5f));
-        ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x - 8, y + 49, 16, 16), new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : Color.Gray);
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(x - 9, y, 2, 55), item == null ? gray : Color.White);
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(x - 6, y, 2, 55), item == null ? gray : Color.Lerp(Color.CornflowerBlue, Color.Gray, 0.5f));
+        ctx.Batch.Draw(SineaterGame.RM.Pins, new Rectangle(x - 8, y + 49, 16, 16), new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : Color.Gray);
         
-        ctx.Batch.DrawText(x, y + i * 20 + 3, SineaterGame.Instance.FontMono, item?.Display ?? "Empty", item == null ? gray : (item.TimeGauge >= 100.0f ? Color.OrangeRed : Color.White));
+        ctx.Batch.DrawText(x, y + i * 20 + 3, SineaterGame.RM.FontMono, item?.Display ?? "Empty", item == null ? gray : (item.TimeGauge >= 100.0f ? Color.OrangeRed : Color.White));
         i++;
 
         var ny = y + 8 + i * 20;
         var blue = Color.Lerp(Color.Blue, Color.CornflowerBlue, 0.75f);
         
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, 100, 4),
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(x + 32, ny - 28, 100, 4),
             new Rectangle(0, 0, 1, 1), item == null ? gray : Color.White);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, (int)(item?.TimeGauge ?? 0), 4),
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(x + 32, ny - 28, (int)(item?.TimeGauge ?? 0), 4),
             new Rectangle(0, 0, 1, 1), item == null ? gray : blue);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(x + 32, ny - 28, (((int)(item?.TimeGauge ?? 0) / 25) * 25) , 4),
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(x + 32, ny - 28, (((int)(item?.TimeGauge ?? 0) / 25) * 25) , 4),
             new Rectangle(0, 0, 1, 1), item == null ? gray : Color.OrangeRed);
-        ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x, ny - 29, 32, 16),
+        ctx.Batch.Draw(SineaterGame.RM.Pins, new Rectangle(x, ny - 29, 32, 16),
             new Rectangle(14 * 16, 0, 32, 16), item == null ? gray : Color.White);
-        ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x + 32, ny - 29, 16, 16),
+        ctx.Batch.Draw(SineaterGame.RM.Pins, new Rectangle(x + 32, ny - 29, 16, 16),
             new Rectangle(15 * 16, 16, 16, 16), item == null ? gray : blue);
         
         if (item != null)
         {
             for (var dx = 0; dx < 5; dx++)
             {
-                ctx.Batch.Draw(SineaterGame.Instance.Pins, new Rectangle(x + 32 + 25 * dx, ny - 29, 16, 16), new Rectangle(14 * 16, 16, 16, 16), 
+                ctx.Batch.Draw(SineaterGame.RM.Pins, new Rectangle(x + 32 + 25 * dx, ny - 29, 16, 16), new Rectangle(14 * 16, 16, 16, 16), 
                     (item?.TimeGauge ?? 0) >= dx * 25 ? Color.OrangeRed : blue);
             }
         }
@@ -210,8 +210,8 @@ public static class Drawing
         {
             effectIndex = 10;
             effectColor = Color.OrangeRed;
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 10, ny), new Rectangle(effectIndex * 16, 0, 16, 32), effectColor);
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 10, ny), new Rectangle(4 * 16, 0, 16, 32),
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 10, ny), new Rectangle(effectIndex * 16, 0, 16, 32), effectColor);
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 10, ny), new Rectangle(4 * 16, 0, 16, 32),
                 Color.White);
         }
         else if (item is not null)
@@ -219,15 +219,15 @@ public static class Drawing
             effectIndex = 11;
             effectColor = Color.ForestGreen;
             
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 10, ny), new Rectangle(effectIndex * 16, 0, 16, 32), effectColor);
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 10, ny), new Rectangle(4 * 16, 0, 16, 32),
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 10, ny), new Rectangle(effectIndex * 16, 0, 16, 32), effectColor);
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 10, ny), new Rectangle(4 * 16, 0, 16, 32),
                 Color.White);
         }
         
         for (var p = 0; p < 4; p++)
         {
             var pn = Pin(item?.PrimaryTargets[p] ?? '-');
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + p * 16, ny),
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + p * 16, ny),
                 new Rectangle(pn * 16, 0, 16, 32), item == null ? gray : Color.White);
             if (p == ((int)(item?.SecondaryStat ?? EStat.None) - 1))
             {
@@ -247,14 +247,14 @@ public static class Drawing
 
                 if (s != 9 && index == p)
                 {
-                    ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + p * 16, ny),
+                    ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + p * 16, ny),
                         new Rectangle(pn * 16, 0, 16, 32), Color.GreenYellow);
-                    ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + p * 16, ny),
+                    ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + p * 16, ny),
                         new Rectangle(s * 16, 0, 16, 32), Color.GreenYellow);
                 }
                 else
                 {
-                    ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + p * 16, ny),
+                    ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + p * 16, ny),
                         new Rectangle(s * 16, 0, 16, 32), Color.Gray);
                 }
             }
@@ -262,9 +262,9 @@ public static class Drawing
         
         if (item != null)
         {
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + 4 * 16, ny), new Rectangle(5 * 16, 0, 16, 32),
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + 4 * 16, ny), new Rectangle(5 * 16, 0, 16, 32),
                 Color.White);
-            ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 26 + 4 * 16, ny), new Rectangle(5 * 16, 0, 16, 32),
+            ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 26 + 4 * 16, ny), new Rectangle(5 * 16, 0, 16, 32),
                 Color.White);
 
             var px = -1;
@@ -296,9 +296,9 @@ public static class Drawing
 
             if (px > -1 && py > -1)
             {
-                ctx.Batch.Draw(SineaterGame.Instance.Pins, new Vector2(x + 32 + 4 * 16, ny + 9),
+                ctx.Batch.Draw(SineaterGame.RM.Pins, new Vector2(x + 32 + 4 * 16, ny + 9),
                     new Rectangle((12 + px) * 16, py * 16, 16, 16), effectColor);
-                ctx.Batch.DrawText(x + 16 + 6 * 16, ny, SineaterGame.Instance.FontMono,
+                ctx.Batch.DrawText(x + 16 + 6 * 16, ny, SineaterGame.RM.FontMono,
                     $"{item.PrimaryEffectModifier}", effectColor);
             }
         }
@@ -323,9 +323,9 @@ public static class Drawing
 
     public static void Party(this RenderContext ctx, int x, int y)
     {
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 150, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.White);
-        ctx.Batch.Draw(SineaterGame.Instance.Pixel, new Rectangle(0, y - 126, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.Gray);
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(0, y - 150, ctx.Batch.GraphicsDevice.Viewport.Width, 300), null, Color.Black);
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(0, y - 128, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.White);
+        ctx.Batch.Draw(SineaterGame.RM.Pixel, new Rectangle(0, y - 126, ctx.Batch.GraphicsDevice.Viewport.Width, 2), null, Color.Gray);
         if (SineaterGame.Instance.ScreenStack.First(s => s is WorldMapScreen) is { } world)
         {
             for (var i = 0; i < 4; i++)

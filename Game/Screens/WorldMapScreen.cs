@@ -115,7 +115,7 @@ public class WorldMapScreen() : Screen()
             
             rc.Party(60, 800);
             
-            batch.DrawText(100, 60, SineaterGame.Instance.FontMono, $"Player position: {CurrentPlayerPosition}");
+            batch.DrawText(100, 60, SineaterGame.RM.FontMono, $"Player position: {CurrentPlayerPosition}");
         batch.End();
     }
     

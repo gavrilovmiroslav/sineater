@@ -32,7 +32,7 @@ public class OptionHeaderDrawable(string header) : IDrawable
 {
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
-        renderContext.Batch.DrawText(x - 150, y - 16, SineaterGame.Instance.FontBold, header, Color.White);
+        renderContext.Batch.DrawText(x - 150, y - 16, SineaterGame.RM.FontBold, header, Color.White);
     }
 }
 
@@ -50,10 +50,10 @@ public class RangeOptionDrawable(int min, int max, string name, int value, Actio
 
     public void Update(int x, int y, Drawing.RenderContext renderContext)
     {
-        renderContext.Batch.DrawText(x - 100, y - 16, SineaterGame.Instance.Font, name, Context.Selected ? Color.Gold : Color.White);
+        renderContext.Batch.DrawText(x - 100, y - 16, SineaterGame.RM.Font, name, Context.Selected ? Color.Gold : Color.White);
         renderContext.FrameEdge(x + 200, y - 8, max * 16, 3, 0, Color.Gray);
         renderContext.FrameEdge(x + 200, y - 8, Context.Value * 16, 3, 0, Context.Selected ? Color.Gold : Color.White);
-        renderContext.Batch.DrawText(x + 400, y - 16, SineaterGame.Instance.Font, $"{Context.Value}", Context.Selected ? Color.Gold : Color.White);
+        renderContext.Batch.DrawText(x + 400, y - 16, SineaterGame.RM.Font, $"{Context.Value}", Context.Selected ? Color.Gold : Color.White);
     }
 }
 
@@ -208,7 +208,7 @@ public class OptionsScreen() : Screen()
         batch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
             DepthStencilState.Default, rasterizerState);
 
-        batch.Draw(SineaterGame.Instance.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
+        batch.Draw(SineaterGame.RM.Logo, new Vector2(Game.Window.ClientBounds.Width / 2.0f, Game.Window.ClientBounds.Height / 4.0f),
             null,
             Color.White, 0.0f, new Vector2(266, 102), Vector2.One, SpriteEffects.None, 0);
 

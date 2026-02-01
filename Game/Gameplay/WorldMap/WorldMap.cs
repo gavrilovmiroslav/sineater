@@ -85,7 +85,7 @@ public class SurpriseMarker(int X, int Y) : IWorldMapMarker
         var alpha = float.Lerp(0f, 1.0f, _time.Low(0.4f, Easing.CubicEaseOut));
         var t = float.Lerp(0f, -20.0f, _time.Low(0.2f, Easing.CubicEaseIn));
         var xy = new Vector2(x, y) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.DrawTextCenter((int)xy.X - 20, (int)(xy.Y - 70 + t), SineaterGame.Instance.FontBold, 
+        renderContext.Batch.DrawTextCenter((int)xy.X - 20, (int)(xy.Y - 70 + t), SineaterGame.RM.FontBold, 
             "!", new Color(1.0f, 1.0f, 1.0f, 1.0f - alpha));
         
         if (alpha >= 1.0f)
@@ -123,14 +123,14 @@ public class PointOfInterestMarker : IWorldMapMarker
         var c = _moveDelta.Low(0.3f, Easing.CubicEaseOut);
         
         var xy = new Vector2(x - 40, y - 20) + WorldMapScreen.InWorld(X, Y);
-        renderContext.Batch.Draw(SineaterGame.Instance.AllSprites, xy, new Rectangle(u * 64, v * 64, 64, 64),
+        renderContext.Batch.Draw(SineaterGame.RM.AllSprites, xy, new Rectangle(u * 64, v * 64, 64, 64),
             Color.White, 0, new Vector2(32, 64),
             new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
             SpriteEffects.None, 0);
         
         if (SineaterGame.Instance.ShowHelp)
         {
-            renderContext.Batch.Draw(SineaterGame.Instance.AllSpriteOutlines, xy,
+            renderContext.Batch.Draw(SineaterGame.RM.AllSpriteOutlines, xy,
                 new Rectangle(u * 64, v * 64, 64, 64),
                 Color.White, 0, new Vector2(32, 64),
                 new Vector2(3, 2.8f - MathF.Sign(MathF.Cos(0.005f * _time)) * 0.1f),
@@ -245,7 +245,7 @@ public class WorldMapDrawable : IDrawable
                 }
                 
                 var pos = xy + new Vector2(i, j) * 64;
-                renderContext.Batch.Draw(SineaterGame.Instance.Pixel,
+                renderContext.Batch.Draw(SineaterGame.RM.Pixel,
                     new Rectangle((int)pos.X, (int)pos.Y, 64, 64),
                     null, new Color(0.0f, 0.0f,0.0f, 1.0f - visibility)); //new Color(0.0f, 0.0f, 0.0f, 0.5f));
             }
