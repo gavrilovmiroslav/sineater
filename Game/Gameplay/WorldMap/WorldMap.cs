@@ -169,10 +169,12 @@ public class WorldMapDrawable : IDrawable
         {
             for (var j = -1; j < 2; j++)
             {
+                var known = false;
                 var f = 0.0f;
                 if (_visibility.TryGetValue((gridX + i, gridY + j), out var value))
                 {
                     f = value;
+                    known = true;
                 }
                 
                 if (i == 0 && j == 0)
@@ -189,6 +191,10 @@ public class WorldMapDrawable : IDrawable
                     {
                         _visibility[(gridX + i, gridY + j)] = MathF.Max(0.5f, f);
                     }
+                }
+
+                if (!known && _visibility[(gridX + i, gridY + j)] <= 0.0f)
+                {
                 }
             }
         }

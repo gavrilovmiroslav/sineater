@@ -14,6 +14,13 @@ public partial class Exit : ILDtkEntity
         Uid = 17,
         Size = new Vector2(16f, 16f),
         Pivot = new Vector2(0f, 0f),
+        Tile = new TilesetRectangle()
+        {
+            X = 96,
+            Y = 64,
+            W = 16,
+            H = 16
+        },
         SmartColor = new Color(190, 74, 47, 255),
 
     };
