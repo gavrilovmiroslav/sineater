@@ -93,7 +93,7 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
 
         // using parent parent with exception will bug ship build, since menu never changes states!
         // FIX ME
-        var dir = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName;
+        var dir = Environment.CurrentDirectory;
         if (dir is null)
         {
             throw new Exception("CONTENT FOLDER MISSING!");
@@ -140,7 +140,7 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
 
             lib.Hash = hash;
 
-            if (Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName is { } parent)
+            if (Environment.CurrentDirectory is { } parent)
             {
                 var json = JsonConvert.SerializeObject(lib);
                 File.WriteAllLines($"{parent}/Content/{JsonPath}", [json]);

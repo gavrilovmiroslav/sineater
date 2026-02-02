@@ -13,8 +13,11 @@
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
     <ItemGroup>
+      <Compile Remove="ContentBuilder\**" />
       <Compile Remove="MonoGame.ImGui\**" />
+      <EmbeddedResource Remove="ContentBuilder\**" />
       <EmbeddedResource Remove="MonoGame.ImGui\**" />
+      <None Remove="ContentBuilder\**" />
       <None Remove="MonoGame.ImGui\**" />
     </ItemGroup>
     <ItemGroup>
@@ -48,8 +51,7 @@
         <PackageReference Include="LDtkMonogame.ContentPipeline" Version="1.8.1" />
         <PackageReference Include="LiteDB" Version="6.0.0-prerelease.73" />
         <PackageReference Include="MonoGame.Extended" Version="5.4.0-preview.2" />
-        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5-develop.11" />
-        <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.5-develop.11" />
+        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5-develop.13" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="RogueSharp" Version="5.0.0-pre4" />
         <PackageReference Include="SadRex" Version="1.0.3" />
@@ -60,10 +62,6 @@
       <ClCompile Include="Content\crt.fx" />
     </ItemGroup>
     <ItemGroup>
-        <Reference Include="MonoJ">
-            <HintPath>..\..\SinEditor\MonoJ\bin\Debug\net8.0\MonoJ.dll</HintPath>
-        </Reference>
-		
 	    <Reference Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'" Include="Libs//win64//Steamworks.NET.dll">
 		    <HintPath> Libs//win64//Steamworks.NET.dll</HintPath>
 	    </Reference>
@@ -71,10 +69,8 @@
 	    <Reference Condition="'$(RuntimeIdentifier)' == 'linux-x64' or '$(OS)' != 'Windows_NT'" Include="Libs//linux64//Steamworks.NET.dll">
 		    <HintPath>Libs//linux64//Steamworks.NET.dll</HintPath>
 	    </Reference>
-		
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Content\audio\" />
       <Folder Include="Scripts\" />
     </ItemGroup>
     <ItemGroup>
@@ -94,18 +90,22 @@
 			<TargetPath>%(Filename)%(Extension)</TargetPath>
 		</None>
 	</ItemGroup>
-	
-    <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
-        <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />
-        <Exec Command="dotnet tool restore" />
-    </Target>
 
 
 	<Target Name="Codegen" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'">
-		<Exec Command="ldtkgen.exe -i Content\map.ldtk -o .\LDTK_Gen"></Exec>
+		<Exec Command="ldtkgen.exe -i ContentBuilder\Assets\map.ldtk -o .\LDTK_Gen"></Exec>
 	</Target>
 
 	<Target Name="Codegen_linux" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
-		<Exec Command="ldtkgen -i Content/map.ldtk -o ./LDTK_Gen"></Exec>
+		<Exec Command="ldtkgen -i ContentBuilder\Assets\map.ldtk -o ./LDTK_Gen"></Exec>
+	</Target>
+
+	<Target Name="BuildContent" BeforeTargets="Build">
+		<PropertyGroup>
+			<ContentOutput>$(ProjectDir)$(OutputPath)</ContentOutput>
+			<ContentTemp>$(ProjectDir)$(IntermediateOutputPath)</ContentTemp>
+			<ContentArgs>build -p $(MonoGamePlatform) -s Assets -o $(ContentOutput) -i $(ContentTemp)</ContentArgs>
+		</PropertyGroup>
+		<MSbuild Projects=".\ContentBuilder\ContentBuilder.csproj" Targets="Build;Run" Properties="RunArguments=$(ContentArgs);" />
 	</Target>
 </Project>
