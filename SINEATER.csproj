@@ -94,7 +94,7 @@
 	</Target>
 
 	<Target Name="Codegen_linux" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'linux-x64' or '$(OS)' != 'Windows_NT'">
-		<Exec Command="ldtkgen -i ContentBuilder/Assets/map.ldtk -o ./LDTK_Gen"></Exec>
+		<Exec Command="dotnet ldtkgen -i ContentBuilder/Assets/map.ldtk -o ./LDTK_Gen"></Exec>
 	</Target>
 
 	<Target Name="BuildContent" BeforeTargets="Build">
