@@ -195,6 +195,13 @@ public class WorldMapDrawable : IDrawable
 
                 if (!known && _visibility[(gridX + i, gridY + j)] <= 0.0f)
                 {
+                    UncoverWorld uncoverWorldEvent = new()
+                    {
+                        Screen = _screen,
+                        X = gridX + i,
+                        Y = gridY + j
+                    };
+                    EventBus.Send(ref uncoverWorldEvent);
                 }
             }
         }

@@ -89,12 +89,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         Barks.Load(Content);
     }
 
-    public void PopAndPushScreen(IScreen screen)
-    {
-        _toPush = screen;
-        ScreenStack.Pop();
-    }
-
     private void LoadOrCreateOptions()
     {
         try
