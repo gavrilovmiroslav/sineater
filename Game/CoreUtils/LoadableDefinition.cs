@@ -32,18 +32,18 @@ public interface ILoadableInterpreter<TDefinition, TResult>
     public TResult MakeFrom(TDefinition? def);
 }
 
-public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResult> 
+public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResult>
     where TDefinition : class, ILoadableDefinition
-    where TParser: ILoadableRowParser<TDefinition>, new()
-    where TInterpreter: ILoadableInterpreter<TDefinition, TResult>, new()
+    where TParser : ILoadableRowParser<TDefinition>, new()
+    where TInterpreter : ILoadableInterpreter<TDefinition, TResult>, new()
 {
     private const string KEY_ID = "Content/sheets.nosj.txt";
     private const string APPS_ID = "19faV45LV7ZQ1KdA-R6JbdCg7gy8JIx_FsJgKhZ-Clr0";
-    
+
     protected abstract string Sheet { get; }
     protected abstract string DataRange { get; }
     protected abstract string JsonPath { get; }
-    
+
     private readonly Dictionary<string, TDefinition> _library = [];
 
     private TInterpreter interp = new();
@@ -51,10 +51,11 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
     public List<string> EnumerateItems()
     {
         var result = new List<string>();
-        foreach(var item in  _library.Keys)
+        foreach (var item in _library.Keys)
         {
             result.Add(item);
         }
+
         return result;
     }
 
@@ -70,7 +71,7 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
         else
             return interp.MakeFrom(null);
     }
-    
+
     public TResult Make(TDefinition? def)
     {
         return interp.MakeFrom(def);
@@ -79,14 +80,14 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
     private string GetHash(IList<IList<object?>?>? omg)
     {
         var hash = "";
-        if (omg is { } a && a[0] is { } b && b[0] is {} c)
+        if (omg is { } a && a[0] is { } b && b[0] is { } c)
         {
             hash = c.ToString();
         }
 
         return hash;
     }
-    
+
     public void Load()
     {
         _library.Clear();
@@ -101,50 +102,72 @@ public abstract class LoadableLibrary<TDefinition, TParser, TInterpreter, TResul
 
         var local = JsonConvert.DeserializeObject<LoadableLibraryDefinition<TDefinition>>(
             File.ReadAllText($"{dir}/Content/{JsonPath}"));
-        
+
         foreach (var e in local?.Entries ?? [])
         {
             _library.Add(e.Item1, e.Item2);
         }
-        
-        var se = string.Concat(string.Join("\n", TitleContainer.OpenStream(KEY_ID).ReadLines(Encoding.Default)).Reverse());
+
+        var se = string.Concat(string.Join("\n", TitleContainer.OpenStream(KEY_ID).ReadLines(Encoding.Default))
+            .Reverse());
         var service = new SheetsService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = GoogleCredential
                 .FromJson(se)
                 .CreateScoped(SheetsService.Scope.Spreadsheets)
         });
-        
+
         var res = new SpreadsheetsResource.ValuesResource(service);
         var hash = GetHash(res.Get(APPS_ID, $"{Sheet}!Z1").Execute().Values);
 
+        Dictionary<string, TDefinition> newLibrary = [];
         if (hash != (local?.Hash ?? ""))
         {
-            Console.WriteLine("Hashes not matching, loading from net!");
-            _library.Clear();
-            var sheet = res.Get(APPS_ID, $"{Sheet}!{DataRange}").Execute();
-
-            var parser = new TParser();
-            for (var i = 1; i < sheet.Values.Count; i++)
+            try
             {
-                var def = parser.Parse(sheet.Values[i]);
-                _library.Remove(def.Key);
-                _library.Add(def.Key, def);
+                Console.WriteLine("Hashes not matching, loading from net!");
+
+                var sheet = res.Get(APPS_ID, $"{Sheet}!{DataRange}").Execute();
+
+                var parser = new TParser();
+                for (var i = 1; i < sheet.Values.Count; i++)
+                {
+                    var def = parser.Parse(sheet.Values[i]);
+                    newLibrary.Remove(def.Key);
+                    newLibrary.Add(def.Key, def);
+                }
+
+                var lib = new LoadableLibraryDefinition<TDefinition>();
+                foreach (var entry in _library)
+                {
+                    lib.Entries.Add((entry.Key, entry.Value));
+                }
+
+                lib.Hash = hash;
+
+                if (Environment.CurrentDirectory is { } parent)
+                {
+                    var json = JsonConvert.SerializeObject(lib);
+                    File.WriteAllLines($"{parent}/Content/{JsonPath}", [json]);
+                    File.WriteAllLines($"Content/{JsonPath}", [json]);
+                }
             }
-
-            var lib = new LoadableLibraryDefinition<TDefinition>();
-            foreach (var entry in _library)
+            catch (Exception e)
             {
-                lib.Entries.Add((entry.Key, entry.Value));
+                Console.WriteLine($"Error parsing item definitions:\n\t{e.Message}");
+                newLibrary.Clear();
             }
-
-            lib.Hash = hash;
-
-            if (Environment.CurrentDirectory is { } parent)
+            finally
             {
-                var json = JsonConvert.SerializeObject(lib);
-                File.WriteAllLines($"{parent}/Content/{JsonPath}", [json]);
-                File.WriteAllLines($"Content/{JsonPath}", [json]);
+                if (newLibrary.Count != 0)
+                {
+                    _library.Clear();
+                    foreach (var entry in newLibrary)
+                    {
+                        _library.Add(entry.Key, entry.Value);
+                    }
+                }
+                
             }
         }
     }
