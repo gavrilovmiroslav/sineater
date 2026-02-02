@@ -124,7 +124,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         InputManager.Instance.PushContext("Default"); 
         base.Initialize();
 
-        var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
+        var file = LDtk.LDtkFile.FromFile("Content/map.ldtk");
         _ldtkWorld = file.LoadWorld(Worlds.World.Iid);
         _ldtkRenderer = new LDTKRender(_spriteBatch, null);
         _ldtkLevel = _ldtkWorld.LoadLevel(0);
@@ -185,6 +185,19 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
 
         ShowHelp = InputM.IsActive(EInputAction.ShowHelp);
 
+        if (InputM.IsActive(EInputAction.Regenerate))
+        {
+            var file = LDtk.LDtkFile.FromFile("Content/map.ldtk");
+            _ldtkWorld = file.LoadWorld(Worlds.World.Iid);
+            _ldtkRenderer = new LDTKRender(_spriteBatch, null);
+            _ldtkLevel = _ldtkWorld.LoadLevel(0);
+        
+            foreach (LDtkLevel level in _ldtkWorld.Levels)
+            {
+                _ldtkRenderer.PrerenderLevel(level);
+            }
+        }
+        
         if (_toPush != null)
         {
             ScreenStack.Push(_toPush);
@@ -207,12 +220,6 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         }
 
         InputManager.Instance.Update(millis);
-        
-        if (InputM.IsActive(EInputAction.RestartExploration))
-        {
-            ScreenStack.Pop();
-            ScreenStack.Push(new WorldMapScreen());
-        }
 
         if (InputM.IsActive(EInputAction.ShowImGui))
         {

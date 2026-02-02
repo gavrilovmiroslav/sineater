@@ -26,7 +26,6 @@ public enum EInputAction
     #region Debug
     Debug,
     LoadItems,
-    RestartExploration,
     ExplorationDebug,
     ShowImGui,
     #endregion

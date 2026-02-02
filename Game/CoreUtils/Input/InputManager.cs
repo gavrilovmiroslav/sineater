@@ -150,7 +150,6 @@ namespace SINEATER.Game.CoreUtils.Input
                     MakeAction(EInputAction.Mute, Keys.End, Buttons.None),
 
                     MakeAction(EInputAction.LoadItems, Keys.F5, Buttons.None),
-                    MakeAction(EInputAction.RestartExploration, Keys.F1, Buttons.None),
                     MakeAction(EInputAction.ExplorationDebug, Keys.F10, Buttons.None),
                     MakeAction(EInputAction.ShowImGui, Keys.F2, Buttons.None),
 

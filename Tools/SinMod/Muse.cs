@@ -52,7 +52,7 @@ public static class Muse
 
     public static void Load()
     {
-        Tools.SinMod.System.LoadBank(@"audio/Desktop/Master");
+        Tools.SinMod.System.LoadBank(@"audio/Desktop/Master.bank");
         Tools.SinMod.System.CreateInstance("Music/Music", "bgm").Play();
     }
 }
