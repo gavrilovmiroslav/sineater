@@ -130,7 +130,7 @@ public class SineaterGame : Microsoft.Xna.Framework.Game
         InputManager.Instance.PushContext("Default"); 
         base.Initialize();
 
-        var file = LDtk.LDtkFile.FromFile("Content\\map.ldtk");
+        var file = LDtk.LDtkFile.FromFile("Content/map.ldtk");
         _ldtkWorld = file.LoadWorld(Worlds.World.Iid);
         _ldtkRenderer = new LDTKRender(_spriteBatch, null);
         _ldtkLevel = _ldtkWorld.LoadLevel(0);
