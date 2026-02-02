@@ -59,9 +59,6 @@
         <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
     <ItemGroup>
-      <ClCompile Include="Content\crt.fx" />
-    </ItemGroup>
-    <ItemGroup>
 	    <Reference Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(OS)' == 'Windows_NT'" Include="Libs//win64//Steamworks.NET.dll">
 		    <HintPath> Libs//win64//Steamworks.NET.dll</HintPath>
 	    </Reference>
@@ -96,7 +93,7 @@
 		<Exec Command="ldtkgen.exe -i ContentBuilder\Assets\map.ldtk -o .\LDTK_Gen"></Exec>
 	</Target>
 
-	<Target Name="Codegen_linux" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'linux-x64 or '$(OS)' != 'Windows_NT'">
+	<Target Name="Codegen_linux" BeforeTargets="BeforeBuild" Condition="'$(RuntimeIdentifier)' == 'linux-x64' or '$(OS)' != 'Windows_NT'">
 		<Exec Command="ldtkgen -i ContentBuilder/Assets/map.ldtk -o ./LDTK_Gen"></Exec>
 	</Target>
 
